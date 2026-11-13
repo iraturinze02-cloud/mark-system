@@ -475,13 +475,22 @@ tbody tr td:first-child {
 
         <input type="hidden" id="editId">
 
-         <label for="adminSector">Sector Name</label>
-        <input
-            type="text"
-            id="adminSector"
-            placeholder="Enter full name"
-            maxlength="200"
-        >
+        <label for="adminSector">Sector Name</label>
+<input
+    type="text"
+    id="adminSector"
+    placeholder="Enter sector name"
+    maxlength="150"
+    required
+>
+        <label for="sectorCode">Sector Code</label>
+<input
+    type="text"
+    id="sectorCode"
+    placeholder="Enter sector code"
+    maxlength="50"
+    required
+>
 
         <label for="adminName">Full Name</label>
         <input
@@ -771,7 +780,14 @@ function closeModal() {
 // SAVE ADMIN
 // ===================================
 
+
 async function saveAdmin() {
+
+    const sector_name =
+        document.getElementById("adminSector").value.trim();
+
+    const sector_code =
+        document.getElementById("sectorCode").value.trim();
 
     const full_name =
         document.getElementById("adminName").value.trim();
@@ -782,50 +798,41 @@ async function saveAdmin() {
     const password =
         document.getElementById("adminPassword").value;
 
-    const sector_id =
-        document.getElementById("adminSector").value;
-
-    if (!full_name || !phone || !sector_id) {
-        alert("Please fill in all required fields.");
+    if (!sector_name || !sector_code || !full_name || !phone) {
+        showMessage("Please complete all required fields.", "error");
         return;
     }
 
     if (!editMode && password.length < 8) {
-        alert("Password must contain at least 8 characters.");
+        showMessage("Password must contain at least 8 characters.", "error");
         return;
     }
 
     if (editMode && password && password.length < 8) {
-        alert("New password must contain at least 8 characters.");
+        showMessage("New password must contain at least 8 characters.", "error");
         return;
     }
 
     const payload = {
+        sector_name,
+        sector_code,
         full_name,
         phone,
-        sector_id,
-        role: "sector_admin"
+        password
     };
 
-    let url = "/api/users/create-sector-admin";
+    const url = editMode
+        ? "/api/users/update-sector-admin"
+        : "/api/users/create-sector-admin";
 
     if (editMode) {
         payload.id = document.getElementById("editId").value;
-
-        if (password) {
-            payload.password = password;
-        }
-
-        url = "/api/users/update-sector-admin";
-    } else {
-        payload.password = password;
     }
 
     saveBtn.disabled = true;
-    saveBtn.textContent = "Saving...";
+    saveBtn.textContent = editMode ? "Updating..." : "Saving...";
 
     try {
-
         const res = await fetch(url, {
             method: "POST",
             credentials: "same-origin",
@@ -835,25 +842,22 @@ async function saveAdmin() {
             body: JSON.stringify(payload)
         });
 
-        const result = await res.json();
+        const result = await readJsonResponse(res);
 
         if (!res.ok || !result.success) {
-            throw new Error(result.message || "Could not save administrator.");
+            throw new Error(result.message || "Operation failed.");
         }
 
         closeModal();
 
-        showMessage(
-            editMode
-                ? "Sector administrator updated successfully."
-                : "Sector administrator created successfully.",
-            "success"
-        );
+        showMessage(result.message, "success");
 
+        await loadSectors();
         await loadSectorAdmins();
 
     } catch (error) {
         showMessage(error.message, "error");
+
     } finally {
         saveBtn.disabled = false;
         saveBtn.textContent = editMode ? "Update" : "Save";
