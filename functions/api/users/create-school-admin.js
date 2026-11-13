@@ -1,3 +1,4 @@
+
 import bcrypt from "bcryptjs";
 import {
     connectDB,
@@ -8,9 +9,7 @@ import {
 export async function onRequestPost(context) {
     const auth = await requireSectorAdmin(context);
 
-    if (auth.error) {
-        return auth.error;
-    }
+    if (auth.error) return auth.error;
 
     let data;
 
@@ -23,29 +22,34 @@ export async function onRequestPost(context) {
         }, 400);
     }
 
-    const full_name = String(data.full_name || "").trim();
+    const fullName = String(data.full_name || "").trim();
     const phone = String(data.phone || "").trim();
     const password = String(data.password || "");
-    const schoolId = Number(data.school_id);
+    const schoolName = String(data.school_name || "").trim();
 
-    if (!full_name || !phone || !password || !schoolId) {
+    const missing = [];
+
+    if (!fullName) missing.push("full_name");
+    if (!phone) missing.push("phone");
+    if (!password) missing.push("password");
+    if (!schoolName) missing.push("school_name");
+
+    if (missing.length) {
         return json({
             success: false,
-            message: "Full name, phone number, password and school are required."
+            message: "Please complete all required fields.",
+            missing
         }, 400);
     }
 
-    if (!Number.isSafeInteger(schoolId) || schoolId <= 0) {
+    if (
+        fullName.length > 200 ||
+        phone.length > 30 ||
+        schoolName.length > 200
+    ) {
         return json({
             success: false,
-            message: "Invalid school selection."
-        }, 400);
-    }
-
-    if (full_name.length > 200 || phone.length > 30) {
-        return json({
-            success: false,
-            message: "Full name or phone number is too long."
+            message: "One or more fields exceed the allowed length."
         }, 400);
     }
 
@@ -65,29 +69,53 @@ export async function onRequestPost(context) {
         await client.query("BEGIN");
         transactionStarted = true;
 
-        // Verify that the selected school belongs to this sector.
-        const schoolResult = await client.query(
-            `SELECT id
-             FROM schools
-             WHERE id = $1
-               AND sector_id = $2
-               AND status = 'active'`,
-            [schoolId, auth.sectorId]
+        // Prevent simultaneous creation of the same school.
+        const lockKey =
+            `${auth.sectorId}:${schoolName.toLowerCase()}`;
+
+        await client.query(
+            "SELECT pg_advisory_xact_lock(hashtext($1))",
+            [lockKey]
         );
 
-        if (schoolResult.rowCount === 0) {
-            await client.query("ROLLBACK");
-            transactionStarted = false;
+        // Find the school within the logged-in admin's sector.
+        let schoolResult = await client.query(
+            `SELECT id
+             FROM schools
+             WHERE sector_id = $1
+               AND LOWER(TRIM(school_name)) = LOWER(TRIM($2))
+             LIMIT 1`,
+            [auth.sectorId, schoolName]
+        );
 
-            return json({
-                success: false,
-                message: "The selected school does not belong to your sector or is inactive."
-            }, 403);
+        let schoolId;
+
+        if (schoolResult.rowCount > 0) {
+            schoolId = schoolResult.rows[0].id;
+        } else {
+            // Generate a unique school code.
+            const schoolCode =
+                `SCH-${Date.now()}-${crypto.randomUUID()
+                    .slice(0, 8).toUpperCase()}`;
+
+            const newSchool = await client.query(
+                `INSERT INTO schools (
+                    sector_id,
+                    school_name,
+                    school_code,
+                    status
+                )
+                VALUES ($1, $2, $3, 'active')
+                RETURNING id`,
+                [auth.sectorId, schoolName, schoolCode]
+            );
+
+            schoolId = newSchool.rows[0].id;
         }
 
-        // Check whether the phone number is already registered.
+        // Check duplicate phone number.
         const duplicate = await client.query(
-            `SELECT id FROM users WHERE phone = $1`,
+            `SELECT id FROM users WHERE phone = $1 LIMIT 1`,
             [phone]
         );
 
@@ -101,6 +129,7 @@ export async function onRequestPost(context) {
             }, 409);
         }
 
+        // Hash the password before saving.
         const passwordHash = await bcrypt.hash(password, 12);
 
         const result = await client.query(
@@ -111,10 +140,10 @@ export async function onRequestPost(context) {
                 role,
                 school_id,
                 status
-             )
-             VALUES ($1, $2, $3, 'school_admin', $4, 'active')
-             RETURNING id, full_name, phone, school_id, role`,
-            [full_name, phone, passwordHash, schoolId]
+            )
+            VALUES ($1, $2, $3, 'school_admin', $4, 'active')
+            RETURNING id, full_name, phone, school_id, role`,
+            [fullName, phone, passwordHash, schoolId]
         );
 
         await client.query("COMMIT");
@@ -123,7 +152,10 @@ export async function onRequestPost(context) {
         return json({
             success: true,
             message: "School administrator created successfully.",
-            admin: result.rows[0]
+            admin: {
+                ...result.rows[0],
+                school_name: schoolName
+            }
         }, 201);
 
     } catch (error) {
@@ -136,7 +168,7 @@ export async function onRequestPost(context) {
         if (error.code === "23505") {
             return json({
                 success: false,
-                message: "This phone number is already registered."
+                message: "This phone number or school code is already registered."
             }, 409);
         }
 
@@ -146,6 +178,8 @@ export async function onRequestPost(context) {
         }, 500);
 
     } finally {
-        if (client) await client.end();
+        if (client) {
+            await client.end().catch(() => {});
+        }
     }
 }
