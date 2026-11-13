@@ -4,192 +4,118 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Add Sector Administrator | Sector Education System</title>
+    <title>Sector Administrators</title>
+
+    <link rel="stylesheet" href="style.css">
 
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: Arial, sans-serif;
-        }
-
-        body {
-            background: #f1f5f9;
-            color: #1e293b;
-        }
-
-        .sidebar {
+        /* MODAL */
+        .modal {
+            display: none;
             position: fixed;
-            width: 250px;
-            height: 100vh;
-            background: #123b67;
-            color: white;
-            padding: 25px 15px;
-        }
-
-        .brand {
-            font-size: 19px;
-            font-weight: bold;
-            padding: 5px 10px 25px;
-            border-bottom: 1px solid #ffffff30;
-        }
-
-        .sidebar p {
-            color: #bfdbfe;
-            font-size: 12px;
-            margin: 20px 10px;
-            text-transform: uppercase;
-        }
-
-        .sidebar a {
-            display: block;
-            color: #e2e8f0;
-            text-decoration: none;
-            padding: 13px 12px;
-            border-radius: 7px;
-            margin-bottom: 5px;
-            font-size: 14px;
-        }
-
-        .sidebar a:hover,
-        .sidebar a.active {
-            background: #24588b;
-            color: white;
-        }
-
-        .main {
-            margin-left: 250px;
-        }
-
-        .topbar {
-            background: white;
-            padding: 18px 28px;
-            display: flex;
-            justify-content: space-between;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            justify-content: center;
             align-items: center;
-            box-shadow: 0 2px 8px #00000008;
+            z-index: 1000;
         }
 
-        .topbar h2 {
-            font-size: 20px;
-        }
-
-        .topbar span {
-            font-size: 13px;
-            color: #64748b;
-        }
-
-        .content {
-            padding: 30px;
-            max-width: 950px;
-        }
-
-        .heading {
-            margin-bottom: 25px;
-        }
-
-        .heading h1 {
-            font-size: 25px;
-            margin-bottom: 8px;
-        }
-
-        .heading p {
-            color: #64748b;
-            font-size: 14px;
-        }
-
-        .form-card {
+        .modal-content {
             background: white;
-            padding: 28px;
-            border-radius: 10px;
-            box-shadow: 0 2px 8px #00000008;
+            padding: 25px;
+            width: 90%;
+            max-width: 420px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            max-height: 90vh;
+            overflow-y: auto;
         }
 
-        .form-card h3 {
-            margin-bottom: 22px;
-            font-size: 18px;
-        }
-
-        .form-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-        }
-
-        .form-group {
+        .modal-content h2 {
             margin-bottom: 18px;
         }
 
-        .form-group.full {
-            grid-column: 1 / -1;
-        }
-
-        label {
+        .modal-content label {
             display: block;
-            font-size: 13px;
-            font-weight: bold;
-            margin-bottom: 8px;
+            margin-top: 12px;
+            font-weight: 600;
+            font-size: 14px;
         }
 
-        input, select {
+        .modal-content input,
+        .modal-content select {
             width: 100%;
-            padding: 13px;
-            border: 1px solid #cbd5e1;
+            padding: 11px;
+            margin: 8px 0;
+            border: 1px solid #ccc;
             border-radius: 6px;
             font-size: 14px;
-            outline: none;
-            background: white;
         }
 
-        input:focus, select:focus {
-            border-color: #2563eb;
-        }
-
-        .help {
-            color: #64748b;
-            font-size: 12px;
-            margin-top: 6px;
-        }
-
-        .buttons {
-            display: flex;
-            gap: 12px;
-            margin-top: 10px;
-        }
-
-        button {
-            padding: 13px 20px;
+        /* BUTTONS */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 12px 18px;
             border: none;
-            border-radius: 6px;
-            cursor: pointer;
+            border-radius: 10px;
             font-size: 14px;
-        }
-
-        .submit-btn {
-            background: #123b67;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.25s ease;
             color: white;
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
 
-        .submit-btn:hover {
-            background: #24588b;
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 14px rgba(0,0,0,0.15);
         }
 
-        .cancel-btn {
-            background: #e2e8f0;
-            color: #1e293b;
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
         }
 
-        button:disabled {
-            opacity: .6;
+        .btn-warning {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+        }
+
+        .btn-sm {
+            padding: 8px 12px;
+            font-size: 12px;
+            border-radius: 8px;
+        }
+
+        .btn-block {
+            width: 100%;
+            margin-top: 12px;
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
             cursor: not-allowed;
+            transform: none;
+        }
+
+        .actions {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
         }
 
         #message {
             display: none;
-            padding: 13px;
-            border-radius: 6px;
-            margin-bottom: 20px;
+            padding: 12px;
+            border-radius: 7px;
+            margin-bottom: 15px;
             font-size: 13px;
         }
 
@@ -205,63 +131,29 @@
             color: #991b1b;
         }
 
-        @media(max-width: 700px) {
-            .sidebar {
-                width: 70px;
-                padding: 15px 6px;
-            }
+        .table-wrapper {
+            width: 100%;
+            overflow-x: auto;
+        }
 
-            .brand {
-                font-size: 10px;
-                text-align: center;
-                padding: 10px 2px;
-            }
+        table {
+            border-collapse: collapse;
+            min-width: 650px;
+        }
 
-            .sidebar p {
-                display: none;
-            }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
 
-            .sidebar a {
-                font-size: 10px;
-                text-align: center;
-                padding: 12px 2px;
-            }
+        th {
+            background: #f8fafc;
+        }
 
-            .main {
-                margin-left: 70px;
-            }
-
-            .content {
-                padding: 18px 12px;
-            }
-
-            .topbar {
-                padding: 15px;
-            }
-
-            .topbar h2 {
-                font-size: 15px;
-            }
-
-            .form-card {
+        @media(max-width: 600px) {
+            .modal-content {
                 padding: 18px;
-            }
-
-            .form-grid {
-                grid-template-columns: 1fr;
-                gap: 0;
-            }
-
-            .form-group.full {
-                grid-column: auto;
-            }
-
-            .buttons {
-                flex-direction: column;
-            }
-
-            .buttons button {
-                width: 100%;
             }
         }
     </style>
@@ -269,270 +161,474 @@
 
 <body>
 
-<aside class="sidebar">
-    <div class="brand">SECTOR EDUCATION</div>
+<header>
+    <h1>SECTOR MANAGEMENT</h1>
+    <p>Manage sectors and sector administrators</p>
+    <button class="logout-btn" onclick="logout()">Logout</button>
+</header>
 
-    <p>Platform Owner</p>
+<main class="dashboard-container">
 
-    <a href="owner.html">Dashboard</a>
-    <a href="sectors.html">Sectors</a>
-    <a href="schools.html">Schools</a>
-    <a href="users.html" class="active">User Accounts</a>
-    <a href="subjects.html">Subjects</a>
-    <a href="examinations.html">Examinations</a>
-    <a href="reports.html">Reports</a>
-</aside>
+    <div class="card" style="max-width:1000px; width:95%;">
 
-<main class="main">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:15px;">
+            <h2>Sector & Admin Overview</h2>
 
-    <header class="topbar">
-        <h2>Add Sector Administrator</h2>
-        <span id="ownerName">Platform Owner</span>
-    </header>
-
-    <div class="content">
-
-        <div class="heading">
-            <h1>Register Sector Administrator</h1>
-            <p>Create an administrator account and assign it to a sector.</p>
+            <button class="btn" onclick="openAdd()">
+                + Add Sector Admin
+            </button>
         </div>
 
-        <section class="form-card">
+        <div id="message"></div>
 
-            <h3>Administrator Information</h3>
+        <div class="table-wrapper">
+            <table style="width:100%; margin-top:20px;">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Sector</th>
+                        <th>Sector Code</th>
+                        <th>Admin Name</th>
+                        <th>Phone Number</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
 
-            <div id="message"></div>
-
-            <form id="adminForm">
-
-                <div class="form-grid">
-
-                    <div class="form-group">
-                        <label for="fullName">Full Name *</label>
-                        <input
-                            type="text"
-                            id="fullName"
-                            placeholder="Enter administrator's full name"
-                            maxlength="200"
-                            required
-                        >
-                    </div>
-
-                    <div class="form-group">
-                        <label for="phone">Phone Number *</label>
-                        <input
-                            type="tel"
-                            id="phone"
-                            placeholder="e.g. 0780000000"
-                            maxlength="30"
-                            required
-                        >
-                    </div>
-
-                    <div class="form-group full">
-                        <label for="sector">Assigned Sector *</label>
-                        <select id="sector" required>
-                            <option value="">Loading sectors...</option>
-                        </select>
-                        <p class="help">
-                            The administrator will manage the selected sector.
-                        </p>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="password">Temporary Password *</label>
-                        <input
-                            type="password"
-                            id="password"
-                            placeholder="Create a temporary password"
-                            minlength="8"
-                            autocomplete="new-password"
-                            required
-                        >
-                    </div>
-
-                    <div class="form-group">
-                        <label for="confirmPassword">Confirm Password *</label>
-                        <input
-                            type="password"
-                            id="confirmPassword"
-                            placeholder="Confirm the password"
-                            minlength="8"
-                            autocomplete="new-password"
-                            required
-                        >
-                    </div>
-
-                    <div class="form-group full">
-                        <label>Account Role</label>
-                        <input type="text" value="Sector Administrator" disabled>
-                        <p class="help">
-                            The system will automatically assign the role sector_admin.
-                        </p>
-                    </div>
-
-                </div>
-
-                <div class="buttons">
-                    <button type="submit" class="submit-btn" id="submitBtn">
-                        Create Administrator
-                    </button>
-
-                    <button
-                        type="button"
-                        class="cancel-btn"
-                        onclick="window.location.href='users.html'"
-                    >
-                        Cancel
-                    </button>
-                </div>
-
-            </form>
-
-        </section>
+                <tbody id="sectorTable">
+                    <tr>
+                        <td colspan="6">Loading...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
 
     </div>
+
 </main>
 
+<!-- ADD / EDIT MODAL -->
+<div id="modal" class="modal">
+
+    <div class="modal-content">
+
+        <h2 id="modalTitle">Add Sector Admin</h2>
+
+        <input type="hidden" id="editId">
+
+        <label for="adminSector">Sector</label>
+        <select id="adminSector" required>
+            <option value="">-- Select Sector --</option>
+        </select>
+
+        <label for="adminName">Full Name</label>
+        <input
+            type="text"
+            id="adminName"
+            placeholder="Enter full name"
+            maxlength="200"
+        >
+
+        <label for="adminPhone">Phone Number</label>
+        <input
+            type="tel"
+            id="adminPhone"
+            placeholder="e.g. 0780000000"
+            maxlength="30"
+        >
+
+        <label for="adminPassword">Password</label>
+        <input
+            type="password"
+            id="adminPassword"
+            placeholder="Enter password"
+            minlength="8"
+            autocomplete="new-password"
+        >
+
+        <p style="font-size:12px;color:#64748b;margin-top:3px;">
+            At least 8 characters. When editing, leave blank to keep the current password.
+        </p>
+
+        <button class="btn btn-success btn-block" id="saveBtn" onclick="saveAdmin()">
+            Save
+        </button>
+
+        <button class="btn btn-danger btn-block" onclick="closeModal()">
+            Cancel
+        </button>
+
+    </div>
+
+</div>
+
 <script>
-    // Protect the page's frontend navigation.
-    const currentUser = JSON.parse(
-        localStorage.getItem("currentUser") || "null"
-    );
+// ===================================
+// OWNER SECURITY GUARD
+// ===================================
 
-    const role = localStorage.getItem("role");
+const currentUser = JSON.parse(
+    localStorage.getItem("currentUser") || "null"
+);
 
-    if (
-        !currentUser ||
-        role !== "owner" ||
-        currentUser.role !== "owner"
-    ) {
-        window.location.replace("index.html");
-    } else {
-        document.getElementById("ownerName").textContent =
-            currentUser.full_name || "Platform Owner";
-    }
+const role = localStorage.getItem("role");
 
-    const form = document.getElementById("adminForm");
-    const sectorSelect = document.getElementById("sector");
-    const submitBtn = document.getElementById("submitBtn");
-    const message = document.getElementById("message");
+if (
+    !currentUser ||
+    !currentUser.id ||
+    role !== "owner" ||
+    currentUser.role !== "owner"
+) {
+    window.location.replace("index.html");
+}
 
-    function showMessage(text, type) {
-        message.textContent = text;
-        message.className = type;
-    }
+// ===================================
+// VARIABLES
+// ===================================
 
-    async function loadSectors() {
-        try {
-            const response = await fetch("/api/sectors", {
-                credentials: "same-origin"
-            });
+let sectors = [];
+let admins = [];
+let editMode = false;
 
-            const result = await response.json();
+const table = document.getElementById("sectorTable");
+const modal = document.getElementById("modal");
+const message = document.getElementById("message");
+const saveBtn = document.getElementById("saveBtn");
 
-            if (!response.ok || !result.success) {
-                throw new Error(result.message || "Could not load sectors.");
-            }
+// ===================================
+// MESSAGES
+// ===================================
 
-            const sectors = result.sectors || [];
+function showMessage(text, type) {
+    message.textContent = text;
+    message.className = type;
+}
 
-            sectorSelect.innerHTML =
-                '<option value="">Select a sector</option>';
+function clearMessage() {
+    message.textContent = "";
+    message.className = "";
+    message.style.display = "none";
+}
 
-            sectors.forEach(sector => {
+// ===================================
+// LOAD SECTORS
+// ===================================
+
+async function loadSectors() {
+
+    const select = document.getElementById("adminSector");
+
+    try {
+        const res = await fetch("/api/sectors", {
+            credentials: "same-origin"
+        });
+
+        const data = await res.json();
+
+        if (!res.ok || !data.success) {
+            throw new Error(data.message || "Unable to load sectors.");
+        }
+
+        sectors = data.sectors || [];
+
+        select.innerHTML = '<option value="">-- Select Sector --</option>';
+
+        sectors
+            .filter(sector => sector.status === "active")
+            .forEach(sector => {
                 const option = document.createElement("option");
                 option.value = sector.id;
                 option.textContent = sector.sector_name;
-                sectorSelect.appendChild(option);
+                select.appendChild(option);
             });
 
-            if (sectors.length === 0) {
-                sectorSelect.innerHTML =
-                    '<option value="">No active sectors available</option>';
-            }
+    } catch (error) {
+        select.innerHTML = '<option value="">Unable to load sectors</option>';
+        showMessage(error.message, "error");
+    }
+}
 
-        } catch (error) {
-            sectorSelect.innerHTML =
-                '<option value="">Unable to load sectors</option>';
+// ===================================
+// LOAD SECTOR ADMINISTRATORS
+// ===================================
 
-            showMessage(error.message, "error");
+async function loadSectorAdmins() {
+
+    table.innerHTML =
+        '<tr><td colspan="6">Loading...</td></tr>';
+
+    try {
+        const res = await fetch("/api/sector-admins", {
+            credentials: "same-origin"
+        });
+
+        const data = await res.json();
+
+        if (!res.ok || !data.success) {
+            throw new Error(data.message || "Unable to load administrators.");
         }
+
+        admins = data.admins || [];
+
+        renderTable();
+
+    } catch (error) {
+        table.innerHTML =
+            `<tr><td colspan="6">${escapeHTML(error.message)}</td></tr>`;
+    }
+}
+
+// ===================================
+// DISPLAY TABLE
+// ===================================
+
+function renderTable() {
+
+    table.innerHTML = "";
+
+    if (sectors.length === 0) {
+        table.innerHTML =
+            '<tr><td colspan="6">No sectors registered.</td></tr>';
+        return;
     }
 
-    form.addEventListener("submit", async function(event) {
-        event.preventDefault();
+    const adminBySector = new Map(
+        admins.map(admin => [String(admin.sector_id), admin])
+    );
 
-        message.className = "";
-        message.style.display = "none";
+    sectors.forEach((sector, index) => {
 
-        const fullName = document.getElementById("fullName").value.trim();
-        const phone = document.getElementById("phone").value.trim();
-        const sectorId = sectorSelect.value;
-        const password = document.getElementById("password").value;
-        const confirmPassword =
-            document.getElementById("confirmPassword").value;
+        const admin = adminBySector.get(String(sector.id));
 
-        if (!sectorId) {
-            showMessage("Please select a sector.", "error");
-            return;
-        }
+        const row = document.createElement("tr");
 
-        if (password.length < 8) {
-            showMessage("Password must contain at least 8 characters.", "error");
-            return;
-        }
+        row.innerHTML = `
+            <td>${index + 1}</td>
+            <td>${escapeHTML(sector.sector_name)}</td>
+            <td>${escapeHTML(sector.sector_code)}</td>
+            <td>${admin ? escapeHTML(admin.full_name) : "-"}</td>
+            <td>${admin ? escapeHTML(admin.phone) : "-"}</td>
+            <td>
+                <div class="actions">
+                    ${
+                        admin
+                        ? `<button class="btn btn-warning btn-sm"
+                            onclick="openEdit('${escapeJS(admin.id)}')">
+                            Edit
+                           </button>`
+                        : `<button class="btn btn-sm"
+                            onclick="openAdd('${escapeJS(sector.id)}')">
+                            Add Admin
+                           </button>`
+                    }
+                </div>
+            </td>
+        `;
 
-        if (password !== confirmPassword) {
-            showMessage("The passwords do not match.", "error");
-            return;
-        }
-
-        submitBtn.disabled = true;
-        submitBtn.textContent = "Creating account...";
-
-        try {
-            const response = await fetch(
-                "/api/users/create-sector-admin",
-                {
-                    method: "POST",
-                    credentials: "same-origin",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({
-                        full_name: fullName,
-                        phone: phone,
-                        password: password,
-                        sector_id: sectorId
-                    })
-                }
-            );
-
-            const result = await response.json();
-
-            if (!response.ok || !result.success) {
-                throw new Error(
-                    result.message || "Could not create administrator."
-                );
-            }
-
-            showMessage(
-                "Sector administrator created successfully!",
-                "success"
-            );
-
-            form.reset();
-
-        } catch (error) {
-            showMessage(error.message, "error");
-        } finally {
-            submitBtn.disabled = false;
-            submitBtn.textContent = "Create Administrator";
-        }
+        table.appendChild(row);
     });
+}
 
-    loadSectors();
+// ===================================
+// SAFE HTML OUTPUT
+// ===================================
+
+function escapeHTML(value) {
+    return String(value ?? "").replace(/[&<>"']/g, char => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
+    })[char]);
+}
+
+function escapeJS(value) {
+    return String(value ?? "").replace(/\\/g, "\\\\").replace(/'/g, "\\'");
+}
+
+// ===================================
+// OPEN ADD MODAL
+// ===================================
+
+function openAdd(sectorId = "") {
+
+    editMode = false;
+
+    document.getElementById("modalTitle").textContent =
+        "Add Sector Admin";
+
+    document.getElementById("editId").value = "";
+    document.getElementById("adminSector").value = sectorId;
+    document.getElementById("adminName").value = "";
+    document.getElementById("adminPhone").value = "";
+    document.getElementById("adminPassword").value = "";
+
+    document.getElementById("adminSector").disabled = false;
+
+    saveBtn.textContent = "Save";
+    modal.style.display = "flex";
+}
+
+// ===================================
+// OPEN EDIT MODAL
+// ===================================
+
+function openEdit(id) {
+
+    const admin = admins.find(item => String(item.id) === String(id));
+
+    if (!admin) return;
+
+    editMode = true;
+
+    document.getElementById("modalTitle").textContent =
+        "Edit Sector Admin";
+
+    document.getElementById("editId").value = admin.id;
+    document.getElementById("adminSector").value = admin.sector_id;
+    document.getElementById("adminName").value = admin.full_name || "";
+    document.getElementById("adminPhone").value = admin.phone || "";
+    document.getElementById("adminPassword").value = "";
+
+    document.getElementById("adminSector").disabled = true;
+
+    saveBtn.textContent = "Update";
+    modal.style.display = "flex";
+}
+
+// ===================================
+// CLOSE MODAL
+// ===================================
+
+function closeModal() {
+    modal.style.display = "none";
+}
+
+// ===================================
+// SAVE ADMIN
+// ===================================
+
+async function saveAdmin() {
+
+    const full_name =
+        document.getElementById("adminName").value.trim();
+
+    const phone =
+        document.getElementById("adminPhone").value.trim();
+
+    const password =
+        document.getElementById("adminPassword").value;
+
+    const sector_id =
+        document.getElementById("adminSector").value;
+
+    if (!full_name || !phone || !sector_id) {
+        alert("Please fill in all required fields.");
+        return;
+    }
+
+    if (!editMode && password.length < 8) {
+        alert("Password must contain at least 8 characters.");
+        return;
+    }
+
+    if (editMode && password && password.length < 8) {
+        alert("New password must contain at least 8 characters.");
+        return;
+    }
+
+    const payload = {
+        full_name,
+        phone,
+        sector_id,
+        role: "sector_admin"
+    };
+
+    let url = "/api/users/create-sector-admin";
+
+    if (editMode) {
+        payload.id = document.getElementById("editId").value;
+
+        if (password) {
+            payload.password = password;
+        }
+
+        url = "/api/users/update-sector-admin";
+    } else {
+        payload.password = password;
+    }
+
+    saveBtn.disabled = true;
+    saveBtn.textContent = "Saving...";
+
+    try {
+
+        const res = await fetch(url, {
+            method: "POST",
+            credentials: "same-origin",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(payload)
+        });
+
+        const result = await res.json();
+
+        if (!res.ok || !result.success) {
+            throw new Error(result.message || "Could not save administrator.");
+        }
+
+        closeModal();
+
+        showMessage(
+            editMode
+                ? "Sector administrator updated successfully."
+                : "Sector administrator created successfully.",
+            "success"
+        );
+
+        await loadSectorAdmins();
+
+    } catch (error) {
+        showMessage(error.message, "error");
+    } finally {
+        saveBtn.disabled = false;
+        saveBtn.textContent = editMode ? "Update" : "Save";
+    }
+}
+
+// ===================================
+// LOGOUT
+// ===================================
+
+async function logout() {
+
+    if (!confirm("Are you sure you want to log out?")) return;
+
+    try {
+        await fetch("/api/logout", {
+            method: "POST",
+            credentials: "same-origin"
+        });
+    } finally {
+        localStorage.removeItem("currentUser");
+        localStorage.removeItem("role");
+        window.location.replace("index.html");
+    }
+}
+
+// ===================================
+// INITIALIZE
+// ===================================
+
+async function initializePage() {
+    await loadSectors();
+    await loadSectorAdmins();
+    renderTable();
+}
+
+initializePage();
+
 </script>
 
 </body>
