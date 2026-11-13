@@ -1,0 +1,438 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Owner Dashboard | Sector Education System</title>
+
+    <link rel="stylesheet" href="style.css">
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background: #f1f5f9;
+            color: #1e293b;
+        }
+
+        .layout {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 250px;
+            background: #123b67;
+            color: white;
+            padding: 25px 15px;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+        }
+
+        .brand {
+            font-size: 20px;
+            font-weight: bold;
+            padding: 5px 10px 25px;
+            border-bottom: 1px solid #ffffff30;
+        }
+
+        .role-label {
+            font-size: 12px;
+            color: #bfdbfe;
+            margin: 18px 10px;
+            text-transform: uppercase;
+        }
+
+        .nav-link {
+            display: block;
+            color: #e2e8f0;
+            text-decoration: none;
+            padding: 13px 12px;
+            border-radius: 7px;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+
+        .nav-link:hover,
+        .nav-link.active {
+            background: #24588b;
+            color: white;
+        }
+
+        .main {
+            margin-left: 250px;
+            width: calc(100% - 250px);
+        }
+
+        .topbar {
+            background: white;
+            padding: 18px 28px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 8px #00000008;
+        }
+
+        .topbar h2 {
+            font-size: 20px;
+        }
+
+        .profile {
+            text-align: right;
+            font-size: 13px;
+        }
+
+        .profile strong {
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .content {
+            padding: 28px;
+        }
+
+        .welcome {
+            margin-bottom: 25px;
+        }
+
+        .welcome h1 {
+            font-size: 25px;
+            margin-bottom: 8px;
+        }
+
+        .welcome p {
+            color: #64748b;
+            font-size: 14px;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 18px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 22px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px #00000008;
+            border-left: 4px solid #2563eb;
+        }
+
+        .stat-card p {
+            color: #64748b;
+            font-size: 13px;
+            margin-bottom: 12px;
+        }
+
+        .stat-card h2 {
+            font-size: 27px;
+            color: #123b67;
+        }
+
+        .section-title {
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+
+        .management-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 18px;
+        }
+
+        .management-card {
+            background: white;
+            padding: 22px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px #00000008;
+        }
+
+        .management-card h3 {
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+
+        .management-card p {
+            font-size: 13px;
+            color: #64748b;
+            line-height: 1.6;
+            margin-bottom: 18px;
+        }
+
+        .management-card a {
+            display: inline-block;
+            background: #123b67;
+            color: white;
+            text-decoration: none;
+            padding: 10px 15px;
+            border-radius: 6px;
+            font-size: 13px;
+        }
+
+        .management-card a:hover {
+            background: #24588b;
+        }
+
+        .notice {
+            background: #fff;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 25px;
+            color: #64748b;
+            font-size: 13px;
+        }
+
+        .logout {
+            margin-top: 25px;
+            width: 100%;
+            border: 1px solid #ffffff50;
+            background: transparent;
+            color: white;
+            padding: 12px;
+            border-radius: 7px;
+            cursor: pointer;
+        }
+
+        .logout:hover {
+            background: #ffffff15;
+        }
+
+        @media(max-width: 1000px) {
+            .stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .management-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media(max-width: 650px) {
+            .sidebar {
+                width: 70px;
+                padding: 15px 7px;
+            }
+
+            .brand {
+                font-size: 11px;
+                padding: 10px 2px;
+                text-align: center;
+            }
+
+            .role-label {
+                display: none;
+            }
+
+            .nav-link {
+                font-size: 11px;
+                text-align: center;
+                padding: 12px 3px;
+            }
+
+            .logout {
+                font-size: 10px;
+                padding: 9px 2px;
+            }
+
+            .main {
+                margin-left: 70px;
+                width: calc(100% - 70px);
+            }
+
+            .topbar {
+                padding: 15px;
+            }
+
+            .topbar h2 {
+                font-size: 15px;
+            }
+
+            .profile {
+                font-size: 11px;
+            }
+
+            .content {
+                padding: 15px;
+            }
+
+            .welcome h1 {
+                font-size: 21px;
+            }
+
+            .stats,
+            .management-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="layout">
+
+    <aside class="sidebar">
+
+        <div class="brand">
+            SECTOR EDUCATION
+        </div>
+
+        <div class="role-label">Platform Owner</div>
+
+        <nav>
+            <a href="owner.html" class="nav-link active">Dashboard</a>
+            <a href="sectors.html" class="nav-link">Sectors</a>
+            <a href="schools.html" class="nav-link">Schools</a>
+            <a href="users.html" class="nav-link">User Accounts</a>
+            <a href="subjects.html" class="nav-link">Subjects</a>
+            <a href="examinations.html" class="nav-link">Examinations</a>
+            <a href="reports.html" class="nav-link">Reports</a>
+        </nav>
+
+        <button class="logout" onclick="logout()">Logout</button>
+
+    </aside>
+
+    <main class="main">
+
+        <header class="topbar">
+            <h2>Owner Dashboard</h2>
+
+            <div class="profile">
+                <strong id="ownerName">Platform Owner</strong>
+                <span>System Administrator</span>
+            </div>
+        </header>
+
+        <div class="content">
+
+            <section class="welcome">
+                <h1>Welcome, <span id="welcomeName">Owner</span>!</h1>
+                <p>Manage and monitor the entire Sector Education Examination Platform.</p>
+            </section>
+
+            <h3 class="section-title">Platform Overview</h3>
+
+            <section class="stats">
+
+                <div class="stat-card">
+                    <p>Total Sectors</p>
+                    <h2 id="totalSectors">—</h2>
+                </div>
+
+                <div class="stat-card">
+                    <p>Total Schools</p>
+                    <h2 id="totalSchools">—</h2>
+                </div>
+
+                <div class="stat-card">
+                    <p>Total Users</p>
+                    <h2 id="totalUsers">—</h2>
+                </div>
+
+                <div class="stat-card">
+                    <p>Total Examinations</p>
+                    <h2 id="totalExaminations">—</h2>
+                </div>
+
+            </section>
+
+            <h3 class="section-title">Platform Management</h3>
+
+            <section class="management-grid">
+
+                <div class="management-card">
+                    <h3>Sector Management</h3>
+                    <p>Create, update, activate and deactivate sectors. Assign sector administrators.</p>
+                    <a href="sectors.html">Manage Sectors</a>
+                </div>
+
+                <div class="management-card">
+                    <h3>School Management</h3>
+                    <p>Register schools, manage school information and monitor their status.</p>
+                    <a href="schools.html">Manage Schools</a>
+                </div>
+
+                <div class="management-card">
+                    <h3>User Management</h3>
+                    <p>Create and manage sector administrators, school administrators and teachers.</p>
+                    <a href="users.html">Manage Users</a>
+                </div>
+
+                <div class="management-card">
+                    <h3>Subject Management</h3>
+                    <p>Manage the subjects available throughout the education platform.</p>
+                    <a href="subjects.html">Manage Subjects</a>
+                </div>
+
+                <div class="management-card">
+                    <h3>Examinations</h3>
+                    <p>Monitor examinations and examination activities across registered schools.</p>
+                    <a href="examinations.html">View Examinations</a>
+                </div>
+
+                <div class="management-card">
+                    <h3>Platform Reports</h3>
+                    <p>View platform-wide reports and monitor education performance.</p>
+                    <a href="reports.html">View Reports</a>
+                </div>
+
+            </section>
+
+            <div class="notice">
+                <strong>System Administration</strong>
+                <p style="margin-top:8px">
+                    You have the highest administrative access to the platform.
+                    All management actions should be recorded and authorized securely.
+                </p>
+            </div>
+
+        </div>
+
+    </main>
+
+</div>
+
+<script>
+    // Check the logged-in account
+    const currentUser = JSON.parse(
+        localStorage.getItem("currentUser") || "null"
+    );
+
+    const role = localStorage.getItem("role");
+
+    if (!currentUser || role !== "owner" || currentUser.role !== "owner") {
+        window.location.replace("index.html");
+    } else {
+        const name = currentUser.full_name || "Owner";
+
+        document.getElementById("ownerName").textContent = name;
+        document.getElementById("welcomeName").textContent = name;
+    }
+
+    function logout() {
+        if (!confirm("Are you sure you want to log out?")) return;
+
+        // The server-side logout endpoint will be connected separately.
+        fetch("/api/logout", {
+            method: "POST",
+            credentials: "same-origin"
+        }).finally(() => {
+            localStorage.removeItem("currentUser");
+            localStorage.removeItem("role");
+            window.location.replace("../index.html");
+        });
+    }
+</script>
+
+</body>
+</html>
