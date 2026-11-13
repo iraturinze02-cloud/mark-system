@@ -69,7 +69,7 @@ async function authenticateRole(context, expectedRole) {
         client = await connectDB(context);
 
         const result = await client.query(
-            `SELECT id, role, status, sector_id
+            `SELECT id, role, status, sector_id, school_id
              FROM users
              WHERE id = $1`,
             [payload.sub]
@@ -105,6 +105,21 @@ async function authenticateRole(context, expectedRole) {
                 sectorId: String(user.sector_id)
             };
         }
+        if (expectedRole === "school_admin") {
+    if (!user.school_id) {
+        return {
+            error: json({
+                success: false,
+                message: "Your account is not assigned to a school."
+            }, 403)
+        };
+    }
+
+    return {
+        userId: String(user.id),
+        schoolId: String(user.school_id)
+    };
+}
 
         return {
             userId: String(user.id)
@@ -133,4 +148,7 @@ export async function requireOwner(context) {
 
 export async function requireSectorAdmin(context) {
     return authenticateRole(context, "sector_admin");
+}
+export async function requireSchoolAdmin(context) {
+    return authenticateRole(context, "school_admin");
 }
