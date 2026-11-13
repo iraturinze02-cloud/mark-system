@@ -1,0 +1,15 @@
+
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "mark-system",
+  "compatibility_date": "2026-11-13",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "hyperdrive": [
+    {
+      "binding": "HYPERDRIVE",
+      "id": "8d2508d52c8e4d6cba6fe2ab5e6e12fe"
+    }
+  ]
+}
