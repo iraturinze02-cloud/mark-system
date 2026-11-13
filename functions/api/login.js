@@ -5,7 +5,6 @@ import { SignJWT } from "jose";
 
 export async function onRequest(context) {
 
-    // ONLY ALLOW POST REQUESTS
     if (context.request.method !== "POST") {
         return Response.json({
             success: false,
@@ -17,7 +16,7 @@ export async function onRequest(context) {
 
     try {
 
-        // READ REQUEST DATA
+        // 1. READ LOGIN DATA
         let data;
 
         try {
@@ -39,15 +38,14 @@ export async function onRequest(context) {
             }, { status: 400 });
         }
 
-        // CONNECT TO NEON THROUGH HYPERDRIVE
+        // 2. CONNECT TO NEON
         client = new Client({
-            connectionString:
-                context.env.HYPERDRIVE.connectionString
+            connectionString: context.env.HYPERDRIVE.connectionString
         });
 
         await client.connect();
 
-        // FIND USER BY PHONE NUMBER
+        // 3. FIND USER
         const result = await client.query(
             `SELECT
                 id,
@@ -73,15 +71,15 @@ export async function onRequest(context) {
 
         const user = result.rows[0];
 
-        // CHECK ACCOUNT STATUS
+        // 4. CHECK ACCOUNT STATUS
         if (user.status !== "active") {
             return Response.json({
                 success: false,
-                message: "Your account is not active. Contact your administrator."
+                message: "Your account is inactive or suspended. Contact your administrator."
             }, { status: 403 });
         }
 
-        // VERIFY PASSWORD
+        // 5. VERIFY PASSWORD
         const passwordMatches = await bcrypt.compare(
             password,
             user.password_hash
@@ -94,7 +92,7 @@ export async function onRequest(context) {
             }, { status: 401 });
         }
 
-        // VALIDATE ROLE
+        // 6. VALIDATE ROLE
         const allowedRoles = [
             "owner",
             "sector_admin",
@@ -109,14 +107,17 @@ export async function onRequest(context) {
             }, { status: 403 });
         }
 
-        // CHECK JWT SECRET
+        // 7. VERIFY JWT SECRET
         const jwtSecret = context.env.JWT_SECRET;
 
-        if (!jwtSecret || new TextEncoder().encode(jwtSecret).length < 32) {
+        if (
+            !jwtSecret ||
+            new TextEncoder().encode(jwtSecret).length < 32
+        ) {
             throw new Error("JWT_SECRET is missing or too short.");
         }
 
-        // CREATE SECURE SESSION
+        // 8. CREATE JWT SESSION
         const secret = new TextEncoder().encode(jwtSecret);
 
         const token = await new SignJWT({
@@ -130,7 +131,7 @@ export async function onRequest(context) {
         .setExpirationTime("8h")
         .sign(secret);
 
-        // RETURN SAFE USER INFORMATION
+        // 9. RETURN SAFE USER DATA
         const safeUser = {
             id: String(user.id),
             full_name: user.full_name,
@@ -140,17 +141,20 @@ export async function onRequest(context) {
             school_id: user.school_id
         };
 
-        return Response.json({
-            success: true,
-            message: "Login successful.",
-            user: safeUser
-        }, {
-            status: 200,
-            headers: {
-                "Set-Cookie":
-                    `ses_token=${token}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=28800`
+        return Response.json(
+            {
+                success: true,
+                message: "Login successful.",
+                user: safeUser
+            },
+            {
+                status: 200,
+                headers: {
+                    "Set-Cookie":
+                        `ses_token=${token}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=28800`
+                }
             }
-        });
+        );
 
     } catch (error) {
 
