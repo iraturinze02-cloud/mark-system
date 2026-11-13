@@ -1,4 +1,3 @@
-
 import {
     connectDB,
     requireSchoolAdmin,
@@ -7,6 +6,7 @@ import {
 
 export async function onRequestPost(context) {
     const auth = await requireSchoolAdmin(context);
+
     if (auth.error) return auth.error;
 
     let data;
@@ -20,18 +20,18 @@ export async function onRequestPost(context) {
         }, 400);
     }
 
-    const teacherId = String(data.teacher_id || "").trim();
-    const classId = String(data.class_id || "").trim();
-    const subjectId = String(data.subject_id || "").trim();
+    const teacherId = Number(data.teacher_id);
+    const classId = Number(data.class_id);
+    const subjectId = Number(data.subject_id);
 
     if (
-        !/^[1-9]\d*$/.test(teacherId) ||
-        !/^[1-9]\d*$/.test(classId) ||
-        !/^[1-9]\d*$/.test(subjectId)
+        !Number.isSafeInteger(teacherId) || teacherId <= 0 ||
+        !Number.isSafeInteger(classId) || classId <= 0 ||
+        !Number.isSafeInteger(subjectId) || subjectId <= 0
     ) {
         return json({
             success: false,
-            message: "Valid teacher, class and subject are required."
+            message: "Please select a valid teacher, class and subject."
         }, 400);
     }
 
@@ -40,63 +40,41 @@ export async function onRequestPost(context) {
     try {
         client = await connectDB(context);
 
-        await client.query("BEGIN");
+        const check = await client.query(`
+            SELECT
+                t.id AS teacher_id,
+                c.id AS class_id,
+                c.class_name,
+                c.class_level,
+                s.id AS subject_id,
+                s.subject_name
+            FROM teachers t
+            JOIN classes c
+                ON c.id = $2
+               AND c.school_id = t.school_id
+            JOIN subjects s
+                ON s.id = $3
+            JOIN subject_class_levels scl
+                ON scl.subject_id = s.id
+               AND scl.education_level = c.class_level
+            WHERE t.id = $1
+              AND t.school_id = $4
+        `, [
+            teacherId,
+            classId,
+            subjectId,
+            auth.schoolId
+        ]);
 
-        // Verify teacher belongs to this school.
-        const teacher = await client.query(
-            `SELECT id
-             FROM teachers
-             WHERE id = $1
-               AND school_id = $2`,
-            [teacherId, auth.schoolId]
-        );
-
-        if (teacher.rowCount === 0) {
-            await client.query("ROLLBACK");
-
+        if (!check.rows.length) {
             return json({
                 success: false,
-                message: "Teacher not found in your school."
-            }, 404);
+                message: "Invalid assignment. Check the teacher, class and subject. The subject may not be available for this class level."
+            }, 400);
         }
 
-        // Verify class belongs to this school.
-        const classResult = await client.query(
-            `SELECT id, class_name
-             FROM classes
-             WHERE id = $1
-               AND school_id = $2`,
-            [classId, auth.schoolId]
-        );
-
-        if (classResult.rowCount === 0) {
-            await client.query("ROLLBACK");
-
-            return json({
-                success: false,
-                message: "Class not found in your school."
-            }, 404);
-        }
-
-        // Verify subject exists.
-        const subject = await client.query(
-            `SELECT id, subject_name
-             FROM subjects
-             WHERE id = $1`,
-            [subjectId]
-        );
-
-        if (subject.rowCount === 0) {
-            await client.query("ROLLBACK");
-
-            return json({
-                success: false,
-                message: "Subject not found."
-            }, 404);
-        }
-
-        const result = await client.query(
-            `INSERT INTO teacher_assignments (
+        await client.query(`
+            INSERT INTO teacher_assignments (
                 school_id,
                 teacher_id,
                 class_id,
@@ -105,42 +83,24 @@ export async function onRequestPost(context) {
             VALUES ($1, $2, $3, $4)
             ON CONFLICT (teacher_id, class_id, subject_id)
             DO NOTHING
-            RETURNING id`,
-            [auth.schoolId, teacherId, classId, subjectId]
-        );
-
-        if (result.rowCount === 0) {
-            await client.query("ROLLBACK");
-
-            return json({
-                success: false,
-                message: "This teacher already has this subject assigned to this class."
-            }, 409);
-        }
-
-        await client.query("COMMIT");
+        `, [
+            auth.schoolId,
+            teacherId,
+            classId,
+            subjectId
+        ]);
 
         return json({
             success: true,
-            message: "Teaching assignment saved successfully.",
-            assignment: {
-                id: result.rows[0].id,
-                teacher_id: teacherId,
-                class_id: classId,
-                class_name: classResult.rows[0].class_name,
-                subject_id: subjectId,
-                subject_name: subject.rows[0].subject_name
-            }
-        }, 201);
+            message: "Teaching assignment saved successfully."
+        });
 
     } catch (error) {
-        await client?.query("ROLLBACK").catch(() => {});
-
-        console.error("Assign teacher error:", error);
+        console.error("Save teacher assignment error:", error);
 
         return json({
             success: false,
-            message: "Failed to save teaching assignment."
+            message: "Could not save the teaching assignment."
         }, 500);
 
     } finally {
