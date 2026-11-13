@@ -1,0 +1,152 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Sector Education System</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header>
+    <h1>LOGIN TO SYSTEM</h1>
+    <p>Sector Education Examination Platform</p>
+</header>
+
+<main class="dashboard-container">
+    <div class="card">
+
+        <h2 style="margin-bottom:25px;">User Login</h2>
+
+        <label>Phone Number</label>
+        <input
+            type="tel"
+            id="username"
+            placeholder="Enter Phone Number"
+            autocomplete="username"
+        >
+
+        <label>Password</label>
+        <input
+            type="password"
+            id="password"
+            placeholder="Enter password"
+            autocomplete="current-password"
+        >
+
+        <button
+            class="btn"
+            id="loginBtn"
+            onclick="loginUser()"
+        >
+            Login
+        </button>
+
+        <p id="message" style="margin-top:15px;"></p>
+
+    </div>
+</main>
+
+<script>
+
+// ROLE-BASED DASHBOARD REDIRECTION
+function redirectByRole(role) {
+
+    const dashboards = {
+        owner: "owner.html",
+        sector_admin: "sector-admin.html",
+        school_admin: "school-admin.html",
+        teacher: "teacher-dashboard.html"
+    };
+
+    if (dashboards[role]) {
+        window.location.replace(dashboards[role]);
+        return true;
+    }
+
+    return false;
+}
+
+// CHECK EXISTING SESSION
+const existingRole = localStorage.getItem("role");
+
+if (existingRole) {
+    redirectByRole(existingRole);
+}
+
+// ENTER KEY SUPPORT
+document.addEventListener("keydown", function(e) {
+    if (e.key === "Enter") {
+        loginUser();
+    }
+});
+
+async function loginUser() {
+
+    const username = document.getElementById("username").value.trim();
+    const password = document.getElementById("password").value;
+    const btn = document.getElementById("loginBtn");
+    const message = document.getElementById("message");
+
+    if (!username || !password) {
+        message.textContent = "Please enter your phone number and password.";
+        message.style.color = "red";
+        return;
+    }
+
+    btn.innerText = "Logging in...";
+    btn.disabled = true;
+    message.textContent = "";
+
+    try {
+
+        const response = await fetch("/api/login", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                phone: username,
+                password: password
+            })
+        });
+
+        const result = await response.json();
+
+        if (!response.ok || !result.success) {
+            throw new Error(result.message || "Login failed.");
+        }
+
+        if (!result.user || ![
+            "owner",
+            "sector_admin",
+            "school_admin",
+            "teacher"
+        ].includes(result.user.role)) {
+            throw new Error("Invalid user role.");
+        }
+
+        // SAVE SESSION
+        localStorage.setItem("role", result.user.role);
+        localStorage.setItem("currentUser", JSON.stringify(result.user));
+
+        // REDIRECT TO CORRECT DASHBOARD
+        if (!redirectByRole(result.user.role)) {
+            throw new Error("Dashboard not found for this role.");
+        }
+
+    } catch (error) {
+
+        message.textContent = error.message || "Server error. Try again.";
+        message.style.color = "red";
+
+        btn.innerText = "Login";
+        btn.disabled = false;
+    }
+}
+
+</script>
+
+</body>
+</html>
