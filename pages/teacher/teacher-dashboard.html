@@ -1,0 +1,334 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teacher Dashboard | Sector Education Examination Platform</title>
+
+    <link rel="stylesheet" href="style.css">
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            background: #f4f7fb;
+            font-family: Arial, sans-serif;
+            color: #1f2937;
+        }
+
+        /* HEADER */
+        .teacher-header {
+            background: linear-gradient(135deg, #1e40af, #1d4ed8);
+            color: white;
+            padding: 25px 20px;
+            text-align: center;
+        }
+
+        .teacher-header h1 {
+            margin: 0;
+            font-size: 25px;
+            letter-spacing: 0.5px;
+        }
+
+        .teacher-header p {
+            margin: 8px 0 0;
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        /* TOP ACTIONS */
+        .top-actions {
+            max-width: 1100px;
+            margin: 15px auto 0;
+            padding: 0 20px;
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .logout-btn {
+            background: #dc2626;
+            color: white;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 7px;
+            font-size: 13px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .logout-btn:hover {
+            background: #b91c1c;
+        }
+
+        /* MAIN CONTENT */
+        .dashboard-container {
+            max-width: 1100px;
+            margin: 25px auto;
+            padding: 0 20px 35px;
+        }
+
+        .welcome-card {
+            background: white;
+            padding: 28px;
+            border-radius: 14px;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.04);
+        }
+
+        .welcome-card h2 {
+            margin: 0;
+            color: #1e40af;
+            font-size: 22px;
+        }
+
+        .welcome-message {
+            margin: 10px 0 0;
+            color: #64748b;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        /* TEACHER GRID */
+        .teacher-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 20px;
+            margin-top: 28px;
+        }
+
+        /* DASHBOARD CARDS */
+        .dash-card {
+            display: block;
+            width: 100%;
+            background: linear-gradient(135deg, #ffffff, #f8fafc);
+            border: 1px solid #e2e8f0;
+            padding: 25px;
+            border-radius: 12px;
+            text-align: left;
+            cursor: pointer;
+            transition: 0.25s;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.04);
+            color: inherit;
+        }
+
+        .dash-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.09);
+            border-color: #2563eb;
+        }
+
+        .dash-card:focus-visible,
+        .logout-btn:focus-visible {
+            outline: 3px solid #93c5fd;
+            outline-offset: 3px;
+        }
+
+        .card-icon {
+            font-size: 30px;
+            margin-bottom: 15px;
+        }
+
+        .dash-card h3 {
+            margin: 0;
+            color: #1d4ed8;
+            font-size: 17px;
+        }
+
+        .dash-card p {
+            margin: 10px 0 0;
+            font-size: 13px;
+            color: #64748b;
+            line-height: 1.6;
+        }
+
+        .card-link {
+            display: inline-block;
+            margin-top: 18px;
+            color: #1d4ed8;
+            font-size: 13px;
+            font-weight: bold;
+        }
+
+        /* FOOTER */
+        .dashboard-footer {
+            text-align: center;
+            color: #94a3b8;
+            font-size: 12px;
+            margin-top: 25px;
+        }
+
+        /* MOBILE */
+        @media (max-width: 768px) {
+            .teacher-header h1 {
+                font-size: 21px;
+            }
+
+            .teacher-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+
+            .welcome-card {
+                padding: 20px;
+            }
+
+            .dashboard-container {
+                margin-top: 18px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <header class="teacher-header">
+        <h1>TEACHER DASHBOARD</h1>
+        <p>Record marks and view student performance</p>
+    </header>
+
+    <div class="top-actions">
+        <button class="logout-btn" id="logoutBtn" type="button">
+            Logout
+        </button>
+    </div>
+
+    <main class="dashboard-container">
+
+        <section class="welcome-card">
+
+            <h2 id="welcomeTitle">Welcome, Teacher</h2>
+
+            <p class="welcome-message">
+                Select an action below to manage student academic records.
+                You can record marks and monitor the academic performance
+                of your assigned students.
+            </p>
+
+            <div class="teacher-grid">
+
+                <!-- RECORD MARKS -->
+                <button
+                    class="dash-card"
+                    type="button"
+                    onclick="window.location.href='record-marks.html'">
+
+                    <div class="card-icon">📝</div>
+
+                    <h3>Record Marks</h3>
+
+                    <p>
+                        Enter and submit student marks for your assigned
+                        class and subject.
+                    </p>
+
+                    <span class="card-link">Open Record Marks →</span>
+                </button>
+
+                <!-- VIEW RESULTS -->
+                <button
+                    class="dash-card"
+                    type="button"
+                    onclick="window.location.href='teacher-results.html'">
+
+                    <div class="card-icon">📊</div>
+
+                    <h3>View Results</h3>
+
+                    <p>
+                        Check student performance, totals, percentages
+                        and rankings.
+                    </p>
+
+                    <span class="card-link">Open Results →</span>
+                </button>
+
+            </div>
+
+        </section>
+
+        <div class="dashboard-footer">
+            Sector Education Examination Platform
+        </div>
+
+    </main>
+
+    <script>
+        // ==========================================
+        // TEACHER AUTHENTICATION
+        // ==========================================
+
+        (function () {
+
+            let currentUser = null;
+
+            try {
+                currentUser = JSON.parse(
+                    localStorage.getItem("currentUser") || "null"
+                );
+            } catch (error) {
+                currentUser = null;
+            }
+
+            const storedRole = localStorage.getItem("role");
+
+            // Only authenticated teachers can access this page.
+            if (
+                !currentUser ||
+                !currentUser.id ||
+                storedRole !== "teacher" ||
+                currentUser.role !== "teacher"
+            ) {
+                window.location.replace("../../index.html");
+                return;
+            }
+
+            // Display teacher's name.
+            const welcomeTitle = document.getElementById("welcomeTitle");
+
+            if (currentUser.full_name) {
+                welcomeTitle.textContent =
+                    "Welcome, " + currentUser.full_name;
+            }
+
+        })();
+
+
+        // ==========================================
+        // LOGOUT
+        // ==========================================
+
+        document.getElementById("logoutBtn").addEventListener("click", logout);
+
+        async function logout() {
+
+            const logoutBtn = document.getElementById("logoutBtn");
+
+            logoutBtn.disabled = true;
+            logoutBtn.textContent = "Logging out...";
+
+            try {
+                await fetch("/api/logout", {
+                    method: "POST",
+                    credentials: "same-origin"
+                });
+            } catch (error) {
+                console.error("Logout request failed:", error);
+            } finally {
+
+                // Clear client-side session information.
+                localStorage.removeItem("currentUser");
+                localStorage.removeItem("role");
+                localStorage.removeItem("selectedTest");
+
+                window.location.replace("../../index.html");
+            }
+        }
+    </script>
+
+</body>
+</html>
