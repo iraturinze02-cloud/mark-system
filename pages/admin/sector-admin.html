@@ -1,0 +1,1007 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Sector Admin Dashboard</title>
+
+    <link rel="stylesheet" href="/style.css">
+
+    <style>
+        :root {
+            --primary: #1d4ed8;
+            --primary-dark: #123b67;
+            --background: #f1f5f9;
+            --surface: #ffffff;
+            --text: #1e293b;
+            --muted: #64748b;
+            --border: #e2e8f0;
+            --success: #15803d;
+            --danger: #dc2626;
+            --radius: 14px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            background: var(--background);
+            color: var(--text);
+            font-family: "Segoe UI", Arial, sans-serif;
+        }
+
+        /* HEADER */
+
+        .top-header {
+            background: linear-gradient(120deg, #123b67, #1d4ed8);
+            color: white;
+            padding: 32px 6%;
+            min-height: 145px;
+            box-shadow: 0 5px 18px rgba(18,59,103,.15);
+        }
+
+        .top-header h1 {
+            margin: 0 0 8px;
+            font-size: 25px;
+            font-weight: 800;
+            letter-spacing: .7px;
+        }
+
+        .top-header p {
+            margin: 0;
+            color: #dbeafe;
+            font-size: 14px;
+        }
+
+        .header-actions {
+            position: absolute;
+            top: 32px;
+            right: 6%;
+            display: flex;
+            gap: 10px;
+        }
+
+        /* BUTTONS */
+
+        .btn {
+            border: none;
+            border-radius: 9px;
+            padding: 11px 17px;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: .2s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn:disabled {
+            opacity: .6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .primary:hover {
+            background: #1e40af;
+        }
+
+        .danger {
+            background: #fee2e2;
+            color: #b91c1c;
+        }
+
+        .logout-btn {
+            background: rgba(255,255,255,.15);
+            color: white;
+            border: 1px solid rgba(255,255,255,.4);
+            padding: 10px 18px;
+            border-radius: 9px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .logout-btn:hover {
+            background: white;
+            color: var(--primary-dark);
+        }
+
+        /* MAIN */
+
+        .landing-container {
+            max-width: 1250px;
+            margin: 35px auto;
+            padding: 0 22px;
+        }
+
+        .welcome-panel {
+            background: white;
+            padding: 23px 26px;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            margin-bottom: 25px;
+            box-shadow: 0 4px 18px rgba(15,23,42,.04);
+        }
+
+        .welcome-panel h2 {
+            margin: 0 0 7px;
+            color: var(--primary-dark);
+            font-size: 20px;
+        }
+
+        .welcome-panel p {
+            color: var(--muted);
+            margin: 0;
+            font-size: 14px;
+        }
+
+        /* DASHBOARD CARDS */
+
+        .section-heading {
+            margin: 30px 0 16px;
+            font-size: 17px;
+            color: var(--primary-dark);
+            font-weight: 800;
+        }
+
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 20px;
+        }
+
+        .dashboard-card {
+            background: white;
+            padding: 25px;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 18px rgba(15,23,42,.04);
+            cursor: pointer;
+            transition: .25s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .dashboard-card::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 4px;
+            background: var(--primary);
+        }
+
+        .dashboard-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 25px rgba(15,23,42,.09);
+            border-color: #bfdbfe;
+        }
+
+        .card-icon {
+            width: 45px;
+            height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            background: #eff6ff;
+            color: var(--primary);
+            font-size: 22px;
+            margin-bottom: 17px;
+        }
+
+        .dashboard-card h3 {
+            font-size: 17px;
+            margin: 0 0 9px;
+            color: #123b67;
+        }
+
+        .dashboard-card p {
+            font-size: 13px;
+            line-height: 1.6;
+            color: var(--muted);
+            margin: 0;
+        }
+
+        .card-link {
+            display: inline-block;
+            margin-top: 17px;
+            color: var(--primary);
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        /* ACTIVE TEST */
+
+        .active-test-panel {
+            margin-top: 25px;
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 12px;
+            padding: 18px 21px;
+        }
+
+        .active-test-panel h3 {
+            margin: 0 0 7px;
+            color: #1e40af;
+            font-size: 15px;
+        }
+
+        .active-test-panel p {
+            margin: 0;
+            color: #475569;
+            font-size: 13px;
+        }
+
+        /* MODALS */
+
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15,23,42,.6);
+            backdrop-filter: blur(4px);
+            justify-content: center;
+            align-items: center;
+            padding: 18px;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: white;
+            width: 100%;
+            max-width: 520px;
+            max-height: 85vh;
+            overflow-y: auto;
+            padding: 27px;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0,0,0,.2);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            color: var(--primary-dark);
+            font-size: 20px;
+        }
+
+        .close-btn {
+            background: #f1f5f9;
+            border: none;
+            width: 34px;
+            height: 34px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 20px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 13px;
+            border: 1px solid var(--border);
+            border-radius: 9px;
+            font-size: 14px;
+            margin-bottom: 14px;
+            outline: none;
+        }
+
+        .form-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37,99,235,.1);
+        }
+
+        /* TEST LIST */
+
+        .test-item {
+            padding: 16px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            margin-bottom: 12px;
+        }
+
+        .test-item h3 {
+            margin: 0 0 6px;
+            font-size: 15px;
+            color: var(--primary-dark);
+        }
+
+        .test-item small {
+            color: var(--muted);
+        }
+
+        .test-item-actions {
+            margin-top: 12px;
+        }
+
+        .active-label {
+            display: inline-block;
+            background: #dcfce7;
+            color: #166534;
+            padding: 5px 9px;
+            font-size: 11px;
+            border-radius: 20px;
+            font-weight: 700;
+            margin-top: 8px;
+        }
+
+        /* NOTIFICATIONS */
+
+        .message {
+            display: none;
+            padding: 13px 16px;
+            border-radius: 9px;
+            margin-bottom: 18px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .message.success {
+            display: block;
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .message.error {
+            display: block;
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: var(--muted);
+            padding: 25px 10px;
+            font-size: 13px;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .modal-actions .btn {
+            flex: 1;
+        }
+
+        @media(max-width: 700px) {
+            .top-header {
+                padding: 25px 20px 85px;
+            }
+
+            .top-header h1 {
+                font-size: 20px;
+                max-width: 75%;
+            }
+
+            .header-actions {
+                top: auto;
+                left: 20px;
+                right: auto;
+                bottom: 18px;
+            }
+
+            .landing-container {
+                margin: 20px auto;
+                padding: 0 13px;
+            }
+
+            .cards-grid {
+                grid-template-columns: 1fr;
+                gap: 14px;
+            }
+
+            .dashboard-card {
+                padding: 21px;
+            }
+
+            .welcome-panel {
+                padding: 20px;
+            }
+
+            .modal-content {
+                padding: 21px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<header class="top-header">
+    <h1>SECTOR ADMIN DASHBOARD</h1>
+    <p>Manage schools, school administrators and examinations</p>
+
+    <div class="header-actions">
+        <button class="logout-btn" onclick="logout()">Logout</button>
+    </div>
+</header>
+
+<main class="landing-container">
+
+    <div id="pageMessage" class="message"></div>
+
+    <section class="welcome-panel">
+        <h2 id="welcomeTitle">Welcome, Sector Administrator</h2>
+        <p>Manage educational activities and monitor schools within your sector.</p>
+    </section>
+
+    <h2 class="section-heading">Management Dashboard</h2>
+
+    <section class="cards-grid">
+
+        <div class="dashboard-card"
+             onclick="navigateTo('school-admins.html')">
+
+            <div class="card-icon">👤</div>
+
+            <h3>School Administrators</h3>
+
+            <p>
+                Create and manage school administrator accounts
+                within your sector.
+            </p>
+
+            <span class="card-link">Manage administrators →</span>
+        </div>
+
+        <div class="dashboard-card"
+             onclick="navigateTo('view-schools.html')">
+
+            <div class="card-icon">🏫</div>
+
+            <h3>View All Schools</h3>
+
+            <p>
+                View schools registered in your sector and
+                monitor their information.
+            </p>
+
+            <span class="card-link">View schools →</span>
+        </div>
+
+        <div class="dashboard-card"
+             onclick="navigateTo('view-all.html')">
+
+            <div class="card-icon">📊</div>
+
+            <h3>Sector School Records</h3>
+
+            <p>
+                Monitor school data and compare examination
+                performance across your sector.
+            </p>
+
+            <span class="card-link">View sector records →</span>
+        </div>
+
+        <div class="dashboard-card"
+             onclick="openManageTests()">
+
+            <div class="card-icon">📝</div>
+
+            <h3>Manage Tests</h3>
+
+            <p>
+                Create examinations and select the active
+                examination for your sector.
+            </p>
+
+            <span class="card-link">Manage examinations →</span>
+        </div>
+
+    </section>
+
+    <section class="active-test-panel">
+        <h3>Currently Selected Test</h3>
+        <p id="activeTestName">Loading selected test...</p>
+    </section>
+
+</main>
+
+
+<!-- MANAGE TESTS MODAL -->
+
+<div id="manageTestsModal" class="modal">
+
+    <div class="modal-content">
+
+        <div class="modal-header">
+            <h2>Manage Tests</h2>
+            <button class="close-btn" onclick="closeManageTests()">×</button>
+        </div>
+
+        <div id="testsList">
+            <div class="empty-state">Loading examinations...</div>
+        </div>
+
+        <div class="modal-actions">
+            <button class="btn primary" onclick="openCreateTestModal()">
+                + Add New Test
+            </button>
+
+            <button class="btn danger" onclick="closeManageTests()">
+                Close
+            </button>
+        </div>
+
+    </div>
+</div>
+
+
+<!-- CREATE TEST MODAL -->
+
+<div id="createTestModal" class="modal">
+
+    <div class="modal-content">
+
+        <div class="modal-header">
+            <h2>Create New Test</h2>
+            <button class="close-btn" onclick="closeCreateTest()">×</button>
+        </div>
+
+        <label for="testName">Test Name</label>
+
+        <input
+            type="text"
+            id="testName"
+            class="form-input"
+            placeholder="e.g. First Term Examination"
+            maxlength="150"
+        >
+
+        <div id="createMessage" class="message"></div>
+
+        <div class="modal-actions">
+            <button class="btn primary" id="createBtn" onclick="createTest()">
+                Create Test
+            </button>
+
+            <button class="btn danger" onclick="closeCreateTest()">
+                Cancel
+            </button>
+        </div>
+
+    </div>
+</div>
+
+
+<script>
+// ==========================================
+// 1. AUTHENTICATION / PAGE GUARD
+// ==========================================
+
+const currentUser = JSON.parse(
+    localStorage.getItem("currentUser") || "null"
+);
+
+const storedRole = localStorage.getItem("role");
+
+if (
+    !currentUser ||
+    !currentUser.id ||
+    storedRole !== "sector_admin" ||
+    currentUser.role !== "sector_admin"
+) {
+    window.location.replace("index.html");
+}
+
+// Display logged-in administrator
+if (currentUser && currentUser.full_name) {
+    document.getElementById("welcomeTitle").textContent =
+        `Welcome, ${currentUser.full_name}`;
+}
+
+
+// ==========================================
+// 2. API RESPONSE HANDLER
+// ==========================================
+
+async function readJsonResponse(response) {
+
+    const contentType =
+        response.headers.get("content-type") || "";
+
+    if (!contentType.includes("application/json")) {
+        await response.text();
+
+        throw new Error(
+            `The server returned an unexpected response (HTTP ${response.status}).`
+        );
+    }
+
+    return response.json();
+}
+
+
+// ==========================================
+// 3. PAGE NAVIGATION
+// ==========================================
+
+function navigateTo(page) {
+    window.location.href = page;
+}
+
+
+// ==========================================
+// 4. NOTIFICATION
+// ==========================================
+
+function showPageMessage(text, type = "success") {
+
+    const box = document.getElementById("pageMessage");
+
+    box.textContent = text;
+    box.className = `message ${type}`;
+
+    window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+    });
+}
+
+
+// ==========================================
+// 5. LOGOUT
+// ==========================================
+
+async function logout() {
+
+    if (!confirm("Are you sure you want to log out?")) {
+        return;
+    }
+
+    try {
+        await fetch("/api/logout", {
+            method: "POST",
+            credentials: "same-origin"
+        });
+    } catch (error) {
+        console.error("Logout error:", error);
+    }
+
+    localStorage.removeItem("currentUser");
+    localStorage.removeItem("role");
+    localStorage.removeItem("selectedTest");
+
+    window.location.replace("index.html");
+}
+
+
+// ==========================================
+// 6. MODAL CONTROLS
+// ==========================================
+
+function openManageTests() {
+
+    document.getElementById("manageTestsModal").style.display = "flex";
+
+    loadTests();
+}
+
+function closeManageTests() {
+    document.getElementById("manageTestsModal").style.display = "none";
+}
+
+function openCreateTestModal() {
+
+    document.getElementById("createTestModal").style.display = "flex";
+
+    document.getElementById("testName").value = "";
+
+    document.getElementById("createMessage").className = "message";
+}
+
+function closeCreateTest() {
+    document.getElementById("createTestModal").style.display = "none";
+}
+
+
+// Close modal by clicking outside
+document.querySelectorAll(".modal").forEach(modal => {
+
+    modal.addEventListener("click", function(event) {
+
+        if (event.target === modal) {
+            modal.style.display = "none";
+        }
+
+    });
+
+});
+
+
+// Close modal using Escape
+document.addEventListener("keydown", function(event) {
+
+    if (event.key === "Escape") {
+        document.querySelectorAll(".modal").forEach(modal => {
+            modal.style.display = "none";
+        });
+    }
+
+});
+
+
+// ==========================================
+// 7. LOAD TESTS
+// ==========================================
+
+async function loadTests() {
+
+    const box = document.getElementById("testsList");
+
+    box.textContent = "Loading examinations...";
+
+    try {
+
+        const response = await fetch("/api/tests", {
+            method: "GET",
+            credentials: "same-origin"
+        });
+
+        const data = await readJsonResponse(response);
+
+        if (!response.ok || !data.success) {
+            throw new Error(data.message || "Unable to load tests.");
+        }
+
+        const tests = data.tests || [];
+
+        box.innerHTML = "";
+
+        if (tests.length === 0) {
+
+            box.textContent = "No tests have been created yet.";
+            box.className = "empty-state";
+
+            return;
+        }
+
+        box.className = "";
+
+        tests.forEach(test => {
+
+            const item = document.createElement("div");
+            item.className = "test-item";
+
+            const heading = document.createElement("h3");
+            heading.textContent = test.test_name;
+
+            const date = document.createElement("small");
+
+            date.textContent = test.created_at
+                ? "Created: " + new Date(test.created_at).toLocaleString()
+                : "Creation date unavailable";
+
+            item.appendChild(heading);
+            item.appendChild(date);
+
+            if (test.is_active) {
+
+                const active = document.createElement("div");
+                active.className = "active-label";
+                active.textContent = "ACTIVE TEST";
+
+                item.appendChild(document.createElement("br"));
+                item.appendChild(active);
+
+            } else {
+
+                const actions = document.createElement("div");
+                actions.className = "test-item-actions";
+
+                const button = document.createElement("button");
+                button.className = "btn primary";
+                button.textContent = "Activate";
+
+                button.addEventListener("click", () => {
+                    switchTest(test.id);
+                });
+
+                actions.appendChild(button);
+                item.appendChild(actions);
+            }
+
+            box.appendChild(item);
+
+        });
+
+        updateActiveTest(tests);
+
+    } catch (error) {
+
+        box.className = "empty-state";
+        box.textContent = error.message;
+
+    }
+}
+
+
+// ==========================================
+// 8. UPDATE ACTIVE TEST DISPLAY
+// ==========================================
+
+function updateActiveTest(tests) {
+
+    const activeTest = tests.find(test => test.is_active);
+
+    const display = document.getElementById("activeTestName");
+
+    if (activeTest) {
+        display.textContent = activeTest.test_name;
+    } else {
+        display.textContent = "No active test selected.";
+    }
+}
+
+
+// ==========================================
+// 9. SWITCH ACTIVE TEST
+// ==========================================
+
+async function switchTest(id) {
+
+    if (!confirm("Do you want to activate this test?")) {
+        return;
+    }
+
+    try {
+
+        const response = await fetch("/api/tests/activate", {
+            method: "POST",
+            credentials: "same-origin",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                test_id: id
+            })
+        });
+
+        const data = await readJsonResponse(response);
+
+        if (!response.ok || !data.success) {
+            throw new Error(data.message || "Could not activate test.");
+        }
+
+        localStorage.setItem("selectedTest", String(id));
+
+        showPageMessage("Test activated successfully.", "success");
+
+        await loadTests();
+
+    } catch (error) {
+
+        alert(error.message);
+
+    }
+}
+
+
+// ==========================================
+// 10. CREATE TEST
+// ==========================================
+
+async function createTest() {
+
+    const name = document.getElementById("testName").value.trim();
+
+    const button = document.getElementById("createBtn");
+    const message = document.getElementById("createMessage");
+
+    if (!name) {
+
+        message.textContent = "Please enter a test name.";
+        message.className = "message error";
+
+        return;
+    }
+
+    if (!confirm(`Create "${name}" as a new test?`)) {
+        return;
+    }
+
+    button.disabled = true;
+    button.textContent = "Creating...";
+
+    try {
+
+        const response = await fetch("/api/tests/create", {
+            method: "POST",
+            credentials: "same-origin",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                test_name: name
+            })
+        });
+
+        const data = await readJsonResponse(response);
+
+        if (!response.ok || !data.success) {
+            throw new Error(data.message || "Could not create test.");
+        }
+
+        message.textContent = data.message || "Test created successfully.";
+        message.className = "message success";
+
+        document.getElementById("testName").value = "";
+
+        await loadTests();
+
+        setTimeout(() => {
+            closeCreateTest();
+        }, 900);
+
+        showPageMessage("New test created successfully.", "success");
+
+    } catch (error) {
+
+        message.textContent = error.message;
+        message.className = "message error";
+
+    } finally {
+
+        button.disabled = false;
+        button.textContent = "Create Test";
+
+    }
+}
+
+
+// ==========================================
+// 11. INITIALIZE DASHBOARD
+// ==========================================
+
+async function initializeDashboard() {
+
+    try {
+
+        const response = await fetch("/api/tests", {
+            credentials: "same-origin"
+        });
+
+        const data = await readJsonResponse(response);
+
+        if (!response.ok || !data.success) {
+            throw new Error(data.message || "Unable to load active test.");
+        }
+
+        updateActiveTest(data.tests || []);
+
+    } catch (error) {
+
+        document.getElementById("activeTestName").textContent =
+            "Unable to load active test.";
+
+        console.error("Dashboard initialization:", error);
+
+    }
+}
+
+initializeDashboard();
+
+</script>
+
+</body>
+</html>
