@@ -1,12 +1,20 @@
-
 import { Client } from "pg";
 import { jwtVerify } from "jose";
 
 export function json(data, status = 200) {
-    return Response.json(data, { status });
+    return Response.json(data, {
+        status,
+        headers: {
+            "Cache-Control": "no-store"
+        }
+    });
 }
 
 export async function connectDB(context) {
+    if (!context.env.HYPERDRIVE?.connectionString) {
+        throw new Error("Database connection is not configured.");
+    }
+
     const client = new Client({
         connectionString: context.env.HYPERDRIVE.connectionString,
         ssl: { rejectUnauthorized: false }
@@ -16,9 +24,12 @@ export async function connectDB(context) {
     return client;
 }
 
-export async function requireOwner(context) {
+async function authenticateRole(context, expectedRole) {
+    let client;
+
     try {
         const cookie = context.request.headers.get("Cookie") || "";
+
         const token = cookie
             .split(";")
             .map(item => item.trim())
@@ -26,58 +37,100 @@ export async function requireOwner(context) {
             ?.substring("ses_token=".length);
 
         if (!token) {
-            return { error: json({
-                success: false,
-                message: "Please log in."
-            }, 401) };
+            return {
+                error: json({
+                    success: false,
+                    message: "Please log in."
+                }, 401)
+            };
         }
 
         if (!context.env.JWT_SECRET) {
-            return { error: json({
-                success: false,
-                message: "Server authentication is not configured."
-            }, 500) };
+            return {
+                error: json({
+                    success: false,
+                    message: "Server authentication is not configured."
+                }, 500)
+            };
         }
 
         const secret = new TextEncoder().encode(context.env.JWT_SECRET);
         const { payload } = await jwtVerify(token, secret);
 
-        if (!payload.sub || payload.role !== "owner") {
-            return { error: json({
-                success: false,
-                message: "Access denied. Owner permission is required."
-            }, 403) };
-        }
-
-        // Confirm that the account is still active and is still an owner.
-        const client = await connectDB(context);
-
-        try {
-            const result = await client.query(
-                `SELECT id, role, status
-                 FROM users
-                 WHERE id = $1`,
-                [payload.sub]
-            );
-
-            const user = result.rows[0];
-
-            if (!user || user.role !== "owner" || user.status !== "active") {
-                return { error: json({
+        if (!payload.sub || payload.role !== expectedRole) {
+            return {
+                error: json({
                     success: false,
-                    message: "Your account is not authorized."
-                }, 403) };
-            }
-        } finally {
-            await client.end();
+                    message: "You are not authorized to access this resource."
+                }, 403)
+            };
         }
 
-        return { userId: payload.sub };
+        client = await connectDB(context);
+
+        const result = await client.query(
+            `SELECT id, role, status, sector_id
+             FROM users
+             WHERE id = $1`,
+            [payload.sub]
+        );
+
+        const user = result.rows[0];
+
+        if (
+            !user ||
+            user.role !== expectedRole ||
+            user.status !== "active"
+        ) {
+            return {
+                error: json({
+                    success: false,
+                    message: "Your account is not active or authorized."
+                }, 403)
+            };
+        }
+
+        if (expectedRole === "sector_admin") {
+            if (!user.sector_id) {
+                return {
+                    error: json({
+                        success: false,
+                        message: "Your account is not assigned to a sector."
+                    }, 403)
+                };
+            }
+
+            return {
+                userId: String(user.id),
+                sectorId: String(user.sector_id)
+            };
+        }
+
+        return {
+            userId: String(user.id)
+        };
 
     } catch (error) {
-        return { error: json({
-            success: false,
-            message: "Your session is invalid or has expired. Please log in again."
-        }, 401) };
+        console.error("Authentication error:", error);
+
+        return {
+            error: json({
+                success: false,
+                message: "Your session is invalid or has expired. Please log in again."
+            }, 401)
+        };
+
+    } finally {
+        if (client) {
+            await client.end().catch(() => {});
+        }
     }
+}
+
+export async function requireOwner(context) {
+    return authenticateRole(context, "owner");
+}
+
+export async function requireSectorAdmin(context) {
+    return authenticateRole(context, "sector_admin");
 }
