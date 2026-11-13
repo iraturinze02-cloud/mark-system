@@ -1,0 +1,539 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Sector Administrator | Sector Education System</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background: #f1f5f9;
+            color: #1e293b;
+        }
+
+        .sidebar {
+            position: fixed;
+            width: 250px;
+            height: 100vh;
+            background: #123b67;
+            color: white;
+            padding: 25px 15px;
+        }
+
+        .brand {
+            font-size: 19px;
+            font-weight: bold;
+            padding: 5px 10px 25px;
+            border-bottom: 1px solid #ffffff30;
+        }
+
+        .sidebar p {
+            color: #bfdbfe;
+            font-size: 12px;
+            margin: 20px 10px;
+            text-transform: uppercase;
+        }
+
+        .sidebar a {
+            display: block;
+            color: #e2e8f0;
+            text-decoration: none;
+            padding: 13px 12px;
+            border-radius: 7px;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+
+        .sidebar a:hover,
+        .sidebar a.active {
+            background: #24588b;
+            color: white;
+        }
+
+        .main {
+            margin-left: 250px;
+        }
+
+        .topbar {
+            background: white;
+            padding: 18px 28px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 8px #00000008;
+        }
+
+        .topbar h2 {
+            font-size: 20px;
+        }
+
+        .topbar span {
+            font-size: 13px;
+            color: #64748b;
+        }
+
+        .content {
+            padding: 30px;
+            max-width: 950px;
+        }
+
+        .heading {
+            margin-bottom: 25px;
+        }
+
+        .heading h1 {
+            font-size: 25px;
+            margin-bottom: 8px;
+        }
+
+        .heading p {
+            color: #64748b;
+            font-size: 14px;
+        }
+
+        .form-card {
+            background: white;
+            padding: 28px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px #00000008;
+        }
+
+        .form-card h3 {
+            margin-bottom: 22px;
+            font-size: 18px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        .form-group.full {
+            grid-column: 1 / -1;
+        }
+
+        label {
+            display: block;
+            font-size: 13px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 13px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 14px;
+            outline: none;
+            background: white;
+        }
+
+        input:focus, select:focus {
+            border-color: #2563eb;
+        }
+
+        .help {
+            color: #64748b;
+            font-size: 12px;
+            margin-top: 6px;
+        }
+
+        .buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 10px;
+        }
+
+        button {
+            padding: 13px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .submit-btn {
+            background: #123b67;
+            color: white;
+        }
+
+        .submit-btn:hover {
+            background: #24588b;
+        }
+
+        .cancel-btn {
+            background: #e2e8f0;
+            color: #1e293b;
+        }
+
+        button:disabled {
+            opacity: .6;
+            cursor: not-allowed;
+        }
+
+        #message {
+            display: none;
+            padding: 13px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            font-size: 13px;
+        }
+
+        #message.success {
+            display: block;
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        #message.error {
+            display: block;
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        @media(max-width: 700px) {
+            .sidebar {
+                width: 70px;
+                padding: 15px 6px;
+            }
+
+            .brand {
+                font-size: 10px;
+                text-align: center;
+                padding: 10px 2px;
+            }
+
+            .sidebar p {
+                display: none;
+            }
+
+            .sidebar a {
+                font-size: 10px;
+                text-align: center;
+                padding: 12px 2px;
+            }
+
+            .main {
+                margin-left: 70px;
+            }
+
+            .content {
+                padding: 18px 12px;
+            }
+
+            .topbar {
+                padding: 15px;
+            }
+
+            .topbar h2 {
+                font-size: 15px;
+            }
+
+            .form-card {
+                padding: 18px;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+                gap: 0;
+            }
+
+            .form-group.full {
+                grid-column: auto;
+            }
+
+            .buttons {
+                flex-direction: column;
+            }
+
+            .buttons button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<aside class="sidebar">
+    <div class="brand">SECTOR EDUCATION</div>
+
+    <p>Platform Owner</p>
+
+    <a href="owner.html">Dashboard</a>
+    <a href="sectors.html">Sectors</a>
+    <a href="schools.html">Schools</a>
+    <a href="users.html" class="active">User Accounts</a>
+    <a href="subjects.html">Subjects</a>
+    <a href="examinations.html">Examinations</a>
+    <a href="reports.html">Reports</a>
+</aside>
+
+<main class="main">
+
+    <header class="topbar">
+        <h2>Add Sector Administrator</h2>
+        <span id="ownerName">Platform Owner</span>
+    </header>
+
+    <div class="content">
+
+        <div class="heading">
+            <h1>Register Sector Administrator</h1>
+            <p>Create an administrator account and assign it to a sector.</p>
+        </div>
+
+        <section class="form-card">
+
+            <h3>Administrator Information</h3>
+
+            <div id="message"></div>
+
+            <form id="adminForm">
+
+                <div class="form-grid">
+
+                    <div class="form-group">
+                        <label for="fullName">Full Name *</label>
+                        <input
+                            type="text"
+                            id="fullName"
+                            placeholder="Enter administrator's full name"
+                            maxlength="200"
+                            required
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="phone">Phone Number *</label>
+                        <input
+                            type="tel"
+                            id="phone"
+                            placeholder="e.g. 0780000000"
+                            maxlength="30"
+                            required
+                        >
+                    </div>
+
+                    <div class="form-group full">
+                        <label for="sector">Assigned Sector *</label>
+                        <select id="sector" required>
+                            <option value="">Loading sectors...</option>
+                        </select>
+                        <p class="help">
+                            The administrator will manage the selected sector.
+                        </p>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="password">Temporary Password *</label>
+                        <input
+                            type="password"
+                            id="password"
+                            placeholder="Create a temporary password"
+                            minlength="8"
+                            autocomplete="new-password"
+                            required
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="confirmPassword">Confirm Password *</label>
+                        <input
+                            type="password"
+                            id="confirmPassword"
+                            placeholder="Confirm the password"
+                            minlength="8"
+                            autocomplete="new-password"
+                            required
+                        >
+                    </div>
+
+                    <div class="form-group full">
+                        <label>Account Role</label>
+                        <input type="text" value="Sector Administrator" disabled>
+                        <p class="help">
+                            The system will automatically assign the role sector_admin.
+                        </p>
+                    </div>
+
+                </div>
+
+                <div class="buttons">
+                    <button type="submit" class="submit-btn" id="submitBtn">
+                        Create Administrator
+                    </button>
+
+                    <button
+                        type="button"
+                        class="cancel-btn"
+                        onclick="window.location.href='users.html'"
+                    >
+                        Cancel
+                    </button>
+                </div>
+
+            </form>
+
+        </section>
+
+    </div>
+</main>
+
+<script>
+    // Protect the page's frontend navigation.
+    const currentUser = JSON.parse(
+        localStorage.getItem("currentUser") || "null"
+    );
+
+    const role = localStorage.getItem("role");
+
+    if (
+        !currentUser ||
+        role !== "owner" ||
+        currentUser.role !== "owner"
+    ) {
+        window.location.replace("index.html");
+    } else {
+        document.getElementById("ownerName").textContent =
+            currentUser.full_name || "Platform Owner";
+    }
+
+    const form = document.getElementById("adminForm");
+    const sectorSelect = document.getElementById("sector");
+    const submitBtn = document.getElementById("submitBtn");
+    const message = document.getElementById("message");
+
+    function showMessage(text, type) {
+        message.textContent = text;
+        message.className = type;
+    }
+
+    async function loadSectors() {
+        try {
+            const response = await fetch("/api/sectors", {
+                credentials: "same-origin"
+            });
+
+            const result = await response.json();
+
+            if (!response.ok || !result.success) {
+                throw new Error(result.message || "Could not load sectors.");
+            }
+
+            const sectors = result.sectors || [];
+
+            sectorSelect.innerHTML =
+                '<option value="">Select a sector</option>';
+
+            sectors.forEach(sector => {
+                const option = document.createElement("option");
+                option.value = sector.id;
+                option.textContent = sector.sector_name;
+                sectorSelect.appendChild(option);
+            });
+
+            if (sectors.length === 0) {
+                sectorSelect.innerHTML =
+                    '<option value="">No active sectors available</option>';
+            }
+
+        } catch (error) {
+            sectorSelect.innerHTML =
+                '<option value="">Unable to load sectors</option>';
+
+            showMessage(error.message, "error");
+        }
+    }
+
+    form.addEventListener("submit", async function(event) {
+        event.preventDefault();
+
+        message.className = "";
+        message.style.display = "none";
+
+        const fullName = document.getElementById("fullName").value.trim();
+        const phone = document.getElementById("phone").value.trim();
+        const sectorId = sectorSelect.value;
+        const password = document.getElementById("password").value;
+        const confirmPassword =
+            document.getElementById("confirmPassword").value;
+
+        if (!sectorId) {
+            showMessage("Please select a sector.", "error");
+            return;
+        }
+
+        if (password.length < 8) {
+            showMessage("Password must contain at least 8 characters.", "error");
+            return;
+        }
+
+        if (password !== confirmPassword) {
+            showMessage("The passwords do not match.", "error");
+            return;
+        }
+
+        submitBtn.disabled = true;
+        submitBtn.textContent = "Creating account...";
+
+        try {
+            const response = await fetch(
+                "/api/users/create-sector-admin",
+                {
+                    method: "POST",
+                    credentials: "same-origin",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        full_name: fullName,
+                        phone: phone,
+                        password: password,
+                        sector_id: sectorId
+                    })
+                }
+            );
+
+            const result = await response.json();
+
+            if (!response.ok || !result.success) {
+                throw new Error(
+                    result.message || "Could not create administrator."
+                );
+            }
+
+            showMessage(
+                "Sector administrator created successfully!",
+                "success"
+            );
+
+            form.reset();
+
+        } catch (error) {
+            showMessage(error.message, "error");
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = "Create Administrator";
+        }
+    });
+
+    loadSectors();
+</script>
+
+</body>
+</html>
