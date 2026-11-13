@@ -833,6 +833,55 @@ function renderTeachers() {
         teacherTable.appendChild(row);
     });
 }
+    async function removeAssignment(assignmentId) {
+    if (!assignmentId) {
+        showToast(
+            "Assignment ID is missing. Reload the page and try again.",
+            "error"
+        );
+        return;
+    }
+
+    const confirmed = confirm(
+        "Are you sure you want to remove this teaching assignment?"
+    );
+
+    if (!confirmed) return;
+
+    try {
+        const result = await api(
+            "/api/teachers/assignments/delete",
+            {
+                method: "POST",
+                body: JSON.stringify({
+                    assignment_id: assignmentId
+                })
+            }
+        );
+
+        showToast(
+            result.message || "Assignment removed successfully."
+        );
+
+        await loadTeachers();
+
+        // Refresh the assignment modal if it is open.
+        if (activeTeacher) {
+            const updatedTeacher = teachers.find(
+                teacher =>
+                    String(teacher.id) === String(activeTeacher.id)
+            );
+
+            if (updatedTeacher) {
+                activeTeacher = updatedTeacher;
+                renderCurrentAssignments(updatedTeacher);
+            }
+        }
+
+    } catch (error) {
+        showToast(error.message, "error");
+    }
+}
 async function loadOptions() {
     try {
         const [classData, subjectData] = await Promise.all([
