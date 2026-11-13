@@ -4,372 +4,337 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Students Management</title>
-<link rel="stylesheet" href="style.css">
+<title>Students</title>
 
 <style>
-:root {
-    --primary: #2563eb;
-    --primary-dark: #1d4ed8;
-    --success: #15803d;
-    --danger: #dc2626;
-    --background: #f4f6fb;
-    --border: #e5e7eb;
-    --text: #1f2937;
-    --muted: #64748b;
+body{
+    font-family:'Segoe UI', Arial;
+    margin:0;
+    background:#f4f6fb;
+    color:#222;
 }
 
-* {
-    box-sizing: border-box;
+/* HEADER */
+header{
+    background:linear-gradient(135deg,#2563eb,#1d4ed8);
+    color:white;
+    text-align:center;
+    padding:20px;
 }
 
-body {
-    margin: 0;
-    padding: 25px 15px;
-    background: var(--background);
-    color: var(--text);
-    font-family: Arial, sans-serif;
+header h1{
+    margin:0;
+    font-size:22px;
 }
 
-.container {
-    max-width: 1050px;
-    margin: 25px auto;
-    background: white;
-    padding: 25px;
-    border-radius: 12px;
-    box-shadow: 0 4px 18px rgba(0,0,0,.06);
+.btn-add{
+    margin-top:10px;
+    background:white;
+    color:#1d4ed8;
+    padding:8px 14px;
+    border:none;
+    border-radius:6px;
+    cursor:pointer;
+    font-weight:bold;
 }
 
-.header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 15px;
-    flex-wrap: wrap;
-    margin-bottom: 25px;
+/* CONTAINER */
+.container{
+    width:95%;
+    max-width:1000px;
+    margin:auto;
+    padding:20px;
 }
 
-.header h2 {
-    margin: 0;
-    font-size: 21px;
+/* CLASS SECTION */
+.class-box{
+    background:white;
+    padding:15px;
+    border-radius:10px;
+    margin-bottom:25px;
+    box-shadow:0 4px 10px rgba(0,0,0,0.05);
 }
 
-button {
-    border: none;
-    border-radius: 6px;
-    padding: 10px 15px;
-    cursor: pointer;
-    font-weight: 600;
-    font-size: 13px;
+.class-title{
+    font-size:18px;
+    color:#1d4ed8;
+    margin-bottom:10px;
+    border-left:4px solid #1d4ed8;
+    padding-left:8px;
 }
 
-.add-btn {
-    background: var(--primary);
-    color: white;
+/* TABLE */
+.table-wrapper{
+    width:100%;
+    overflow-x:auto;
 }
 
-.add-btn:hover {
-    background: var(--primary-dark);
+table{
+    width:100%;
+    border-collapse:collapse;
+    font-size:14px;
 }
 
-.class-section {
-    margin-top: 25px;
+th{
+    background:#1d4ed8;
+    color:white;
+    padding:10px;
+    text-align:left;
 }
 
-.class-title {
-    background: #eff6ff;
-    color: #1d4ed8;
-    padding: 12px 15px;
-    border-radius: 7px;
-    margin-bottom: 12px;
-    font-size: 16px;
+td{
+    padding:10px;
+    border-bottom:1px solid #eee;
 }
 
-.table-wrapper {
-    width: 100%;
-    overflow-x: auto;
+tr:hover{
+    background:#f0f6ff;
 }
 
-table {
-    width: 100%;
-    border-collapse: collapse;
-    min-width: 500px;
+/* BUTTONS */
+.edit{
+    background:#f59e0b;
+    color:white;
+    padding:6px 10px;
+    border:none;
+    border-radius:5px;
+    cursor:pointer;
+    margin-right:5px;
 }
 
-th, td {
-    text-align: left;
-    padding: 13px 12px;
-    border-bottom: 1px solid var(--border);
-    font-size: 14px;
-}
-
-th {
-    background: #f8fafc;
-    font-weight: 700;
-}
-
-.action-buttons {
-    display: flex;
-    gap: 7px;
-}
-
-.edit-btn {
-    background: #dbeafe;
-    color: #1d4ed8;
-}
-
-.delete-btn {
-    background: #fee2e2;
-    color: #b91c1c;
-}
-
-.empty-message {
-    text-align: center;
-    color: var(--muted);
-    padding: 20px;
-}
-
-.status-message {
-    display: none;
-    padding: 12px 15px;
-    margin-bottom: 18px;
-    border-radius: 7px;
-    font-size: 14px;
-}
-
-.status-message.success {
-    display: block;
-    background: #dcfce7;
-    color: #166534;
-}
-
-.status-message.error {
-    display: block;
-    background: #fee2e2;
-    color: #991b1b;
-}
-
-.status-message.info {
-    display: block;
-    background: #eff6ff;
-    color: #1d4ed8;
+.delete{
+    background:#ef4444;
+    color:white;
+    padding:6px 10px;
+    border:none;
+    border-radius:5px;
+    cursor:pointer;
 }
 
 /* MODAL */
-
-.modal {
-    display: none;
-    position: fixed;
-    z-index: 1000;
-    inset: 0;
-    background: rgba(0,0,0,.5);
-    align-items: center;
-    justify-content: center;
-    padding: 15px;
+.modal{
+    display:none;
+    position:fixed;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    background:rgba(0,0,0,0.5);
+    justify-content:center;
+    align-items:center;
+    z-index:1000;
 }
 
-.modal-content {
-    background: white;
-    width: 100%;
-    max-width: 450px;
-    padding: 25px;
-    border-radius: 12px;
-    box-shadow: 0 10px 35px rgba(0,0,0,.15);
+.modal-box{
+    background:white;
+    padding:20px;
+    border-radius:10px;
+    width:320px;
+    max-width:calc(100% - 70px);
 }
 
-.modal-content h3 {
-    margin: 0 0 20px;
+.modal-box input,
+.modal-box select{
+    width:100%;
+    padding:8px;
+    margin:8px 0;
+    box-sizing:border-box;
 }
 
-.form-group {
-    margin-bottom: 17px;
+.save{
+    background:#2563eb;
+    color:white;
+    width:100%;
+    padding:10px;
+    border:none;
+    border-radius:6px;
+    cursor:pointer;
 }
 
-.form-group label {
-    display: block;
-    font-size: 14px;
-    font-weight: 600;
-    margin-bottom: 7px;
+.close{
+    background:#ef4444;
+    color:white;
+    width:100%;
+    padding:10px;
+    border:none;
+    border-radius:6px;
+    margin-top:5px;
+    cursor:pointer;
 }
 
-.form-group input,
-.form-group select {
-    width: 100%;
-    padding: 12px;
-    border: 1px solid #d1d5db;
-    border-radius: 6px;
-    outline: none;
-    font-size: 14px;
-    background: white;
+button:disabled{
+    opacity:.6;
+    cursor:not-allowed;
 }
 
-.form-group input:focus,
-.form-group select:focus {
-    border-color: var(--primary);
+/* MESSAGES */
+.message{
+    display:none;
+    padding:10px 12px;
+    margin:12px auto;
+    border-radius:6px;
+    font-size:14px;
+    max-width:1000px;
+    width:90%;
 }
 
-.modal-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-    margin-top: 22px;
+.message.error{
+    display:block;
+    background:#fee2e2;
+    color:#991b1b;
 }
 
-.cancel-btn {
-    background: #e5e7eb;
-    color: #374151;
+.message.success{
+    display:block;
+    background:#dcfce7;
+    color:#166534;
 }
 
-.save-btn {
-    background: var(--primary);
-    color: white;
-}
-
-button:disabled {
-    opacity: .6;
-    cursor: not-allowed;
-}
-
-@media(max-width:600px) {
-    .container {
-        padding: 16px;
-        margin: 10px auto;
-    }
-
-    .header h2 {
-        font-size: 18px;
-    }
-
-    .header button {
-        width: 100%;
-    }
-
-    .modal-content {
-        padding: 20px;
-    }
+.empty-row{
+    text-align:center;
+    color:#777;
 }
 </style>
 </head>
 
 <body>
 
+<script>
+const role = localStorage.getItem("role");
+
+if(role !== "school_admin"){
+    alert("Access denied");
+    location.href = "login.html";
+}
+</script>
+
+<header>
+    <h1>REGISTERED STUDENTS</h1>
+    <button class="btn-add" onclick="openModal()">
+        + Add Student
+    </button>
+</header>
+
+<div id="message" class="message"></div>
+
 <div class="container">
 
-    <div class="header">
-        <h2>REGISTERED STUDENTS</h2>
-        <button class="add-btn" id="addStudentBtn">
-            + Add Student
-        </button>
+    <!-- PRIMARY 6 -->
+    <div id="p6Box" class="class-box" style="display:none;">
+        <div class="class-title">Primary 6 Students</div>
+
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Name</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="p6Table"></tbody>
+            </table>
+        </div>
     </div>
 
-    <div id="statusMessage" class="status-message"></div>
+    <!-- SENIOR 3 -->
+    <div id="s3Box" class="class-box" style="display:none;">
+        <div class="class-title">Senior 3 Students</div>
 
-    <div id="studentsContainer">
-        <p class="empty-message">Loading students...</p>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Name</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="s3Table"></tbody>
+            </table>
+        </div>
     </div>
 
 </div>
 
-<!-- STUDENT MODAL -->
+<!-- MODAL -->
+<div class="modal" id="modal">
 
-<div class="modal" id="studentModal">
-    <div class="modal-content">
+    <div class="modal-box">
 
-        <h3 id="modalTitle">Register Student</h3>
+        <h3 id="modalTitle">Add Student</h3>
 
-        <form id="studentForm">
+        <input type="hidden" id="editId">
 
-            <div class="form-group">
-                <label for="studentClass">Class</label>
-                <select id="studentClass" required>
-                    <option value="">Loading classes...</option>
-                </select>
-            </div>
+        <select id="className" required>
+            <option value="">Select Class</option>
+        </select>
 
-            <div class="form-group">
-                <label for="studentName">Student Full Name</label>
-                <input
-                    type="text"
-                    id="studentName"
-                    maxlength="200"
-                    placeholder="Enter student full name"
-                    required
-                >
-            </div>
+        <input
+            type="text"
+            id="name"
+            placeholder="Student Name"
+            maxlength="200"
+            required
+        >
 
-            <div class="form-group">
-                <label for="studentGender">Gender</label>
-                <select id="studentGender">
-                    <option value="">Select gender</option>
-                    <option value="Male">Male</option>
-                    <option value="Female">Female</option>
-                </select>
-            </div>
+        <button class="save" id="saveButton" onclick="saveStudent()">
+            Save
+        </button>
 
-            <div class="form-group">
-                <label for="dateOfBirth">Date of Birth</label>
-                <input type="date" id="dateOfBirth">
-            </div>
+        <button class="close" onclick="closeModal()">
+            Close
+        </button>
 
-            <div class="form-group">
-                <label for="admissionDate">Admission Date</label>
-                <input type="date" id="admissionDate">
-            </div>
-
-            <div class="modal-actions">
-                <button type="button" class="cancel-btn" id="cancelBtn">
-                    Cancel
-                </button>
-
-                <button type="submit" class="save-btn" id="saveBtn">
-                    Save Student
-                </button>
-            </div>
-
-        </form>
     </div>
+
 </div>
 
 <script>
 "use strict";
 
-/* =====================================
+/* ======================================
    AUTHENTICATION
-===================================== */
+====================================== */
 
 const currentUser = JSON.parse(
     localStorage.getItem("currentUser") || "null"
 );
 
-if (localStorage.getItem("role") !== "school_admin" || !currentUser) {
+if(
+    localStorage.getItem("role") !== "school_admin" ||
+    !currentUser
+){
     window.location.href = "login.html";
 }
 
-/* =====================================
-   ELEMENTS AND STATE
-===================================== */
-
-const studentsContainer = document.getElementById("studentsContainer");
-const studentModal = document.getElementById("studentModal");
-const studentForm = document.getElementById("studentForm");
-const studentClass = document.getElementById("studentClass");
-const studentName = document.getElementById("studentName");
-const studentGender = document.getElementById("studentGender");
-const dateOfBirth = document.getElementById("dateOfBirth");
-const admissionDate = document.getElementById("admissionDate");
-const modalTitle = document.getElementById("modalTitle");
-const saveBtn = document.getElementById("saveBtn");
-const statusMessage = document.getElementById("statusMessage");
+/* ======================================
+   VARIABLES
+====================================== */
 
 let students = [];
 let classes = [];
-let editingStudentId = null;
+let editMode = false;
 
-/* =====================================
-   API REQUEST HELPER
-===================================== */
+const p6Table = document.getElementById("p6Table");
+const s3Table = document.getElementById("s3Table");
+const p6Box = document.getElementById("p6Box");
+const s3Box = document.getElementById("s3Box");
 
-async function apiRequest(url, options = {}) {
+const modal = document.getElementById("modal");
+const modalTitle = document.getElementById("modalTitle");
+const editId = document.getElementById("editId");
+const nameInput = document.getElementById("name");
+const classSelect = document.getElementById("className");
+const saveButton = document.getElementById("saveButton");
+const messageBox = document.getElementById("message");
+
+/* ======================================
+   API HELPER
+====================================== */
+
+async function apiRequest(url, options = {}){
+
     const response = await fetch(url, {
         ...options,
         credentials: "same-origin",
@@ -379,457 +344,412 @@ async function apiRequest(url, options = {}) {
         }
     });
 
-    const result = await response.json().catch(() => null);
+    const data = await response.json().catch(() => null);
 
-    if (!result) {
+    if(!data){
         throw new Error(
-            "The server returned an invalid response. Check the API endpoint."
+            "Invalid server response. Please check the API endpoint."
         );
     }
 
-    if (!response.ok || result.success === false) {
-        if (response.status === 401 || response.status === 403) {
-            throw new Error(result.message || "Your session is not authorized.");
+    if(!response.ok || data.success === false){
+
+        if(response.status === 401 || response.status === 403){
+            throw new Error(
+                data.message || "Your session has expired or access is denied."
+            );
         }
 
-        throw new Error(result.message || "Request failed.");
+        throw new Error(data.message || "Something went wrong.");
     }
 
-    return result;
+    return data;
 }
 
-/* =====================================
+/* ======================================
    MESSAGE
-===================================== */
+====================================== */
 
-function showMessage(message, type = "success") {
-    statusMessage.textContent = message;
-    statusMessage.className = "status-message " + type;
+function showMessage(text, type){
 
-    window.scrollTo({
-        top: 0,
-        behavior: "smooth"
-    });
+    messageBox.textContent = text;
+    messageBox.className = "message " + type;
 
-    if (type !== "info") {
-        setTimeout(() => {
-            statusMessage.style.display = "none";
-            statusMessage.className = "status-message";
-        }, 5000);
-    }
+    setTimeout(() => {
+        messageBox.className = "message";
+    }, 5000);
 }
 
-/* =====================================
-   LOAD CLASSES
-===================================== */
+/* ======================================
+   CLASS NAME HELPERS
+====================================== */
 
-async function loadClasses() {
-    const result = await apiRequest("/api/classes");
+function normalizeClass(value){
 
-    classes = Array.isArray(result)
-        ? result
-        : (result.classes || []);
-
-    studentClass.replaceChildren();
-
-    const placeholder = document.createElement("option");
-    placeholder.value = "";
-    placeholder.textContent = "Select class";
-    studentClass.appendChild(placeholder);
-
-    classes.forEach(item => {
-        const option = document.createElement("option");
-
-        option.value = item.id;
-        option.textContent = formatClassName(item.class_name);
-
-        studentClass.appendChild(option);
-    });
-
-    if (classes.length === 0) {
-        studentClass.replaceChildren();
-
-        const option = document.createElement("option");
-        option.value = "";
-        option.textContent = "No classes available";
-        studentClass.appendChild(option);
-    }
-}
-
-/* =====================================
-   CLASS NAME FORMATTING
-===================================== */
-
-function formatClassName(name) {
-    const value = String(name || "").trim();
-
-    const mapping = {
-        "P1": "Primary 1",
-        "P2": "Primary 2",
-        "P3": "Primary 3",
-        "P4": "Primary 4",
-        "P5": "Primary 5",
-        "P6": "Primary 6",
-        "S1": "Senior 1",
-        "S2": "Senior 2",
-        "S3": "Senior 3",
-        "S4": "Senior 4",
-        "S5": "Senior 5",
-        "S6": "Senior 6"
-    };
-
-    return mapping[value.toUpperCase()] || value;
-}
-
-function normalizeClassName(name) {
-    return String(name || "")
+    return String(value || "")
         .toLowerCase()
         .replace(/[^a-z0-9]/g, "");
 }
 
-function getStudentClassName(student) {
-    return student.class_name || "";
-}
+function displayClassName(value){
 
-/* =====================================
-   LOAD STUDENTS
-===================================== */
+    const key = normalizeClass(value);
 
-async function loadStudents() {
-    studentsContainer.replaceChildren();
-
-    const loading = document.createElement("p");
-    loading.className = "empty-message";
-    loading.textContent = "Loading students...";
-    studentsContainer.appendChild(loading);
-
-    try {
-        const result = await apiRequest("/api/students");
-
-        students = result.students || [];
-
-        renderStudents();
-
-    } catch (error) {
-        studentsContainer.replaceChildren();
-
-        const message = document.createElement("p");
-        message.className = "empty-message";
-        message.textContent = error.message;
-
-        studentsContainer.appendChild(message);
-        showMessage(error.message, "error");
-    }
-}
-
-/* =====================================
-   RENDER STUDENTS
-===================================== */
-
-function renderStudents() {
-    studentsContainer.replaceChildren();
-
-    /*
-       Keep the original two sections:
-       Primary 6 and Senior 3.
-    */
-
-    const sections = [
-        {
-            title: "Primary 6",
-            names: ["p6", "primary6"]
-        },
-        {
-            title: "Senior 3",
-            names: ["s3", "senior3"]
-        }
-    ];
-
-    sections.forEach(section => {
-        const sectionStudents = students.filter(student => {
-            const name = normalizeClassName(
-                getStudentClassName(student)
-            );
-
-            return section.names.includes(name);
-        });
-
-        const sectionElement = document.createElement("div");
-        sectionElement.className = "class-section";
-
-        const heading = document.createElement("h3");
-        heading.className = "class-title";
-        heading.textContent =
-            section.title + " (" + sectionStudents.length + ")";
-
-        sectionElement.appendChild(heading);
-
-        const wrapper = document.createElement("div");
-        wrapper.className = "table-wrapper";
-
-        const table = document.createElement("table");
-
-        const thead = document.createElement("thead");
-        const headerRow = document.createElement("tr");
-
-        ["#", "Student Name", "Student Code", "Actions"].forEach(label => {
-            const th = document.createElement("th");
-            th.textContent = label;
-            headerRow.appendChild(th);
-        });
-
-        thead.appendChild(headerRow);
-        table.appendChild(thead);
-
-        const tbody = document.createElement("tbody");
-
-        if (sectionStudents.length === 0) {
-            const row = document.createElement("tr");
-            const cell = document.createElement("td");
-
-            cell.colSpan = 4;
-            cell.className = "empty-message";
-            cell.textContent = "No students registered in this class.";
-
-            row.appendChild(cell);
-            tbody.appendChild(row);
-
-        } else {
-            sectionStudents.forEach((student, index) => {
-                const row = document.createElement("tr");
-
-                const numberCell = document.createElement("td");
-                numberCell.textContent = String(index + 1);
-
-                const nameCell = document.createElement("td");
-                nameCell.textContent = student.full_name;
-
-                const codeCell = document.createElement("td");
-                codeCell.textContent = student.student_code || "—";
-
-                const actionsCell = document.createElement("td");
-                const actions = document.createElement("div");
-                actions.className = "action-buttons";
-
-                const editButton = document.createElement("button");
-                editButton.type = "button";
-                editButton.className = "edit-btn";
-                editButton.textContent = "Edit";
-                editButton.addEventListener("click", () => {
-                    openEditModal(student.id);
-                });
-
-                const deleteButton = document.createElement("button");
-                deleteButton.type = "button";
-                deleteButton.className = "delete-btn";
-                deleteButton.textContent = "Delete";
-                deleteButton.addEventListener("click", () => {
-                    deactivateStudent(student.id);
-                });
-
-                actions.append(editButton, deleteButton);
-                actionsCell.appendChild(actions);
-
-                row.append(
-                    numberCell,
-                    nameCell,
-                    codeCell,
-                    actionsCell
-                );
-
-                tbody.appendChild(row);
-            });
-        }
-
-        table.appendChild(tbody);
-        wrapper.appendChild(table);
-        sectionElement.appendChild(wrapper);
-
-        studentsContainer.appendChild(sectionElement);
-    });
-}
-
-/* =====================================
-   OPEN REGISTRATION MODAL
-===================================== */
-
-function openAddModal() {
-    editingStudentId = null;
-
-    studentForm.reset();
-
-    modalTitle.textContent = "Register Student";
-    saveBtn.textContent = "Save Student";
-
-    studentModal.style.display = "flex";
-}
-
-/* =====================================
-   OPEN EDIT MODAL
-===================================== */
-
-function openEditModal(id) {
-    const student = students.find(item => String(item.id) === String(id));
-
-    if (!student) {
-        showMessage("Student not found.", "error");
-        return;
-    }
-
-    editingStudentId = student.id;
-
-    studentClass.value = student.class_id;
-    studentName.value = student.full_name || "";
-    studentGender.value = student.gender || "";
-    dateOfBirth.value = student.date_of_birth
-        ? String(student.date_of_birth).slice(0, 10)
-        : "";
-    admissionDate.value = student.admission_date
-        ? String(student.admission_date).slice(0, 10)
-        : "";
-
-    modalTitle.textContent = "Edit Student";
-    saveBtn.textContent = "Update Student";
-
-    studentModal.style.display = "flex";
-}
-
-/* =====================================
-   CLOSE MODAL
-===================================== */
-
-function closeModal() {
-    studentModal.style.display = "none";
-    studentForm.reset();
-    editingStudentId = null;
-}
-
-document.getElementById("cancelBtn").addEventListener(
-    "click",
-    closeModal
-);
-
-studentModal.addEventListener("click", event => {
-    if (event.target === studentModal) {
-        closeModal();
-    }
-});
-
-/* =====================================
-   SAVE / UPDATE STUDENT
-===================================== */
-
-studentForm.addEventListener("submit", async event => {
-    event.preventDefault();
-
-    const classId = Number(studentClass.value);
-    const fullName = studentName.value.trim();
-
-    if (!classId || !fullName) {
-        showMessage("Please enter the student name and select a class.", "error");
-        return;
-    }
-
-    const payload = {
-        class_id: classId,
-        full_name: fullName,
-        gender: studentGender.value || null,
-        date_of_birth: dateOfBirth.value || null,
-        admission_date: admissionDate.value || null
+    const names = {
+        "p1": "Primary 1",
+        "p2": "Primary 2",
+        "p3": "Primary 3",
+        "p4": "Primary 4",
+        "p5": "Primary 5",
+        "p6": "Primary 6",
+        "s1": "Senior 1",
+        "s2": "Senior 2",
+        "s3": "Senior 3",
+        "s4": "Senior 4",
+        "s5": "Senior 5",
+        "s6": "Senior 6",
+        "primary6": "Primary 6",
+        "senior3": "Senior 3"
     };
 
-    saveBtn.disabled = true;
-    saveBtn.textContent = "Please wait...";
+    return names[key] || value;
+}
 
-    try {
-        if (editingStudentId !== null) {
-            payload.id = editingStudentId;
+/* ======================================
+   LOAD CLASSES
+====================================== */
 
-            await apiRequest("/api/students/update", {
-                method: "POST",
-                body: JSON.stringify(payload)
-            });
+async function loadClasses(){
 
-            closeModal();
-            showMessage("Student updated successfully.");
+    const data = await apiRequest("/api/classes");
 
-        } else {
-            await apiRequest("/api/students", {
-                method: "POST",
-                body: JSON.stringify(payload)
-            });
+    classes = Array.isArray(data)
+        ? data
+        : (data.classes || []);
 
-            closeModal();
-            showMessage("Student registered successfully.");
-        }
+    classSelect.replaceChildren();
 
-        await loadStudents();
+    const placeholder = document.createElement("option");
+    placeholder.value = "";
+    placeholder.textContent = "Select Class";
 
-    } catch (error) {
-        showMessage(error.message, "error");
+    classSelect.appendChild(placeholder);
 
-    } finally {
-        saveBtn.disabled = false;
-        saveBtn.textContent =
-            editingStudentId !== null ? "Update Student" : "Save Student";
+    // Only offer the two classes shown on this page.
+    const allowedClasses = classes.filter(c => {
+        const key = normalizeClass(c.class_name);
+
+        return key === "p6" ||
+               key === "primary6" ||
+               key === "s3" ||
+               key === "senior3";
+    });
+
+    allowedClasses.forEach(c => {
+
+        const option = document.createElement("option");
+
+        option.value = String(c.id);
+        option.textContent = displayClassName(c.class_name);
+
+        classSelect.appendChild(option);
+    });
+
+    if(allowedClasses.length === 0){
+        showMessage(
+            "Primary 6 and Senior 3 classes were not found. Please check your school's classes.",
+            "error"
+        );
     }
-});
+}
 
-/* =====================================
-   DEACTIVATE STUDENT
-===================================== */
+/* ======================================
+   LOAD STUDENTS
+====================================== */
 
-async function deactivateStudent(id) {
-    const confirmed = confirm(
-        "Are you sure you want to deactivate this student?"
-    );
+async function loadStudents(){
 
-    if (!confirmed) return;
+    try{
 
-    try {
-        await apiRequest("/api/students/delete", {
-            method: "POST",
-            body: JSON.stringify({ id })
-        });
+        const data = await apiRequest("/api/students");
 
-        students = students.filter(
-            student => String(student.id) !== String(id)
+        students = data.students || [];
+
+        // Sort alphabetically.
+        students.sort((a,b) =>
+            String(a.full_name || "").localeCompare(
+                String(b.full_name || ""),
+                undefined,
+                {sensitivity:"base"}
+            )
         );
 
         renderStudents();
 
-        showMessage("Student deactivated successfully.");
+    }catch(error){
 
-    } catch (error) {
+        showMessage(error.message, "error");
+
+        p6Table.replaceChildren();
+        s3Table.replaceChildren();
+
+        p6Box.style.display = "none";
+        s3Box.style.display = "none";
+    }
+}
+
+/* ======================================
+   RENDER TABLE ROW
+====================================== */
+
+function createStudentRow(student, number){
+
+    const row = document.createElement("tr");
+
+    const numberCell = document.createElement("td");
+    numberCell.textContent = number;
+
+    const nameCell = document.createElement("td");
+    nameCell.textContent = student.full_name;
+
+    const actionsCell = document.createElement("td");
+
+    const editButton = document.createElement("button");
+    editButton.className = "edit";
+    editButton.textContent = "Edit";
+
+    editButton.addEventListener("click", () => {
+        editStudent(student.id);
+    });
+
+    const deleteButton = document.createElement("button");
+    deleteButton.className = "delete";
+    deleteButton.textContent = "Delete";
+
+    deleteButton.addEventListener("click", () => {
+        deleteStudent(student.id);
+    });
+
+    actionsCell.append(editButton, deleteButton);
+
+    row.append(numberCell, nameCell, actionsCell);
+
+    return row;
+}
+
+/* ======================================
+   RENDER STUDENTS
+====================================== */
+
+function renderStudents(){
+
+    p6Table.replaceChildren();
+    s3Table.replaceChildren();
+
+    const p6Students = students.filter(s => {
+        const key = normalizeClass(s.class_name);
+
+        return key === "p6" || key === "primary6";
+    });
+
+    const s3Students = students.filter(s => {
+        const key = normalizeClass(s.class_name);
+
+        return key === "s3" || key === "senior3";
+    });
+
+    // P6 numbering.
+    p6Students.forEach((student, index) => {
+        p6Table.appendChild(
+            createStudentRow(student, index + 1)
+        );
+    });
+
+    // S3 numbering.
+    s3Students.forEach((student, index) => {
+        s3Table.appendChild(
+            createStudentRow(student, index + 1)
+        );
+    });
+
+    // Hide empty classes.
+    p6Box.style.display =
+        p6Students.length > 0 ? "block" : "none";
+
+    s3Box.style.display =
+        s3Students.length > 0 ? "block" : "none";
+}
+
+/* ======================================
+   OPEN MODAL
+====================================== */
+
+function openModal(){
+
+    editMode = false;
+
+    modalTitle.textContent = "Add Student";
+    editId.value = "";
+    nameInput.value = "";
+    classSelect.value = "";
+
+    saveButton.textContent = "Save";
+    saveButton.disabled = false;
+
+    modal.style.display = "flex";
+}
+
+/* ======================================
+   EDIT STUDENT
+====================================== */
+
+function editStudent(id){
+
+    const student = students.find(
+        s => String(s.id) === String(id)
+    );
+
+    if(!student){
+        showMessage("Student not found.", "error");
+        return;
+    }
+
+    editMode = true;
+
+    modalTitle.textContent = "Edit Student";
+    editId.value = student.id;
+    nameInput.value = student.full_name || "";
+    classSelect.value = String(student.class_id);
+
+    saveButton.textContent = "Update";
+
+    modal.style.display = "flex";
+}
+
+/* ======================================
+   CLOSE MODAL
+====================================== */
+
+function closeModal(){
+
+    modal.style.display = "none";
+
+    editMode = false;
+    editId.value = "";
+    nameInput.value = "";
+    classSelect.value = "";
+
+    saveButton.disabled = false;
+    saveButton.textContent = "Save";
+}
+
+/* ======================================
+   SAVE STUDENT
+====================================== */
+
+async function saveStudent(){
+
+    const id = editId.value;
+    const full_name = nameInput.value.trim();
+    const class_id = Number(classSelect.value);
+
+    if(!full_name){
+        showMessage("Enter the student's name.", "error");
+        return;
+    }
+
+    if(!class_id){
+        showMessage("Please select a class.", "error");
+        return;
+    }
+
+    const body = {
+        full_name,
+        class_id
+    };
+
+    let url = "/api/students";
+
+    if(editMode){
+        url = "/api/students/update";
+        body.id = Number(id);
+    }
+
+    saveButton.disabled = true;
+    saveButton.textContent = "Saving...";
+
+    try{
+
+        await apiRequest(url, {
+            method: "POST",
+            body: JSON.stringify(body)
+        });
+
+        closeModal();
+
+        showMessage(
+            editMode
+                ? "Student updated successfully."
+                : "Student registered successfully.",
+            "success"
+        );
+
+        await loadStudents();
+
+    }catch(error){
+
+        showMessage(error.message, "error");
+
+    }finally{
+
+        saveButton.disabled = false;
+        saveButton.textContent = editMode ? "Update" : "Save";
+    }
+}
+
+/* ======================================
+   DELETE / DEACTIVATE STUDENT
+====================================== */
+
+async function deleteStudent(id){
+
+    if(!confirm("Delete student?")) return;
+
+    try{
+
+        await apiRequest("/api/students/delete", {
+            method: "POST",
+            body: JSON.stringify({id: Number(id)})
+        });
+
+        showMessage("Student deactivated successfully.", "success");
+
+        await loadStudents();
+
+    }catch(error){
+
         showMessage(error.message, "error");
     }
 }
 
-/* =====================================
-   BUTTON EVENTS
-===================================== */
+/* ======================================
+   INITIALIZE
+====================================== */
 
-document.getElementById("addStudentBtn").addEventListener(
-    "click",
-    openAddModal
-);
+async function initialize(){
 
-/* =====================================
-   INITIALIZE PAGE
-===================================== */
+    try{
 
-async function initializePage() {
-    try {
         await loadClasses();
         await loadStudents();
 
-    } catch (error) {
+    }catch(error){
+
         showMessage(error.message, "error");
-        studentsContainer.textContent = error.message;
     }
 }
 
-initializePage();
+initialize();
 
 </script>
 
