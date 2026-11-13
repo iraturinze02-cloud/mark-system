@@ -27,6 +27,7 @@ export async function onRequestGet(context) {
                     (
                         SELECT json_agg(
                             json_build_object(
+                                'assignment_id', ta.id,
                                 'class_id', c.id,
                                 'class_name', c.class_name,
                                 'subject_id', s.id,
@@ -98,8 +99,11 @@ export async function onRequestPost(context) {
         }, 400);
     }
 
-    if (fullName.length > 200 || phone.length > 30 ||
-        (staffNumber && staffNumber.length > 50)) {
+    if (
+        fullName.length > 200 ||
+        phone.length > 30 ||
+        (staffNumber && staffNumber.length > 50)
+    ) {
         return json({
             success: false,
             message: "One or more fields exceed the allowed length."
@@ -118,6 +122,7 @@ export async function onRequestPost(context) {
 
     try {
         client = await connectDB(context);
+
         await client.query("BEGIN");
         transactionStarted = true;
 
