@@ -223,6 +223,36 @@ tbody tr:hover {
     font-size: 11px;
     font-weight: 600;
 }
+    .assignment-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: #eff6ff;
+    border: 1px solid #dbeafe;
+    border-radius: 6px;
+    padding: 3px 5px 3px 8px;
+}
+
+.assignment-item span {
+    color: #1d4ed8;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.remove-assignment {
+    border: none;
+    background: #fee2e2;
+    color: #dc2626;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: bold;
+    padding: 3px 6px;
+}
+
+.remove-assignment:hover {
+    background: #fecaca;
+}
 
 .no-assignment {
     color: #94a3b8;
@@ -739,21 +769,37 @@ function renderTeachers() {
         const assignmentList = document.createElement("div");
         assignmentList.className = "assignment-list";
 
-        const assignments = teacher.assignments || [];
+        const assignments = Array.isArray(teacher.assignments)
+            ? teacher.assignments
+            : [];
 
         if (assignments.length) {
             assignments.forEach(item => {
-                const tag = document.createElement("span");
-                tag.className = "assignment-tag";
-                tag.textContent =
+                const wrapper = document.createElement("div");
+                wrapper.className = "assignment-item";
+
+                const label = document.createElement("span");
+                label.textContent =
                     `${item.class_name} — ${item.subject_name}`;
 
-                assignmentList.appendChild(tag);
+                const removeButton = document.createElement("button");
+                removeButton.className = "remove-assignment";
+                removeButton.type = "button";
+                removeButton.textContent = "×";
+                removeButton.title = "Remove this assignment";
+
+                removeButton.addEventListener("click", () => {
+                    removeAssignment(item.assignment_id);
+                });
+
+                wrapper.append(label, removeButton);
+                assignmentList.appendChild(wrapper);
             });
         } else {
             const empty = document.createElement("span");
             empty.className = "no-assignment";
             empty.textContent = "No assignments";
+
             assignmentList.appendChild(empty);
         }
 
@@ -767,6 +813,7 @@ function renderTeachers() {
         const editButton = document.createElement("button");
         editButton.className = "btn btn-warning btn-sm";
         editButton.textContent = "Edit";
+
         editButton.addEventListener("click", () => {
             openEditTeacher(teacher);
         });
@@ -774,6 +821,7 @@ function renderTeachers() {
         const assignButton = document.createElement("button");
         assignButton.className = "btn btn-success btn-sm";
         assignButton.textContent = "+ Assignment";
+
         assignButton.addEventListener("click", () => {
             openAssignment(teacher);
         });
@@ -785,7 +833,6 @@ function renderTeachers() {
         teacherTable.appendChild(row);
     });
 }
-
 async function loadOptions() {
     try {
         const [classData, subjectData] = await Promise.all([
@@ -881,7 +928,9 @@ function renderCurrentAssignments(teacher) {
 
     container.replaceChildren();
 
-    const assignments = teacher.assignments || [];
+    const assignments = Array.isArray(teacher.assignments)
+        ? teacher.assignments
+        : [];
 
     if (!assignments.length) {
         const empty = document.createElement("span");
@@ -891,15 +940,27 @@ function renderCurrentAssignments(teacher) {
     }
 
     assignments.forEach(item => {
-        const tag = document.createElement("span");
+        const wrapper = document.createElement("div");
+        wrapper.className = "assignment-item";
 
-        tag.textContent =
+        const label = document.createElement("span");
+        label.textContent =
             `${item.class_name} — ${item.subject_name}`;
 
-        container.appendChild(tag);
+        const removeButton = document.createElement("button");
+        removeButton.className = "remove-assignment";
+        removeButton.type = "button";
+        removeButton.textContent = "×";
+        removeButton.title = "Remove assignment";
+
+        removeButton.addEventListener("click", () => {
+            removeAssignment(item.assignment_id);
+        });
+
+        wrapper.append(label, removeButton);
+        container.appendChild(wrapper);
     });
 }
-
 function openAddTeacher() {
     editMode = false;
 
