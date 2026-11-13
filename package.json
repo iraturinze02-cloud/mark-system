@@ -5,6 +5,8 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "pg": "^8.16.3"
+    "pg": "^8.16.3",
+    "bcryptjs": "^3.0.2",
+    "jose": "^6.1.0"
   }
 }
