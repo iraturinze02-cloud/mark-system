@@ -1,0 +1,968 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>School Management | Sector Education Examination Platform</title>
+
+    <link rel="stylesheet" href="style.css">
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            background: #f4f7fb;
+            font-family: Arial, sans-serif;
+            color: #1f2937;
+        }
+
+        /* HEADER */
+        header {
+            background: linear-gradient(135deg, #1e40af, #1d4ed8);
+            color: white;
+            padding: 25px 20px;
+            text-align: center;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 25px;
+        }
+
+        header p {
+            margin: 8px 0 0;
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .logout-btn {
+            margin-top: 15px;
+            padding: 9px 18px;
+            border: none;
+            border-radius: 7px;
+            background: #dc2626;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .logout-btn:hover {
+            background: #b91c1c;
+        }
+
+        /* MAIN CONTENT */
+        .dashboard-container {
+            max-width: 1100px;
+            width: 95%;
+            margin: 25px auto;
+        }
+
+        .management-card {
+            background: white;
+            padding: 25px;
+            border-radius: 13px;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+
+        .page-heading {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .page-heading h2 {
+            margin: 0;
+            color: #1e40af;
+            font-size: 21px;
+        }
+
+        .page-heading p {
+            margin: 7px 0 0;
+            color: #64748b;
+            font-size: 13px;
+        }
+
+        /* BUTTONS */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 11px 16px;
+            border: none;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            color: white;
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            transition: 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            filter: brightness(0.95);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+        }
+
+        .btn-sm {
+            padding: 8px 11px;
+            font-size: 12px;
+        }
+
+        /* TABLE */
+        .table-wrapper {
+            width: 100%;
+            overflow-x: auto;
+            margin-top: 20px;
+        }
+
+        table {
+            width: 100%;
+            min-width: 650px;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 13px 12px;
+            border-bottom: 1px solid #e5e7eb;
+            text-align: left;
+            font-size: 13px;
+        }
+
+        th {
+            background: #eff6ff;
+            color: #1e40af;
+            font-weight: bold;
+        }
+
+        tbody tr:hover {
+            background: #f8fafc;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 7px;
+            flex-wrap: wrap;
+        }
+
+        .table-message {
+            text-align: center;
+            padding: 25px;
+            color: #64748b;
+        }
+
+        /* MODAL */
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 1000;
+            background: rgba(15, 23, 42, 0.6);
+            justify-content: center;
+            align-items: center;
+            padding: 15px;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 25px;
+            width: 100%;
+            max-width: 450px;
+            max-height: 90vh;
+            overflow-y: auto;
+            border-radius: 13px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .modal-content h2 {
+            margin: 0 0 20px;
+            color: #1e40af;
+            font-size: 21px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 7px;
+            font-size: 13px;
+            font-weight: bold;
+            color: #374151;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 11px;
+            border: 1px solid #cbd5e1;
+            border-radius: 7px;
+            font-size: 14px;
+            background: white;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+        }
+
+        .form-hint {
+            display: block;
+            margin-top: 5px;
+            color: #64748b;
+            font-size: 11px;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .modal-actions button {
+            flex: 1;
+        }
+
+        .message {
+            display: none;
+            padding: 11px;
+            border-radius: 7px;
+            margin-bottom: 15px;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .message.error {
+            display: block;
+            color: #991b1b;
+            background: #fee2e2;
+        }
+
+        .message.success {
+            display: block;
+            color: #166534;
+            background: #dcfce7;
+        }
+
+        .footer {
+            text-align: center;
+            color: #94a3b8;
+            font-size: 12px;
+            margin: 25px 0;
+        }
+
+        @media (max-width: 600px) {
+            header h1 {
+                font-size: 21px;
+            }
+
+            .management-card {
+                padding: 17px;
+            }
+
+            .page-heading {
+                align-items: stretch;
+            }
+
+            .page-heading .btn {
+                width: 100%;
+            }
+
+            .modal-content {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- HEADER -->
+    <header>
+        <h1>SCHOOL MANAGEMENT</h1>
+        <p>Manage schools and school administrators in your sector</p>
+
+        <button class="logout-btn" id="logoutBtn" type="button">
+            Logout
+        </button>
+    </header>
+
+    <!-- MAIN CONTENT -->
+    <main class="dashboard-container">
+
+        <section class="management-card">
+
+            <div class="page-heading">
+                <div>
+                    <h2>School & Admin Overview</h2>
+                    <p>Register and manage school administrators.</p>
+                </div>
+
+                <button class="btn" id="addAdminBtn" type="button">
+                    + Add School Admin
+                </button>
+            </div>
+
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>School</th>
+                            <th>Admin Name</th>
+                            <th>Phone Number</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+
+                    <tbody id="schoolTable">
+                        <tr>
+                            <td colspan="5" class="table-message">
+                                Loading school administrators...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+        </section>
+
+        <div class="footer">
+            Sector Education Examination Platform
+        </div>
+
+    </main>
+
+
+    <!-- ADD / EDIT MODAL -->
+    <div class="modal" id="adminModal">
+
+        <div class="modal-content">
+
+            <h2 id="modalTitle">Add School Admin</h2>
+
+            <div id="formMessage" class="message"></div>
+
+            <form id="adminForm">
+
+                <input type="hidden" id="editId">
+
+                <div class="form-group">
+                    <label for="adminSchool">School</label>
+
+                    <select id="adminSchool" required>
+                        <option value="">Loading schools...</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="adminName">Full Name</label>
+
+                    <input
+                        type="text"
+                        id="adminName"
+                        placeholder="Enter administrator's full name"
+                        maxlength="200"
+                        required>
+                </div>
+
+                <div class="form-group">
+                    <label for="adminPhone">Phone Number</label>
+
+                    <input
+                        type="tel"
+                        id="adminPhone"
+                        placeholder="Enter phone number"
+                        maxlength="30"
+                        autocomplete="tel"
+                        required>
+
+                    <small class="form-hint">
+                        This phone number will be used to log in.
+                    </small>
+                </div>
+
+                <div class="form-group">
+                    <label for="adminPassword">Password</label>
+
+                    <input
+                        type="password"
+                        id="adminPassword"
+                        placeholder="Enter password"
+                        minlength="8"
+                        autocomplete="new-password">
+
+                    <small class="form-hint" id="passwordHint">
+                        A password is required when creating an account.
+                    </small>
+                </div>
+
+                <div class="modal-actions">
+
+                    <button
+                        class="btn btn-success"
+                        id="saveBtn"
+                        type="submit">
+                        Save
+                    </button>
+
+                    <button
+                        class="btn btn-danger"
+                        id="cancelBtn"
+                        type="button">
+                        Cancel
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+    </div>
+
+
+    <script>
+    // ==================================================
+    // AUTHENTICATION
+    // ==================================================
+
+    let currentUser = null;
+
+    try {
+        currentUser = JSON.parse(
+            localStorage.getItem("currentUser") || "null"
+        );
+    } catch (error) {
+        currentUser = null;
+    }
+
+    const storedRole = localStorage.getItem("role");
+
+    const authorized =
+        currentUser &&
+        currentUser.id &&
+        storedRole === "sector_admin" &&
+        currentUser.role === "sector_admin";
+
+    if (!authorized) {
+        window.location.replace("../../index.html");
+    } else {
+
+        // ==================================================
+        // ELEMENTS
+        // ==================================================
+
+        const schoolTable = document.getElementById("schoolTable");
+        const modal = document.getElementById("adminModal");
+        const adminForm = document.getElementById("adminForm");
+        const schoolSelect = document.getElementById("adminSchool");
+        const saveBtn = document.getElementById("saveBtn");
+        const formMessage = document.getElementById("formMessage");
+
+        let editMode = false;
+
+
+        // ==================================================
+        // API RESPONSE HANDLER
+        // ==================================================
+
+        async function readJsonResponse(response) {
+
+            const contentType =
+                response.headers.get("content-type") || "";
+
+            if (!contentType.includes("application/json")) {
+                await response.text();
+
+                throw new Error(
+                    "The server returned HTML instead of JSON. " +
+                    "Check that the Cloudflare API endpoint exists."
+                );
+            }
+
+            const data = await response.json();
+
+            if (!response.ok || data.success === false) {
+                throw new Error(
+                    data.message || "The request could not be completed."
+                );
+            }
+
+            return data;
+        }
+
+
+        // ==================================================
+        // LOAD SCHOOLS BELONGING TO THIS SECTOR
+        // ==================================================
+
+        async function loadSchools(selectedSchoolId = "") {
+
+            schoolSelect.innerHTML =
+                '<option value="">Loading schools...</option>';
+
+            try {
+
+                const response = await fetch("/api/sector-schools", {
+                    method: "GET",
+                    credentials: "same-origin"
+                });
+
+                const data = await readJsonResponse(response);
+
+                const schools = data.schools || [];
+
+                schoolSelect.innerHTML =
+                    '<option value="">-- Select School --</option>';
+
+                schools.forEach(school => {
+
+                    const option = document.createElement("option");
+
+                    option.value = String(school.id);
+                    option.textContent = school.school_name;
+
+                    schoolSelect.appendChild(option);
+                });
+
+                if (selectedSchoolId) {
+                    schoolSelect.value = String(selectedSchoolId);
+                }
+
+                if (schools.length === 0) {
+                    schoolSelect.innerHTML =
+                        '<option value="">No schools registered in your sector</option>';
+                }
+
+            } catch (error) {
+
+                schoolSelect.innerHTML =
+                    '<option value="">Could not load schools</option>';
+
+                throw error;
+            }
+        }
+
+
+        // ==================================================
+        // LOAD SCHOOL ADMINISTRATORS
+        // ==================================================
+
+        async function loadSchoolAdmins() {
+
+            schoolTable.innerHTML = `
+                <tr>
+                    <td colspan="5" class="table-message">
+                        Loading school administrators...
+                    </td>
+                </tr>
+            `;
+
+            try {
+
+                const response = await fetch("/api/school-admins", {
+                    method: "GET",
+                    credentials: "same-origin"
+                });
+
+                const data = await readJsonResponse(response);
+
+                const admins = data.admins || [];
+
+                schoolTable.innerHTML = "";
+
+                if (admins.length === 0) {
+
+                    const row = document.createElement("tr");
+                    const cell = document.createElement("td");
+
+                    cell.colSpan = 5;
+                    cell.className = "table-message";
+                    cell.textContent =
+                        "No school administrators registered yet.";
+
+                    row.appendChild(cell);
+                    schoolTable.appendChild(row);
+
+                    return;
+                }
+
+                admins.forEach((admin, index) => {
+
+                    const row = document.createElement("tr");
+
+                    const numberCell = document.createElement("td");
+                    numberCell.textContent = index + 1;
+
+                    const schoolCell = document.createElement("td");
+                    schoolCell.textContent = admin.school_name || "-";
+
+                    const nameCell = document.createElement("td");
+                    nameCell.textContent = admin.full_name || "-";
+
+                    const phoneCell = document.createElement("td");
+                    phoneCell.textContent = admin.phone || "-";
+
+                    const actionCell = document.createElement("td");
+                    const actions = document.createElement("div");
+
+                    actions.className = "action-buttons";
+
+                    const editButton = document.createElement("button");
+
+                    editButton.type = "button";
+                    editButton.className = "btn btn-warning btn-sm";
+                    editButton.textContent = "Edit";
+
+                    editButton.addEventListener("click", () => {
+                        openEdit(admin);
+                    });
+
+                    actions.appendChild(editButton);
+
+                    actionCell.appendChild(actions);
+
+                    row.append(
+                        numberCell,
+                        schoolCell,
+                        nameCell,
+                        phoneCell,
+                        actionCell
+                    );
+
+                    schoolTable.appendChild(row);
+                });
+
+            } catch (error) {
+
+                schoolTable.innerHTML = "";
+
+                const row = document.createElement("tr");
+                const cell = document.createElement("td");
+
+                cell.colSpan = 5;
+                cell.className = "table-message";
+                cell.textContent = error.message;
+
+                row.appendChild(cell);
+                schoolTable.appendChild(row);
+            }
+        }
+
+
+        // ==================================================
+        // OPEN ADD MODAL
+        // ==================================================
+
+        async function openAdd() {
+
+            editMode = false;
+
+            adminForm.reset();
+
+            document.getElementById("editId").value = "";
+
+            document.getElementById("modalTitle").textContent =
+                "Add School Admin";
+
+            document.getElementById("passwordHint").textContent =
+                "A password is required when creating an account.";
+
+            document.getElementById("adminPassword").required = true;
+
+            clearFormMessage();
+
+            modal.classList.add("show");
+
+            try {
+                await loadSchools();
+            } catch (error) {
+                showFormMessage(error.message, "error");
+            }
+        }
+
+
+        // ==================================================
+        // OPEN EDIT MODAL
+        // ==================================================
+
+        async function openEdit(admin) {
+
+            editMode = true;
+
+            adminForm.reset();
+
+            document.getElementById("editId").value = admin.id;
+
+            document.getElementById("adminName").value =
+                admin.full_name || "";
+
+            document.getElementById("adminPhone").value =
+                admin.phone || "";
+
+            document.getElementById("adminPassword").value = "";
+
+            document.getElementById("modalTitle").textContent =
+                "Edit School Admin";
+
+            document.getElementById("passwordHint").textContent =
+                "Leave password blank to keep the current password.";
+
+            document.getElementById("adminPassword").required = false;
+
+            clearFormMessage();
+
+            modal.classList.add("show");
+
+            try {
+                await loadSchools(admin.school_id);
+            } catch (error) {
+                showFormMessage(error.message, "error");
+            }
+        }
+
+
+        // ==================================================
+        // CLOSE MODAL
+        // ==================================================
+
+        function closeModal() {
+            modal.classList.remove("show");
+            adminForm.reset();
+            clearFormMessage();
+        }
+
+        document.getElementById("cancelBtn").addEventListener(
+            "click",
+            closeModal
+        );
+
+        modal.addEventListener("click", function(event) {
+            if (event.target === modal) {
+                closeModal();
+            }
+        });
+
+        document.addEventListener("keydown", function(event) {
+            if (event.key === "Escape" && modal.classList.contains("show")) {
+                closeModal();
+            }
+        });
+
+
+        // ==================================================
+        // FORM MESSAGES
+        // ==================================================
+
+        function showFormMessage(message, type) {
+
+            formMessage.textContent = message;
+            formMessage.className = "message " + type;
+        }
+
+        function clearFormMessage() {
+
+            formMessage.textContent = "";
+            formMessage.className = "message";
+        }
+
+
+        // ==================================================
+        // SAVE SCHOOL ADMIN
+        // ==================================================
+
+        adminForm.addEventListener("submit", async function(event) {
+
+            event.preventDefault();
+
+            const full_name =
+                document.getElementById("adminName").value.trim();
+
+            const phone =
+                document.getElementById("adminPhone").value.trim();
+
+            const password =
+                document.getElementById("adminPassword").value;
+
+            const school_id = schoolSelect.value;
+
+            if (!full_name || !phone || !school_id) {
+                showFormMessage(
+                    "Please complete all required fields.",
+                    "error"
+                );
+                return;
+            }
+
+            if (!editMode && !password) {
+                showFormMessage(
+                    "Please enter a password.",
+                    "error"
+                );
+                return;
+            }
+
+            if (password && password.length < 8) {
+                showFormMessage(
+                    "Password must contain at least 8 characters.",
+                    "error"
+                );
+                return;
+            }
+
+            const payload = {
+                full_name,
+                phone,
+                school_id: Number(school_id)
+            };
+
+            if (password) {
+                payload.password = password;
+            }
+
+            let url;
+
+            if (editMode) {
+
+                payload.id =
+                    document.getElementById("editId").value;
+
+                url = "/api/users/update-school-admin";
+
+            } else {
+
+                url = "/api/users/create-school-admin";
+            }
+
+            saveBtn.disabled = true;
+            saveBtn.textContent = "Saving...";
+
+            try {
+
+                const response = await fetch(url, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    credentials: "same-origin",
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await readJsonResponse(response);
+
+                closeModal();
+
+                await loadSchoolAdmins();
+
+                // The API should return success only after the DB operation.
+                if (result.success !== false) {
+                    alert(
+                        editMode
+                            ? "School administrator updated successfully."
+                            : "School administrator created successfully."
+                    );
+                }
+
+            } catch (error) {
+
+                showFormMessage(error.message, "error");
+
+            } finally {
+
+                saveBtn.disabled = false;
+                saveBtn.textContent = "Save";
+            }
+        });
+
+
+        // ==================================================
+        // ADD BUTTON
+        // ==================================================
+
+        document.getElementById("addAdminBtn").addEventListener(
+            "click",
+            openAdd
+        );
+
+
+        // ==================================================
+        // LOGOUT
+        // ==================================================
+
+        document.getElementById("logoutBtn").addEventListener(
+            "click",
+            async function() {
+
+                const button = this;
+
+                button.disabled = true;
+                button.textContent = "Logging out...";
+
+                try {
+
+                    await fetch("/api/logout", {
+                        method: "POST",
+                        credentials: "same-origin"
+                    });
+
+                } catch (error) {
+
+                    console.error("Logout request failed:", error);
+
+                } finally {
+
+                    localStorage.removeItem("currentUser");
+                    localStorage.removeItem("role");
+                    localStorage.removeItem("selectedTest");
+
+                    window.location.replace("../../index.html");
+                }
+            }
+        );
+
+
+        // ==================================================
+        // INITIALIZE PAGE
+        // ==================================================
+
+        loadSchoolAdmins();
+
+    }
+    </script>
+
+</body>
+</html>
