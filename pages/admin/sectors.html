@@ -561,6 +561,21 @@ let sectors = [];
 let admins = [];
 let editMode = false;
 
+    // Read API responses safely
+async function readJsonResponse(response) {
+    const contentType = response.headers.get("content-type") || "";
+
+    if (!contentType.includes("application/json")) {
+        await response.text();
+
+        throw new Error(
+            `Server returned HTML instead of JSON. HTTP status: ${response.status}. Check your API endpoint.`
+        );
+    }
+
+    return await response.json();
+}
+    
 const table = document.getElementById("sectorTable");
 const modal = document.getElementById("modal");
 const message = document.getElementById("message");
