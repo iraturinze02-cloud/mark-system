@@ -1,0 +1,795 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Teachers Management</title>
+<link rel="stylesheet" href="style.css">
+
+<style>
+:root {
+    --primary: #2563eb;
+    --primary-dark: #1d4ed8;
+    --success: #16a34a;
+    --danger: #dc2626;
+    --warning: #d97706;
+    --border: #e5e7eb;
+    --muted: #64748b;
+}
+
+.page-content {
+    width: 95%;
+    max-width: 1150px;
+    margin: 25px auto;
+}
+
+.management-card {
+    background: white;
+    padding: 24px;
+    border-radius: 14px;
+    box-shadow: 0 5px 20px rgba(0,0,0,.07);
+    overflow: hidden;
+}
+
+.page-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    flex-wrap: wrap;
+    margin-bottom: 22px;
+}
+
+.page-heading h2 {
+    margin: 0 0 5px;
+}
+
+.page-heading p {
+    color: var(--muted);
+    margin: 0;
+    font-size: 14px;
+}
+
+.btn {
+    border: none;
+    border-radius: 8px;
+    padding: 10px 15px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    color: white;
+    transition: .2s;
+}
+
+.btn:hover {
+    opacity: .9;
+    transform: translateY(-1px);
+}
+
+.btn-primary { background: var(--primary); }
+.btn-success { background: var(--success); }
+.btn-danger { background: var(--danger); }
+.btn-warning { background: var(--warning); }
+
+.btn-sm {
+    padding: 7px 10px;
+    font-size: 12px;
+}
+
+.btn-block {
+    width: 100%;
+    margin-top: 10px;
+}
+
+.table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    min-width: 750px;
+    border-collapse: collapse;
+}
+
+th, td {
+    padding: 13px 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+}
+
+th {
+    background: #f8fafc;
+    color: #334155;
+    font-weight: 700;
+}
+
+tbody tr:hover {
+    background: #f8fafc;
+}
+
+.subject-tag {
+    display: inline-block;
+    background: #e0ecff;
+    color: #1e40af;
+    border-radius: 5px;
+    padding: 4px 8px;
+    margin: 2px;
+    font-size: 11px;
+}
+
+.class-tag {
+    display: inline-block;
+    background: #f1f5f9;
+    color: #334155;
+    border-radius: 5px;
+    padding: 4px 8px;
+    margin: 2px;
+    font-size: 11px;
+}
+
+.actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(15,23,42,.55);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+    padding: 15px;
+}
+
+.modal-content {
+    background: white;
+    width: 100%;
+    max-width: 470px;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: 25px;
+    border-radius: 14px;
+    box-shadow: 0 15px 40px rgba(0,0,0,.2);
+}
+
+.modal-content h2 {
+    margin-top: 0;
+    margin-bottom: 20px;
+}
+
+.form-group {
+    margin-bottom: 14px;
+}
+
+.form-group label {
+    display: block;
+    font-weight: 600;
+    font-size: 13px;
+    margin-bottom: 6px;
+}
+
+.form-group input,
+.form-group select {
+    width: 100%;
+    padding: 11px;
+    border: 1px solid #cbd5e1;
+    border-radius: 7px;
+    background: white;
+    font-size: 14px;
+    box-sizing: border-box;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    outline: 2px solid #bfdbfe;
+    border-color: var(--primary);
+}
+
+.modal-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.modal-actions button {
+    flex: 1;
+}
+
+.toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 2000;
+    max-width: 350px;
+    padding: 13px 18px;
+    border-radius: 8px;
+    color: white;
+    background: #334155;
+    box-shadow: 0 5px 20px rgba(0,0,0,.15);
+    display: none;
+    font-size: 14px;
+}
+
+.toast.success { background: #15803d; }
+.toast.error { background: #b91c1c; }
+
+.empty-state {
+    text-align: center;
+    color: var(--muted);
+    padding: 25px;
+}
+
+@media(max-width:600px) {
+    .management-card {
+        padding: 15px;
+    }
+
+    .page-heading {
+        align-items: stretch;
+    }
+
+    .page-heading .btn {
+        width: 100%;
+    }
+
+    .modal-content {
+        padding: 18px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <h1>TEACHERS MANAGEMENT</h1>
+    <p>Manage teachers, classes and subjects</p>
+</header>
+
+<main class="page-content">
+    <section class="management-card">
+
+        <div class="page-heading">
+            <div>
+                <h2>Teachers List</h2>
+                <p>Manage teachers and their teaching assignments.</p>
+            </div>
+
+            <button class="btn btn-primary" id="addTeacherBtn">
+                + Add Teacher
+            </button>
+        </div>
+
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Full Name</th>
+                        <th>Phone Number</th>
+                        <th>Classes</th>
+                        <th>Subjects</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+
+                <tbody id="teacherTable">
+                    <tr>
+                        <td colspan="6" class="empty-state">
+                            Loading teachers...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+    </section>
+</main>
+
+<!-- TEACHER MODAL -->
+<div class="modal" id="teacherModal">
+    <div class="modal-content">
+
+        <h2 id="modalTitle">Add Teacher</h2>
+
+        <input type="hidden" id="teacherId">
+
+        <div class="form-group">
+            <label for="teacherName">Full Name</label>
+            <input type="text" id="teacherName"
+                   maxlength="200" placeholder="Enter full name">
+        </div>
+
+        <div class="form-group">
+            <label for="teacherPhone">Phone Number</label>
+            <input type="tel" id="teacherPhone"
+                   maxlength="30" placeholder="e.g. 0786728623">
+        </div>
+
+        <div class="form-group">
+            <label for="teacherPassword">Password</label>
+            <input type="password" id="teacherPassword"
+                   minlength="8" placeholder="At least 8 characters">
+            <small id="passwordHint" style="color:#64748b">
+                Required when creating a new teacher.
+            </small>
+        </div>
+
+        <div class="form-group">
+            <label for="staffNumber">Staff Number (optional)</label>
+            <input type="text" id="staffNumber"
+                   maxlength="50" placeholder="Enter staff number">
+        </div>
+
+        <div class="modal-actions">
+            <button class="btn btn-success" id="saveTeacherBtn">
+                Save Teacher
+            </button>
+            <button class="btn btn-danger" id="cancelTeacherBtn">
+                Cancel
+            </button>
+        </div>
+
+    </div>
+</div>
+
+<!-- ASSIGNMENT MODAL -->
+<div class="modal" id="assignmentModal">
+    <div class="modal-content">
+
+        <h2>Assign Class and Subject</h2>
+
+        <input type="hidden" id="assignmentTeacherId">
+
+        <div class="form-group">
+            <label for="assignmentClass">Class</label>
+            <select id="assignmentClass">
+                <option value="">Loading classes...</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="assignmentSubject">Subject</label>
+            <select id="assignmentSubject">
+                <option value="">Loading subjects...</option>
+            </select>
+        </div>
+
+        <div class="modal-actions">
+            <button class="btn btn-success" id="saveAssignmentBtn">
+                Save Assignment
+            </button>
+            <button class="btn btn-danger" id="cancelAssignmentBtn">
+                Cancel
+            </button>
+        </div>
+
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+const currentUser = JSON.parse(
+    localStorage.getItem("currentUser") || "null"
+);
+
+const role = localStorage.getItem("role");
+
+if (
+    !currentUser ||
+    !currentUser.id ||
+    role !== "school_admin" ||
+    currentUser.role !== "school_admin" ||
+    !currentUser.school_id
+) {
+    window.location.replace("index.html");
+    throw new Error("Unauthorized access.");
+}
+
+const schoolId = String(currentUser.school_id);
+
+const teacherTable = document.getElementById("teacherTable");
+const teacherModal = document.getElementById("teacherModal");
+const assignmentModal = document.getElementById("assignmentModal");
+
+let teachers = [];
+let classes = [];
+let subjects = [];
+let editMode = false;
+
+function showToast(message, type = "success") {
+    const toast = document.getElementById("toast");
+
+    toast.textContent = message;
+    toast.className = `toast ${type}`;
+    toast.style.display = "block";
+
+    setTimeout(() => {
+        toast.style.display = "none";
+    }, 3500);
+}
+
+async function api(url, options = {}) {
+    const response = await fetch(url, {
+        ...options,
+        credentials: "same-origin",
+        headers: {
+            ...(options.headers || {}),
+            ...(options.body ? {
+                "Content-Type": "application/json"
+            } : {})
+        }
+    });
+
+    const text = await response.text();
+
+    let result;
+
+    try {
+        result = JSON.parse(text);
+    } catch {
+        throw new Error(
+            "The server returned an invalid response. Check the Cloudflare API endpoint."
+        );
+    }
+
+    if (!response.ok || result.success === false) {
+        throw new Error(result.message || "Request failed.");
+    }
+
+    return result;
+}
+
+function addCell(row, value) {
+    const cell = document.createElement("td");
+    cell.textContent = value ?? "-";
+    row.appendChild(cell);
+    return cell;
+}
+
+function addTag(container, text, className) {
+    const tag = document.createElement("span");
+    tag.className = className;
+    tag.textContent = text;
+    container.appendChild(tag);
+}
+
+async function loadTeachers() {
+    teacherTable.replaceChildren();
+
+    const loading = document.createElement("tr");
+    const loadingCell = document.createElement("td");
+    loadingCell.colSpan = 6;
+    loadingCell.className = "empty-state";
+    loadingCell.textContent = "Loading teachers...";
+    loading.appendChild(loadingCell);
+    teacherTable.appendChild(loading);
+
+    try {
+        const data = await api("/api/teachers");
+
+        teachers = data.teachers || [];
+        renderTeachers();
+
+    } catch (error) {
+        teacherTable.replaceChildren();
+
+        const row = document.createElement("tr");
+        const cell = document.createElement("td");
+        cell.colSpan = 6;
+        cell.className = "empty-state";
+        cell.textContent = error.message;
+
+        row.appendChild(cell);
+        teacherTable.appendChild(row);
+    }
+}
+
+function renderTeachers() {
+    teacherTable.replaceChildren();
+
+    if (!teachers.length) {
+        const row = document.createElement("tr");
+        const cell = document.createElement("td");
+
+        cell.colSpan = 6;
+        cell.className = "empty-state";
+        cell.textContent = "No teachers registered yet.";
+
+        row.appendChild(cell);
+        teacherTable.appendChild(row);
+        return;
+    }
+
+    teachers.forEach((teacher, index) => {
+        const row = document.createElement("tr");
+
+        addCell(row, index + 1);
+        addCell(row, teacher.full_name);
+        addCell(row, teacher.phone);
+
+        const classesCell = document.createElement("td");
+        const subjectsCell = document.createElement("td");
+
+        const assignments = teacher.assignments || [];
+
+        const classNames = [...new Set(
+            assignments.map(item => item.class_name)
+        )];
+
+        const subjectNames = [...new Set(
+            assignments.map(item => item.subject_name)
+        )];
+
+        classNames.forEach(name =>
+            addTag(classesCell, name, "class-tag")
+        );
+
+        subjectNames.forEach(name =>
+            addTag(subjectsCell, name, "subject-tag")
+        );
+
+        if (!classNames.length) classesCell.textContent = "-";
+        if (!subjectNames.length) subjectsCell.textContent = "-";
+
+        row.append(classesCell, subjectsCell);
+
+        const actionsCell = document.createElement("td");
+        const actions = document.createElement("div");
+        actions.className = "actions";
+
+        const editButton = document.createElement("button");
+        editButton.className = "btn btn-warning btn-sm";
+        editButton.textContent = "Edit";
+        editButton.addEventListener("click", () => {
+            openEditTeacher(teacher);
+        });
+
+        const assignButton = document.createElement("button");
+        assignButton.className = "btn btn-success btn-sm";
+        assignButton.textContent = "+ Assignment";
+        assignButton.addEventListener("click", () => {
+            openAssignment(teacher.id);
+        });
+
+        actions.append(editButton, assignButton);
+        actionsCell.appendChild(actions);
+        row.appendChild(actionsCell);
+
+        teacherTable.appendChild(row);
+    });
+}
+
+async function loadOptions() {
+    try {
+        const [classData, subjectData] = await Promise.all([
+            api("/api/classes"),
+            api("/api/subjects")
+        ]);
+
+        classes = classData.classes || [];
+        subjects = subjectData.subjects || [];
+
+        populateOptions();
+
+    } catch (error) {
+        showToast(error.message, "error");
+    }
+}
+
+function populateOptions() {
+    const classSelect = document.getElementById("assignmentClass");
+    const subjectSelect = document.getElementById("assignmentSubject");
+
+    classSelect.replaceChildren();
+    subjectSelect.replaceChildren();
+
+    const classPlaceholder = new Option("-- Select Class --", "");
+    const subjectPlaceholder = new Option("-- Select Subject --", "");
+
+    classSelect.add(classPlaceholder);
+    subjectSelect.add(subjectPlaceholder);
+
+    classes.forEach(item => {
+        classSelect.add(
+            new Option(item.class_name, String(item.id))
+        );
+    });
+
+    subjects.forEach(item => {
+        subjectSelect.add(
+            new Option(item.subject_name, String(item.id))
+        );
+    });
+}
+
+function openAddTeacher() {
+    editMode = false;
+
+    document.getElementById("modalTitle").textContent = "Add Teacher";
+    document.getElementById("teacherId").value = "";
+    document.getElementById("teacherName").value = "";
+    document.getElementById("teacherPhone").value = "";
+    document.getElementById("teacherPassword").value = "";
+    document.getElementById("staffNumber").value = "";
+    document.getElementById("teacherPassword").required = true;
+    document.getElementById("passwordHint").textContent =
+        "Required when creating a new teacher.";
+
+    teacherModal.style.display = "flex";
+}
+
+function openEditTeacher(teacher) {
+    editMode = true;
+
+    document.getElementById("modalTitle").textContent = "Edit Teacher";
+    document.getElementById("teacherId").value = teacher.id;
+    document.getElementById("teacherName").value = teacher.full_name || "";
+    document.getElementById("teacherPhone").value = teacher.phone || "";
+    document.getElementById("teacherPassword").value = "";
+    document.getElementById("staffNumber").value =
+        teacher.staff_number || "";
+
+    document.getElementById("teacherPassword").required = false;
+    document.getElementById("passwordHint").textContent =
+        "Leave blank to keep the current password.";
+
+    teacherModal.style.display = "flex";
+}
+
+function closeTeacherModal() {
+    teacherModal.style.display = "none";
+}
+
+function openAssignment(teacherId) {
+    document.getElementById("assignmentTeacherId").value = teacherId;
+    document.getElementById("assignmentClass").value = "";
+    document.getElementById("assignmentSubject").value = "";
+
+    assignmentModal.style.display = "flex";
+}
+
+function closeAssignmentModal() {
+    assignmentModal.style.display = "none";
+}
+
+async function saveTeacher() {
+    const full_name = document.getElementById("teacherName").value.trim();
+    const phone = document.getElementById("teacherPhone").value.trim();
+    const password = document.getElementById("teacherPassword").value;
+    const staff_number = document.getElementById("staffNumber").value.trim();
+
+    if (!full_name || !phone || (!editMode && !password)) {
+        showToast("Complete all required fields.", "error");
+        return;
+    }
+
+    if (password && password.length < 8) {
+        showToast("Password must contain at least 8 characters.", "error");
+        return;
+    }
+
+    const payload = {
+        full_name,
+        phone,
+        staff_number
+    };
+
+    if (password) payload.password = password;
+
+    if (editMode) {
+        payload.id = document.getElementById("teacherId").value;
+    }
+
+    const button = document.getElementById("saveTeacherBtn");
+    button.disabled = true;
+    button.textContent = "Saving...";
+
+    try {
+        const endpoint = editMode
+            ? "/api/teachers/update"
+            : "/api/teachers";
+
+        await api(endpoint, {
+            method: "POST",
+            body: JSON.stringify(payload)
+        });
+
+        showToast(
+            editMode
+                ? "Teacher updated successfully."
+                : "Teacher created successfully."
+        );
+
+        closeTeacherModal();
+        await loadTeachers();
+
+    } catch (error) {
+        showToast(error.message, "error");
+
+    } finally {
+        button.disabled = false;
+        button.textContent = "Save Teacher";
+    }
+}
+
+async function saveAssignment() {
+    const teacher_id =
+        document.getElementById("assignmentTeacherId").value;
+
+    const class_id =
+        document.getElementById("assignmentClass").value;
+
+    const subject_id =
+        document.getElementById("assignmentSubject").value;
+
+    if (!class_id || !subject_id) {
+        showToast("Select both a class and a subject.", "error");
+        return;
+    }
+
+    const button = document.getElementById("saveAssignmentBtn");
+    button.disabled = true;
+    button.textContent = "Saving...";
+
+    try {
+        await api("/api/teachers/assignments", {
+            method: "POST",
+            body: JSON.stringify({
+                teacher_id,
+                class_id,
+                subject_id
+            })
+        });
+
+        showToast("Teaching assignment saved successfully.");
+        closeAssignmentModal();
+        await loadTeachers();
+
+    } catch (error) {
+        showToast(error.message, "error");
+
+    } finally {
+        button.disabled = false;
+        button.textContent = "Save Assignment";
+    }
+}
+
+document.getElementById("addTeacherBtn")
+    .addEventListener("click", openAddTeacher);
+
+document.getElementById("cancelTeacherBtn")
+    .addEventListener("click", closeTeacherModal);
+
+document.getElementById("saveTeacherBtn")
+    .addEventListener("click", saveTeacher);
+
+document.getElementById("cancelAssignmentBtn")
+    .addEventListener("click", closeAssignmentModal);
+
+document.getElementById("saveAssignmentBtn")
+    .addEventListener("click", saveAssignment);
+
+teacherModal.addEventListener("click", event => {
+    if (event.target === teacherModal) closeTeacherModal();
+});
+
+assignmentModal.addEventListener("click", event => {
+    if (event.target === assignmentModal) closeAssignmentModal();
+});
+
+await Promise.all([
+    loadOptions(),
+    loadTeachers()
+]);
+</script>
+
+</body>
+</html>
