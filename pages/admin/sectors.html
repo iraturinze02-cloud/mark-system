@@ -9,153 +9,413 @@
     <link rel="stylesheet" href="../../style.css">
 
     <style>
-        /* MODAL */
-        .modal {
-            display: none;
-            position: fixed;
-            inset: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.5);
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-        }
 
-        .modal-content {
-            background: white;
-            padding: 25px;
-            width: 90%;
-            max-width: 420px;
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            max-height: 90vh;
-            overflow-y: auto;
-        }
+/* =========================================
+   SECTOR EDUCATION PLATFORM
+   PROFESSIONAL ADMIN MANAGEMENT DESIGN
+========================================= */
 
-        .modal-content h2 {
-            margin-bottom: 18px;
-        }
+:root {
+    --primary: #1d4ed8;
+    --primary-dark: #123b67;
+    --primary-light: #eff6ff;
+    --success: #16a34a;
+    --danger: #dc2626;
+    --warning: #d97706;
+    --text: #1e293b;
+    --muted: #64748b;
+    --border: #e2e8f0;
+    --surface: #ffffff;
+    --background: #f1f5f9;
+    --radius: 14px;
+}
 
-        .modal-content label {
-            display: block;
-            margin-top: 12px;
-            font-weight: 600;
-            font-size: 14px;
-        }
+* {
+    box-sizing: border-box;
+}
 
-        .modal-content input,
-        .modal-content select {
-            width: 100%;
-            padding: 11px;
-            margin: 8px 0;
-            border: 1px solid #ccc;
-            border-radius: 6px;
-            font-size: 14px;
-        }
+body {
+    margin: 0;
+    background: var(--background);
+    color: var(--text);
+    font-family: "Segoe UI", Arial, sans-serif;
+}
 
-        /* BUTTONS */
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            padding: 12px 18px;
-            border: none;
-            border-radius: 10px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.25s ease;
-            color: white;
-            background: linear-gradient(135deg, #2563eb, #1d4ed8);
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-        }
+/* =========================================
+   HEADER
+========================================= */
 
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 14px rgba(0,0,0,0.15);
-        }
+header {
+    position: relative;
+    background: linear-gradient(120deg, #123b67, #1d4ed8);
+    color: white;
+    padding: 32px 6%;
+    min-height: 150px;
+    box-shadow: 0 5px 18px rgba(18,59,103,.18);
+}
 
-        .btn-danger {
-            background: linear-gradient(135deg, #ef4444, #dc2626);
-        }
+header h1 {
+    font-size: 25px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    margin: 0 0 9px;
+}
 
-        .btn-warning {
-            background: linear-gradient(135deg, #f59e0b, #d97706);
-        }
+header p {
+    color: #dbeafe;
+    font-size: 14px;
+    margin: 0;
+}
 
-        .btn-success {
-            background: linear-gradient(135deg, #22c55e, #16a34a);
-        }
+.logout-btn {
+    position: absolute;
+    right: 6%;
+    top: 32px;
+    background: rgba(255,255,255,.14);
+    color: white;
+    border: 1px solid rgba(255,255,255,.35);
+    padding: 11px 19px;
+    border-radius: 9px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: .25s;
+}
 
-        .btn-sm {
-            padding: 8px 12px;
-            font-size: 12px;
-            border-radius: 8px;
-        }
+.logout-btn:hover {
+    background: white;
+    color: var(--primary-dark);
+    transform: translateY(-2px);
+}
 
-        .btn-block {
-            width: 100%;
-            margin-top: 12px;
-        }
+/* =========================================
+   MAIN CONTAINER
+========================================= */
 
-        .btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
-        }
+.dashboard-container {
+    width: 100%;
+    max-width: 1250px;
+    margin: 35px auto;
+    padding: 0 22px;
+}
 
-        .actions {
-            display: flex;
-            gap: 6px;
-            flex-wrap: wrap;
-        }
+.card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 28px;
+    box-shadow: 0 5px 25px rgba(15,23,42,.06);
+    border: 1px solid #e9eef5;
+    width: 100%;
+}
 
-        #message {
-            display: none;
-            padding: 12px;
-            border-radius: 7px;
-            margin-bottom: 15px;
-            font-size: 13px;
-        }
+.card h2 {
+    font-size: 21px;
+    font-weight: 750;
+    color: #123b67;
+    margin: 0;
+}
 
-        #message.success {
-            display: block;
-            background: #dcfce7;
-            color: #166534;
-        }
+/* =========================================
+   BUTTONS
+========================================= */
 
-        #message.error {
-            display: block;
-            background: #fee2e2;
-            color: #991b1b;
-        }
+.btn {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    gap: 7px;
+    padding: 11px 17px;
+    border: none;
+    border-radius: 9px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    color: white;
+    background: linear-gradient(135deg,#2563eb,#1d4ed8);
+    box-shadow: 0 3px 8px rgba(37,99,235,.18);
+    transition: all .25s ease;
+}
 
-        .table-wrapper {
-            width: 100%;
-            overflow-x: auto;
-        }
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 14px rgba(37,99,235,.25);
+}
 
-        table {
-            border-collapse: collapse;
-            min-width: 650px;
-        }
+.btn:active {
+    transform: scale(.97);
+}
 
-        th, td {
-            padding: 12px;
-            text-align: left;
-            border-bottom: 1px solid #eee;
-        }
+.btn:disabled {
+    opacity: .6;
+    cursor: not-allowed;
+    transform: none;
+}
 
-        th {
-            background: #f8fafc;
-        }
+.btn-success {
+    background: linear-gradient(135deg,#22c55e,#15803d);
+}
 
-        @media(max-width: 600px) {
-            .modal-content {
-                padding: 18px;
-            }
-        }
+.btn-danger {
+    background: linear-gradient(135deg,#ef4444,#b91c1c);
+}
+
+.btn-warning {
+    background: linear-gradient(135deg,#f59e0b,#d97706);
+}
+
+.btn-sm {
+    padding: 8px 12px;
+    font-size: 12px;
+    border-radius: 7px;
+}
+
+.btn-block {
+    width: 100%;
+    margin-top: 12px;
+}
+
+/* =========================================
+   TABLE
+========================================= */
+
+.table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    margin-top: 22px;
+    border: 1px solid var(--border);
+    border-radius: 11px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 680px;
+    background: white;
+}
+
+thead {
+    background: #f1f5f9;
+}
+
+th {
+    color: #475569;
+    font-size: 12px;
+    font-weight: 750;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    padding: 16px 15px;
+    text-align: left;
+    white-space: nowrap;
+}
+
+td {
+    padding: 15px;
+    border-top: 1px solid #edf0f4;
+    color: #334155;
+    font-size: 13px;
+}
+
+tbody tr {
+    transition: background .2s;
+}
+
+tbody tr:hover {
+    background: #f8fbff;
+}
+
+tbody tr td:first-child {
+    color: #64748b;
+    font-weight: 700;
+}
+
+.actions {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    flex-wrap: wrap;
+}
+
+/* =========================================
+   MODAL BACKDROP
+========================================= */
+
+.modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    padding: 18px;
+    background: rgba(15,23,42,.58);
+    backdrop-filter: blur(5px);
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+/* =========================================
+   MODAL BOX
+========================================= */
+
+.modal-content {
+    width: 100%;
+    max-width: 460px;
+    max-height: 90vh;
+    overflow-y: auto;
+    background: white;
+    padding: 30px;
+    border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(0,0,0,.2);
+    animation: modalOpen .25s ease;
+}
+
+@keyframes modalOpen {
+    from {
+        opacity: 0;
+        transform: translateY(20px) scale(.98);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.modal-content h2 {
+    font-size: 21px;
+    color: #123b67;
+    margin: 0 0 7px;
+    font-weight: 800;
+}
+
+.modal-content label {
+    display: block;
+    font-size: 13px;
+    font-weight: 700;
+    color: #334155;
+    margin-top: 17px;
+    margin-bottom: 7px;
+}
+
+/* =========================================
+   FORM INPUTS
+========================================= */
+
+.modal-content input,
+.modal-content select {
+    width: 100%;
+    padding: 13px 14px;
+    border: 1px solid #dbe2ea;
+    background: #f8fafc;
+    border-radius: 9px;
+    font-size: 14px;
+    color: #1e293b;
+    outline: none;
+    transition: .2s;
+}
+
+.modal-content input:focus,
+.modal-content select:focus {
+    background: white;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37,99,235,.12);
+}
+
+.modal-content input::placeholder {
+    color: #94a3b8;
+}
+
+.modal-content button {
+    min-height: 43px;
+}
+
+/* =========================================
+   NOTIFICATIONS
+========================================= */
+
+#message {
+    display: none;
+    padding: 14px 17px;
+    border-radius: 9px;
+    margin: 15px 0;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+#message.success {
+    display: block;
+    color: #166534;
+    background: #dcfce7;
+    border: 1px solid #bbf7d0;
+}
+
+#message.error {
+    display: block;
+    color: #991b1b;
+    background: #fee2e2;
+    border: 1px solid #fecaca;
+}
+
+/* =========================================
+   RESPONSIVE DESIGN
+========================================= */
+
+@media(max-width: 768px) {
+
+    header {
+        padding: 25px 20px;
+        padding-bottom: 75px;
+    }
+
+    header h1 {
+        font-size: 21px;
+        max-width: 75%;
+    }
+
+    header p {
+        font-size: 12px;
+    }
+
+    .logout-btn {
+        left: 20px;
+        right: auto;
+        top: auto;
+        bottom: 18px;
+        padding: 9px 16px;
+    }
+
+    .dashboard-container {
+        margin: 20px auto;
+        padding: 0 12px;
+    }
+
+    .card {
+        padding: 18px 13px;
+    }
+
+    .card h2 {
+        font-size: 17px;
+    }
+
+    .modal-content {
+        padding: 23px 19px;
+    }
+}
+
+@media(max-width: 420px) {
+
+    header h1 {
+        font-size: 18px;
+    }
+
+    .btn {
+        padding: 10px 12px;
+        font-size: 12px;
+    }
+
+    .card {
+        border-radius: 11px;
+    }
+}
+
     </style>
 </head>
 
