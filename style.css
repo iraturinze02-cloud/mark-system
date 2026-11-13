@@ -1,0 +1,132 @@
+
+/* GENERAL RESET */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background: #f1f5f9;
+    color: #1e293b;
+    min-height: 100vh;
+}
+
+/* HEADER */
+header {
+    background: #123b67;
+    color: white;
+    text-align: center;
+    padding: 30px 15px;
+}
+
+header h1 {
+    font-size: 27px;
+    margin-bottom: 8px;
+}
+
+header p {
+    font-size: 15px;
+    color: #dbeafe;
+}
+
+/* MAIN CONTAINER */
+.dashboard-container {
+    width: 100%;
+    max-width: 480px;
+    margin: 55px auto;
+    padding: 15px;
+}
+
+/* LOGIN CARD */
+.card {
+    background: white;
+    padding: 35px 30px;
+    border-radius: 12px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+}
+
+.card h2 {
+    text-align: center;
+    color: #123b67;
+    font-size: 23px;
+}
+
+/* FORM LABELS */
+label {
+    display: block;
+    font-weight: 600;
+    font-size: 14px;
+    margin-bottom: 8px;
+    margin-top: 18px;
+}
+
+/* INPUTS */
+input {
+    display: block;
+    width: 100%;
+    padding: 13px;
+    border: 1px solid #cbd5e1;
+    border-radius: 7px;
+    font-size: 16px;
+    outline: none;
+    transition: 0.2s;
+}
+
+input:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+/* LOGIN BUTTON */
+.btn {
+    width: 100%;
+    margin-top: 25px;
+    padding: 14px;
+    border: none;
+    border-radius: 7px;
+    background: #123b67;
+    color: white;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.btn:hover {
+    background: #1d5b96;
+}
+
+.btn:disabled {
+    background: #94a3b8;
+    cursor: not-allowed;
+}
+
+/* MESSAGE */
+#message {
+    text-align: center;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+/* MOBILE RESPONSIVENESS */
+@media (max-width: 600px) {
+
+    header {
+        padding: 25px 12px;
+    }
+
+    header h1 {
+        font-size: 22px;
+    }
+
+    .dashboard-container {
+        margin: 25px auto;
+        padding: 12px;
+    }
+
+    .card {
+        padding: 28px 20px;
+    }
+}
