@@ -1,4 +1,3 @@
-
 import {
     connectDB,
     requireSchoolAdmin,
@@ -7,6 +6,7 @@ import {
 
 export async function onRequestGet(context) {
     const auth = await requireSchoolAdmin(context);
+
     if (auth.error) return auth.error;
 
     let client;
@@ -14,14 +14,22 @@ export async function onRequestGet(context) {
     try {
         client = await connectDB(context);
 
-        const result = await client.query(
-            `SELECT
-                id::text AS id,
-                subject_name,
-                subject_code
-             FROM subjects
-             ORDER BY subject_name ASC`
-        );
+        const result = await client.query(`
+            SELECT
+                s.id,
+                s.subject_name,
+                s.subject_code,
+                COALESCE(
+                    ARRAY_AGG(scl.education_level)
+                    FILTER (WHERE scl.education_level IS NOT NULL),
+                    ARRAY[]::VARCHAR[]
+                ) AS education_levels
+            FROM subjects s
+            LEFT JOIN subject_class_levels scl
+                ON scl.subject_id = s.id
+            GROUP BY s.id, s.subject_name, s.subject_code
+            ORDER BY s.subject_name
+        `);
 
         return json({
             success: true,
@@ -33,7 +41,7 @@ export async function onRequestGet(context) {
 
         return json({
             success: false,
-            message: "Failed to load subjects."
+            message: "Could not load subjects."
         }, 500);
 
     } finally {
