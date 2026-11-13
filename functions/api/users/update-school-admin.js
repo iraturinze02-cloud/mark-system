@@ -14,15 +14,16 @@ export async function onRequestPost(context) {
         return json({ success: false, message: "Invalid request data." }, 400);
     }
 
+    const id = String(data.id || "").trim();
     const fullName = String(data.full_name || "").trim();
     const phone = String(data.phone || "").trim();
     const password = String(data.password || "");
     const schoolName = String(data.school_name || "").trim();
 
-    if (!fullName || !phone || !password || !schoolName) {
+    if (!id || !/^\d+$/.test(id) || !fullName || !phone || !schoolName) {
         return json({
             success: false,
-            message: "Please complete all required fields."
+            message: "Please provide valid administrator details."
         }, 400);
     }
 
@@ -33,10 +34,10 @@ export async function onRequestPost(context) {
         }, 400);
     }
 
-    if (password.length < 8) {
+    if (password && password.length < 8) {
         return json({
             success: false,
-            message: "Password must contain at least 8 characters."
+            message: "A new password must contain at least 8 characters."
         }, 400);
     }
 
@@ -46,14 +47,51 @@ export async function onRequestPost(context) {
         client = await connectDB(context);
         await client.query("BEGIN");
 
-        // Prevent two simultaneous requests from creating the same school.
+        // Confirm that this administrator belongs to the logged-in sector.
+        const adminResult = await client.query(
+            `SELECT u.id
+             FROM users u
+             JOIN schools s ON s.id = u.school_id
+             WHERE u.id = $1
+               AND u.role = 'school_admin'
+               AND s.sector_id = $2
+             FOR UPDATE OF u`,
+            [id, auth.sectorId]
+        );
+
+        if (adminResult.rows.length === 0) {
+            await client.query("ROLLBACK");
+            return json({
+                success: false,
+                message: "School administrator not found in your sector."
+            }, 404);
+        }
+
+        // Check that the phone number is not used by another user.
+        const duplicate = await client.query(
+            `SELECT id
+             FROM users
+             WHERE phone = $1 AND id <> $2
+             LIMIT 1`,
+            [phone, id]
+        );
+
+        if (duplicate.rows.length > 0) {
+            await client.query("ROLLBACK");
+            return json({
+                success: false,
+                message: "This phone number is already registered."
+            }, 409);
+        }
+
+        // Prevent simultaneous creation of duplicate school records.
         const lockKey = `${auth.sectorId}:${schoolName.toLowerCase()}`;
         await client.query(
             "SELECT pg_advisory_xact_lock(hashtext($1))",
             [lockKey]
         );
 
-        // Find the school in this sector.
+        // Find the school in the administrator's sector.
         let schoolResult = await client.query(
             `SELECT id
              FROM schools
@@ -68,7 +106,6 @@ export async function onRequestPost(context) {
         if (schoolResult.rows.length > 0) {
             schoolId = schoolResult.rows[0].id;
         } else {
-            // Generate a unique school code.
             const schoolCode =
                 `SCH-${Date.now()}-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
 
@@ -83,42 +120,47 @@ export async function onRequestPost(context) {
             schoolId = newSchool.rows[0].id;
         }
 
-        // Check whether the phone number is already registered.
-        const duplicate = await client.query(
-            "SELECT id FROM users WHERE phone = $1 LIMIT 1",
-            [phone]
-        );
+        let result;
 
-        if (duplicate.rows.length > 0) {
-            await client.query("ROLLBACK");
-            return json({
-                success: false,
-                message: "This phone number is already registered."
-            }, 409);
+        if (password) {
+            const passwordHash = await bcrypt.hash(password, 12);
+
+            result = await client.query(
+                `UPDATE users
+                 SET full_name = $1,
+                     phone = $2,
+                     password_hash = $3,
+                     school_id = $4,
+                     updated_at = NOW()
+                 WHERE id = $5
+                 RETURNING id, full_name, phone, school_id`,
+                [fullName, phone, passwordHash, schoolId, id]
+            );
+        } else {
+            result = await client.query(
+                `UPDATE users
+                 SET full_name = $1,
+                     phone = $2,
+                     school_id = $3,
+                     updated_at = NOW()
+                 WHERE id = $4
+                 RETURNING id, full_name, phone, school_id`,
+                [fullName, phone, schoolId, id]
+            );
         }
-
-        const passwordHash = await bcrypt.hash(password, 12);
-
-        const result = await client.query(
-            `INSERT INTO users
-                (full_name, phone, password_hash, role, school_id, status)
-             VALUES ($1, $2, $3, 'school_admin', $4, 'active')
-             RETURNING id, full_name, phone, school_id`,
-            [fullName, phone, passwordHash, schoolId]
-        );
 
         await client.query("COMMIT");
 
         return json({
             success: true,
-            message: "School administrator created successfully.",
+            message: "School administrator updated successfully.",
             admin: result.rows[0]
-        }, 201);
+        });
 
     } catch (error) {
         if (client) await client.query("ROLLBACK").catch(() => {});
 
-        console.error("Create school admin error:", error);
+        console.error("Update school admin error:", error);
 
         if (error.code === "23505") {
             return json({
@@ -129,7 +171,7 @@ export async function onRequestPost(context) {
 
         return json({
             success: false,
-            message: "Could not create the school administrator."
+            message: "Could not update the school administrator."
         }, 500);
 
     } finally {
