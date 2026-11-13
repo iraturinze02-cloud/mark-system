@@ -21,7 +21,6 @@
             color: #1f2937;
         }
 
-        /* HEADER */
         header {
             background: linear-gradient(135deg, #1e40af, #1d4ed8);
             color: white;
@@ -55,7 +54,6 @@
             background: #b91c1c;
         }
 
-        /* MAIN CONTENT */
         .dashboard-container {
             max-width: 1100px;
             width: 95%;
@@ -91,7 +89,6 @@
             font-size: 13px;
         }
 
-        /* BUTTONS */
         .btn {
             display: inline-flex;
             align-items: center;
@@ -136,7 +133,6 @@
             font-size: 12px;
         }
 
-        /* TABLE */
         .table-wrapper {
             width: 100%;
             overflow-x: auto;
@@ -179,6 +175,7 @@
         }
 
         /* MODAL */
+
         .modal {
             display: none;
             position: fixed;
@@ -223,8 +220,7 @@
             color: #374151;
         }
 
-        .form-group input,
-        .form-group select {
+        .form-group input {
             width: 100%;
             padding: 11px;
             border: 1px solid #cbd5e1;
@@ -233,8 +229,7 @@
             background: white;
         }
 
-        .form-group input:focus,
-        .form-group select:focus {
+        .form-group input:focus {
             outline: none;
             border-color: #2563eb;
             box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
@@ -245,6 +240,7 @@
             margin-top: 5px;
             color: #64748b;
             font-size: 11px;
+            line-height: 1.5;
         }
 
         .modal-actions {
@@ -272,17 +268,40 @@
             background: #fee2e2;
         }
 
-        .message.success {
-            display: block;
-            color: #166534;
-            background: #dcfce7;
-        }
-
         .footer {
             text-align: center;
             color: #94a3b8;
             font-size: 12px;
             margin: 25px 0;
+        }
+
+        /* NOTIFICATION */
+
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 2000;
+            max-width: 350px;
+            padding: 14px 18px;
+            border-radius: 8px;
+            color: white;
+            font-size: 13px;
+            line-height: 1.5;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+            display: none;
+        }
+
+        .toast.show {
+            display: block;
+        }
+
+        .toast.success {
+            background: #15803d;
+        }
+
+        .toast.error {
+            background: #dc2626;
         }
 
         @media (max-width: 600px) {
@@ -305,13 +324,19 @@
             .modal-content {
                 padding: 20px;
             }
+
+            .toast {
+                left: 15px;
+                right: 15px;
+                top: 15px;
+                max-width: none;
+            }
         }
     </style>
 </head>
 
 <body>
 
-    <!-- HEADER -->
     <header>
         <h1>SCHOOL MANAGEMENT</h1>
         <p>Manage schools and school administrators in your sector</p>
@@ -321,7 +346,6 @@
         </button>
     </header>
 
-    <!-- MAIN CONTENT -->
     <main class="dashboard-container">
 
         <section class="management-card">
@@ -367,8 +391,8 @@
 
     </main>
 
-
     <!-- ADD / EDIT MODAL -->
+
     <div class="modal" id="adminModal">
 
         <div class="modal-content">
@@ -381,17 +405,25 @@
 
                 <input type="hidden" id="editId">
 
-<div class="form-group">
-    <label for="schoolName">School Name</label>
-    <input
-        type="text"
-        id="schoolName"
-        name="school_name"
-        placeholder="Enter school name"
-        maxlength="200"
-        required
-    >
-</div>
+                <div class="form-group">
+                    <label for="schoolName">School Name</label>
+
+                    <input
+                        type="text"
+                        id="schoolName"
+                        name="school_name"
+                        placeholder="Enter school name"
+                        maxlength="200"
+                        autocomplete="organization"
+                        required
+                    >
+
+                    <small class="form-hint">
+                        Enter the official name of the school. If it has
+                        already been registered in your sector, the existing
+                        school record will be used.
+                    </small>
+                </div>
 
                 <div class="form-group">
                     <label for="adminName">Full Name</label>
@@ -401,7 +433,8 @@
                         id="adminName"
                         placeholder="Enter administrator's full name"
                         maxlength="200"
-                        required>
+                        required
+                    >
                 </div>
 
                 <div class="form-group">
@@ -413,7 +446,8 @@
                         placeholder="Enter phone number"
                         maxlength="30"
                         autocomplete="tel"
-                        required>
+                        required
+                    >
 
                     <small class="form-hint">
                         This phone number will be used to log in.
@@ -428,7 +462,8 @@
                         id="adminPassword"
                         placeholder="Enter password"
                         minlength="8"
-                        autocomplete="new-password">
+                        autocomplete="new-password"
+                    >
 
                     <small class="form-hint" id="passwordHint">
                         A password is required when creating an account.
@@ -440,14 +475,16 @@
                     <button
                         class="btn btn-success"
                         id="saveBtn"
-                        type="submit">
+                        type="submit"
+                    >
                         Save
                     </button>
 
                     <button
                         class="btn btn-danger"
                         id="cancelBtn"
-                        type="button">
+                        type="button"
+                    >
                         Cancel
                     </button>
 
@@ -458,6 +495,7 @@
         </div>
     </div>
 
+    <div id="toast" class="toast"></div>
 
     <script>
     // ==================================================
@@ -483,7 +521,9 @@
         currentUser.role === "sector_admin";
 
     if (!authorized) {
+
         window.location.replace("../../index.html");
+
     } else {
 
         // ==================================================
@@ -493,12 +533,36 @@
         const schoolTable = document.getElementById("schoolTable");
         const modal = document.getElementById("adminModal");
         const adminForm = document.getElementById("adminForm");
-        const schoolSelect = document.getElementById("adminSchool");
+
         const saveBtn = document.getElementById("saveBtn");
         const formMessage = document.getElementById("formMessage");
+        const toast = document.getElementById("toast");
+
+        const schoolNameInput = document.getElementById("schoolName");
+        const adminNameInput = document.getElementById("adminName");
+        const adminPhoneInput = document.getElementById("adminPhone");
+        const adminPasswordInput = document.getElementById("adminPassword");
 
         let editMode = false;
+        let toastTimeout = null;
 
+        // ==================================================
+        // NOTIFICATIONS
+        // ==================================================
+
+        function showToast(message, type = "success") {
+
+            toast.textContent = message;
+            toast.className = "toast show " + type;
+
+            if (toastTimeout) {
+                clearTimeout(toastTimeout);
+            }
+
+            toastTimeout = setTimeout(() => {
+                toast.className = "toast";
+            }, 3500);
+        }
 
         // ==================================================
         // API RESPONSE HANDLER
@@ -510,6 +574,7 @@
                 response.headers.get("content-type") || "";
 
             if (!contentType.includes("application/json")) {
+
                 await response.text();
 
                 throw new Error(
@@ -521,6 +586,7 @@
             const data = await response.json();
 
             if (!response.ok || data.success === false) {
+
                 throw new Error(
                     data.message || "The request could not be completed."
                 );
@@ -528,59 +594,6 @@
 
             return data;
         }
-
-
-        // ==================================================
-        // LOAD SCHOOLS BELONGING TO THIS SECTOR
-        // ==================================================
-
-        async function loadSchools(selectedSchoolId = "") {
-
-            schoolSelect.innerHTML =
-                '<option value="">Loading schools...</option>';
-
-            try {
-
-                const response = await fetch("/api/sector-schools", {
-                    method: "GET",
-                    credentials: "same-origin"
-                });
-
-                const data = await readJsonResponse(response);
-
-                const schools = data.schools || [];
-
-                schoolSelect.innerHTML =
-                    '<option value="">-- Select School --</option>';
-
-                schools.forEach(school => {
-
-                    const option = document.createElement("option");
-
-                    option.value = String(school.id);
-                    option.textContent = school.school_name;
-
-                    schoolSelect.appendChild(option);
-                });
-
-                if (selectedSchoolId) {
-                    schoolSelect.value = String(selectedSchoolId);
-                }
-
-                if (schools.length === 0) {
-                    schoolSelect.innerHTML =
-                        '<option value="">No schools registered in your sector</option>';
-                }
-
-            } catch (error) {
-
-                schoolSelect.innerHTML =
-                    '<option value="">Could not load schools</option>';
-
-                throw error;
-            }
-        }
-
 
         // ==================================================
         // LOAD SCHOOL ADMINISTRATORS
@@ -600,7 +613,8 @@
 
                 const response = await fetch("/api/school-admins", {
                     method: "GET",
-                    credentials: "same-origin"
+                    credentials: "same-origin",
+                    cache: "no-store"
                 });
 
                 const data = await readJsonResponse(response);
@@ -657,7 +671,6 @@
                     });
 
                     actions.appendChild(editButton);
-
                     actionCell.appendChild(actions);
 
                     row.append(
@@ -687,12 +700,11 @@
             }
         }
 
-
         // ==================================================
         // OPEN ADD MODAL
         // ==================================================
 
-        async function openAdd() {
+        function openAdd() {
 
             editMode = false;
 
@@ -706,25 +718,19 @@
             document.getElementById("passwordHint").textContent =
                 "A password is required when creating an account.";
 
-            document.getElementById("adminPassword").required = true;
+            adminPasswordInput.required = true;
 
             clearFormMessage();
 
             modal.classList.add("show");
-
-            try {
-                await loadSchools();
-            } catch (error) {
-                showFormMessage(error.message, "error");
-            }
+            schoolNameInput.focus();
         }
-
 
         // ==================================================
         // OPEN EDIT MODAL
         // ==================================================
 
-        async function openEdit(admin) {
+        function openEdit(admin) {
 
             editMode = true;
 
@@ -732,13 +738,11 @@
 
             document.getElementById("editId").value = admin.id;
 
-            document.getElementById("adminName").value =
-                admin.full_name || "";
+            schoolNameInput.value = admin.school_name || "";
+            adminNameInput.value = admin.full_name || "";
+            adminPhoneInput.value = admin.phone || "";
 
-            document.getElementById("adminPhone").value =
-                admin.phone || "";
-
-            document.getElementById("adminPassword").value = "";
+            adminPasswordInput.value = "";
 
             document.getElementById("modalTitle").textContent =
                 "Edit School Admin";
@@ -746,27 +750,24 @@
             document.getElementById("passwordHint").textContent =
                 "Leave password blank to keep the current password.";
 
-            document.getElementById("adminPassword").required = false;
+            adminPasswordInput.required = false;
 
             clearFormMessage();
 
             modal.classList.add("show");
-
-            try {
-                await loadSchools(admin.school_id);
-            } catch (error) {
-                showFormMessage(error.message, "error");
-            }
+            schoolNameInput.focus();
         }
-
 
         // ==================================================
         // CLOSE MODAL
         // ==================================================
 
         function closeModal() {
+
             modal.classList.remove("show");
+
             adminForm.reset();
+
             clearFormMessage();
         }
 
@@ -776,17 +777,21 @@
         );
 
         modal.addEventListener("click", function(event) {
+
             if (event.target === modal) {
                 closeModal();
             }
         });
 
         document.addEventListener("keydown", function(event) {
-            if (event.key === "Escape" && modal.classList.contains("show")) {
+
+            if (
+                event.key === "Escape" &&
+                modal.classList.contains("show")
+            ) {
                 closeModal();
             }
         });
-
 
         // ==================================================
         // FORM MESSAGES
@@ -804,7 +809,6 @@
             formMessage.className = "message";
         }
 
-
         // ==================================================
         // SAVE SCHOOL ADMIN
         // ==================================================
@@ -813,45 +817,45 @@
 
             event.preventDefault();
 
-            const full_name =
-                document.getElementById("adminName").value.trim();
+            const full_name = adminNameInput.value.trim();
+            const phone = adminPhoneInput.value.trim();
+            const password = adminPasswordInput.value;
+            const school_name = schoolNameInput.value.trim();
 
-            const phone =
-                document.getElementById("adminPhone").value.trim();
+            if (!school_name || !full_name || !phone) {
 
-            const password =
-                document.getElementById("adminPassword").value;
-
-            const school_id = schoolSelect.value;
-
-            if (!full_name || !phone || !school_id) {
                 showFormMessage(
                     "Please complete all required fields.",
                     "error"
                 );
+
                 return;
             }
 
             if (!editMode && !password) {
+
                 showFormMessage(
                     "Please enter a password.",
                     "error"
                 );
+
                 return;
             }
 
             if (password && password.length < 8) {
+
                 showFormMessage(
                     "Password must contain at least 8 characters.",
                     "error"
                 );
+
                 return;
             }
 
             const payload = {
                 full_name,
                 phone,
-                school_id: Number(school_id)
+                school_name
             };
 
             if (password) {
@@ -892,14 +896,15 @@
 
                 await loadSchoolAdmins();
 
-                // The API should return success only after the DB operation.
-                if (result.success !== false) {
-                    alert(
+                showToast(
+                    result.message ||
+                    (
                         editMode
                             ? "School administrator updated successfully."
                             : "School administrator created successfully."
-                    );
-                }
+                    ),
+                    "success"
+                );
 
             } catch (error) {
 
@@ -912,7 +917,6 @@
             }
         });
 
-
         // ==================================================
         // ADD BUTTON
         // ==================================================
@@ -921,7 +925,6 @@
             "click",
             openAdd
         );
-
 
         // ==================================================
         // LOGOUT
@@ -938,10 +941,14 @@
 
                 try {
 
-                    await fetch("/api/logout", {
+                    const response = await fetch("/api/logout", {
                         method: "POST",
                         credentials: "same-origin"
                     });
+
+                    if (!response.ok) {
+                        console.error("Logout endpoint returned an error.");
+                    }
 
                 } catch (error) {
 
@@ -957,7 +964,6 @@
                 }
             }
         );
-
 
         // ==================================================
         // INITIALIZE PAGE
