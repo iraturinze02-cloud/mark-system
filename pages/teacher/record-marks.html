@@ -94,9 +94,52 @@
         .mark-input {
             width: 110px;
             max-width: 100%;
-            padding: 8px;
+            padding: 9px;
             border: 1px solid #cbd5e1;
             border-radius: 5px;
+            font-size: 15px;
+        }
+
+        .mark-input:focus {
+            outline: 2px solid #93c5fd;
+            border-color: #2563eb;
+        }
+
+        .mark-input.invalid {
+            border-color: #dc2626;
+            background: #fef2f2;
+        }
+
+        .save-status {
+            display: block;
+            margin-top: 5px;
+            font-size: 12px;
+            min-height: 16px;
+        }
+
+        .save-status.saving {
+            color: #2563eb;
+        }
+
+        .save-status.saved {
+            color: #15803d;
+        }
+
+        .save-status.error {
+            color: #dc2626;
+        }
+
+        .save-status.warning {
+            color: #b45309;
+        }
+
+        .maximum-info {
+            margin: 12px 0;
+            padding: 12px;
+            border-radius: 6px;
+            background: #eff6ff;
+            color: #1e40af;
+            font-weight: 600;
         }
 
         .status-message {
@@ -149,11 +192,6 @@
             color: #64748b;
         }
 
-        button:disabled {
-            opacity: .5;
-            cursor: not-allowed;
-        }
-
         @media(max-width:600px) {
             .record-container {
                 padding: 8px;
@@ -161,6 +199,10 @@
 
             .record-card {
                 padding: 14px;
+            }
+
+            .table-container {
+                padding: 8px;
             }
         }
     </style>
@@ -242,9 +284,13 @@
             Select a class, subject and open Test to continue.
         </div>
 
-        <div class="table-container"
-             id="studentsTableContainer"
-             style="display:none">
+        <div
+            class="table-container"
+            id="studentsTableContainer"
+            style="display:none"
+        >
+
+            <div id="maximumInformation" class="maximum-info"></div>
 
             <table>
                 <thead>
@@ -252,7 +298,7 @@
                         <th>#</th>
                         <th>Student Name</th>
                         <th>Mark</th>
-                        <th>Remarks</th>
+                        <th>Save Status</th>
                     </tr>
                 </thead>
 
@@ -261,9 +307,11 @@
 
             <p id="marksTotal"></p>
 
-            <button class="btn" id="saveMarksButton" disabled>
-                Save Marks
-            </button>
+            <p class="status-message">
+                Marks are saved automatically when you leave a mark field.
+                Press Enter to move to the next student.
+            </p>
+
         </div>
     </section>
 
@@ -292,8 +340,10 @@ let selectedClassId = null;
 let selectedAssignment = null;
 let selectedTest = null;
 
+let maximumMark = null;
+
 let loadingStudents = false;
-let savingMarks = false;
+let pageSession = 0;
 
 /* =====================================================
    ELEMENTS
@@ -310,7 +360,7 @@ const studentsBody = document.getElementById("studentsBody");
 const studentsPlaceholder = document.getElementById("studentsPlaceholder");
 const studentsTableContainer = document.getElementById("studentsTableContainer");
 
-const saveButton = document.getElementById("saveMarksButton");
+const maximumInformation = document.getElementById("maximumInformation");
 
 /* =====================================================
    LOGOUT
@@ -452,10 +502,13 @@ function renderClasses() {
 }
 
 function changeClass() {
+    pageSession++;
+
     selectedClassId = classSelect.value || null;
 
     selectedAssignment = null;
     selectedTest = null;
+    maximumMark = null;
 
     document.getElementById("teacherClass").textContent =
         "Not selected";
@@ -531,6 +584,8 @@ function renderSubjects() {
 }
 
 function changeSubject() {
+    pageSession++;
+
     const subjectId = subjectSelect.value;
 
     selectedAssignment = assignments.find(item =>
@@ -539,6 +594,7 @@ function changeSubject() {
     ) || null;
 
     selectedTest = null;
+    maximumMark = null;
 
     document.getElementById("teacherSubject").textContent =
         selectedAssignment?.subject_name || "Not selected";
@@ -567,7 +623,7 @@ function getMatchingTests() {
 
     return tests.filter(test =>
         String(test.assignment_id) ===
-            String(selectedAssignment.assignment_id)
+        String(selectedAssignment.assignment_id)
     );
 }
 
@@ -634,11 +690,15 @@ function renderTests() {
 }
 
 function changeTest() {
+    pageSession++;
+
     const testId = testSelect.value;
 
     selectedTest = getMatchingTests().find(
         item => String(item.test_id) === String(testId)
     ) || null;
+
+    maximumMark = null;
 
     clearStudents();
 
@@ -687,6 +747,8 @@ function changeTest() {
 async function loadStudents() {
     if (!selectedAssignment || !selectedTest) return;
 
+    const requestSession = pageSession;
+
     clearStudents();
 
     loadingStudents = true;
@@ -712,12 +774,38 @@ async function loadStudents() {
 
         const data = await readResponse(response);
 
-        // The server verifies the Test again before returning students.
+        if (requestSession !== pageSession) return;
+
         if (!data.test || data.test.status !== "open") {
             throw new Error("This Test is no longer open.");
         }
 
         students = data.students || [];
+
+        maximumMark = Number(data.test.total_marks);
+
+        if (
+            !Number.isFinite(maximumMark) ||
+            maximumMark <= 0
+        ) {
+            maximumMark = null;
+
+            studentsPlaceholder.textContent =
+                "The maximum mark for this Test subject has not been configured.";
+
+            showTestMessage(
+                "The maximum mark for this Test subject has not been configured. Contact the Test administrator.",
+                "error"
+            );
+
+            return;
+        }
+
+        // Keep the verified Test information from the server.
+        selectedTest = {
+            ...selectedTest,
+            ...data.test
+        };
 
         if (students.length === 0) {
             studentsPlaceholder.textContent =
@@ -729,13 +817,17 @@ async function loadStudents() {
         renderStudents();
 
     } catch (error) {
+        if (requestSession !== pageSession) return;
+
         console.error("Load students error:", error);
 
         studentsPlaceholder.textContent = error.message;
         showTestMessage(error.message, "error");
 
     } finally {
-        loadingStudents = false;
+        if (requestSession === pageSession) {
+            loadingStudents = false;
+        }
     }
 }
 
@@ -745,6 +837,9 @@ async function loadStudents() {
 
 function renderStudents() {
     studentsBody.innerHTML = "";
+
+    maximumInformation.textContent =
+        `Maximum mark: ${maximumMark}`;
 
     students.forEach((student, index) => {
         const row = document.createElement("tr");
@@ -767,30 +862,46 @@ function renderStudents() {
 
         markInput.type = "number";
         markInput.min = "0";
+        markInput.max = String(maximumMark);
         markInput.step = "0.01";
         markInput.className = "mark-input";
+
         markInput.dataset.studentId = student.student_id;
+
         markInput.value = student.mark ?? "";
-        markInput.placeholder = "Enter mark";
+
+        // Keep track of the last successfully saved value.
+        markInput.dataset.savedValue =
+            student.mark == null ? "" : String(student.mark);
+
+        markInput.placeholder = `0 - ${maximumMark}`;
+        markInput.setAttribute(
+            "aria-label",
+            `Mark for ${student.full_name}`
+        );
 
         markCell.appendChild(markInput);
 
-        const remarksCell = document.createElement("td");
+        const statusCell = document.createElement("td");
 
-        const remarksInput = document.createElement("input");
+        const saveStatus = document.createElement("span");
 
-        remarksInput.type = "text";
-        remarksInput.className = "mark-input";
-        remarksInput.dataset.remarksStudentId = student.student_id;
-        remarksInput.value = student.remarks || "";
-        remarksInput.placeholder = "Optional";
+        saveStatus.className = "save-status";
+        saveStatus.textContent =
+            student.mark == null ? "Not saved" : "Saved";
 
-        remarksCell.appendChild(remarksInput);
+        if (student.mark != null) {
+            saveStatus.classList.add("saved");
+        }
+
+        saveStatus.dataset.statusStudentId = student.student_id;
+
+        statusCell.appendChild(saveStatus);
 
         row.appendChild(numberCell);
         row.appendChild(nameCell);
         row.appendChild(markCell);
-        row.appendChild(remarksCell);
+        row.appendChild(statusCell);
 
         studentsBody.appendChild(row);
     });
@@ -798,10 +909,8 @@ function renderStudents() {
     studentsPlaceholder.style.display = "none";
     studentsTableContainer.style.display = "block";
 
-    saveButton.disabled = false;
-
     document.getElementById("marksTotal").textContent =
-        `${students.length} students | Enter marks for the selected Test.`;
+        `${students.length} students | Maximum mark: ${maximumMark}`;
 }
 
 /* =====================================================
@@ -817,110 +926,235 @@ function clearStudents() {
         "Select a class, subject and open Test to continue.";
 
     studentsTableContainer.style.display = "none";
-    saveButton.disabled = true;
+    maximumInformation.textContent = "";
+    document.getElementById("marksTotal").textContent = "";
 }
 
 /* =====================================================
-   SAVE MARKS
+   INDIVIDUAL STUDENT SAVE
 ===================================================== */
 
-async function saveMarks() {
-    if (savingMarks || loadingStudents) return;
-
-    if (!selectedAssignment || !selectedTest) {
-        showMessage(
-            "Select a class, subject and open Test first.",
-            "error"
-        );
-        return;
-    }
-
-    const markInputs = studentsBody.querySelectorAll(
-        "input[data-student-id]"
+function setSaveStatus(studentId, text, type = "") {
+    const status = studentsBody.querySelector(
+        `[data-status-student-id="${studentId}"]`
     );
 
-    const marks = [];
+    if (!status) return;
 
-    for (const input of markInputs) {
-        const value = input.value.trim();
+    status.textContent = text;
+    status.className = "save-status " + type;
+}
 
-        if (value !== "") {
-            const score = Number(value);
+function validateMarkInput(input) {
+    const value = input.value.trim();
 
-            if (!Number.isFinite(score) || score < 0) {
-                input.focus();
+    input.classList.remove("invalid");
 
-                showMessage(
-                    "Marks must be valid non-negative numbers.",
-                    "error"
-                );
-
-                return;
-            }
-        }
-
-        const studentId = input.dataset.studentId;
-
-        const remarksInput = studentsBody.querySelector(
-            `input[data-remarks-student-id="${studentId}"]`
-        );
-
-        marks.push({
-            student_id: studentId,
-            score: value === "" ? null : Number(value),
-            remarks: remarksInput?.value.trim() || null
-        });
+    if (value === "") {
+        return {
+            valid: true,
+            empty: true
+        };
     }
 
-    if (!marks.some(item => item.score !== null)) {
-        showMessage(
-            "Enter at least one student's mark before saving.",
-            "error"
-        );
+    const score = Number(value);
+
+    if (!Number.isFinite(score) || score < 0) {
+        input.classList.add("invalid");
+
+        return {
+            valid: false,
+            message: "Enter a valid non-negative mark."
+        };
+    }
+
+    if (score > maximumMark) {
+        input.classList.add("invalid");
+
+        return {
+            valid: false,
+            message: `Maximum mark is ${maximumMark}.`
+        };
+    }
+
+    return {
+        valid: true,
+        empty: false,
+        score
+    };
+}
+
+async function saveIndividualMark(input) {
+    if (!input || !input.isConnected) return;
+
+    if (!selectedTest || !selectedAssignment || maximumMark === null) {
         return;
     }
 
-    const payload = {
-        test_id: String(selectedTest.test_id),
-        assignment_id: String(selectedAssignment.assignment_id),
-        marks
-    };
+    const studentId = input.dataset.studentId;
 
-    savingMarks = true;
-    saveButton.disabled = true;
-    saveButton.textContent = "Saving...";
+    // Prevent overlapping saves for the same input.
+    if (input.dataset.saving === "true") return;
+
+    const validation = validateMarkInput(input);
+
+    if (!validation.valid) {
+        setSaveStatus(studentId, validation.message, "error");
+        showMessage(validation.message, "error");
+        return;
+    }
+
+    const currentValue = input.value.trim();
+    const savedValue = input.dataset.savedValue || "";
+
+    // Do not create unnecessary database requests.
+    if (currentValue === savedValue) return;
+
+    // Empty inputs do not delete previously saved marks.
+    if (validation.empty) {
+        if (savedValue !== "") {
+            input.value = savedValue;
+
+            setSaveStatus(
+                studentId,
+                "Existing mark retained",
+                "warning"
+            );
+        }
+
+        return;
+    }
+
+    const session = pageSession;
+    const testId = selectedTest.test_id;
+    const assignmentId = selectedAssignment.assignment_id;
+
+    input.dataset.saving = "true";
 
     try {
-        const response = await fetch(API_SAVE, {
-            method: "POST",
-            credentials: "same-origin",
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            },
-            body: JSON.stringify(payload)
-        });
+        // Continue saving if the teacher changes the value
+        // while an earlier request is still being processed.
+        while (input.isConnected && session === pageSession) {
+            const valueToSave = input.value.trim();
 
-        const result = await readResponse(response);
+            const check = validateMarkInput(input);
 
-        showMessage(
-            `${result.message} ${result.saved_count} student marks saved.`,
-            "success"
-        );
+            if (!check.valid) {
+                setSaveStatus(studentId, check.message, "error");
+                showMessage(check.message, "error");
+                break;
+            }
 
-        await loadStudents();
+            if (check.empty) {
+                break;
+            }
+
+            if (valueToSave === (input.dataset.savedValue || "")) {
+                break;
+            }
+
+            setSaveStatus(studentId, "Saving...", "saving");
+
+            const response = await fetch(API_SAVE, {
+                method: "POST",
+                credentials: "same-origin",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json"
+                },
+                body: JSON.stringify({
+                    test_id: String(testId),
+                    assignment_id: String(assignmentId),
+                    marks: [{
+                        student_id: String(studentId),
+                        score: Number(valueToSave)
+                    }]
+                })
+            });
+
+            const result = await readResponse(response);
+
+            if (session !== pageSession) return;
+
+            input.dataset.savedValue = valueToSave;
+
+            setSaveStatus(studentId, "Saved", "saved");
+
+            showMessage(
+                `${result.message} ${result.saved_count} mark saved.`,
+                "success"
+            );
+
+            // If the input changed while saving, save the newer value too.
+        }
 
     } catch (error) {
-        console.error("Save marks error:", error);
+        if (session !== pageSession) return;
+
+        console.error("Automatic mark save error:", error);
+
+        setSaveStatus(studentId, error.message, "error");
 
         showMessage(error.message, "error");
 
     } finally {
-        savingMarks = false;
-        saveButton.disabled = false;
-        saveButton.textContent = "Save Marks";
+        if (input.isConnected) {
+            input.dataset.saving = "false";
+        }
     }
 }
+
+/* =====================================================
+   AUTOMATIC SAVE WHEN LEAVING MARK INPUT
+===================================================== */
+
+studentsBody.addEventListener("focusout", event => {
+    const input = event.target;
+
+    if (!input.matches("input[data-student-id]")) return;
+
+    saveIndividualMark(input);
+});
+
+/* =====================================================
+   ENTER KEY: MOVE TO NEXT STUDENT
+===================================================== */
+
+studentsBody.addEventListener("keydown", event => {
+    const input = event.target;
+
+    if (
+        event.key !== "Enter" ||
+        !input.matches("input[data-student-id]")
+    ) {
+        return;
+    }
+
+    event.preventDefault();
+
+    const inputs = Array.from(
+        studentsBody.querySelectorAll("input[data-student-id]")
+    );
+
+    const currentIndex = inputs.indexOf(input);
+
+    if (currentIndex === -1) return;
+
+    const nextInput = inputs[currentIndex + 1];
+
+    if (nextInput) {
+        nextInput.focus();
+        nextInput.select();
+    } else {
+        // The last field loses focus, triggering automatic saving.
+        input.blur();
+
+        showMessage(
+            "You have reached the last student. The entered mark is being saved.",
+            "success"
+        );
+    }
+});
 
 /* =====================================================
    EVENT LISTENERS
@@ -929,7 +1163,6 @@ async function saveMarks() {
 classSelect.addEventListener("change", changeClass);
 subjectSelect.addEventListener("change", changeSubject);
 testSelect.addEventListener("change", changeTest);
-saveButton.addEventListener("click", saveMarks);
 
 /* =====================================================
    START
