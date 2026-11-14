@@ -78,7 +78,7 @@ export async function onRequestPost(context) {
 
         seenStudents.add(studentId);
 
-        // Empty scores are skipped, allowing partially completed class lists.
+        // Empty scores are skipped.
         if (
             item.score === null ||
             item.score === undefined ||
@@ -96,12 +96,10 @@ export async function onRequestPost(context) {
             }, 400);
         }
 
+        // Remarks are deliberately not accepted or updated here.
         marks.push({
             studentId,
-            score,
-            remarks: item.remarks == null
-                ? null
-                : String(item.remarks).trim()
+            score
         });
     }
 
@@ -158,6 +156,7 @@ export async function onRequestPost(context) {
 
         /* ---------------------------------------------
            2. LOCK AND VERIFY TEST
+              INCLUDING SUBJECT MAXIMUM MARK
         --------------------------------------------- */
 
         const testResult = await client.query(
@@ -166,7 +165,8 @@ export async function onRequestPost(context) {
                 t.id,
                 t.test_name,
                 t.status,
-                t.closing_at
+                t.closing_at,
+                ts.total_marks
             FROM tests t
             INNER JOIN test_classes tc
                 ON tc.test_id = t.id
@@ -197,6 +197,27 @@ export async function onRequestPost(context) {
         }
 
         const test = testResult.rows[0];
+
+        if (
+            test.total_marks === null ||
+            test.total_marks === undefined ||
+            !Number.isFinite(Number(test.total_marks)) ||
+            Number(test.total_marks) <= 0
+        ) {
+            await client.query("ROLLBACK");
+            transactionStarted = false;
+
+            return json({
+                success: false,
+                message: "The maximum mark for this Test subject has not been configured."
+            }, 400);
+        }
+
+        const maximumMark = Number(test.total_marks);
+
+        /* ---------------------------------------------
+           3. VERIFY TEST STATUS
+        --------------------------------------------- */
 
         if (test.status !== "open") {
             await client.query("ROLLBACK");
@@ -235,7 +256,25 @@ export async function onRequestPost(context) {
         }
 
         /* ---------------------------------------------
-           3. VERIFY ALL STUDENTS BELONG TO THIS CLASS
+           4. VALIDATE MARKS AGAINST MAXIMUM
+        --------------------------------------------- */
+
+        for (const item of marks) {
+            if (item.score > maximumMark) {
+                await client.query("ROLLBACK");
+                transactionStarted = false;
+
+                return json({
+                    success: false,
+                    message: `A mark cannot exceed ${maximumMark}.`,
+                    maximum_mark: maximumMark,
+                    student_id: item.studentId
+                }, 400);
+            }
+        }
+
+        /* ---------------------------------------------
+           5. VERIFY ALL STUDENTS BELONG TO THIS CLASS
         --------------------------------------------- */
 
         const studentIds = marks.map(item => item.studentId);
@@ -266,7 +305,8 @@ export async function onRequestPost(context) {
         }
 
         /* ---------------------------------------------
-           4. SAVE OR UPDATE TEST MARKS
+           6. SAVE OR UPDATE TEST MARKS
+              DO NOT OVERWRITE REMARKS
         --------------------------------------------- */
 
         let savedCount = 0;
@@ -281,7 +321,6 @@ export async function onRequestPost(context) {
                     class_id,
                     subject_id,
                     score,
-                    remarks,
                     recorded_by,
                     created_at,
                     updated_at
@@ -294,7 +333,6 @@ export async function onRequestPost(context) {
                     $4,
                     $5,
                     $6,
-                    $7,
                     NOW(),
                     NOW()
                 )
@@ -306,7 +344,6 @@ export async function onRequestPost(context) {
                 WHERE test_id IS NOT NULL
                 DO UPDATE SET
                     score = EXCLUDED.score,
-                    remarks = EXCLUDED.remarks,
                     recorded_by = EXCLUDED.recorded_by,
                     updated_at = NOW()
                 `,
@@ -316,7 +353,6 @@ export async function onRequestPost(context) {
                     assignment.class_id,
                     assignment.subject_id,
                     item.score,
-                    item.remarks,
                     auth.userId
                 ]
             );
@@ -331,7 +367,8 @@ export async function onRequestPost(context) {
             success: true,
             message: "Test marks saved successfully.",
             saved_count: savedCount,
-            test_id: testId
+            test_id: testId,
+            maximum_mark: maximumMark
         });
 
     } catch (error) {
