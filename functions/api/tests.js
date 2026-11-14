@@ -39,6 +39,89 @@ function validClosingAt(value) {
     return date.toISOString();
 }
 
+function validateSubjectMarks(subjectIds, subjectMarks) {
+    if (!Array.isArray(subjectMarks)) {
+        return {
+            valid: false,
+            message: "Maximum marks must be provided for every selected subject."
+        };
+    }
+
+    if (subjectMarks.length !== subjectIds.length) {
+        return {
+            valid: false,
+            message: "Provide maximum marks for every selected subject."
+        };
+    }
+
+    const marksMap = new Map();
+
+    for (const item of subjectMarks) {
+        if (!item || typeof item !== "object") {
+            return {
+                valid: false,
+                message: "Invalid subject maximum marks data."
+            };
+        }
+
+        const subjectId = String(
+            item.subject_id ?? item.subjectId ?? ""
+        ).trim();
+
+        const totalMarks = Number(item.total_marks ?? item.totalMarks);
+
+        if (!/^\d+$/.test(subjectId)) {
+            return {
+                valid: false,
+                message: "Invalid subject selected."
+            };
+        }
+
+        if (!subjectIds.includes(subjectId)) {
+            return {
+                valid: false,
+                message: "Maximum marks were provided for an unselected subject."
+            };
+        }
+
+        if (marksMap.has(subjectId)) {
+            return {
+                valid: false,
+                message: "Duplicate subject maximum marks were provided."
+            };
+        }
+
+        if (
+            !Number.isFinite(totalMarks) ||
+            totalMarks <= 0
+        ) {
+            return {
+                valid: false,
+                message: "Every subject must have a positive maximum mark."
+            };
+        }
+
+        marksMap.set(subjectId, totalMarks);
+    }
+
+    for (const subjectId of subjectIds) {
+        if (!marksMap.has(subjectId)) {
+            return {
+                valid: false,
+                message: "Provide maximum marks for every selected subject."
+            };
+        }
+    }
+
+    return {
+        valid: true,
+        marks: subjectIds.map(subjectId => ({
+            subject_id: subjectId,
+            total_marks: marksMap.get(subjectId)
+        }))
+    };
+}
+
 async function closeExpiredTests(client) {
     await client.query(`
         UPDATE tests
@@ -152,13 +235,6 @@ export async function onRequestGet(context) {
 
         /* ---------------------------------------------
            LOAD TESTS WITH RELATED DATA
-
-           The HTML expects:
-           schools[]
-           classes[]
-           subjects[]
-           creator_name
-           can_manage
         --------------------------------------------- */
 
         const testsResult = await client.query(
@@ -246,7 +322,8 @@ export async function onRequestGet(context) {
                     json_build_object(
                         'id', s.id,
                         'subject_name', s.subject_name,
-                        'subject_code', s.subject_code
+                        'subject_code', s.subject_code,
+                        'total_marks', ts.total_marks
                     )
                     ORDER BY s.subject_name
                 ) AS data
@@ -456,7 +533,7 @@ export async function onRequestPost(context) {
     }
 
     /* ---------------------------------------------
-       READ BOTH SNAKE_CASE AND CAMELCASE
+       READ TEST NAME
     --------------------------------------------- */
 
     const testName = String(
@@ -470,17 +547,23 @@ export async function onRequestPost(context) {
         }, 400);
     }
 
+    /* ---------------------------------------------
+       READ SELECTED SCHOOLS
+    --------------------------------------------- */
+
     let schoolIds;
 
     if (auth.role === "school_admin") {
-        // School Admin always uses their own school.
-        // The frontend does not need to send school_ids.
         schoolIds = [String(auth.schoolId)];
     } else {
         schoolIds = uniqueIds(
             data.school_ids ?? data.schoolIds
         );
     }
+
+    /* ---------------------------------------------
+       READ SELECTED CLASSES AND SUBJECTS
+    --------------------------------------------- */
 
     const classIds = uniqueIds(
         data.class_ids ?? data.classIds
@@ -510,6 +593,28 @@ export async function onRequestPost(context) {
             message: "Select at least one subject."
         }, 400);
     }
+
+    /* ---------------------------------------------
+       VALIDATE MAXIMUM MARKS FOR EACH SUBJECT
+    --------------------------------------------- */
+
+    const subjectMarksValidation = validateSubjectMarks(
+        subjectIds,
+        data.subject_marks ?? data.subjectMarks
+    );
+
+    if (!subjectMarksValidation.valid) {
+        return json({
+            success: false,
+            message: subjectMarksValidation.message
+        }, 400);
+    }
+
+    const subjectMarks = subjectMarksValidation.marks;
+
+    /* ---------------------------------------------
+       VALIDATE CLOSING DATE
+    --------------------------------------------- */
 
     const closingAt = validClosingAt(
         data.closing_at ?? data.closingAt
@@ -694,19 +799,24 @@ export async function onRequestPost(context) {
         }
 
         /* ---------------------------------------------
-           INSERT TEST SUBJECTS
+           INSERT TEST SUBJECTS WITH MAXIMUM MARKS
         --------------------------------------------- */
 
-        for (const subjectId of subjectIds) {
+        for (const subject of subjectMarks) {
             await client.query(
                 `
                 INSERT INTO test_subjects (
                     test_id,
-                    subject_id
+                    subject_id,
+                    total_marks
                 )
-                VALUES ($1, $2)
+                VALUES ($1, $2, $3)
                 `,
-                [test.id, subjectId]
+                [
+                    test.id,
+                    subject.subject_id,
+                    subject.total_marks
+                ]
             );
         }
 
