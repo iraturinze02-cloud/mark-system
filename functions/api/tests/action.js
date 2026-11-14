@@ -1,3 +1,4 @@
+
 import {
     connectDB,
     requireTestUser,
@@ -38,8 +39,20 @@ function validClosingAt(value) {
     return date.toISOString();
 }
 
+function getValue(data, snakeCase, camelCase) {
+    return data[snakeCase] ?? data[camelCase];
+}
+
 /* =====================================================
    POST: TEST ACTIONS
+
+   Supported actions:
+   - update
+   - initiate
+   - close
+   - delete
+
+   Only the original creator can manage their Test.
 ===================================================== */
 
 export async function onRequestPost(context) {
@@ -49,10 +62,7 @@ export async function onRequestPost(context) {
         return auth.error;
     }
 
-    if (
-        auth.role !== "sector_admin" &&
-        auth.role !== "school_admin"
-    ) {
+    if (!["sector_admin", "school_admin"].includes(auth.role)) {
         return json({
             success: false,
             message: "You are not allowed to manage tests."
@@ -73,7 +83,7 @@ export async function onRequestPost(context) {
     const action = String(data.action || "").trim();
 
     const testId = String(
-        data.testId || data.test_id || ""
+        data.testId ?? data.test_id ?? ""
     ).trim();
 
     if (!/^\d+$/.test(testId)) {
@@ -108,6 +118,9 @@ export async function onRequestPost(context) {
 
         /* ---------------------------------------------
            FIND TEST AND LOCK IT
+
+           The creator must match the logged-in user.
+           The role and organizational scope must match.
         --------------------------------------------- */
 
         let testResult;
@@ -119,11 +132,15 @@ export async function onRequestPost(context) {
                 FROM tests
                 WHERE id = $1
                   AND sector_id = $2
+                  AND created_by = $3
                 FOR UPDATE
                 `,
-                [testId, auth.sectorId]
+                [
+                    testId,
+                    auth.sectorId,
+                    auth.userId
+                ]
             );
-
         } else {
             testResult = await client.query(
                 `
@@ -131,9 +148,14 @@ export async function onRequestPost(context) {
                 FROM tests
                 WHERE id = $1
                   AND school_id = $2
+                  AND created_by = $3
                 FOR UPDATE
                 `,
-                [testId, auth.schoolId]
+                [
+                    testId,
+                    auth.schoolId,
+                    auth.userId
+                ]
             );
         }
 
@@ -143,7 +165,7 @@ export async function onRequestPost(context) {
 
             return json({
                 success: false,
-                message: "Test not found or you do not have permission to manage it."
+                message: "Test not found or you are not its creator."
             }, 404);
         }
 
@@ -151,7 +173,10 @@ export async function onRequestPost(context) {
 
         /* ---------------------------------------------
            DELETE TEST
+
            Only draft tests can be deleted.
+           Do not delete a test already linked to an
+           examination.
         --------------------------------------------- */
 
         if (action === "delete") {
@@ -165,12 +190,33 @@ export async function onRequestPost(context) {
                 }, 400);
             }
 
+            const mappingResult = await client.query(
+                `
+                SELECT 1
+                FROM test_examinations
+                WHERE test_id = $1
+                LIMIT 1
+                `,
+                [testId]
+            );
+
+            if (mappingResult.rows.length > 0) {
+                await client.query("ROLLBACK");
+                transactionStarted = false;
+
+                return json({
+                    success: false,
+                    message: "This test is linked to an examination and cannot be deleted."
+                }, 409);
+            }
+
             await client.query(
                 `
                 DELETE FROM tests
                 WHERE id = $1
+                  AND created_by = $2
                 `,
-                [testId]
+                [testId, auth.userId]
             );
 
             await client.query("COMMIT");
@@ -184,6 +230,9 @@ export async function onRequestPost(context) {
 
         /* ---------------------------------------------
            INITIATE TEST
+
+           Only its creator can initiate it.
+           Record the responsible user.
         --------------------------------------------- */
 
         if (action === "initiate") {
@@ -216,11 +265,17 @@ export async function onRequestPost(context) {
                 SET
                     status = 'open',
                     initiated_at = NOW(),
+                    initiated_by = $2,
                     closed_at = NULL,
+                    closed_by = NULL,
                     updated_at = NOW()
                 WHERE id = $1
+                  AND created_by = $2
                 `,
-                [testId]
+                [
+                    testId,
+                    auth.userId
+                ]
             );
 
             await client.query("COMMIT");
@@ -228,12 +283,15 @@ export async function onRequestPost(context) {
 
             return json({
                 success: true,
-                message: "Test initiated successfully. Teachers can now record marks."
+                message: "Test initiated successfully. Teachers can now record marks.",
+                initiated_by: auth.userId
             });
         }
 
         /* ---------------------------------------------
            CLOSE TEST
+
+           Record the user who manually closed it.
         --------------------------------------------- */
 
         if (action === "close") {
@@ -253,10 +311,15 @@ export async function onRequestPost(context) {
                 SET
                     status = 'closed',
                     closed_at = NOW(),
+                    closed_by = $2,
                     updated_at = NOW()
                 WHERE id = $1
+                  AND created_by = $2
                 `,
-                [testId]
+                [
+                    testId,
+                    auth.userId
+                ]
             );
 
             await client.query("COMMIT");
@@ -264,12 +327,14 @@ export async function onRequestPost(context) {
 
             return json({
                 success: true,
-                message: "Test closed successfully."
+                message: "Test closed successfully.",
+                closed_by: auth.userId
             });
         }
 
         /* ---------------------------------------------
            UPDATE TEST
+
            Only draft tests can be edited.
         --------------------------------------------- */
 
@@ -285,7 +350,7 @@ export async function onRequestPost(context) {
             }
 
             const testName = String(
-                data.testName || data.test_name || ""
+                getValue(data, "test_name", "testName") || ""
             ).trim();
 
             if (!testName || testName.length > 200) {
@@ -298,9 +363,17 @@ export async function onRequestPost(context) {
                 }, 400);
             }
 
-            let schoolIds = uniqueIds(data.schoolIds);
-            const classIds = uniqueIds(data.classIds);
-            const subjectIds = uniqueIds(data.subjectIds);
+            let schoolIds = uniqueIds(
+                getValue(data, "school_ids", "schoolIds")
+            );
+
+            const classIds = uniqueIds(
+                getValue(data, "class_ids", "classIds")
+            );
+
+            const subjectIds = uniqueIds(
+                getValue(data, "subject_ids", "subjectIds")
+            );
 
             if (auth.role === "school_admin") {
                 schoolIds = [String(auth.schoolId)];
@@ -321,7 +394,7 @@ export async function onRequestPost(context) {
             }
 
             const closingAt = validClosingAt(
-                data.closingAt ?? data.closing_at
+                getValue(data, "closing_at", "closingAt")
             );
 
             if (closingAt === undefined) {
@@ -349,9 +422,11 @@ export async function onRequestPost(context) {
                       AND sector_id = $2
                       AND status = 'active'
                     `,
-                    [schoolIds, auth.sectorId]
+                    [
+                        schoolIds,
+                        auth.sectorId
+                    ]
                 );
-
             } else {
                 validSchools = await client.query(
                     `
@@ -376,6 +451,9 @@ export async function onRequestPost(context) {
 
             /* -----------------------------------------
                VALIDATE CLASSES
+
+               Every class must belong to one of the
+               selected schools.
             ----------------------------------------- */
 
             const validClasses = await client.query(
@@ -385,7 +463,10 @@ export async function onRequestPost(context) {
                 WHERE id = ANY($1::bigint[])
                   AND school_id = ANY($2::bigint[])
                 `,
-                [classIds, schoolIds]
+                [
+                    classIds,
+                    schoolIds
+                ]
             );
 
             if (validClasses.rows.length !== classIds.length) {
@@ -433,20 +514,21 @@ export async function onRequestPost(context) {
                     closing_at = $2,
                     updated_at = NOW()
                 WHERE id = $3
+                  AND created_by = $4
                 `,
                 [
                     testName,
                     closingAt,
-                    testId
+                    testId,
+                    auth.userId
                 ]
             );
 
             /* -----------------------------------------
                REMOVE OLD RELATIONSHIPS
 
-               Deleting test_schools also removes
-               related test_classes through ON DELETE
-               CASCADE.
+               Test classes are removed through the
+               existing test_schools cascade relationship.
             ----------------------------------------- */
 
             await client.query(
@@ -478,7 +560,10 @@ export async function onRequestPost(context) {
                     )
                     VALUES ($1, $2)
                     `,
-                    [testId, schoolId]
+                    [
+                        testId,
+                        schoolId
+                    ]
                 );
             }
 
@@ -517,7 +602,10 @@ export async function onRequestPost(context) {
                     )
                     VALUES ($1, $2)
                     `,
-                    [testId, subjectId]
+                    [
+                        testId,
+                        subjectId
+                    ]
                 );
             }
 
