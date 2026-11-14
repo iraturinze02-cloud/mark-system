@@ -57,7 +57,11 @@ async function authenticateRole(context, expectedRole) {
         const secret = new TextEncoder().encode(context.env.JWT_SECRET);
         const { payload } = await jwtVerify(token, secret);
 
-        if (!payload.sub || payload.role !== expectedRole) {
+        const allowedRoles = Array.isArray(expectedRole)
+    ? expectedRole
+    : [expectedRole];
+
+if (!payload.sub || !allowedRoles.includes(payload.role)) {
             return {
                 error: json({
                     success: false,
@@ -77,11 +81,11 @@ async function authenticateRole(context, expectedRole) {
 
         const user = result.rows[0];
 
-        if (
-            !user ||
-            user.role !== expectedRole ||
-            user.status !== "active"
-        ) {
+       if (
+    !user ||
+    !allowedRoles.includes(user.role) ||
+    user.status !== "active"
+) {
             return {
                 error: json({
                     success: false,
@@ -89,6 +93,14 @@ async function authenticateRole(context, expectedRole) {
                 }, 403)
             };
         }
+        if (Array.isArray(expectedRole)) {
+    return {
+        userId: String(user.id),
+        role: user.role,
+        sectorId: user.sector_id ? String(user.sector_id) : null,
+        schoolId: user.school_id ? String(user.school_id) : null
+    };
+}
 
         if (expectedRole === "sector_admin") {
             if (!user.sector_id) {
@@ -152,3 +164,11 @@ export async function requireSectorAdmin(context) {
 export async function requireSchoolAdmin(context) {
     return authenticateRole(context, "school_admin");
 }
+export async function requireTestUser(context) {
+    return authenticateRole(context, [
+        "sector_admin",
+        "school_admin",
+        "teacher"
+    ]);
+}
+
