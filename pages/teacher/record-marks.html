@@ -294,13 +294,14 @@
 
             <table>
                 <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>Student Name</th>
-                        <th>Mark</th>
-                        <th>Save Status</th>
-                    </tr>
-                </thead>
+    <tr>
+        <th>#</th>
+        <th>Student FilaCode</th>
+        <th>Student Name</th>
+        <th>Mark</th>
+        <th>Save Status</th>
+    </tr>
+</thead>
 
                 <tbody id="studentsBody"></tbody>
             </table>
@@ -835,6 +836,7 @@ async function loadStudents() {
    RENDER STUDENTS
 ===================================================== */
 
+
 function renderStudents() {
     studentsBody.innerHTML = "";
 
@@ -844,18 +846,19 @@ function renderStudents() {
     students.forEach((student, index) => {
         const row = document.createElement("tr");
 
+        // Student number
         const numberCell = document.createElement("td");
         numberCell.textContent = index + 1;
 
+        // Student FilaCode
+        const codeCell = document.createElement("td");
+        codeCell.textContent = student.student_code || "—";
+
+        // Student name
         const nameCell = document.createElement("td");
-        nameCell.textContent = student.full_name;
+        nameCell.textContent = student.full_name || "";
 
-        if (student.student_code) {
-            const code = document.createElement("small");
-            code.textContent = ` (${student.student_code})`;
-            nameCell.appendChild(code);
-        }
-
+        // Mark input
         const markCell = document.createElement("td");
 
         const markInput = document.createElement("input");
@@ -870,11 +873,11 @@ function renderStudents() {
 
         markInput.value = student.mark ?? "";
 
-        // Keep track of the last successfully saved value.
         markInput.dataset.savedValue =
             student.mark == null ? "" : String(student.mark);
 
         markInput.placeholder = `0 - ${maximumMark}`;
+
         markInput.setAttribute(
             "aria-label",
             `Mark for ${student.full_name}`
@@ -882,6 +885,7 @@ function renderStudents() {
 
         markCell.appendChild(markInput);
 
+        // Save status
         const statusCell = document.createElement("td");
 
         const saveStatus = document.createElement("span");
@@ -898,7 +902,9 @@ function renderStudents() {
 
         statusCell.appendChild(saveStatus);
 
+        // Add cells in the correct order
         row.appendChild(numberCell);
+        row.appendChild(codeCell);
         row.appendChild(nameCell);
         row.appendChild(markCell);
         row.appendChild(statusCell);
