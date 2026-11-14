@@ -1,0 +1,705 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Record Marks</title>
+    <link rel="stylesheet" href="style.css">
+
+    <style>
+        .record-container {
+            max-width: 1100px;
+            margin: 25px auto;
+            padding: 15px;
+        }
+
+        .record-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,.08);
+        }
+
+        .record-card h2 {
+            margin-top: 0;
+        }
+
+        .form-group {
+            margin: 15px 0;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 7px;
+        }
+
+        .form-group select {
+            width: 100%;
+            padding: 11px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            background: white;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+        }
+
+        .info-item {
+            background: #f8fafc;
+            padding: 12px;
+            border-radius: 7px;
+        }
+
+        .info-item small {
+            display: block;
+            color: #64748b;
+            margin-bottom: 5px;
+        }
+
+        .info-item strong {
+            color: #1e293b;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        th {
+            background: #1d4ed8;
+            color: white;
+            padding: 10px;
+            text-align: left;
+        }
+
+        td {
+            padding: 9px 7px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .status-message {
+            padding: 12px;
+            border-radius: 6px;
+            margin: 12px 0;
+            background: #eff6ff;
+            color: #1e40af;
+        }
+
+        .status-message.error {
+            background: #fef2f2;
+            color: #991b1b;
+        }
+
+        .status-message.success {
+            background: #f0fdf4;
+            color: #166534;
+        }
+
+        .status-message.warning {
+            background: #fffbeb;
+            color: #92400e;
+        }
+
+        .assessment-status {
+            display: inline-block;
+            padding: 4px 9px;
+            border-radius: 5px;
+            font-size: 12px;
+            font-weight: 600;
+            background: #e2e8f0;
+            color: #334155;
+        }
+
+        .assessment-status.open,
+        .assessment-status.ready {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .assessment-status.closed,
+        .assessment-status.draft {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .assessment-status.not-ready {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 25px;
+            color: #64748b;
+        }
+
+        button:disabled {
+            opacity: .5;
+            cursor: not-allowed;
+        }
+
+        @media(max-width:600px) {
+            .record-container {
+                padding: 8px;
+            }
+
+            .record-card {
+                padding: 14px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+    <h1>RECORD MARKS</h1>
+    <p>Record marks for your assigned classes and subjects</p>
+    <button class="logout-btn" onclick="logout()">Logout</button>
+</header>
+
+<main class="record-container">
+
+    <div id="message" class="status-message">
+        Loading your assignments...
+    </div>
+
+    <section class="record-card">
+        <h2>Teacher Information</h2>
+
+        <div class="info-grid">
+            <div class="info-item">
+                <small>Teacher</small>
+                <strong id="teacherName">Authenticated teacher</strong>
+            </div>
+
+            <div class="info-item">
+                <small>School</small>
+                <strong id="teacherSchool">Loading...</strong>
+            </div>
+
+            <div class="info-item">
+                <small>Class</small>
+                <strong id="teacherClass">Not selected</strong>
+            </div>
+
+            <div class="info-item">
+                <small>Subject</small>
+                <strong id="teacherSubject">Not selected</strong>
+            </div>
+        </div>
+    </section>
+
+    <section class="record-card">
+        <h2>Assessment Selection</h2>
+
+        <div class="form-group">
+            <label for="assignmentSelect">
+                Select Class and Subject
+            </label>
+
+            <select id="assignmentSelect" disabled>
+                <option value="">Loading assignments...</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="assessmentType">
+                Assessment Type
+            </label>
+
+            <select id="assessmentType" disabled>
+                <option value="">Select assessment type</option>
+                <option value="test">Tests</option>
+                <option value="examination">Examinations</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="assessmentSelect">
+                Select Test or Examination
+            </label>
+
+            <select id="assessmentSelect" disabled>
+                <option value="">Select an assessment</option>
+            </select>
+        </div>
+
+        <div id="assessmentInformation" class="status-message">
+            Select your class, subject and assessment.
+        </div>
+    </section>
+
+    <section class="record-card">
+        <h2>Student Marks Entry</h2>
+
+        <div class="empty-state" id="studentsPlaceholder">
+            Select a valid assessment to continue.
+        </div>
+
+        <div class="table-container" id="studentsTableContainer"
+             style="display:none">
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Student Name</th>
+                        <th>Mark</th>
+                    </tr>
+                </thead>
+
+                <tbody id="studentsBody"></tbody>
+            </table>
+
+            <p id="marksTotal"></p>
+
+            <button class="btn" id="saveMarksButton" disabled>
+                Save Marks
+            </button>
+        </div>
+    </section>
+
+</main>
+
+<script>
+"use strict";
+
+/* =====================================================
+   CONFIGURATION
+===================================================== */
+
+const API_OPTIONS = "/api/record-marks/options";
+
+let assignments = [];
+let tests = [];
+let examinations = [];
+
+let selectedAssignment = null;
+let selectedAssessment = null;
+
+/* =====================================================
+   ELEMENTS
+===================================================== */
+
+const message = document.getElementById("message");
+
+const assignmentSelect =
+    document.getElementById("assignmentSelect");
+
+const assessmentType =
+    document.getElementById("assessmentType");
+
+const assessmentSelect =
+    document.getElementById("assessmentSelect");
+
+const assessmentInformation =
+    document.getElementById("assessmentInformation");
+
+/* =====================================================
+   MESSAGE
+===================================================== */
+
+function showMessage(text, type = "") {
+    message.textContent = text;
+    message.className = "status-message " + type;
+}
+
+function showAssessmentMessage(text, type = "") {
+    assessmentInformation.textContent = text;
+    assessmentInformation.className =
+        "status-message " + type;
+}
+
+/* =====================================================
+   LOGOUT
+===================================================== */
+
+function logout() {
+    localStorage.clear();
+    window.location.href = "index.html";
+}
+
+/* =====================================================
+   LOAD OPTIONS FROM CLOUDFLARE
+===================================================== */
+
+async function loadOptions() {
+    try {
+        showMessage("Loading your assignments...");
+
+        const response = await fetch(API_OPTIONS, {
+            method: "GET",
+            credentials: "same-origin",
+            headers: {
+                "Accept": "application/json"
+            }
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+            throw new Error(
+                data.message || "Unable to load your assignments."
+            );
+        }
+
+        assignments = data.assignments || [];
+        tests = data.tests || [];
+        examinations = data.examinations || [];
+
+        if (assignments.length === 0) {
+            assignmentSelect.innerHTML =
+                '<option value="">No assignments found</option>';
+
+            showMessage(
+                data.message || "No class and subject assignments found.",
+                "warning"
+            );
+
+            return;
+        }
+
+        renderAssignments();
+
+        document.getElementById("teacherSchool").textContent =
+            assignments[0].school_name || "Not available";
+
+        assignmentSelect.disabled = false;
+        assessmentType.disabled = false;
+
+        showMessage(
+            "Your assignments have loaded successfully.",
+            "success"
+        );
+
+    } catch (error) {
+        console.error(error);
+
+        showMessage(
+            error.message || "Unable to connect to the server.",
+            "error"
+        );
+    }
+}
+
+/* =====================================================
+   RENDER ASSIGNMENTS
+===================================================== */
+
+function renderAssignments() {
+    assignmentSelect.innerHTML = "";
+
+    assignments.forEach((assignment, index) => {
+        const option = document.createElement("option");
+
+        option.value = String(index);
+
+        option.textContent =
+            `${assignment.class_name} - ${assignment.subject_name}`;
+
+        assignmentSelect.appendChild(option);
+    });
+
+    assignmentSelect.value = "0";
+    changeAssignment();
+}
+
+/* =====================================================
+   CHANGE ASSIGNMENT
+===================================================== */
+
+function changeAssignment() {
+    const index = Number(assignmentSelect.value);
+
+    selectedAssignment = assignments[index] || null;
+
+    selectedAssessment = null;
+
+    document.getElementById("teacherClass").textContent =
+        selectedAssignment?.class_name || "Not selected";
+
+    document.getElementById("teacherSubject").textContent =
+        selectedAssignment?.subject_name || "Not selected";
+
+    assessmentType.value = "";
+
+    assessmentSelect.innerHTML =
+        '<option value="">Select an assessment</option>';
+
+    assessmentSelect.disabled = true;
+
+    clearStudents();
+
+    showAssessmentMessage(
+        "Select an assessment type and assessment."
+    );
+}
+
+/* =====================================================
+   CHANGE ASSESSMENT TYPE
+===================================================== */
+
+function changeAssessmentType() {
+    selectedAssessment = null;
+
+    assessmentSelect.innerHTML =
+        '<option value="">Select an assessment</option>';
+
+    clearStudents();
+
+    if (!selectedAssignment || !assessmentType.value) {
+        assessmentSelect.disabled = true;
+        return;
+    }
+
+    assessmentSelect.disabled = false;
+
+    if (assessmentType.value === "test") {
+        renderTests();
+    } else if (assessmentType.value === "examination") {
+        renderExaminations();
+    }
+}
+
+/* =====================================================
+   TESTS
+===================================================== */
+
+function renderTests() {
+    const matchingTests = tests.filter(test =>
+        String(test.school_id) ===
+            String(selectedAssignment.school_id) &&
+        String(test.class_id) ===
+            String(selectedAssignment.class_id) &&
+        String(test.subject_id) ===
+            String(selectedAssignment.subject_id)
+    );
+
+    if (matchingTests.length === 0) {
+        assessmentSelect.innerHTML =
+            '<option value="">No matching tests found</option>';
+
+        showAssessmentMessage(
+            "There are no Tests assigned to this class and subject.",
+            "warning"
+        );
+
+        return;
+    }
+
+    matchingTests.forEach((test, index) => {
+        const option = document.createElement("option");
+
+        option.value = String(index);
+
+        let statusText = test.status.toUpperCase();
+
+        if (test.status === "open" && !test.ready_for_marks) {
+            statusText += " - NOT READY";
+        }
+
+        option.textContent =
+            `${test.test_name} (${statusText})`;
+
+        option.disabled = !test.ready_for_marks;
+
+        assessmentSelect.appendChild(option);
+    });
+
+    const firstAvailable = matchingTests.findIndex(
+        test => test.ready_for_marks
+    );
+
+    if (firstAvailable >= 0) {
+        assessmentSelect.value = String(firstAvailable);
+        changeAssessment();
+    } else {
+        showAssessmentMessage(
+            "No matching Test is currently ready for mark entry. " +
+            "A Test must be open and connected to a valid Examination.",
+            "warning"
+        );
+    }
+}
+
+/* =====================================================
+   EXAMINATIONS
+===================================================== */
+
+function renderExaminations() {
+    const matchingExaminations = examinations.filter(exam =>
+        String(exam.school_id) ===
+            String(selectedAssignment.school_id) &&
+        String(exam.class_id) ===
+            String(selectedAssignment.class_id) &&
+        String(exam.subject_id) ===
+            String(selectedAssignment.subject_id)
+    );
+
+    if (matchingExaminations.length === 0) {
+        assessmentSelect.innerHTML =
+            '<option value="">No examinations found</option>';
+
+        showAssessmentMessage(
+            "No Examinations were found for this class and subject.",
+            "warning"
+        );
+
+        return;
+    }
+
+    matchingExaminations.forEach((exam, index) => {
+        const option = document.createElement("option");
+
+        option.value = String(index);
+
+        option.textContent =
+            `${exam.exam_name} (${exam.total_marks} marks)`;
+
+        assessmentSelect.appendChild(option);
+    });
+
+    assessmentSelect.value = "0";
+    changeAssessment();
+}
+
+/* =====================================================
+   CHANGE SELECTED ASSESSMENT
+===================================================== */
+
+function changeAssessment() {
+    const index = Number(assessmentSelect.value);
+
+    if (!assessmentType.value || !selectedAssignment) {
+        return;
+    }
+
+    if (assessmentType.value === "test") {
+        const matchingTests = tests.filter(test =>
+            String(test.school_id) ===
+                String(selectedAssignment.school_id) &&
+            String(test.class_id) ===
+                String(selectedAssignment.class_id) &&
+            String(test.subject_id) ===
+                String(selectedAssignment.subject_id)
+        );
+
+        selectedAssessment = matchingTests[index] || null;
+
+        if (!selectedAssessment) return;
+
+        if (!selectedAssessment.ready_for_marks) {
+            showAssessmentMessage(
+                selectedAssessment.availability_message ||
+                "This Test is not ready for marks.",
+                "warning"
+            );
+
+            clearStudents();
+            return;
+        }
+
+        showAssessmentMessage(
+            `Test is open and ready. Maximum marks: ` +
+            `${selectedAssessment.total_marks}.`,
+            "success"
+        );
+
+    } else {
+        const matchingExaminations = examinations.filter(exam =>
+            String(exam.school_id) ===
+                String(selectedAssignment.school_id) &&
+            String(exam.class_id) ===
+                String(selectedAssignment.class_id) &&
+            String(exam.subject_id) ===
+                String(selectedAssignment.subject_id)
+        );
+
+        selectedAssessment =
+            matchingExaminations[index] || null;
+
+        if (!selectedAssessment) return;
+
+        showAssessmentMessage(
+            `Examination selected. Maximum marks: ` +
+            `${selectedAssessment.total_marks}.`,
+            "success"
+        );
+    }
+
+    /*
+       Student loading and mark saving will be connected
+       after their backend endpoints are installed.
+    */
+
+    document.getElementById("studentsPlaceholder").textContent =
+        "Assessment selected. Student loading will be enabled " +
+        "in the next implementation step.";
+
+    document.getElementById("studentsTableContainer").style.display =
+        "none";
+}
+
+/* =====================================================
+   CLEAR STUDENTS
+===================================================== */
+
+function clearStudents() {
+    document.getElementById("studentsBody").innerHTML = "";
+
+    document.getElementById("studentsPlaceholder").textContent =
+        "Select a valid assessment to continue.";
+
+    document.getElementById("studentsPlaceholder").style.display =
+        "block";
+
+    document.getElementById("studentsTableContainer").style.display =
+        "none";
+
+    document.getElementById("saveMarksButton").disabled = true;
+}
+
+/* =====================================================
+   EVENTS
+===================================================== */
+
+assignmentSelect.addEventListener(
+    "change",
+    changeAssignment
+);
+
+assessmentType.addEventListener(
+    "change",
+    changeAssessmentType
+);
+
+assessmentSelect.addEventListener(
+    "change",
+    changeAssessment
+);
+
+/* =====================================================
+   START
+===================================================== */
+
+loadOptions();
+
+</script>
+
+</body>
+</html>
