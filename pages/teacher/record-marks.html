@@ -279,24 +279,18 @@
 <script>
 "use strict";
 
-/* =====================================================
-   CONFIGURATION
-===================================================== */
-
 const API_OPTIONS = "/api/record-marks/options";
+const API_STUDENTS = "/api/record-marks/students";
+const API_SAVE = "/api/record-marks/save";
 
 let assignments = [];
 let tests = [];
 let examinations = [];
+let students = [];
 
 let selectedAssignment = null;
 let selectedAssessment = null;
-
-/* =====================================================
-   ELEMENTS
-===================================================== */
-
-const message = document.getElementById("message");
+let maximumMarks = 0;
 
 const assignmentSelect =
     document.getElementById("assignmentSelect");
@@ -307,11 +301,35 @@ const assessmentType =
 const assessmentSelect =
     document.getElementById("assessmentSelect");
 
+const message =
+    document.getElementById("message");
+
 const assessmentInformation =
     document.getElementById("assessmentInformation");
 
+const studentsBody =
+    document.getElementById("studentsBody");
+
+const studentsPlaceholder =
+    document.getElementById("studentsPlaceholder");
+
+const studentsTableContainer =
+    document.getElementById("studentsTableContainer");
+
+const saveButton =
+    document.getElementById("saveMarksButton");
+
 /* =====================================================
-   MESSAGE
+   LOGOUT
+===================================================== */
+
+function logout() {
+    localStorage.clear();
+    window.location.href = "index.html";
+}
+
+/* =====================================================
+   MESSAGES
 ===================================================== */
 
 function showMessage(text, type = "") {
@@ -326,16 +344,29 @@ function showAssessmentMessage(text, type = "") {
 }
 
 /* =====================================================
-   LOGOUT
+   API RESPONSE
 ===================================================== */
 
-function logout() {
-    localStorage.clear();
-    window.location.href = "index.html";
+async function readResponse(response) {
+    let result;
+
+    try {
+        result = await response.json();
+    } catch {
+        throw new Error("The server returned an invalid response.");
+    }
+
+    if (!response.ok || !result.success) {
+        throw new Error(
+            result.message || "The request could not be completed."
+        );
+    }
+
+    return result;
 }
 
 /* =====================================================
-   LOAD OPTIONS FROM CLOUDFLARE
+   LOAD OPTIONS
 ===================================================== */
 
 async function loadOptions() {
@@ -343,20 +374,13 @@ async function loadOptions() {
         showMessage("Loading your assignments...");
 
         const response = await fetch(API_OPTIONS, {
-            method: "GET",
             credentials: "same-origin",
             headers: {
                 "Accept": "application/json"
             }
         });
 
-        const data = await response.json();
-
-        if (!response.ok || !data.success) {
-            throw new Error(
-                data.message || "Unable to load your assignments."
-            );
-        }
+        const data = await readResponse(response);
 
         assignments = data.assignments || [];
         tests = data.tests || [];
@@ -367,47 +391,53 @@ async function loadOptions() {
                 '<option value="">No assignments found</option>';
 
             showMessage(
-                data.message || "No class and subject assignments found.",
+                data.message || "No assignments found.",
                 "warning"
             );
 
             return;
         }
 
-        renderAssignments();
+        const currentUser = JSON.parse(
+            localStorage.getItem("currentUser") || "{}"
+        );
+
+        document.getElementById("teacherName").textContent =
+            currentUser.full_name ||
+            currentUser.fullName ||
+            "Authenticated teacher";
 
         document.getElementById("teacherSchool").textContent =
             assignments[0].school_name || "Not available";
+
+        renderAssignments();
 
         assignmentSelect.disabled = false;
         assessmentType.disabled = false;
 
         showMessage(
-            "Your assignments have loaded successfully.",
+            "Assignments loaded successfully.",
             "success"
         );
 
     } catch (error) {
         console.error(error);
 
-        showMessage(
-            error.message || "Unable to connect to the server.",
-            "error"
-        );
+        showMessage(error.message, "error");
     }
 }
 
 /* =====================================================
-   RENDER ASSIGNMENTS
+   ASSIGNMENTS
 ===================================================== */
 
 function renderAssignments() {
     assignmentSelect.innerHTML = "";
 
-    assignments.forEach((assignment, index) => {
+    assignments.forEach(assignment => {
         const option = document.createElement("option");
 
-        option.value = String(index);
+        option.value = String(assignment.assignment_id);
 
         option.textContent =
             `${assignment.class_name} - ${assignment.subject_name}`;
@@ -415,18 +445,18 @@ function renderAssignments() {
         assignmentSelect.appendChild(option);
     });
 
-    assignmentSelect.value = "0";
+    assignmentSelect.value =
+        String(assignments[0].assignment_id);
+
     changeAssignment();
 }
 
-/* =====================================================
-   CHANGE ASSIGNMENT
-===================================================== */
-
 function changeAssignment() {
-    const index = Number(assignmentSelect.value);
+    const assignmentId = assignmentSelect.value;
 
-    selectedAssignment = assignments[index] || null;
+    selectedAssignment = assignments.find(
+        item => String(item.assignment_id) === String(assignmentId)
+    ) || null;
 
     selectedAssessment = null;
 
@@ -437,7 +467,6 @@ function changeAssignment() {
         selectedAssignment?.subject_name || "Not selected";
 
     assessmentType.value = "";
-
     assessmentSelect.innerHTML =
         '<option value="">Select an assessment</option>';
 
@@ -446,12 +475,12 @@ function changeAssignment() {
     clearStudents();
 
     showAssessmentMessage(
-        "Select an assessment type and assessment."
+        "Select Tests or Examinations."
     );
 }
 
 /* =====================================================
-   CHANGE ASSESSMENT TYPE
+   ASSESSMENT TYPE
 ===================================================== */
 
 function changeAssessmentType() {
@@ -471,7 +500,7 @@ function changeAssessmentType() {
 
     if (assessmentType.value === "test") {
         renderTests();
-    } else if (assessmentType.value === "examination") {
+    } else {
         renderExaminations();
     }
 }
@@ -480,8 +509,8 @@ function changeAssessmentType() {
    TESTS
 ===================================================== */
 
-function renderTests() {
-    const matchingTests = tests.filter(test =>
+function getMatchingTests() {
+    return tests.filter(test =>
         String(test.school_id) ===
             String(selectedAssignment.school_id) &&
         String(test.class_id) ===
@@ -489,60 +518,60 @@ function renderTests() {
         String(test.subject_id) ===
             String(selectedAssignment.subject_id)
     );
+}
 
-    if (matchingTests.length === 0) {
+function renderTests() {
+    const matching = getMatchingTests();
+
+    if (matching.length === 0) {
         assessmentSelect.innerHTML =
-            '<option value="">No matching tests found</option>';
+            '<option value="">No matching Tests found</option>';
 
         showAssessmentMessage(
-            "There are no Tests assigned to this class and subject.",
+            "No Tests have been assigned to this class and subject.",
             "warning"
         );
 
         return;
     }
 
-    matchingTests.forEach((test, index) => {
+    matching.forEach(test => {
         const option = document.createElement("option");
 
-        option.value = String(index);
-
-        let statusText = test.status.toUpperCase();
-
-        if (test.status === "open" && !test.ready_for_marks) {
-            statusText += " - NOT READY";
-        }
+        option.value = String(test.test_id);
 
         option.textContent =
-            `${test.test_name} (${statusText})`;
+            `${test.test_name} (${test.status.toUpperCase()})`;
 
         option.disabled = !test.ready_for_marks;
 
         assessmentSelect.appendChild(option);
     });
 
-    const firstAvailable = matchingTests.findIndex(
+    const firstReady = matching.find(
         test => test.ready_for_marks
     );
 
-    if (firstAvailable >= 0) {
-        assessmentSelect.value = String(firstAvailable);
-        changeAssessment();
-    } else {
+    if (!firstReady) {
         showAssessmentMessage(
-            "No matching Test is currently ready for mark entry. " +
-            "A Test must be open and connected to a valid Examination.",
+            "No Test is ready for mark entry. A Test must be open " +
+            "and connected to a valid Examination.",
             "warning"
         );
+
+        return;
     }
+
+    assessmentSelect.value = String(firstReady.test_id);
+    changeAssessment();
 }
 
 /* =====================================================
    EXAMINATIONS
 ===================================================== */
 
-function renderExaminations() {
-    const matchingExaminations = examinations.filter(exam =>
+function getMatchingExaminations() {
+    return examinations.filter(exam =>
         String(exam.school_id) ===
             String(selectedAssignment.school_id) &&
         String(exam.class_id) ===
@@ -550,10 +579,14 @@ function renderExaminations() {
         String(exam.subject_id) ===
             String(selectedAssignment.subject_id)
     );
+}
 
-    if (matchingExaminations.length === 0) {
+function renderExaminations() {
+    const matching = getMatchingExaminations();
+
+    if (matching.length === 0) {
         assessmentSelect.innerHTML =
-            '<option value="">No examinations found</option>';
+            '<option value="">No Examinations found</option>';
 
         showAssessmentMessage(
             "No Examinations were found for this class and subject.",
@@ -563,10 +596,10 @@ function renderExaminations() {
         return;
     }
 
-    matchingExaminations.forEach((exam, index) => {
+    matching.forEach(exam => {
         const option = document.createElement("option");
 
-        option.value = String(index);
+        option.value = String(exam.examination_id);
 
         option.textContent =
             `${exam.exam_name} (${exam.total_marks} marks)`;
@@ -574,85 +607,199 @@ function renderExaminations() {
         assessmentSelect.appendChild(option);
     });
 
-    assessmentSelect.value = "0";
+    assessmentSelect.value =
+        String(matching[0].examination_id);
+
     changeAssessment();
 }
 
 /* =====================================================
-   CHANGE SELECTED ASSESSMENT
+   SELECT ASSESSMENT
 ===================================================== */
 
 function changeAssessment() {
-    const index = Number(assessmentSelect.value);
+    if (!selectedAssignment || !assessmentType.value) {
+        return;
+    }
 
-    if (!assessmentType.value || !selectedAssignment) {
+    const assessmentId = assessmentSelect.value;
+
+    if (!assessmentId) {
+        selectedAssessment = null;
+        clearStudents();
         return;
     }
 
     if (assessmentType.value === "test") {
-        const matchingTests = tests.filter(test =>
-            String(test.school_id) ===
-                String(selectedAssignment.school_id) &&
-            String(test.class_id) ===
-                String(selectedAssignment.class_id) &&
-            String(test.subject_id) ===
-                String(selectedAssignment.subject_id)
-        );
+        selectedAssessment = getMatchingTests().find(
+            item => String(item.test_id) === String(assessmentId)
+        ) || null;
 
-        selectedAssessment = matchingTests[index] || null;
+        if (
+            !selectedAssessment ||
+            !selectedAssessment.ready_for_marks
+        ) {
+            clearStudents();
 
-        if (!selectedAssessment) return;
-
-        if (!selectedAssessment.ready_for_marks) {
             showAssessmentMessage(
-                selectedAssessment.availability_message ||
-                "This Test is not ready for marks.",
+                selectedAssessment?.availability_message ||
+                "This Test is not ready for mark entry.",
                 "warning"
             );
 
-            clearStudents();
             return;
         }
 
-        showAssessmentMessage(
-            `Test is open and ready. Maximum marks: ` +
-            `${selectedAssessment.total_marks}.`,
-            "success"
-        );
-
     } else {
-        const matchingExaminations = examinations.filter(exam =>
-            String(exam.school_id) ===
-                String(selectedAssignment.school_id) &&
-            String(exam.class_id) ===
-                String(selectedAssignment.class_id) &&
-            String(exam.subject_id) ===
-                String(selectedAssignment.subject_id)
-        );
-
-        selectedAssessment =
-            matchingExaminations[index] || null;
-
-        if (!selectedAssessment) return;
-
-        showAssessmentMessage(
-            `Examination selected. Maximum marks: ` +
-            `${selectedAssessment.total_marks}.`,
-            "success"
-        );
+        selectedAssessment = getMatchingExaminations().find(
+            item => String(item.examination_id) ===
+                String(assessmentId)
+        ) || null;
     }
 
-    /*
-       Student loading and mark saving will be connected
-       after their backend endpoints are installed.
-    */
+    if (!selectedAssessment) {
+        clearStudents();
+        return;
+    }
 
-    document.getElementById("studentsPlaceholder").textContent =
-        "Assessment selected. Student loading will be enabled " +
-        "in the next implementation step.";
+    maximumMarks = Number(selectedAssessment.total_marks);
 
-    document.getElementById("studentsTableContainer").style.display =
-        "none";
+    if (!Number.isFinite(maximumMarks) || maximumMarks <= 0) {
+        showAssessmentMessage(
+            "The assessment has an invalid maximum mark.",
+            "error"
+        );
+
+        clearStudents();
+        return;
+    }
+
+    showAssessmentMessage(
+        `Selected: ${
+            selectedAssessment.test_name ||
+            selectedAssessment.exam_name
+        }. Maximum marks: ${maximumMarks}.`,
+        "success"
+    );
+
+    loadStudents();
+}
+
+/* =====================================================
+   LOAD STUDENTS
+===================================================== */
+
+async function loadStudents() {
+    clearStudents();
+
+    if (!selectedAssignment || !selectedAssessment) {
+        return;
+    }
+
+    studentsPlaceholder.style.display = "block";
+    studentsPlaceholder.textContent = "Loading students...";
+
+    try {
+        const params = new URLSearchParams({
+            assessment_type: assessmentType.value,
+            assessment_id: String(
+                assessmentType.value === "test"
+                    ? selectedAssessment.test_id
+                    : selectedAssessment.examination_id
+            ),
+            assignment_id: String(
+                selectedAssignment.assignment_id
+            )
+        });
+
+        const response = await fetch(
+            `${API_STUDENTS}?${params.toString()}`,
+            {
+                credentials: "same-origin",
+                headers: {
+                    "Accept": "application/json"
+                }
+            }
+        );
+
+        const data = await readResponse(response);
+
+        students = data.students || [];
+
+        maximumMarks = Number(data.assessment.total_marks);
+
+        if (students.length === 0) {
+            studentsPlaceholder.textContent =
+                "No students found in this class.";
+
+            return;
+        }
+
+        renderStudents();
+
+    } catch (error) {
+        console.error(error);
+
+        studentsPlaceholder.textContent = error.message;
+
+        showAssessmentMessage(error.message, "error");
+    }
+}
+
+/* =====================================================
+   RENDER STUDENTS
+===================================================== */
+
+function renderStudents() {
+    studentsBody.innerHTML = "";
+
+    students.forEach((student, index) => {
+        const row = document.createElement("tr");
+
+        const numberCell = document.createElement("td");
+        numberCell.textContent = index + 1;
+
+        const nameCell = document.createElement("td");
+        nameCell.textContent = student.full_name;
+
+        if (student.student_code) {
+            const code = document.createElement("small");
+            code.textContent = ` (${student.student_code})`;
+            nameCell.appendChild(code);
+        }
+
+        const markCell = document.createElement("td");
+
+        const input = document.createElement("input");
+
+        input.type = "number";
+        input.min = "0";
+        input.max = String(maximumMarks);
+        input.step = "0.01";
+        input.id = `mark_${student.id}`;
+        input.dataset.studentId = student.id;
+        input.value = student.mark ?? "";
+        input.placeholder = `0 - ${maximumMarks}`;
+
+        input.style.width = "100px";
+        input.style.padding = "7px";
+
+        markCell.appendChild(input);
+
+        row.appendChild(numberCell);
+        row.appendChild(nameCell);
+        row.appendChild(markCell);
+
+        studentsBody.appendChild(row);
+    });
+
+    studentsPlaceholder.style.display = "none";
+    studentsTableContainer.style.display = "block";
+
+    saveButton.disabled = false;
+
+    document.getElementById("marksTotal").textContent =
+        `${students.length} students | Maximum mark: ${maximumMarks}`;
 }
 
 /* =====================================================
@@ -660,18 +807,120 @@ function changeAssessment() {
 ===================================================== */
 
 function clearStudents() {
-    document.getElementById("studentsBody").innerHTML = "";
+    students = [];
+    studentsBody.innerHTML = "";
 
-    document.getElementById("studentsPlaceholder").textContent =
+    studentsPlaceholder.style.display = "block";
+    studentsPlaceholder.textContent =
         "Select a valid assessment to continue.";
 
-    document.getElementById("studentsPlaceholder").style.display =
-        "block";
+    studentsTableContainer.style.display = "none";
+    saveButton.disabled = true;
+}
 
-    document.getElementById("studentsTableContainer").style.display =
-        "none";
+/* =====================================================
+   SAVE MARKS
+===================================================== */
 
-    document.getElementById("saveMarksButton").disabled = true;
+async function saveMarks() {
+    if (!selectedAssignment || !selectedAssessment) {
+        showMessage(
+            "Select a valid assignment and assessment first.",
+            "error"
+        );
+        return;
+    }
+
+    const inputs = studentsBody.querySelectorAll(
+        "input[data-student-id]"
+    );
+
+    const marks = [];
+
+    for (const input of inputs) {
+        const value = input.value.trim();
+
+        if (value !== "") {
+            const score = Number(value);
+
+            if (
+                !Number.isFinite(score) ||
+                score < 0 ||
+                score > maximumMarks
+            ) {
+                input.focus();
+
+                showMessage(
+                    `Every mark must be between 0 and ${maximumMarks}.`,
+                    "error"
+                );
+
+                return;
+            }
+        }
+
+        marks.push({
+            student_id: input.dataset.studentId,
+            mark: value === "" ? null : Number(value)
+        });
+    }
+
+    if (!marks.some(item => item.mark !== null)) {
+        showMessage(
+            "Enter at least one mark before saving.",
+            "error"
+        );
+        return;
+    }
+
+    const payload = {
+        assessment_type: assessmentType.value,
+
+        assessment_id: String(
+            assessmentType.value === "test"
+                ? selectedAssessment.test_id
+                : selectedAssessment.examination_id
+        ),
+
+        assignment_id: String(
+            selectedAssignment.assignment_id
+        ),
+
+        marks
+    };
+
+    saveButton.disabled = true;
+    saveButton.textContent = "Saving...";
+
+    try {
+        const response = await fetch(API_SAVE, {
+            method: "POST",
+            credentials: "same-origin",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            },
+            body: JSON.stringify(payload)
+        });
+
+        const result = await readResponse(response);
+
+        showMessage(
+            `${result.message} ${result.saved_count} student marks saved.`,
+            "success"
+        );
+
+        await loadStudents();
+
+    } catch (error) {
+        console.error(error);
+
+        showMessage(error.message, "error");
+
+    } finally {
+        saveButton.disabled = false;
+        saveButton.textContent = "Save Marks";
+    }
 }
 
 /* =====================================================
@@ -693,13 +942,15 @@ assessmentSelect.addEventListener(
     changeAssessment
 );
 
+saveButton.addEventListener(
+    "click",
+    saveMarks
+);
+
 /* =====================================================
    START
 ===================================================== */
 
 loadOptions();
-
-</script>
-
-</body>
+                </script>
 </html>
