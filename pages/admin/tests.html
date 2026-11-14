@@ -1,0 +1,1256 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Test Management</title>
+
+<link rel="stylesheet" href="style.css">
+
+<style>
+:root {
+    --primary: #2563eb;
+    --primary-dark: #1d4ed8;
+    --success: #15803d;
+    --danger: #dc2626;
+    --warning: #d97706;
+    --border: #e2e8f0;
+    --muted: #64748b;
+    --background: #f8fafc;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background: var(--background);
+    color: #0f172a;
+    font-family: Arial, sans-serif;
+}
+
+button, input, select {
+    font: inherit;
+}
+
+button {
+    cursor: pointer;
+}
+
+.topbar {
+    background: white;
+    border-bottom: 1px solid var(--border);
+    padding: 16px 22px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+}
+
+.topbar h2 {
+    margin: 0;
+    font-size: 20px;
+}
+
+.topbar p {
+    color: var(--muted);
+    font-size: 13px;
+    margin: 5px 0 0;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 28px auto;
+    padding: 0 18px;
+}
+
+.panel {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 22px;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, .04);
+}
+
+.panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin-bottom: 20px;
+}
+
+.panel-header h3 {
+    margin: 0;
+    font-size: 19px;
+}
+
+.primary-btn,
+.secondary-btn,
+.danger-btn,
+.success-btn,
+.warning-btn {
+    border: 0;
+    border-radius: 7px;
+    padding: 10px 14px;
+    font-weight: 600;
+    font-size: 13px;
+}
+
+.primary-btn {
+    background: var(--primary);
+    color: white;
+}
+
+.primary-btn:hover {
+    background: var(--primary-dark);
+}
+
+.secondary-btn {
+    background: #e2e8f0;
+    color: #1e293b;
+}
+
+.danger-btn {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.success-btn {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.warning-btn {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+button:disabled {
+    opacity: .55;
+    cursor: not-allowed;
+}
+
+.toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+.toolbar input,
+.toolbar select {
+    min-height: 40px;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 9px 12px;
+    background: white;
+}
+
+.toolbar input {
+    flex: 1;
+    min-width: 180px;
+}
+
+.table-wrap {
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    min-width: 850px;
+    border-collapse: collapse;
+}
+
+th, td {
+    padding: 13px 12px;
+    border-bottom: 1px solid var(--border);
+    text-align: left;
+    font-size: 13px;
+    vertical-align: top;
+}
+
+th {
+    background: #f8fafc;
+    color: #475569;
+    font-weight: 700;
+}
+
+td strong {
+    color: #0f172a;
+}
+
+.details {
+    color: #64748b;
+    line-height: 1.7;
+    max-width: 260px;
+}
+
+.status {
+    display: inline-block;
+    padding: 5px 9px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.status-draft {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.status-open {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.status-closed {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    min-width: 180px;
+}
+
+.actions button {
+    padding: 7px 9px;
+    font-size: 11px;
+}
+
+.empty {
+    text-align: center;
+    color: var(--muted);
+    padding: 35px 12px;
+}
+
+.message {
+    display: none;
+    padding: 12px 15px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    font-size: 13px;
+}
+
+.message.success {
+    display: block;
+    color: #166534;
+    background: #dcfce7;
+}
+
+.message.error {
+    display: block;
+    color: #991b1b;
+    background: #fee2e2;
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    background: rgba(15, 23, 42, .6);
+    padding: 18px;
+    overflow-y: auto;
+    align-items: flex-start;
+    justify-content: center;
+}
+
+.modal.show {
+    display: flex;
+}
+
+.modal-content {
+    background: white;
+    width: 100%;
+    max-width: 720px;
+    margin: 25px auto;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.modal-header {
+    padding: 18px 22px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 19px;
+}
+
+.close-modal {
+    border: 0;
+    background: transparent;
+    font-size: 25px;
+    color: #64748b;
+}
+
+.modal-body {
+    padding: 22px;
+}
+
+.form-group {
+    margin-bottom: 21px;
+}
+
+.form-group label,
+.section-label {
+    display: block;
+    font-weight: 700;
+    font-size: 13px;
+    margin-bottom: 9px;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 11px;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+}
+
+.hint {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 6px;
+}
+
+.selection-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
+    gap: 9px;
+}
+
+.selection-card {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    min-height: 45px;
+    text-align: left;
+    color: #334155;
+    font-size: 13px;
+    transition: .15s;
+}
+
+.selection-card.selected {
+    border: 2px solid var(--primary);
+    background: #eff6ff;
+    color: #1d4ed8;
+    font-weight: 700;
+}
+
+.selection-card:disabled {
+    opacity: .65;
+    cursor: not-allowed;
+}
+
+.selection-card small {
+    display: block;
+    color: var(--muted);
+    margin-top: 5px;
+    font-weight: 400;
+}
+
+.modal-footer {
+    padding: 16px 22px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: flex-end;
+    gap: 9px;
+}
+
+@media(max-width:600px) {
+    .topbar {
+        padding: 14px;
+    }
+
+    .container {
+        margin: 16px auto;
+        padding: 0 10px;
+    }
+
+    .panel {
+        padding: 14px;
+    }
+
+    .modal {
+        padding: 8px;
+    }
+
+    .modal-content {
+        margin: 8px auto;
+    }
+
+    .modal-body {
+        padding: 16px;
+    }
+
+    .selection-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+</style>
+</head>
+
+<body>
+
+<header class="topbar">
+    <div>
+        <h2>Test Management</h2>
+        <p id="roleDescription">Manage examinations and tests</p>
+    </div>
+
+    <button class="secondary-btn" onclick="goBack()">
+        Back
+    </button>
+</header>
+
+<main class="container">
+
+    <div id="message" class="message"></div>
+
+    <section class="panel">
+        <div class="panel-header">
+            <div>
+                <h3>Tests</h3>
+                <p style="color:#64748b;font-size:13px;margin:6px 0 0">
+                    View and manage examination tests
+                </p>
+            </div>
+
+            <button
+                class="primary-btn"
+                id="addTestBtn"
+                onclick="openAddModal()">
+                + Add New Test
+            </button>
+        </div>
+
+        <div class="toolbar">
+            <input
+                type="search"
+                id="searchInput"
+                placeholder="Search tests..."
+                oninput="renderTests()">
+
+            <select id="statusFilter" onchange="renderTests()">
+                <option value="all">All statuses</option>
+                <option value="draft">Draft</option>
+                <option value="open">Open</option>
+                <option value="closed">Closed</option>
+            </select>
+        </div>
+
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Test</th>
+                        <th>Schools</th>
+                        <th>Classes</th>
+                        <th>Subjects</th>
+                        <th>Closing time</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+
+                <tbody id="testsTable">
+                    <tr>
+                        <td colspan="8" class="empty">
+                            Loading tests...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+</main>
+
+<!-- ADD / EDIT TEST MODAL -->
+<div class="modal" id="testModal">
+    <div class="modal-content">
+
+        <div class="modal-header">
+            <h3 id="modalTitle">Create New Test</h3>
+            <button class="close-modal" onclick="closeModal()">&times;</button>
+        </div>
+
+        <div class="modal-body">
+
+            <div class="form-group">
+                <label for="testName">Test name *</label>
+                <input
+                    type="text"
+                    id="testName"
+                    maxlength="200"
+                    placeholder="e.g. First Term Examination">
+            </div>
+
+            <div class="form-group" id="schoolsGroup">
+                <label class="section-label">
+                    Schools expected to do this test *
+                </label>
+                <div class="selection-grid" id="schoolsGrid"></div>
+                <div class="hint">
+                    Select one or more schools in your sector.
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="section-label">
+                    Classes expected to do this test *
+                </label>
+                <div class="selection-grid" id="classesGrid"></div>
+                <div class="hint">
+                    Select one or more classes. All classes in the
+                    selected school or schools are available.
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="section-label">
+                    Subjects to be examined *
+                </label>
+                <div class="selection-grid" id="subjectsGrid"></div>
+            </div>
+
+            <div class="form-group">
+                <label for="closingAt">Closing date and time (optional)</label>
+                <input type="datetime-local" id="closingAt">
+                <div class="hint">
+                    Leave blank if the test should remain open until
+                    an administrator closes it.
+                </div>
+            </div>
+
+        </div>
+
+        <div class="modal-footer">
+            <button class="secondary-btn" onclick="closeModal()">
+                Cancel
+            </button>
+
+            <button
+                class="primary-btn"
+                id="saveTestBtn"
+                onclick="saveTest()">
+                Save Test
+            </button>
+        </div>
+
+    </div>
+</div>
+
+<script>
+"use strict";
+
+/* =========================================
+   AUTHENTICATION AND PAGE CONFIGURATION
+========================================= */
+
+const currentUser = JSON.parse(
+    localStorage.getItem("currentUser") || "null"
+);
+
+const role = localStorage.getItem("role");
+
+if (!currentUser || ![
+    "sector_admin",
+    "school_admin",
+    "teacher"
+].includes(role)) {
+    window.location.href = "index.html";
+}
+
+const isAdmin = [
+    "sector_admin",
+    "school_admin"
+].includes(role);
+
+document.getElementById("roleDescription").textContent =
+    role === "sector_admin"
+        ? "Sector examination management"
+        : role === "school_admin"
+            ? "School examination management"
+            : "View tests assigned to your classes and subjects";
+
+document.getElementById("addTestBtn").style.display =
+    isAdmin ? "inline-block" : "none";
+
+
+/* =========================================
+   APPLICATION STATE
+========================================= */
+
+let tests = [];
+let options = {
+    schools: [],
+    classes: [],
+    subjects: []
+};
+
+let selectedSchools = [];
+let selectedClasses = [];
+let selectedSubjects = [];
+let editingTestId = null;
+
+
+/* =========================================
+   API REQUEST HELPER
+========================================= */
+
+async function apiRequest(url, options = {}) {
+    const response = await fetch(url, {
+        ...options,
+        credentials: "same-origin",
+        headers: {
+            ...(options.body ? {
+                "Content-Type": "application/json"
+            } : {}),
+            ...options.headers
+        }
+    });
+
+    const contentType = response.headers.get("content-type") || "";
+
+    if (!contentType.includes("application/json")) {
+        throw new Error(
+            "The server returned an invalid response. Check the API file and deployment."
+        );
+    }
+
+    const result = await response.json();
+
+    if (!response.ok || result.success === false) {
+        throw new Error(result.message || "Request failed.");
+    }
+
+    return result;
+}
+
+
+/* =========================================
+   MESSAGES
+========================================= */
+
+function showMessage(message, type = "success") {
+    const element = document.getElementById("message");
+
+    element.textContent = message;
+    element.className = "message " + type;
+
+    window.scrollTo({ top: 0, behavior: "smooth" });
+
+    setTimeout(() => {
+        element.className = "message";
+    }, 5000);
+}
+
+
+/* =========================================
+   LOAD TEST OPTIONS
+========================================= */
+
+async function loadOptions() {
+    if (!isAdmin) return;
+
+    const result = await apiRequest("/api/test-options");
+
+    options = {
+        schools: result.schools || [],
+        classes: result.classes || [],
+        subjects: result.subjects || []
+    };
+}
+
+
+/* =========================================
+   LOAD TESTS
+========================================= */
+
+async function loadTests() {
+    const result = await apiRequest("/api/tests");
+
+    tests = result.tests || [];
+
+    renderTests();
+}
+
+
+/* =========================================
+   RENDER TEST LIST
+========================================= */
+
+function renderTests() {
+    const tbody = document.getElementById("testsTable");
+
+    const search = document
+        .getElementById("searchInput")
+        .value.toLowerCase()
+        .trim();
+
+    const status = document.getElementById("statusFilter").value;
+
+    const filtered = tests.filter(test => {
+        const matchesSearch =
+            (test.test_name || "").toLowerCase().includes(search);
+
+        const matchesStatus =
+            status === "all" || test.status === status;
+
+        return matchesSearch && matchesStatus;
+    });
+
+    if (!filtered.length) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="8" class="empty">
+                    No tests found.
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    tbody.innerHTML = filtered.map((test, index) => {
+        const schools = (test.schools || [])
+            .map(s => s.school_name)
+            .filter(Boolean);
+
+        const classes = (test.classes || [])
+            .map(c => c.class_name)
+            .filter(Boolean);
+
+        const subjects = (test.subjects || [])
+            .map(s => s.subject_name)
+            .filter(Boolean);
+
+        const statusLabel =
+            test.status.charAt(0).toUpperCase() +
+            test.status.slice(1);
+
+        let actions = "";
+
+        if (isAdmin) {
+            if (test.status === "draft") {
+                actions = `
+                    <button class="warning-btn"
+                        onclick="editTest('${test.id}')">
+                        Edit
+                    </button>
+
+                    <button class="success-btn"
+                        onclick="manageTest('${test.id}','initiate')">
+                        Initiate
+                    </button>
+
+                    <button class="danger-btn"
+                        onclick="manageTest('${test.id}','delete')">
+                        Delete
+                    </button>
+                `;
+            } else if (test.status === "open") {
+                actions = `
+                    <button class="danger-btn"
+                        onclick="manageTest('${test.id}','close')">
+                        Close Test
+                    </button>
+                `;
+            } else {
+                actions = `<span style="color:#64748b">Read only</span>`;
+            }
+        } else {
+            actions = `<span style="color:#64748b">Read only</span>`;
+        }
+
+        return `
+            <tr>
+                <td>${index + 1}</td>
+
+                <td>
+                    <strong>${escapeHTML(test.test_name)}</strong>
+                    <div class="hint">
+                        Created by ${escapeHTML(test.creator_name || "Administrator")}
+                    </div>
+                </td>
+
+                <td class="details">
+                    ${schools.length
+                        ? schools.map(escapeHTML).join("<br>")
+                        : "Your school"}
+                </td>
+
+                <td class="details">
+                    ${classes.map(escapeHTML).join("<br>")}
+                </td>
+
+                <td class="details">
+                    ${subjects.map(escapeHTML).join("<br>")}
+                </td>
+
+                <td>
+                    ${formatDate(test.closing_at)}
+                </td>
+
+                <td>
+                    <span class="status status-${test.status}">
+                        ${statusLabel}
+                    </span>
+                </td>
+
+                <td>
+                    <div class="actions">
+                        ${actions}
+                    </div>
+                </td>
+            </tr>
+        `;
+    }).join("");
+}
+
+
+/* =========================================
+   SAFE HTML OUTPUT
+========================================= */
+
+function escapeHTML(value) {
+    return String(value ?? "").replace(/[&<>"']/g, character => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#039;"
+    })[character]);
+}
+
+function formatDate(value) {
+    if (!value) return "Not set";
+
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) return "Not set";
+
+    return date.toLocaleString();
+}
+
+
+/* =========================================
+   OPEN AND CLOSE MODAL
+========================================= */
+
+function openAddModal() {
+    editingTestId = null;
+
+    selectedSchools = [];
+    selectedClasses = [];
+    selectedSubjects = [];
+
+    document.getElementById("modalTitle").textContent =
+        "Create New Test";
+
+    document.getElementById("testName").value = "";
+    document.getElementById("closingAt").value = "";
+
+    renderSelectionCards();
+
+    document.getElementById("testModal").classList.add("show");
+}
+
+function closeModal() {
+    document.getElementById("testModal").classList.remove("show");
+}
+
+
+/* =========================================
+   RENDER MULTI-SELECT CARDS
+========================================= */
+
+function renderSelectionCards() {
+    const schoolsGroup = document.getElementById("schoolsGroup");
+
+    schoolsGroup.style.display =
+        role === "sector_admin" ? "block" : "none";
+
+    renderSchools();
+    renderClasses();
+    renderSubjects();
+}
+
+function renderSchools() {
+    const grid = document.getElementById("schoolsGrid");
+
+    if (role !== "sector_admin") {
+        grid.innerHTML = "";
+        return;
+    }
+
+    if (!options.schools.length) {
+        grid.innerHTML = `<p class="hint">No schools found.</p>`;
+        return;
+    }
+
+    grid.innerHTML = options.schools.map(school => {
+        const selected = selectedSchools.includes(String(school.id));
+
+        return `
+            <button type="button"
+                class="selection-card ${selected ? "selected" : ""}"
+                onclick="toggleSchool('${school.id}')">
+                ${selected ? "✓ " : ""}
+                ${escapeHTML(school.school_name)}
+            </button>
+        `;
+    }).join("");
+}
+
+function renderClasses() {
+    const grid = document.getElementById("classesGrid");
+
+    const allowedSchools = role === "sector_admin"
+        ? selectedSchools
+        : options.schools.map(s => String(s.id));
+
+    const availableClasses = options.classes.filter(item =>
+        allowedSchools.includes(String(item.school_id))
+    );
+
+    if (!availableClasses.length) {
+        grid.innerHTML = `
+            <p class="hint">
+                ${role === "sector_admin"
+                    ? "Select schools first to see their classes."
+                    : "No classes found for this school."}
+            </p>
+        `;
+        return;
+    }
+
+    grid.innerHTML = availableClasses.map(item => {
+        const selected = selectedClasses.includes(String(item.id));
+
+        return `
+            <button type="button"
+                class="selection-card ${selected ? "selected" : ""}"
+                onclick="toggleClass('${item.id}')">
+                ${selected ? "✓ " : ""}
+                ${escapeHTML(item.class_name)}
+                ${item.class_level
+                    ? `<small>${escapeHTML(item.class_level)}</small>`
+                    : ""}
+            </button>
+        `;
+    }).join("");
+}
+
+function renderSubjects() {
+    const grid = document.getElementById("subjectsGrid");
+
+    if (!options.subjects.length) {
+        grid.innerHTML = `<p class="hint">No subjects found.</p>`;
+        return;
+    }
+
+    grid.innerHTML = options.subjects.map(subject => {
+        const selected = selectedSubjects.includes(String(subject.id));
+
+        return `
+            <button type="button"
+                class="selection-card ${selected ? "selected" : ""}"
+                onclick="toggleSubject('${subject.id}')">
+                ${selected ? "✓ " : ""}
+                ${escapeHTML(subject.subject_name)}
+            </button>
+        `;
+    }).join("");
+}
+
+
+/* =========================================
+   SELECTION HANDLERS
+========================================= */
+
+function toggleSchool(id) {
+    id = String(id);
+
+    if (selectedSchools.includes(id)) {
+        selectedSchools = selectedSchools.filter(item => item !== id);
+
+        const allowed = options.classes
+            .filter(c => selectedSchools.includes(String(c.school_id)))
+            .map(c => String(c.id));
+
+        selectedClasses = selectedClasses.filter(id =>
+            allowed.includes(id)
+        );
+    } else {
+        selectedSchools.push(id);
+    }
+
+    renderSchools();
+    renderClasses();
+}
+
+function toggleClass(id) {
+    id = String(id);
+
+    if (selectedClasses.includes(id)) {
+        selectedClasses = selectedClasses.filter(item => item !== id);
+    } else {
+        selectedClasses.push(id);
+    }
+
+    renderClasses();
+}
+
+function toggleSubject(id) {
+    id = String(id);
+
+    if (selectedSubjects.includes(id)) {
+        selectedSubjects = selectedSubjects.filter(item => item !== id);
+    } else {
+        selectedSubjects.push(id);
+    }
+
+    renderSubjects();
+}
+
+
+/* =========================================
+   SAVE NEW OR EDITED TEST
+========================================= */
+
+async function saveTest() {
+    const button = document.getElementById("saveTestBtn");
+
+    const testName = document
+        .getElementById("testName")
+        .value.trim();
+
+    const closingValue = document
+        .getElementById("closingAt")
+        .value;
+
+    if (!testName) {
+        showMessage("Enter the test name.", "error");
+        return;
+    }
+
+    if (!selectedClasses.length) {
+        showMessage("Select at least one class.", "error");
+        return;
+    }
+
+    if (!selectedSubjects.length) {
+        showMessage("Select at least one subject.", "error");
+        return;
+    }
+
+    if (role === "sector_admin" && !selectedSchools.length) {
+        showMessage("Select at least one school.", "error");
+        return;
+    }
+
+    let closingAt = null;
+
+    if (closingValue) {
+        const date = new Date(closingValue);
+
+        if (Number.isNaN(date.getTime()) || date <= new Date()) {
+            showMessage("Choose a valid future closing date and time.", "error");
+            return;
+        }
+
+        closingAt = date.toISOString();
+    }
+
+    const payload = {
+        test_name: testName,
+        school_ids: role === "sector_admin" ? selectedSchools : [],
+        class_ids: selectedClasses,
+        subject_ids: selectedSubjects,
+        closing_at: closingAt
+    };
+
+    button.disabled = true;
+    button.textContent = "Saving...";
+
+    try {
+        if (editingTestId) {
+            await apiRequest("/api/tests/action", {
+                method: "POST",
+                body: JSON.stringify({
+                    ...payload,
+                    test_id: editingTestId,
+                    action: "update"
+                })
+            });
+        } else {
+            await apiRequest("/api/tests", {
+                method: "POST",
+                body: JSON.stringify(payload)
+            });
+        }
+
+        closeModal();
+
+        showMessage(
+            editingTestId
+                ? "Test updated successfully."
+                : "Test created successfully."
+        );
+
+        editingTestId = null;
+
+        await loadTests();
+
+    } catch (error) {
+        showMessage(error.message, "error");
+    } finally {
+        button.disabled = false;
+        button.textContent = "Save Test";
+    }
+}
+
+
+/* =========================================
+   EDIT TEST
+========================================= */
+
+function editTest(id) {
+    const test = tests.find(item => String(item.id) === String(id));
+
+    if (!test || test.status !== "draft") return;
+
+    editingTestId = String(test.id);
+
+    selectedSchools = (test.schools || [])
+        .map(item => String(item.id));
+
+    selectedClasses = (test.classes || [])
+        .map(item => String(item.id));
+
+    selectedSubjects = (test.subjects || [])
+        .map(item => String(item.id));
+
+    document.getElementById("modalTitle").textContent =
+        "Edit Test";
+
+    document.getElementById("testName").value = test.test_name || "";
+
+    if (test.closing_at) {
+        const date = new Date(test.closing_at);
+        const local = new Date(
+            date.getTime() - date.getTimezoneOffset() * 60000
+        );
+
+        document.getElementById("closingAt").value =
+            local.toISOString().slice(0, 16);
+    } else {
+        document.getElementById("closingAt").value = "";
+    }
+
+    renderSelectionCards();
+
+    document.getElementById("testModal").classList.add("show");
+}
+
+
+/* =========================================
+   DELETE / INITIATE / CLOSE
+========================================= */
+
+async function manageTest(id, action) {
+    const messages = {
+        delete: "Are you sure you want to delete this draft test?",
+        initiate: "Initiate this test? Teachers will be able to start recording marks.",
+        close: "Close this test? Teachers will no longer be able to record marks."
+    };
+
+    if (!confirm(messages[action])) return;
+
+    try {
+        await apiRequest("/api/tests/action", {
+            method: "POST",
+            body: JSON.stringify({
+                test_id: id,
+                action
+            })
+        });
+
+        const successMessages = {
+            delete: "Test deleted successfully.",
+            initiate: "Test initiated. It is now open.",
+            close: "Test closed successfully."
+        };
+
+        showMessage(successMessages[action]);
+
+        await loadTests();
+
+    } catch (error) {
+        showMessage(error.message, "error");
+    }
+}
+
+
+/* =========================================
+   NAVIGATION
+========================================= */
+
+function goBack() {
+    if (role === "sector_admin") {
+        window.location.href = "sector-admin.html";
+    } else if (role === "school_admin") {
+        window.location.href = "school-admin.html";
+    } else {
+        window.location.href = "teacher-dashboard.html";
+    }
+}
+
+
+/* =========================================
+   INITIALIZE
+========================================= */
+
+async function initializePage() {
+    try {
+        if (isAdmin) {
+            await loadOptions();
+        }
+
+        await loadTests();
+
+    } catch (error) {
+        showMessage(error.message, "error");
+
+        document.getElementById("testsTable").innerHTML = `
+            <tr>
+                <td colspan="8" class="empty">
+                    Unable to load tests. Please refresh the page.
+                </td>
+            </tr>
+        `;
+    }
+}
+
+initializePage();
+
+</script>
+
+</body>
+</html>
