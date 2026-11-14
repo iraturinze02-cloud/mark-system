@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Record Marks</title>
+    <title>Record Test Marks</title>
     <link rel="stylesheet" href="style.css">
 
     <style>
@@ -91,6 +91,14 @@
             border-bottom: 1px solid #eee;
         }
 
+        .mark-input {
+            width: 110px;
+            max-width: 100%;
+            padding: 8px;
+            border: 1px solid #cbd5e1;
+            border-radius: 5px;
+        }
+
         .status-message {
             padding: 12px;
             border-radius: 6px;
@@ -114,7 +122,7 @@
             color: #92400e;
         }
 
-        .assessment-status {
+        .test-status {
             display: inline-block;
             padding: 4px 9px;
             border-radius: 5px;
@@ -124,21 +132,15 @@
             color: #334155;
         }
 
-        .assessment-status.open,
-        .assessment-status.ready {
+        .test-status.open {
             background: #dcfce7;
             color: #166534;
         }
 
-        .assessment-status.closed,
-        .assessment-status.draft {
+        .test-status.closed,
+        .test-status.draft {
             background: #fee2e2;
             color: #991b1b;
-        }
-
-        .assessment-status.not-ready {
-            background: #fef3c7;
-            color: #92400e;
         }
 
         .empty-state {
@@ -205,42 +207,31 @@
     </section>
 
     <section class="record-card">
-        <h2>Assessment Selection</h2>
+        <h2>Test Selection</h2>
 
         <div class="form-group">
-            <label for="assignmentSelect">
-                Select Class and Subject
-            </label>
-
-            <select id="assignmentSelect" disabled>
-                <option value="">Loading assignments...</option>
+            <label for="classSelect">Select Class</label>
+            <select id="classSelect" disabled>
+                <option value="">Loading classes...</option>
             </select>
         </div>
 
         <div class="form-group">
-            <label for="assessmentType">
-                Assessment Type
-            </label>
-
-            <select id="assessmentType" disabled>
-                <option value="">Select assessment type</option>
-                <option value="test">Tests</option>
-                <option value="examination">Examinations</option>
+            <label for="subjectSelect">Select Subject</label>
+            <select id="subjectSelect" disabled>
+                <option value="">Select a subject</option>
             </select>
         </div>
 
         <div class="form-group">
-            <label for="assessmentSelect">
-                Select Test or Examination
-            </label>
-
-            <select id="assessmentSelect" disabled>
-                <option value="">Select an assessment</option>
+            <label for="testSelect">Select Test</label>
+            <select id="testSelect" disabled>
+                <option value="">Select a Test</option>
             </select>
         </div>
 
-        <div id="assessmentInformation" class="status-message">
-            Select your class, subject and assessment.
+        <div id="testInformation" class="status-message">
+            Select your class and subject to view available Tests.
         </div>
     </section>
 
@@ -248,10 +239,11 @@
         <h2>Student Marks Entry</h2>
 
         <div class="empty-state" id="studentsPlaceholder">
-            Select a valid assessment to continue.
+            Select a class, subject and open Test to continue.
         </div>
 
-        <div class="table-container" id="studentsTableContainer"
+        <div class="table-container"
+             id="studentsTableContainer"
              style="display:none">
 
             <table>
@@ -260,6 +252,7 @@
                         <th>#</th>
                         <th>Student Name</th>
                         <th>Mark</th>
+                        <th>Remarks</th>
                     </tr>
                 </thead>
 
@@ -279,45 +272,45 @@
 <script>
 "use strict";
 
+/* =====================================================
+   API ENDPOINTS
+===================================================== */
+
 const API_OPTIONS = "/api/record-marks/options";
 const API_STUDENTS = "/api/record-marks/students";
 const API_SAVE = "/api/record-marks/save";
 
+/* =====================================================
+   STATE
+===================================================== */
+
 let assignments = [];
 let tests = [];
-let examinations = [];
 let students = [];
 
+let selectedClassId = null;
 let selectedAssignment = null;
-let selectedAssessment = null;
-let maximumMarks = 0;
+let selectedTest = null;
 
-const assignmentSelect =
-    document.getElementById("assignmentSelect");
+let loadingStudents = false;
+let savingMarks = false;
 
-const assessmentType =
-    document.getElementById("assessmentType");
+/* =====================================================
+   ELEMENTS
+===================================================== */
 
-const assessmentSelect =
-    document.getElementById("assessmentSelect");
+const classSelect = document.getElementById("classSelect");
+const subjectSelect = document.getElementById("subjectSelect");
+const testSelect = document.getElementById("testSelect");
 
-const message =
-    document.getElementById("message");
+const message = document.getElementById("message");
+const testInformation = document.getElementById("testInformation");
 
-const assessmentInformation =
-    document.getElementById("assessmentInformation");
+const studentsBody = document.getElementById("studentsBody");
+const studentsPlaceholder = document.getElementById("studentsPlaceholder");
+const studentsTableContainer = document.getElementById("studentsTableContainer");
 
-const studentsBody =
-    document.getElementById("studentsBody");
-
-const studentsPlaceholder =
-    document.getElementById("studentsPlaceholder");
-
-const studentsTableContainer =
-    document.getElementById("studentsTableContainer");
-
-const saveButton =
-    document.getElementById("saveMarksButton");
+const saveButton = document.getElementById("saveMarksButton");
 
 /* =====================================================
    LOGOUT
@@ -337,10 +330,9 @@ function showMessage(text, type = "") {
     message.className = "status-message " + type;
 }
 
-function showAssessmentMessage(text, type = "") {
-    assessmentInformation.textContent = text;
-    assessmentInformation.className =
-        "status-message " + type;
+function showTestMessage(text, type = "") {
+    testInformation.textContent = text;
+    testInformation.className = "status-message " + type;
 }
 
 /* =====================================================
@@ -384,14 +376,13 @@ async function loadOptions() {
 
         assignments = data.assignments || [];
         tests = data.tests || [];
-        examinations = data.examinations || [];
 
         if (assignments.length === 0) {
-            assignmentSelect.innerHTML =
-                '<option value="">No assignments found</option>';
+            classSelect.innerHTML =
+                '<option value="">No assigned classes found</option>';
 
             showMessage(
-                data.message || "No assignments found.",
+                data.message || "No class and subject assignments were found.",
                 "warning"
             );
 
@@ -410,125 +401,187 @@ async function loadOptions() {
         document.getElementById("teacherSchool").textContent =
             assignments[0].school_name || "Not available";
 
-        renderAssignments();
+        renderClasses();
 
-        assignmentSelect.disabled = false;
-        assessmentType.disabled = false;
+        classSelect.disabled = false;
 
-        showMessage(
-            "Assignments loaded successfully.",
-            "success"
-        );
+        showMessage("Assignments loaded successfully.", "success");
 
     } catch (error) {
-        console.error(error);
-
+        console.error("Load options error:", error);
         showMessage(error.message, "error");
     }
 }
 
 /* =====================================================
-   ASSIGNMENTS
+   CLASS SELECTION
 ===================================================== */
 
-function renderAssignments() {
-    assignmentSelect.innerHTML = "";
+function renderClasses() {
+    const classes = [];
 
     assignments.forEach(assignment => {
-        const option = document.createElement("option");
+        const exists = classes.some(
+            item => String(item.class_id) === String(assignment.class_id)
+        );
 
-        option.value = String(assignment.assignment_id);
-
-        option.textContent =
-            `${assignment.class_name} - ${assignment.subject_name}`;
-
-        assignmentSelect.appendChild(option);
+        if (!exists) {
+            classes.push({
+                class_id: assignment.class_id,
+                class_name: assignment.class_name
+            });
+        }
     });
 
-    assignmentSelect.value =
-        String(assignments[0].assignment_id);
+    classSelect.innerHTML =
+        '<option value="">Select a class</option>';
 
-    changeAssignment();
+    classes.forEach(item => {
+        const option = document.createElement("option");
+
+        option.value = String(item.class_id);
+        option.textContent = item.class_name;
+
+        classSelect.appendChild(option);
+    });
+
+    if (classes.length === 1) {
+        classSelect.value = String(classes[0].class_id);
+        changeClass();
+    }
 }
 
-function changeAssignment() {
-    const assignmentId = assignmentSelect.value;
+function changeClass() {
+    selectedClassId = classSelect.value || null;
 
-    selectedAssignment = assignments.find(
-        item => String(item.assignment_id) === String(assignmentId)
-    ) || null;
-
-    selectedAssessment = null;
+    selectedAssignment = null;
+    selectedTest = null;
 
     document.getElementById("teacherClass").textContent =
-        selectedAssignment?.class_name || "Not selected";
+        "Not selected";
+
+    document.getElementById("teacherSubject").textContent =
+        "Not selected";
+
+    subjectSelect.innerHTML =
+        '<option value="">Select a subject</option>';
+
+    testSelect.innerHTML =
+        '<option value="">Select a Test</option>';
+
+    subjectSelect.disabled = !selectedClassId;
+    testSelect.disabled = true;
+
+    clearStudents();
+
+    if (!selectedClassId) {
+        showTestMessage("Select your class first.");
+        return;
+    }
+
+    document.getElementById("teacherClass").textContent =
+        assignments.find(
+            item => String(item.class_id) === String(selectedClassId)
+        )?.class_name || "Selected class";
+
+    renderSubjects();
+}
+
+/* =====================================================
+   SUBJECT SELECTION
+===================================================== */
+
+function renderSubjects() {
+    const matching = assignments.filter(
+        item => String(item.class_id) === String(selectedClassId)
+    );
+
+    const subjects = [];
+
+    matching.forEach(assignment => {
+        const exists = subjects.some(
+            item => String(item.subject_id) ===
+                String(assignment.subject_id)
+        );
+
+        if (!exists) {
+            subjects.push({
+                subject_id: assignment.subject_id,
+                subject_name: assignment.subject_name
+            });
+        }
+    });
+
+    subjectSelect.innerHTML =
+        '<option value="">Select a subject</option>';
+
+    subjects.forEach(subject => {
+        const option = document.createElement("option");
+
+        option.value = String(subject.subject_id);
+        option.textContent = subject.subject_name;
+
+        subjectSelect.appendChild(option);
+    });
+
+    if (subjects.length === 1) {
+        subjectSelect.value = String(subjects[0].subject_id);
+        changeSubject();
+    }
+}
+
+function changeSubject() {
+    const subjectId = subjectSelect.value;
+
+    selectedAssignment = assignments.find(item =>
+        String(item.class_id) === String(selectedClassId) &&
+        String(item.subject_id) === String(subjectId)
+    ) || null;
+
+    selectedTest = null;
 
     document.getElementById("teacherSubject").textContent =
         selectedAssignment?.subject_name || "Not selected";
 
-    assessmentType.value = "";
-    assessmentSelect.innerHTML =
-        '<option value="">Select an assessment</option>';
+    testSelect.innerHTML =
+        '<option value="">Select a Test</option>';
 
-    assessmentSelect.disabled = true;
-
-    clearStudents();
-
-    showAssessmentMessage(
-        "Select Tests or Examinations."
-    );
-}
-
-/* =====================================================
-   ASSESSMENT TYPE
-===================================================== */
-
-function changeAssessmentType() {
-    selectedAssessment = null;
-
-    assessmentSelect.innerHTML =
-        '<option value="">Select an assessment</option>';
+    testSelect.disabled = !selectedAssignment;
 
     clearStudents();
 
-    if (!selectedAssignment || !assessmentType.value) {
-        assessmentSelect.disabled = true;
+    if (!selectedAssignment) {
+        showTestMessage("Select your subject.");
         return;
     }
 
-    assessmentSelect.disabled = false;
-
-    if (assessmentType.value === "test") {
-        renderTests();
-    } else {
-        renderExaminations();
-    }
+    renderTests();
 }
 
 /* =====================================================
-   TESTS
+   TEST SELECTION
 ===================================================== */
 
 function getMatchingTests() {
+    if (!selectedAssignment) return [];
+
     return tests.filter(test =>
-        String(test.school_id) ===
-            String(selectedAssignment.school_id) &&
-        String(test.class_id) ===
-            String(selectedAssignment.class_id) &&
-        String(test.subject_id) ===
-            String(selectedAssignment.subject_id)
+        String(test.assignment_id) ===
+            String(selectedAssignment.assignment_id)
     );
 }
 
 function renderTests() {
     const matching = getMatchingTests();
 
-    if (matching.length === 0) {
-        assessmentSelect.innerHTML =
-            '<option value="">No matching Tests found</option>';
+    testSelect.innerHTML =
+        '<option value="">Select a Test</option>';
 
-        showAssessmentMessage(
-            "No Tests have been assigned to this class and subject.",
+    if (matching.length === 0) {
+        testSelect.disabled = true;
+
+        showTestMessage(
+            "No Tests were found for this class and subject.",
             "warning"
         );
 
@@ -541,146 +594,88 @@ function renderTests() {
         option.value = String(test.test_id);
 
         option.textContent =
-            `${test.test_name} (${test.status.toUpperCase()})`;
+            `${test.test_name} (${String(test.status).toUpperCase()})`;
 
-        option.disabled = !test.ready_for_marks;
+        const available =
+            test.available_for_marks === true &&
+            test.status === "open";
 
-        assessmentSelect.appendChild(option);
+        option.disabled = !available;
+
+        testSelect.appendChild(option);
     });
 
-    const firstReady = matching.find(
-        test => test.ready_for_marks
+    testSelect.disabled = false;
+
+    const availableTests = matching.filter(test =>
+        test.available_for_marks === true &&
+        test.status === "open"
     );
 
-    if (!firstReady) {
-        showAssessmentMessage(
-            "No Test is ready for mark entry. A Test must be open " +
-            "and connected to a valid Examination.",
+    if (availableTests.length === 0) {
+        showTestMessage(
+            "There are no open Tests for this class and subject. " +
+            "Only open Tests accept marks.",
             "warning"
         );
 
         return;
     }
 
-    assessmentSelect.value = String(firstReady.test_id);
-    changeAssessment();
-}
-
-/* =====================================================
-   EXAMINATIONS
-===================================================== */
-
-function getMatchingExaminations() {
-    return examinations.filter(exam =>
-        String(exam.school_id) ===
-            String(selectedAssignment.school_id) &&
-        String(exam.class_id) ===
-            String(selectedAssignment.class_id) &&
-        String(exam.subject_id) ===
-            String(selectedAssignment.subject_id)
-    );
-}
-
-function renderExaminations() {
-    const matching = getMatchingExaminations();
-
-    if (matching.length === 0) {
-        assessmentSelect.innerHTML =
-            '<option value="">No Examinations found</option>';
-
-        showAssessmentMessage(
-            "No Examinations were found for this class and subject.",
-            "warning"
-        );
-
-        return;
-    }
-
-    matching.forEach(exam => {
-        const option = document.createElement("option");
-
-        option.value = String(exam.examination_id);
-
-        option.textContent =
-            `${exam.exam_name} (${exam.total_marks} marks)`;
-
-        assessmentSelect.appendChild(option);
-    });
-
-    assessmentSelect.value =
-        String(matching[0].examination_id);
-
-    changeAssessment();
-}
-
-/* =====================================================
-   SELECT ASSESSMENT
-===================================================== */
-
-function changeAssessment() {
-    if (!selectedAssignment || !assessmentType.value) {
-        return;
-    }
-
-    const assessmentId = assessmentSelect.value;
-
-    if (!assessmentId) {
-        selectedAssessment = null;
-        clearStudents();
-        return;
-    }
-
-    if (assessmentType.value === "test") {
-        selectedAssessment = getMatchingTests().find(
-            item => String(item.test_id) === String(assessmentId)
-        ) || null;
-
-        if (
-            !selectedAssessment ||
-            !selectedAssessment.ready_for_marks
-        ) {
-            clearStudents();
-
-            showAssessmentMessage(
-                selectedAssessment?.availability_message ||
-                "This Test is not ready for mark entry.",
-                "warning"
-            );
-
-            return;
-        }
-
+    if (availableTests.length === 1) {
+        testSelect.value = String(availableTests[0].test_id);
+        changeTest();
     } else {
-        selectedAssessment = getMatchingExaminations().find(
-            item => String(item.examination_id) ===
-                String(assessmentId)
-        ) || null;
+        showTestMessage(
+            `${availableTests.length} open Tests are available. Please select one.`,
+            "success"
+        );
     }
+}
 
-    if (!selectedAssessment) {
-        clearStudents();
+function changeTest() {
+    const testId = testSelect.value;
+
+    selectedTest = getMatchingTests().find(
+        item => String(item.test_id) === String(testId)
+    ) || null;
+
+    clearStudents();
+
+    if (!selectedTest) {
+        showTestMessage("Select a Test to continue.");
         return;
     }
 
-    maximumMarks = Number(selectedAssessment.total_marks);
-
-    if (!Number.isFinite(maximumMarks) || maximumMarks <= 0) {
-        showAssessmentMessage(
-            "The assessment has an invalid maximum mark.",
-            "error"
+    if (
+        selectedTest.status !== "open" ||
+        selectedTest.available_for_marks !== true
+    ) {
+        showTestMessage(
+            "This Test is not open. Marks cannot be recorded.",
+            "warning"
         );
 
-        clearStudents();
+        selectedTest = null;
         return;
     }
 
-    showAssessmentMessage(
-        `Selected: ${
-            selectedAssessment.test_name ||
-            selectedAssessment.exam_name
-        }. Maximum marks: ${maximumMarks}.`,
-        "success"
-    );
+    const information = [
+        `Test: ${selectedTest.test_name}`,
+        `Status: ${selectedTest.status.toUpperCase()}`,
+        `Created by: ${selectedTest.creator_name || "Not available"}`,
+        `Opened by: ${selectedTest.initiated_by_name || "Not available"}`
+    ];
+
+    if (selectedTest.closing_at) {
+        information.push(
+            `Closing time: ${new Date(selectedTest.closing_at).toLocaleString()}`
+        );
+    } else {
+        information.push("Closing time: Manual closure");
+    }
+
+    showTestMessage(information.join(" | "), "success");
 
     loadStudents();
 }
@@ -690,26 +685,19 @@ function changeAssessment() {
 ===================================================== */
 
 async function loadStudents() {
+    if (!selectedAssignment || !selectedTest) return;
+
     clearStudents();
 
-    if (!selectedAssignment || !selectedAssessment) {
-        return;
-    }
+    loadingStudents = true;
 
     studentsPlaceholder.style.display = "block";
     studentsPlaceholder.textContent = "Loading students...";
 
     try {
         const params = new URLSearchParams({
-            assessment_type: assessmentType.value,
-            assessment_id: String(
-                assessmentType.value === "test"
-                    ? selectedAssessment.test_id
-                    : selectedAssessment.examination_id
-            ),
-            assignment_id: String(
-                selectedAssignment.assignment_id
-            )
+            test_id: String(selectedTest.test_id),
+            assignment_id: String(selectedAssignment.assignment_id)
         });
 
         const response = await fetch(
@@ -724,13 +712,16 @@ async function loadStudents() {
 
         const data = await readResponse(response);
 
-        students = data.students || [];
+        // The server verifies the Test again before returning students.
+        if (!data.test || data.test.status !== "open") {
+            throw new Error("This Test is no longer open.");
+        }
 
-        maximumMarks = Number(data.assessment.total_marks);
+        students = data.students || [];
 
         if (students.length === 0) {
             studentsPlaceholder.textContent =
-                "No students found in this class.";
+                "No students were found in this class.";
 
             return;
         }
@@ -738,11 +729,13 @@ async function loadStudents() {
         renderStudents();
 
     } catch (error) {
-        console.error(error);
+        console.error("Load students error:", error);
 
         studentsPlaceholder.textContent = error.message;
+        showTestMessage(error.message, "error");
 
-        showAssessmentMessage(error.message, "error");
+    } finally {
+        loadingStudents = false;
     }
 }
 
@@ -770,25 +763,34 @@ function renderStudents() {
 
         const markCell = document.createElement("td");
 
-        const input = document.createElement("input");
+        const markInput = document.createElement("input");
 
-        input.type = "number";
-        input.min = "0";
-        input.max = String(maximumMarks);
-        input.step = "0.01";
-        input.id = `mark_${student.id}`;
-        input.dataset.studentId = student.id;
-        input.value = student.mark ?? "";
-        input.placeholder = `0 - ${maximumMarks}`;
+        markInput.type = "number";
+        markInput.min = "0";
+        markInput.step = "0.01";
+        markInput.className = "mark-input";
+        markInput.dataset.studentId = student.student_id;
+        markInput.value = student.mark ?? "";
+        markInput.placeholder = "Enter mark";
 
-        input.style.width = "100px";
-        input.style.padding = "7px";
+        markCell.appendChild(markInput);
 
-        markCell.appendChild(input);
+        const remarksCell = document.createElement("td");
+
+        const remarksInput = document.createElement("input");
+
+        remarksInput.type = "text";
+        remarksInput.className = "mark-input";
+        remarksInput.dataset.remarksStudentId = student.student_id;
+        remarksInput.value = student.remarks || "";
+        remarksInput.placeholder = "Optional";
+
+        remarksCell.appendChild(remarksInput);
 
         row.appendChild(numberCell);
         row.appendChild(nameCell);
         row.appendChild(markCell);
+        row.appendChild(remarksCell);
 
         studentsBody.appendChild(row);
     });
@@ -799,7 +801,7 @@ function renderStudents() {
     saveButton.disabled = false;
 
     document.getElementById("marksTotal").textContent =
-        `${students.length} students | Maximum mark: ${maximumMarks}`;
+        `${students.length} students | Enter marks for the selected Test.`;
 }
 
 /* =====================================================
@@ -812,7 +814,7 @@ function clearStudents() {
 
     studentsPlaceholder.style.display = "block";
     studentsPlaceholder.textContent =
-        "Select a valid assessment to continue.";
+        "Select a class, subject and open Test to continue.";
 
     studentsTableContainer.style.display = "none";
     saveButton.disabled = true;
@@ -823,35 +825,33 @@ function clearStudents() {
 ===================================================== */
 
 async function saveMarks() {
-    if (!selectedAssignment || !selectedAssessment) {
+    if (savingMarks || loadingStudents) return;
+
+    if (!selectedAssignment || !selectedTest) {
         showMessage(
-            "Select a valid assignment and assessment first.",
+            "Select a class, subject and open Test first.",
             "error"
         );
         return;
     }
 
-    const inputs = studentsBody.querySelectorAll(
+    const markInputs = studentsBody.querySelectorAll(
         "input[data-student-id]"
     );
 
     const marks = [];
 
-    for (const input of inputs) {
+    for (const input of markInputs) {
         const value = input.value.trim();
 
         if (value !== "") {
             const score = Number(value);
 
-            if (
-                !Number.isFinite(score) ||
-                score < 0 ||
-                score > maximumMarks
-            ) {
+            if (!Number.isFinite(score) || score < 0) {
                 input.focus();
 
                 showMessage(
-                    `Every mark must be between 0 and ${maximumMarks}.`,
+                    "Marks must be valid non-negative numbers.",
                     "error"
                 );
 
@@ -859,36 +859,34 @@ async function saveMarks() {
             }
         }
 
+        const studentId = input.dataset.studentId;
+
+        const remarksInput = studentsBody.querySelector(
+            `input[data-remarks-student-id="${studentId}"]`
+        );
+
         marks.push({
-            student_id: input.dataset.studentId,
-            mark: value === "" ? null : Number(value)
+            student_id: studentId,
+            score: value === "" ? null : Number(value),
+            remarks: remarksInput?.value.trim() || null
         });
     }
 
-    if (!marks.some(item => item.mark !== null)) {
+    if (!marks.some(item => item.score !== null)) {
         showMessage(
-            "Enter at least one mark before saving.",
+            "Enter at least one student's mark before saving.",
             "error"
         );
         return;
     }
 
     const payload = {
-        assessment_type: assessmentType.value,
-
-        assessment_id: String(
-            assessmentType.value === "test"
-                ? selectedAssessment.test_id
-                : selectedAssessment.examination_id
-        ),
-
-        assignment_id: String(
-            selectedAssignment.assignment_id
-        ),
-
+        test_id: String(selectedTest.test_id),
+        assignment_id: String(selectedAssignment.assignment_id),
         marks
     };
 
+    savingMarks = true;
     saveButton.disabled = true;
     saveButton.textContent = "Saving...";
 
@@ -913,44 +911,33 @@ async function saveMarks() {
         await loadStudents();
 
     } catch (error) {
-        console.error(error);
+        console.error("Save marks error:", error);
 
         showMessage(error.message, "error");
 
     } finally {
+        savingMarks = false;
         saveButton.disabled = false;
         saveButton.textContent = "Save Marks";
     }
 }
 
 /* =====================================================
-   EVENTS
+   EVENT LISTENERS
 ===================================================== */
 
-assignmentSelect.addEventListener(
-    "change",
-    changeAssignment
-);
-
-assessmentType.addEventListener(
-    "change",
-    changeAssessmentType
-);
-
-assessmentSelect.addEventListener(
-    "change",
-    changeAssessment
-);
-
-saveButton.addEventListener(
-    "click",
-    saveMarks
-);
+classSelect.addEventListener("change", changeClass);
+subjectSelect.addEventListener("change", changeSubject);
+testSelect.addEventListener("change", changeTest);
+saveButton.addEventListener("click", saveMarks);
 
 /* =====================================================
    START
 ===================================================== */
 
 loadOptions();
-                </script>
+
+</script>
+
+</body>
 </html>
