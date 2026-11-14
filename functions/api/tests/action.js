@@ -44,6 +44,95 @@ function getValue(data, snakeCase, camelCase) {
 }
 
 /* =====================================================
+   VALIDATE SUBJECT MAXIMUM MARKS
+===================================================== */
+
+function validateSubjectMarks(subjectIds, subjectMarks) {
+    if (!Array.isArray(subjectMarks)) {
+        return {
+            valid: false,
+            message: "Provide maximum marks for every selected subject."
+        };
+    }
+
+    if (subjectMarks.length !== subjectIds.length) {
+        return {
+            valid: false,
+            message: "Provide maximum marks for every selected subject."
+        };
+    }
+
+    const marksMap = new Map();
+
+    for (const item of subjectMarks) {
+        if (!item || typeof item !== "object") {
+            return {
+                valid: false,
+                message: "Invalid subject maximum marks data."
+            };
+        }
+
+        const subjectId = String(
+            item.subject_id ?? item.subjectId ?? ""
+        ).trim();
+
+        const totalMarks = Number(
+            item.total_marks ?? item.totalMarks
+        );
+
+        if (!/^\d+$/.test(subjectId)) {
+            return {
+                valid: false,
+                message: "Invalid subject selected."
+            };
+        }
+
+        if (!subjectIds.includes(subjectId)) {
+            return {
+                valid: false,
+                message: "Maximum marks were provided for an unselected subject."
+            };
+        }
+
+        if (marksMap.has(subjectId)) {
+            return {
+                valid: false,
+                message: "Duplicate subject maximum marks were provided."
+            };
+        }
+
+        if (
+            !Number.isFinite(totalMarks) ||
+            totalMarks <= 0
+        ) {
+            return {
+                valid: false,
+                message: "Every subject must have a positive maximum mark."
+            };
+        }
+
+        marksMap.set(subjectId, totalMarks);
+    }
+
+    for (const subjectId of subjectIds) {
+        if (!marksMap.has(subjectId)) {
+            return {
+                valid: false,
+                message: "Provide maximum marks for every selected subject."
+            };
+        }
+    }
+
+    return {
+        valid: true,
+        marks: subjectIds.map(subjectId => ({
+            subject_id: subjectId,
+            total_marks: marksMap.get(subjectId)
+        }))
+    };
+}
+
+/* =====================================================
    POST: TEST ACTIONS
 
    Supported actions:
@@ -52,7 +141,13 @@ function getValue(data, snakeCase, camelCase) {
    - close
    - delete
 
-   Only the original creator can manage their Test.
+   Permissions are based on organizational scope.
+
+   Sector admin:
+   Manages Tests belonging to their sector.
+
+   School admin:
+   Manages Tests belonging to their school.
 ===================================================== */
 
 export async function onRequestPost(context) {
@@ -119,8 +214,8 @@ export async function onRequestPost(context) {
         /* ---------------------------------------------
            FIND TEST AND LOCK IT
 
-           The creator must match the logged-in user.
-           The role and organizational scope must match.
+           Authorization is based on the administrator's
+           organizational scope, not who created it.
         --------------------------------------------- */
 
         let testResult;
@@ -132,13 +227,11 @@ export async function onRequestPost(context) {
                 FROM tests
                 WHERE id = $1
                   AND sector_id = $2
-                  AND created_by = $3
                 FOR UPDATE
                 `,
                 [
                     testId,
-                    auth.sectorId,
-                    auth.userId
+                    auth.sectorId
                 ]
             );
         } else {
@@ -148,13 +241,11 @@ export async function onRequestPost(context) {
                 FROM tests
                 WHERE id = $1
                   AND school_id = $2
-                  AND created_by = $3
                 FOR UPDATE
                 `,
                 [
                     testId,
-                    auth.schoolId,
-                    auth.userId
+                    auth.schoolId
                 ]
             );
         }
@@ -165,7 +256,7 @@ export async function onRequestPost(context) {
 
             return json({
                 success: false,
-                message: "Test not found or you are not its creator."
+                message: "Test not found or you do not have permission to manage it."
             }, 404);
         }
 
@@ -175,8 +266,6 @@ export async function onRequestPost(context) {
            DELETE TEST
 
            Only draft tests can be deleted.
-           Do not delete a test already linked to an
-           examination.
         --------------------------------------------- */
 
         if (action === "delete") {
@@ -214,9 +303,8 @@ export async function onRequestPost(context) {
                 `
                 DELETE FROM tests
                 WHERE id = $1
-                  AND created_by = $2
                 `,
-                [testId, auth.userId]
+                [testId]
             );
 
             await client.query("COMMIT");
@@ -231,8 +319,7 @@ export async function onRequestPost(context) {
         /* ---------------------------------------------
            INITIATE TEST
 
-           Only its creator can initiate it.
-           Record the responsible user.
+           Only draft tests can be initiated.
         --------------------------------------------- */
 
         if (action === "initiate") {
@@ -270,7 +357,6 @@ export async function onRequestPost(context) {
                     closed_by = NULL,
                     updated_at = NOW()
                 WHERE id = $1
-                  AND created_by = $2
                 `,
                 [
                     testId,
@@ -291,7 +377,7 @@ export async function onRequestPost(context) {
         /* ---------------------------------------------
            CLOSE TEST
 
-           Record the user who manually closed it.
+           Record the administrator who closed it.
         --------------------------------------------- */
 
         if (action === "close") {
@@ -314,7 +400,6 @@ export async function onRequestPost(context) {
                     closed_by = $2,
                     updated_at = NOW()
                 WHERE id = $1
-                  AND created_by = $2
                 `,
                 [
                     testId,
@@ -348,6 +433,10 @@ export async function onRequestPost(context) {
                     message: "Only draft tests can be edited."
                 }, 400);
             }
+
+            /* -----------------------------------------
+               READ TEST DETAILS
+            ----------------------------------------- */
 
             const testName = String(
                 getValue(data, "test_name", "testName") || ""
@@ -392,6 +481,31 @@ export async function onRequestPost(context) {
                     message: "Select at least one school, class and subject."
                 }, 400);
             }
+
+            /* -----------------------------------------
+               VALIDATE SUBJECT MAXIMUM MARKS
+            ----------------------------------------- */
+
+            const subjectMarksValidation = validateSubjectMarks(
+                subjectIds,
+                getValue(data, "subject_marks", "subjectMarks")
+            );
+
+            if (!subjectMarksValidation.valid) {
+                await client.query("ROLLBACK");
+                transactionStarted = false;
+
+                return json({
+                    success: false,
+                    message: subjectMarksValidation.message
+                }, 400);
+            }
+
+            const subjectMarks = subjectMarksValidation.marks;
+
+            /* -----------------------------------------
+               VALIDATE CLOSING DATE
+            ----------------------------------------- */
 
             const closingAt = validClosingAt(
                 getValue(data, "closing_at", "closingAt")
@@ -514,21 +628,20 @@ export async function onRequestPost(context) {
                     closing_at = $2,
                     updated_at = NOW()
                 WHERE id = $3
-                  AND created_by = $4
                 `,
                 [
                     testName,
                     closingAt,
-                    testId,
-                    auth.userId
+                    testId
                 ]
             );
 
             /* -----------------------------------------
                REMOVE OLD RELATIONSHIPS
 
-               Test classes are removed through the
-               existing test_schools cascade relationship.
+               Removing test_schools also removes its
+               dependent test_classes if the existing
+               foreign key uses ON DELETE CASCADE.
             ----------------------------------------- */
 
             await client.query(
@@ -590,21 +703,23 @@ export async function onRequestPost(context) {
             }
 
             /* -----------------------------------------
-               INSERT UPDATED SUBJECTS
+               INSERT UPDATED SUBJECTS WITH MAXIMUM MARKS
             ----------------------------------------- */
 
-            for (const subjectId of subjectIds) {
+            for (const subject of subjectMarks) {
                 await client.query(
                     `
                     INSERT INTO test_subjects (
                         test_id,
-                        subject_id
+                        subject_id,
+                        total_marks
                     )
-                    VALUES ($1, $2)
+                    VALUES ($1, $2, $3)
                     `,
                     [
                         testId,
-                        subjectId
+                        subject.subject_id,
+                        subject.total_marks
                     ]
                 );
             }
