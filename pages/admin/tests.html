@@ -189,6 +189,19 @@ td strong {
     max-width: 260px;
 }
 
+.subject-list {
+    line-height: 1.8;
+}
+
+.subject-list span {
+    display: block;
+}
+
+.subject-list small {
+    color: var(--muted);
+    font-size: 11px;
+}
+
 .status {
     display: inline-block;
     padding: 5px 9px;
@@ -363,6 +376,78 @@ td strong {
     font-weight: 400;
 }
 
+/* SUBJECT MAXIMUM MARKS */
+
+.subject-selection-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 11px;
+}
+
+.subject-option {
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    padding: 12px;
+    background: white;
+}
+
+.subject-option.selected {
+    border: 2px solid var(--primary);
+    background: #eff6ff;
+}
+
+.subject-select-btn {
+    width: 100%;
+    border: 0;
+    background: transparent;
+    text-align: left;
+    color: #334155;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 2px 0 8px;
+}
+
+.subject-option.selected .subject-select-btn {
+    color: #1d4ed8;
+}
+
+.subject-mark-group {
+    margin-top: 5px;
+}
+
+.subject-mark-group label {
+    display: block;
+    font-size: 12px;
+    color: #475569;
+    font-weight: 600;
+    margin-bottom: 6px;
+}
+
+.subject-mark-group input {
+    width: 100%;
+    padding: 9px 10px;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    background: white;
+    font-size: 14px;
+}
+
+.subject-mark-group input:focus {
+    outline: 2px solid #bfdbfe;
+    border-color: var(--primary);
+}
+
+.subject-mark-group input:disabled {
+    background: #f1f5f9;
+    cursor: not-allowed;
+}
+
+.subject-mark-hint {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 5px;
+}
+
 .modal-footer {
     padding: 16px 22px;
     border-top: 1px solid var(--border);
@@ -400,6 +485,10 @@ td strong {
     .selection-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
+
+    .subject-selection-grid {
+        grid-template-columns: 1fr;
+    }
 }
 </style>
 </head>
@@ -409,7 +498,7 @@ td strong {
 <header class="topbar">
     <div>
         <h2>Test Management</h2>
-        <p id="roleDescription">Manage examinations and tests</p>
+        <p id="roleDescription">Manage Tests</p>
     </div>
 
     <button class="secondary-btn" onclick="goBack()">
@@ -426,7 +515,7 @@ td strong {
             <div>
                 <h3>Tests</h3>
                 <p style="color:#64748b;font-size:13px;margin:6px 0 0">
-                    View and manage examination tests
+                    View and manage Tests
                 </p>
             </div>
 
@@ -442,7 +531,7 @@ td strong {
             <input
                 type="search"
                 id="searchInput"
-                placeholder="Search tests..."
+                placeholder="Search Tests..."
                 oninput="renderTests()">
 
             <select id="statusFilter" onchange="renderTests()">
@@ -461,7 +550,7 @@ td strong {
                         <th>Test</th>
                         <th>Schools</th>
                         <th>Classes</th>
-                        <th>Subjects</th>
+                        <th>Subjects and Maximum Marks</th>
                         <th>Closing time</th>
                         <th>Status</th>
                         <th>Actions</th>
@@ -471,7 +560,7 @@ td strong {
                 <tbody id="testsTable">
                     <tr>
                         <td colspan="8" class="empty">
-                            Loading tests...
+                            Loading Tests...
                         </td>
                     </tr>
                 </tbody>
@@ -482,6 +571,7 @@ td strong {
 </main>
 
 <!-- ADD / EDIT TEST MODAL -->
+
 <div class="modal" id="testModal">
     <div class="modal-content">
 
@@ -498,14 +588,16 @@ td strong {
                     type="text"
                     id="testName"
                     maxlength="200"
-                    placeholder="e.g. First Term Examination">
+                    placeholder="e.g. First Mid-Term Test">
             </div>
 
             <div class="form-group" id="schoolsGroup">
                 <label class="section-label">
-                    Schools expected to do this test *
+                    Schools expected to do this Test *
                 </label>
+
                 <div class="selection-grid" id="schoolsGrid"></div>
+
                 <div class="hint">
                     Select one or more schools in your sector.
                 </div>
@@ -513,27 +605,41 @@ td strong {
 
             <div class="form-group">
                 <label class="section-label">
-                    Classes expected to do this test *
+                    Classes expected to do this Test *
                 </label>
+
                 <div class="selection-grid" id="classesGrid"></div>
+
                 <div class="hint">
-                    Select one or more classes. All classes in the
-                    selected school or schools are available.
+                    Select one or more classes from the selected schools.
                 </div>
             </div>
 
             <div class="form-group">
                 <label class="section-label">
-                    Subjects to be examined *
+                    Subjects and Maximum Marks *
                 </label>
-                <div class="selection-grid" id="subjectsGrid"></div>
+
+                <div class="hint" style="margin-bottom:12px">
+                    Select each subject and enter its maximum mark.
+                    For example, English out of 100 and Mathematics out of 50.
+                </div>
+
+                <div
+                    class="subject-selection-grid"
+                    id="subjectsGrid">
+                </div>
             </div>
 
             <div class="form-group">
-                <label for="closingAt">Closing date and time (optional)</label>
+                <label for="closingAt">
+                    Closing date and time (optional)
+                </label>
+
                 <input type="datetime-local" id="closingAt">
+
                 <div class="hint">
-                    Leave blank if the test should remain open until
+                    Leave blank if the Test should remain open until
                     an administrator closes it.
                 </div>
             </div>
@@ -590,10 +696,10 @@ const isAdmin = [
 
 document.getElementById("roleDescription").textContent =
     role === "sector_admin"
-        ? "Sector examination management"
+        ? "Sector Test management"
         : role === "school_admin"
-            ? "School examination management"
-            : "View tests assigned to your classes and subjects";
+            ? "School Test management"
+            : "View Tests assigned to your classes and subjects";
 
 document.getElementById("addTestBtn").style.display =
     isAdmin ? "inline-block" : "none";
@@ -604,6 +710,7 @@ document.getElementById("addTestBtn").style.display =
 ========================================= */
 
 let tests = [];
+
 let options = {
     schools: [],
     classes: [],
@@ -613,6 +720,19 @@ let options = {
 let selectedSchools = [];
 let selectedClasses = [];
 let selectedSubjects = [];
+
+/*
+    Stores maximum marks separately for each subject.
+
+    Example:
+    {
+        "1": "100",
+        "2": "50"
+    }
+*/
+
+let subjectTotalMarks = {};
+
 let editingTestId = null;
 
 
@@ -632,7 +752,8 @@ async function apiRequest(url, options = {}) {
         }
     });
 
-    const contentType = response.headers.get("content-type") || "";
+    const contentType =
+        response.headers.get("content-type") || "";
 
     if (!contentType.includes("application/json")) {
         throw new Error(
@@ -643,7 +764,9 @@ async function apiRequest(url, options = {}) {
     const result = await response.json();
 
     if (!response.ok || result.success === false) {
-        throw new Error(result.message || "Request failed.");
+        throw new Error(
+            result.message || "Request failed."
+        );
     }
 
     return result;
@@ -660,7 +783,10 @@ function showMessage(message, type = "success") {
     element.textContent = message;
     element.className = "message " + type;
 
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+    });
 
     setTimeout(() => {
         element.className = "message";
@@ -726,7 +852,7 @@ function renderTests() {
         tbody.innerHTML = `
             <tr>
                 <td colspan="8" class="empty">
-                    No tests found.
+                    No Tests found.
                 </td>
             </tr>
         `;
@@ -743,17 +869,41 @@ function renderTests() {
             .filter(Boolean);
 
         const subjects = (test.subjects || [])
-            .map(s => s.subject_name)
-            .filter(Boolean);
+            .map(subject => {
+                const name = escapeHTML(subject.subject_name);
+
+                const totalMarks = subject.total_marks;
+
+                if (
+                    totalMarks === null ||
+                    totalMarks === undefined ||
+                    totalMarks === ""
+                ) {
+                    return `
+                        <span>
+                            ${name}
+                            <small>(Maximum mark not set)</small>
+                        </span>
+                    `;
+                }
+
+                return `
+                    <span>
+                        ${name}
+                        <small>
+                            (Out of ${escapeHTML(totalMarks)})
+                        </small>
+                    </span>
+                `;
+            });
 
         const statusLabel =
-            test.status.charAt(0).toUpperCase() +
-            test.status.slice(1);
+            String(test.status || "")
+                .charAt(0).toUpperCase() +
+            String(test.status || "").slice(1);
 
         let actions = "";
 
-        // The backend is the authority for management permissions.
-        // Sector-created tests shown to a school admin are read-only.
         if (test.can_manage === true && test.status === "draft") {
             actions = `
                 <button class="warning-btn"
@@ -771,7 +921,10 @@ function renderTests() {
                     Delete
                 </button>
             `;
-        } else if (test.can_manage === true && test.status === "open") {
+        } else if (
+            test.can_manage === true &&
+            test.status === "open"
+        ) {
             actions = `
                 <button class="danger-btn"
                     onclick="manageTest('${test.id}','close')">
@@ -779,7 +932,11 @@ function renderTests() {
                 </button>
             `;
         } else {
-            actions = `<span style="color:#64748b">Read only</span>`;
+            actions = `
+                <span style="color:#64748b">
+                    Read only
+                </span>
+            `;
         }
 
         return `
@@ -788,8 +945,10 @@ function renderTests() {
 
                 <td>
                     <strong>${escapeHTML(test.test_name)}</strong>
+
                     <div class="hint">
-                        Created by ${escapeHTML(test.creator_name || "Administrator")}
+                        Created by
+                        ${escapeHTML(test.creator_name || "Administrator")}
                     </div>
                 </td>
 
@@ -804,7 +963,9 @@ function renderTests() {
                 </td>
 
                 <td class="details">
-                    ${subjects.map(escapeHTML).join("<br>")}
+                    <div class="subject-list">
+                        ${subjects.join("")}
+                    </div>
                 </td>
 
                 <td>
@@ -812,8 +973,8 @@ function renderTests() {
                 </td>
 
                 <td>
-                    <span class="status status-${test.status}">
-                        ${statusLabel}
+                    <span class="status status-${escapeHTML(test.status)}">
+                        ${escapeHTML(statusLabel)}
                     </span>
                 </td>
 
@@ -847,7 +1008,9 @@ function formatDate(value) {
 
     const date = new Date(value);
 
-    if (Number.isNaN(date.getTime())) return "Not set";
+    if (Number.isNaN(date.getTime())) {
+        return "Not set";
+    }
 
     return date.toLocaleString();
 }
@@ -863,6 +1026,8 @@ function openAddModal() {
     selectedSchools = [];
     selectedClasses = [];
     selectedSubjects = [];
+
+    subjectTotalMarks = {};
 
     document.getElementById("modalTitle").textContent =
         "Create New Test";
@@ -895,6 +1060,11 @@ function renderSelectionCards() {
     renderSubjects();
 }
 
+
+/* =========================================
+   RENDER SCHOOLS
+========================================= */
+
 function renderSchools() {
     const grid = document.getElementById("schoolsGrid");
 
@@ -904,23 +1074,32 @@ function renderSchools() {
     }
 
     if (!options.schools.length) {
-        grid.innerHTML = `<p class="hint">No schools found.</p>`;
+        grid.innerHTML = `
+            <p class="hint">No schools found.</p>
+        `;
         return;
     }
 
     grid.innerHTML = options.schools.map(school => {
-        const selected = selectedSchools.includes(String(school.id));
+        const selected =
+            selectedSchools.includes(String(school.id));
 
         return `
             <button type="button"
                 class="selection-card ${selected ? "selected" : ""}"
                 onclick="toggleSchool('${school.id}')">
+
                 ${selected ? "✓ " : ""}
                 ${escapeHTML(school.school_name)}
             </button>
         `;
     }).join("");
 }
+
+
+/* =========================================
+   RENDER CLASSES
+========================================= */
 
 function renderClasses() {
     const grid = document.getElementById("classesGrid");
@@ -945,14 +1124,17 @@ function renderClasses() {
     }
 
     grid.innerHTML = availableClasses.map(item => {
-        const selected = selectedClasses.includes(String(item.id));
+        const selected =
+            selectedClasses.includes(String(item.id));
 
         return `
             <button type="button"
                 class="selection-card ${selected ? "selected" : ""}"
                 onclick="toggleClass('${item.id}')">
+
                 ${selected ? "✓ " : ""}
                 ${escapeHTML(item.class_name)}
+
                 ${item.class_level
                     ? `<small>${escapeHTML(item.class_level)}</small>`
                     : ""}
@@ -961,26 +1143,83 @@ function renderClasses() {
     }).join("");
 }
 
+
+/* =========================================
+   RENDER SUBJECTS AND MAXIMUM MARK INPUTS
+========================================= */
+
 function renderSubjects() {
     const grid = document.getElementById("subjectsGrid");
 
     if (!options.subjects.length) {
-        grid.innerHTML = `<p class="hint">No subjects found.</p>`;
+        grid.innerHTML = `
+            <p class="hint">No subjects found.</p>
+        `;
         return;
     }
 
     grid.innerHTML = options.subjects.map(subject => {
-        const selected = selectedSubjects.includes(String(subject.id));
+        const id = String(subject.id);
+
+        const selected = selectedSubjects.includes(id);
+
+        const currentMarks = subjectTotalMarks[id] ?? "";
 
         return `
-            <button type="button"
-                class="selection-card ${selected ? "selected" : ""}"
-                onclick="toggleSubject('${subject.id}')">
-                ${selected ? "✓ " : ""}
-                ${escapeHTML(subject.subject_name)}
-            </button>
+            <div class="subject-option ${selected ? "selected" : ""}">
+
+                <button
+                    type="button"
+                    class="subject-select-btn"
+                    onclick="toggleSubject('${id}')">
+
+                    ${selected ? "✓ Selected: " : "+ Select: "}
+                    ${escapeHTML(subject.subject_name)}
+                </button>
+
+                ${selected ? `
+                    <div class="subject-mark-group">
+
+                        <label for="subject-mark-${id}">
+                            Maximum mark (Out of) *
+                        </label>
+
+                        <input
+                            type="number"
+                            id="subject-mark-${id}"
+                            min="0.01"
+                            step="0.01"
+                            placeholder="e.g. 100"
+                            value="${escapeHTML(currentMarks)}"
+                            oninput="setSubjectTotalMarks('${id}', this.value)"
+                            required>
+
+                        <div class="subject-mark-hint">
+                            Enter the maximum mark for
+                            ${escapeHTML(subject.subject_name)}.
+                        </div>
+
+                    </div>
+                ` : `
+                    <div class="subject-mark-hint">
+                        Select this subject to enter its maximum mark.
+                    </div>
+                `}
+
+            </div>
         `;
     }).join("");
+}
+
+
+/* =========================================
+   UPDATE SUBJECT MAXIMUM MARK
+========================================= */
+
+function setSubjectTotalMarks(subjectId, value) {
+    subjectId = String(subjectId);
+
+    subjectTotalMarks[subjectId] = value;
 }
 
 
@@ -992,15 +1231,20 @@ function toggleSchool(id) {
     id = String(id);
 
     if (selectedSchools.includes(id)) {
-        selectedSchools = selectedSchools.filter(item => item !== id);
+        selectedSchools = selectedSchools.filter(
+            item => item !== id
+        );
 
-        const allowed = options.classes
-            .filter(c => selectedSchools.includes(String(c.school_id)))
+        const allowedClasses = options.classes
+            .filter(c =>
+                selectedSchools.includes(String(c.school_id))
+            )
             .map(c => String(c.id));
 
         selectedClasses = selectedClasses.filter(id =>
-            allowed.includes(id)
+            allowedClasses.includes(id)
         );
+
     } else {
         selectedSchools.push(id);
     }
@@ -1013,7 +1257,9 @@ function toggleClass(id) {
     id = String(id);
 
     if (selectedClasses.includes(id)) {
-        selectedClasses = selectedClasses.filter(item => item !== id);
+        selectedClasses = selectedClasses.filter(
+            item => item !== id
+        );
     } else {
         selectedClasses.push(id);
     }
@@ -1025,12 +1271,64 @@ function toggleSubject(id) {
     id = String(id);
 
     if (selectedSubjects.includes(id)) {
-        selectedSubjects = selectedSubjects.filter(item => item !== id);
+        selectedSubjects = selectedSubjects.filter(
+            item => item !== id
+        );
+
+        // Remove the deselected subject's maximum mark.
+        delete subjectTotalMarks[id];
+
     } else {
         selectedSubjects.push(id);
     }
 
     renderSubjects();
+}
+
+
+/* =========================================
+   VALIDATE SUBJECT MAXIMUM MARKS
+========================================= */
+
+function collectSubjectMarks() {
+    const result = [];
+
+    for (const subjectId of selectedSubjects) {
+        const value = subjectTotalMarks[subjectId];
+
+        if (
+            value === undefined ||
+            value === null ||
+            String(value).trim() === ""
+        ) {
+            return {
+                valid: false,
+                message: "Enter the maximum mark for every selected subject."
+            };
+        }
+
+        const totalMarks = Number(value);
+
+        if (
+            !Number.isFinite(totalMarks) ||
+            totalMarks <= 0
+        ) {
+            return {
+                valid: false,
+                message: "Every subject must have a maximum mark greater than zero."
+            };
+        }
+
+        result.push({
+            subject_id: subjectId,
+            total_marks: totalMarks
+        });
+    }
+
+    return {
+        valid: true,
+        subjectMarks: result
+    };
 }
 
 
@@ -1050,7 +1348,7 @@ async function saveTest() {
         .value;
 
     if (!testName) {
-        showMessage("Enter the test name.", "error");
+        showMessage("Enter the Test name.", "error");
         return;
     }
 
@@ -1064,29 +1362,65 @@ async function saveTest() {
         return;
     }
 
-    if (role === "sector_admin" && !selectedSchools.length) {
+    if (
+        role === "sector_admin" &&
+        !selectedSchools.length
+    ) {
         showMessage("Select at least one school.", "error");
         return;
     }
+
+    /* -----------------------------------------
+       VALIDATE SUBJECT MAXIMUM MARKS
+    ----------------------------------------- */
+
+    const marksValidation = collectSubjectMarks();
+
+    if (!marksValidation.valid) {
+        showMessage(marksValidation.message, "error");
+        return;
+    }
+
+    /* -----------------------------------------
+       VALIDATE CLOSING DATE
+    ----------------------------------------- */
 
     let closingAt = null;
 
     if (closingValue) {
         const date = new Date(closingValue);
 
-        if (Number.isNaN(date.getTime()) || date <= new Date()) {
-            showMessage("Choose a valid future closing date and time.", "error");
+        if (
+            Number.isNaN(date.getTime()) ||
+            date <= new Date()
+        ) {
+            showMessage(
+                "Choose a valid future closing date and time.",
+                "error"
+            );
             return;
         }
 
         closingAt = date.toISOString();
     }
 
+    /* -----------------------------------------
+       BUILD REQUEST PAYLOAD
+    ----------------------------------------- */
+
     const payload = {
         test_name: testName,
-        school_ids: role === "sector_admin" ? selectedSchools : [],
+
+        school_ids: role === "sector_admin"
+            ? selectedSchools
+            : [],
+
         class_ids: selectedClasses,
+
         subject_ids: selectedSubjects,
+
+        subject_marks: marksValidation.subjectMarks,
+
         closing_at: closingAt
     };
 
@@ -1094,15 +1428,19 @@ async function saveTest() {
     button.textContent = "Saving...";
 
     try {
-        if (editingTestId) {
+        const wasEditing = Boolean(editingTestId);
+
+        if (wasEditing) {
             await apiRequest("/api/tests/action", {
                 method: "POST",
+
                 body: JSON.stringify({
                     ...payload,
                     test_id: editingTestId,
                     action: "update"
                 })
             });
+
         } else {
             await apiRequest("/api/tests", {
                 method: "POST",
@@ -1112,18 +1450,19 @@ async function saveTest() {
 
         closeModal();
 
+        editingTestId = null;
+
         showMessage(
-            editingTestId
+            wasEditing
                 ? "Test updated successfully."
                 : "Test created successfully."
         );
-
-        editingTestId = null;
 
         await loadTests();
 
     } catch (error) {
         showMessage(error.message, "error");
+
     } finally {
         button.disabled = false;
         button.textContent = "Save Test";
@@ -1132,42 +1471,86 @@ async function saveTest() {
 
 
 /* =========================================
-   EDIT TEST
+   EDIT EXISTING DRAFT TEST
 ========================================= */
 
 function editTest(id) {
-    const test = tests.find(item => String(item.id) === String(id));
+    const test = tests.find(
+        item => String(item.id) === String(id)
+    );
 
-    // Never open the editor unless the API explicitly grants permission.
-    if (!test || test.can_manage !== true || test.status !== "draft") {
-        showMessage("You are not allowed to edit this test.", "error");
+    if (
+        !test ||
+        test.can_manage !== true ||
+        test.status !== "draft"
+    ) {
+        showMessage(
+            "You are not allowed to edit this Test.",
+            "error"
+        );
         return;
     }
 
     editingTestId = String(test.id);
 
+    /* -----------------------------------------
+       RESTORE SELECTED SCHOOLS
+    ----------------------------------------- */
+
     selectedSchools = (test.schools || [])
         .map(item => String(item.id));
+
+    /* -----------------------------------------
+       RESTORE SELECTED CLASSES
+    ----------------------------------------- */
 
     selectedClasses = (test.classes || [])
         .map(item => String(item.id));
 
+    /* -----------------------------------------
+       RESTORE SELECTED SUBJECTS
+    ----------------------------------------- */
+
     selectedSubjects = (test.subjects || [])
         .map(item => String(item.id));
+
+    /* -----------------------------------------
+       RESTORE EACH SUBJECT MAXIMUM MARK
+    ----------------------------------------- */
+
+    subjectTotalMarks = {};
+
+    (test.subjects || []).forEach(subject => {
+        const id = String(subject.id);
+
+        subjectTotalMarks[id] =
+            subject.total_marks === null ||
+            subject.total_marks === undefined
+                ? ""
+                : String(subject.total_marks);
+    });
+
+    /* -----------------------------------------
+       RESTORE TEST DETAILS
+    ----------------------------------------- */
 
     document.getElementById("modalTitle").textContent =
         "Edit Test";
 
-    document.getElementById("testName").value = test.test_name || "";
+    document.getElementById("testName").value =
+        test.test_name || "";
 
     if (test.closing_at) {
         const date = new Date(test.closing_at);
+
         const local = new Date(
-            date.getTime() - date.getTimezoneOffset() * 60000
+            date.getTime() -
+            date.getTimezoneOffset() * 60000
         );
 
         document.getElementById("closingAt").value =
             local.toISOString().slice(0, 16);
+
     } else {
         document.getElementById("closingAt").value = "";
     }
@@ -1179,21 +1562,26 @@ function editTest(id) {
 
 
 /* =========================================
-   DELETE / INITIATE / CLOSE
+   DELETE / INITIATE / CLOSE TEST
 ========================================= */
 
 async function manageTest(id, action) {
     const messages = {
-        delete: "Are you sure you want to delete this draft test?",
-        initiate: "Initiate this test? Teachers will be able to start recording marks.",
-        close: "Close this test? Teachers will no longer be able to record marks."
+        delete: "Are you sure you want to delete this draft Test?",
+
+        initiate: "Initiate this Test? Teachers will be able to record marks.",
+
+        close: "Close this Test? Teachers will no longer be able to record marks."
     };
+
+    if (!messages[action]) return;
 
     if (!confirm(messages[action])) return;
 
     try {
         await apiRequest("/api/tests/action", {
             method: "POST",
+
             body: JSON.stringify({
                 test_id: id,
                 action
@@ -1202,7 +1590,9 @@ async function manageTest(id, action) {
 
         const successMessages = {
             delete: "Test deleted successfully.",
-            initiate: "Test initiated. It is now open.",
+
+            initiate: "Test initiated successfully. It is now open.",
+
             close: "Test closed successfully."
         };
 
@@ -1223,8 +1613,10 @@ async function manageTest(id, action) {
 function goBack() {
     if (role === "sector_admin") {
         window.location.href = "sector-admin.html";
+
     } else if (role === "school_admin") {
         window.location.href = "school-admin.html";
+
     } else {
         window.location.href = "teacher-dashboard.html";
     }
@@ -1232,7 +1624,7 @@ function goBack() {
 
 
 /* =========================================
-   INITIALIZE
+   INITIALIZE PAGE
 ========================================= */
 
 async function initializePage() {
@@ -1249,7 +1641,7 @@ async function initializePage() {
         document.getElementById("testsTable").innerHTML = `
             <tr>
                 <td colspan="8" class="empty">
-                    Unable to load tests. Please refresh the page.
+                    Unable to load Tests. Please refresh the page.
                 </td>
             </tr>
         `;
