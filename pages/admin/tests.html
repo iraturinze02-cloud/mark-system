@@ -563,9 +563,15 @@ td strong {
    AUTHENTICATION AND PAGE CONFIGURATION
 ========================================= */
 
-const currentUser = JSON.parse(
-    localStorage.getItem("currentUser") || "null"
-);
+let currentUser = null;
+
+try {
+    currentUser = JSON.parse(
+        localStorage.getItem("currentUser") || "null"
+    );
+} catch (error) {
+    console.warn("Saved user information is invalid.", error);
+}
 
 const role = localStorage.getItem("role");
 
@@ -746,34 +752,32 @@ function renderTests() {
 
         let actions = "";
 
-        if (isAdmin) {
-            if (test.status === "draft") {
-                actions = `
-                    <button class="warning-btn"
-                        onclick="editTest('${test.id}')">
-                        Edit
-                    </button>
+        // The backend is the authority for management permissions.
+        // Sector-created tests shown to a school admin are read-only.
+        if (test.can_manage === true && test.status === "draft") {
+            actions = `
+                <button class="warning-btn"
+                    onclick="editTest('${test.id}')">
+                    Edit
+                </button>
 
-                    <button class="success-btn"
-                        onclick="manageTest('${test.id}','initiate')">
-                        Initiate
-                    </button>
+                <button class="success-btn"
+                    onclick="manageTest('${test.id}','initiate')">
+                    Initiate
+                </button>
 
-                    <button class="danger-btn"
-                        onclick="manageTest('${test.id}','delete')">
-                        Delete
-                    </button>
-                `;
-            } else if (test.status === "open") {
-                actions = `
-                    <button class="danger-btn"
-                        onclick="manageTest('${test.id}','close')">
-                        Close Test
-                    </button>
-                `;
-            } else {
-                actions = `<span style="color:#64748b">Read only</span>`;
-            }
+                <button class="danger-btn"
+                    onclick="manageTest('${test.id}','delete')">
+                    Delete
+                </button>
+            `;
+        } else if (test.can_manage === true && test.status === "open") {
+            actions = `
+                <button class="danger-btn"
+                    onclick="manageTest('${test.id}','close')">
+                    Close Test
+                </button>
+            `;
         } else {
             actions = `<span style="color:#64748b">Read only</span>`;
         }
@@ -1134,7 +1138,11 @@ async function saveTest() {
 function editTest(id) {
     const test = tests.find(item => String(item.id) === String(id));
 
-    if (!test || test.status !== "draft") return;
+    // Never open the editor unless the API explicitly grants permission.
+    if (!test || test.can_manage !== true || test.status !== "draft") {
+        showMessage("You are not allowed to edit this test.", "error");
+        return;
+    }
 
     editingTestId = String(test.id);
 
