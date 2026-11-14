@@ -1,18 +1,61 @@
-
 import {
     connectDB,
     requireTestUser,
     json
 } from "../../_utils.js";
 
+/* =====================================================
+   HELPERS
+===================================================== */
+
+function uniqueIds(values) {
+    if (!Array.isArray(values)) return [];
+
+    return [
+        ...new Set(
+            values
+                .map(value => String(value).trim())
+                .filter(value => /^\d+$/.test(value))
+        )
+    ];
+}
+
+function validClosingAt(value) {
+    if (value === null || value === undefined || value === "") {
+        return null;
+    }
+
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) {
+        return undefined;
+    }
+
+    if (date.getTime() <= Date.now()) {
+        return undefined;
+    }
+
+    return date.toISOString();
+}
+
+/* =====================================================
+   POST: TEST ACTIONS
+===================================================== */
+
 export async function onRequestPost(context) {
     const auth = await requireTestUser(context);
-    if (auth.error) return auth.error;
 
-    if (!["sector_admin", "school_admin"].includes(auth.role)) {
+    if (auth.error) {
+        return auth.error;
+    }
+
+    if (
+        auth.role !== "sector_admin" &&
+        auth.role !== "school_admin"
+    ) {
         return json({
             success: false,
-            message: "Only administrators can manage tests."
+            message: "You are not allowed to manage tests."
         }, 403);
     }
 
@@ -21,223 +64,487 @@ export async function onRequestPost(context) {
     try {
         data = await context.request.json();
     } catch {
-        return json({ success: false, message: "Invalid request." }, 400);
+        return json({
+            success: false,
+            message: "Invalid JSON request."
+        }, 400);
     }
 
-    const testId = String(data.test_id || "");
-    const action = String(data.action || "");
+    const action = String(data.action || "").trim();
+
+    const testId = String(
+        data.testId || data.test_id || ""
+    ).trim();
 
     if (!/^\d+$/.test(testId)) {
-        return json({ success: false, message: "Invalid test ID." }, 400);
+        return json({
+            success: false,
+            message: "Invalid test ID."
+        }, 400);
+    }
+
+    const allowedActions = [
+        "update",
+        "initiate",
+        "close",
+        "delete"
+    ];
+
+    if (!allowedActions.includes(action)) {
+        return json({
+            success: false,
+            message: "Invalid test action."
+        }, 400);
     }
 
     let client;
+    let transactionStarted = false;
 
     try {
         client = await connectDB(context);
+
         await client.query("BEGIN");
+        transactionStarted = true;
 
-        const scopeColumn = auth.role === "sector_admin"
-            ? "sector_id"
-            : "school_id";
+        /* ---------------------------------------------
+           FIND TEST AND LOCK IT
+        --------------------------------------------- */
 
-        const scopeId = auth.role === "sector_admin"
-            ? auth.sectorId
-            : auth.schoolId;
+        let testResult;
 
-        const testResult = await client.query(`
-            SELECT *
-            FROM tests
-            WHERE id = $1
-              AND ${scopeColumn} = $2
-            FOR UPDATE
-        `, [testId, scopeId]);
+        if (auth.role === "sector_admin") {
+            testResult = await client.query(
+                `
+                SELECT *
+                FROM tests
+                WHERE id = $1
+                  AND sector_id = $2
+                FOR UPDATE
+                `,
+                [testId, auth.sectorId]
+            );
+
+        } else {
+            testResult = await client.query(
+                `
+                SELECT *
+                FROM tests
+                WHERE id = $1
+                  AND school_id = $2
+                FOR UPDATE
+                `,
+                [testId, auth.schoolId]
+            );
+        }
+
+        if (testResult.rows.length === 0) {
+            await client.query("ROLLBACK");
+            transactionStarted = false;
+
+            return json({
+                success: false,
+                message: "Test not found or you do not have permission to manage it."
+            }, 404);
+        }
 
         const test = testResult.rows[0];
 
-        if (!test) {
-            throw new Error("Test not found or access denied.");
-        }
+        /* ---------------------------------------------
+           DELETE TEST
+           Only draft tests can be deleted.
+        --------------------------------------------- */
 
         if (action === "delete") {
             if (test.status !== "draft") {
-                throw new Error("Only tests that have not been initiated can be deleted.");
+                await client.query("ROLLBACK");
+                transactionStarted = false;
+
+                return json({
+                    success: false,
+                    message: "Only draft tests can be deleted."
+                }, 400);
             }
 
             await client.query(
-                "DELETE FROM tests WHERE id = $1",
+                `
+                DELETE FROM tests
+                WHERE id = $1
+                `,
                 [testId]
             );
 
-        } else if (action === "initiate") {
+            await client.query("COMMIT");
+            transactionStarted = false;
+
+            return json({
+                success: true,
+                message: "Test deleted successfully."
+            });
+        }
+
+        /* ---------------------------------------------
+           INITIATE TEST
+        --------------------------------------------- */
+
+        if (action === "initiate") {
             if (test.status !== "draft") {
-                throw new Error("Only draft tests can be initiated.");
+                await client.query("ROLLBACK");
+                transactionStarted = false;
+
+                return json({
+                    success: false,
+                    message: "Only draft tests can be initiated."
+                }, 400);
             }
 
-            if (test.closing_at && new Date(test.closing_at) <= new Date()) {
-                throw new Error("The closing time has already passed.");
+            if (
+                test.closing_at &&
+                new Date(test.closing_at).getTime() <= Date.now()
+            ) {
+                await client.query("ROLLBACK");
+                transactionStarted = false;
+
+                return json({
+                    success: false,
+                    message: "The test closing time has already passed."
+                }, 400);
             }
 
-            await client.query(`
+            await client.query(
+                `
                 UPDATE tests
-                SET status = 'open',
+                SET
+                    status = 'open',
                     initiated_at = NOW(),
+                    closed_at = NULL,
                     updated_at = NOW()
                 WHERE id = $1
-            `, [testId]);
+                `,
+                [testId]
+            );
 
-        } else if (action === "close") {
+            await client.query("COMMIT");
+            transactionStarted = false;
+
+            return json({
+                success: true,
+                message: "Test initiated successfully. Teachers can now record marks."
+            });
+        }
+
+        /* ---------------------------------------------
+           CLOSE TEST
+        --------------------------------------------- */
+
+        if (action === "close") {
             if (test.status !== "open") {
-                throw new Error("Only open tests can be closed.");
+                await client.query("ROLLBACK");
+                transactionStarted = false;
+
+                return json({
+                    success: false,
+                    message: "Only open tests can be closed."
+                }, 400);
             }
 
-            await client.query(`
+            await client.query(
+                `
                 UPDATE tests
-                SET status = 'closed',
+                SET
+                    status = 'closed',
                     closed_at = NOW(),
                     updated_at = NOW()
                 WHERE id = $1
-            `, [testId]);
+                `,
+                [testId]
+            );
 
-        } else if (action === "update") {
+            await client.query("COMMIT");
+            transactionStarted = false;
+
+            return json({
+                success: true,
+                message: "Test closed successfully."
+            });
+        }
+
+        /* ---------------------------------------------
+           UPDATE TEST
+           Only draft tests can be edited.
+        --------------------------------------------- */
+
+        if (action === "update") {
             if (test.status !== "draft") {
-                throw new Error("Only draft tests can be edited.");
+                await client.query("ROLLBACK");
+                transactionStarted = false;
+
+                return json({
+                    success: false,
+                    message: "Only draft tests can be edited."
+                }, 400);
             }
 
-            const name = String(data.test_name || "").trim();
-            const schoolIds = [...new Set((data.school_ids || []).map(String))];
-            const classIds = [...new Set((data.class_ids || []).map(String))];
-            const subjectIds = [...new Set((data.subject_ids || []).map(String))];
-            const closingAt = data.closing_at || null;
+            const testName = String(
+                data.testName || data.test_name || ""
+            ).trim();
 
-            if (!name || !classIds.length || !subjectIds.length) {
-                throw new Error("Test name, classes and subjects are required.");
+            if (!testName || testName.length > 200) {
+                await client.query("ROLLBACK");
+                transactionStarted = false;
+
+                return json({
+                    success: false,
+                    message: "Enter a valid test name."
+                }, 400);
             }
 
-            if (closingAt && (
-                !Number.isFinite(Date.parse(closingAt)) ||
-                new Date(closingAt) <= new Date()
-            )) {
-                throw new Error("Choose a valid future closing time.");
+            let schoolIds = uniqueIds(data.schoolIds);
+            const classIds = uniqueIds(data.classIds);
+            const subjectIds = uniqueIds(data.subjectIds);
+
+            if (auth.role === "school_admin") {
+                schoolIds = [String(auth.schoolId)];
             }
 
-            let selectedSchools;
+            if (
+                schoolIds.length === 0 ||
+                classIds.length === 0 ||
+                subjectIds.length === 0
+            ) {
+                await client.query("ROLLBACK");
+                transactionStarted = false;
+
+                return json({
+                    success: false,
+                    message: "Select at least one school, class and subject."
+                }, 400);
+            }
+
+            const closingAt = validClosingAt(
+                data.closingAt ?? data.closing_at
+            );
+
+            if (closingAt === undefined) {
+                await client.query("ROLLBACK");
+                transactionStarted = false;
+
+                return json({
+                    success: false,
+                    message: "The closing date and time must be in the future."
+                }, 400);
+            }
+
+            /* -----------------------------------------
+               VALIDATE SCHOOLS
+            ----------------------------------------- */
+
+            let validSchools;
 
             if (auth.role === "sector_admin") {
-                if (!schoolIds.length) {
-                    throw new Error("Select at least one school.");
-                }
-
-                const validSchools = await client.query(`
+                validSchools = await client.query(
+                    `
                     SELECT id
                     FROM schools
-                    WHERE sector_id = $1
+                    WHERE id = ANY($1::bigint[])
+                      AND sector_id = $2
                       AND status = 'active'
-                      AND id = ANY($2::bigint[])
-                `, [auth.sectorId, schoolIds]);
+                    `,
+                    [schoolIds, auth.sectorId]
+                );
 
-                if (validSchools.rows.length !== schoolIds.length) {
-                    throw new Error("A selected school is outside your sector.");
-                }
-
-                selectedSchools = validSchools.rows.map(r => String(r.id));
             } else {
-                if (schoolIds.length) {
-                    throw new Error("You cannot select other schools.");
-                }
-                selectedSchools = [auth.schoolId];
+                validSchools = await client.query(
+                    `
+                    SELECT id
+                    FROM schools
+                    WHERE id = $1
+                      AND status = 'active'
+                    `,
+                    [auth.schoolId]
+                );
             }
 
-            const validClasses = await client.query(`
+            if (validSchools.rows.length !== schoolIds.length) {
+                await client.query("ROLLBACK");
+                transactionStarted = false;
+
+                return json({
+                    success: false,
+                    message: "One or more selected schools are invalid."
+                }, 400);
+            }
+
+            /* -----------------------------------------
+               VALIDATE CLASSES
+            ----------------------------------------- */
+
+            const validClasses = await client.query(
+                `
                 SELECT id, school_id
                 FROM classes
                 WHERE id = ANY($1::bigint[])
                   AND school_id = ANY($2::bigint[])
-            `, [classIds, selectedSchools]);
+                `,
+                [classIds, schoolIds]
+            );
 
             if (validClasses.rows.length !== classIds.length) {
-                throw new Error("A selected class is outside the selected schools.");
+                await client.query("ROLLBACK");
+                transactionStarted = false;
+
+                return json({
+                    success: false,
+                    message: "One or more selected classes do not belong to the selected schools."
+                }, 400);
             }
 
-            const validSubjects = await client.query(`
-                SELECT id FROM subjects
+            /* -----------------------------------------
+               VALIDATE SUBJECTS
+            ----------------------------------------- */
+
+            const validSubjects = await client.query(
+                `
+                SELECT id
+                FROM subjects
                 WHERE id = ANY($1::bigint[])
-            `, [subjectIds]);
+                `,
+                [subjectIds]
+            );
 
             if (validSubjects.rows.length !== subjectIds.length) {
-                throw new Error("A selected subject is invalid.");
+                await client.query("ROLLBACK");
+                transactionStarted = false;
+
+                return json({
+                    success: false,
+                    message: "One or more selected subjects are invalid."
+                }, 400);
             }
 
-            await client.query(`
+            /* -----------------------------------------
+               UPDATE MAIN TEST
+            ----------------------------------------- */
+
+            await client.query(
+                `
                 UPDATE tests
-                SET test_name = $1,
+                SET
+                    test_name = $1,
                     closing_at = $2,
                     updated_at = NOW()
                 WHERE id = $3
-            `, [name, closingAt, testId]);
-
-            await client.query(
-                "DELETE FROM test_classes WHERE test_id = $1",
-                [testId]
-            );
-            await client.query(
-                "DELETE FROM test_schools WHERE test_id = $1",
-                [testId]
-            );
-            await client.query(
-                "DELETE FROM test_subjects WHERE test_id = $1",
-                [testId]
+                `,
+                [
+                    testName,
+                    closingAt,
+                    testId
+                ]
             );
 
-            for (const schoolId of selectedSchools) {
-                await client.query(`
-                    INSERT INTO test_schools (test_id, school_id)
+            /* -----------------------------------------
+               REMOVE OLD RELATIONSHIPS
+
+               Deleting test_schools also removes
+               related test_classes through ON DELETE
+               CASCADE.
+            ----------------------------------------- */
+
+            await client.query(
+                `
+                DELETE FROM test_schools
+                WHERE test_id = $1
+                `,
+                [testId]
+            );
+
+            await client.query(
+                `
+                DELETE FROM test_subjects
+                WHERE test_id = $1
+                `,
+                [testId]
+            );
+
+            /* -----------------------------------------
+               INSERT UPDATED SCHOOLS FIRST
+            ----------------------------------------- */
+
+            for (const schoolId of schoolIds) {
+                await client.query(
+                    `
+                    INSERT INTO test_schools (
+                        test_id,
+                        school_id
+                    )
                     VALUES ($1, $2)
-                `, [testId, schoolId]);
+                    `,
+                    [testId, schoolId]
+                );
             }
 
-            for (const item of validClasses.rows) {
-                await client.query(`
-                    INSERT INTO test_classes (test_id, school_id, class_id)
+            /* -----------------------------------------
+               INSERT UPDATED CLASSES
+            ----------------------------------------- */
+
+            for (const selectedClass of validClasses.rows) {
+                await client.query(
+                    `
+                    INSERT INTO test_classes (
+                        test_id,
+                        school_id,
+                        class_id
+                    )
                     VALUES ($1, $2, $3)
-                `, [testId, item.school_id, item.id]);
+                    `,
+                    [
+                        testId,
+                        selectedClass.school_id,
+                        selectedClass.id
+                    ]
+                );
             }
+
+            /* -----------------------------------------
+               INSERT UPDATED SUBJECTS
+            ----------------------------------------- */
 
             for (const subjectId of subjectIds) {
-                await client.query(`
-                    INSERT INTO test_subjects (test_id, subject_id)
+                await client.query(
+                    `
+                    INSERT INTO test_subjects (
+                        test_id,
+                        subject_id
+                    )
                     VALUES ($1, $2)
-                `, [testId, subjectId]);
+                    `,
+                    [testId, subjectId]
+                );
             }
 
-        } else {
-            throw new Error("Unknown action.");
+            await client.query("COMMIT");
+            transactionStarted = false;
+
+            return json({
+                success: true,
+                message: "Test updated successfully."
+            });
         }
 
-        await client.query("COMMIT");
-
-        return json({
-            success: true,
-            message: action === "initiate"
-                ? "Test initiated successfully."
-                : action === "close"
-                    ? "Test closed successfully."
-                    : action === "delete"
-                        ? "Test deleted successfully."
-                        : "Test updated successfully."
-        });
-
     } catch (error) {
-        if (client) await client.query("ROLLBACK").catch(() => {});
+        if (client && transactionStarted) {
+            await client.query("ROLLBACK").catch(() => {});
+        }
 
         console.error("Test action error:", error);
 
         return json({
             success: false,
-            message: error.message || "Unable to complete the action."
-        }, 400);
+            message: "Unable to complete the requested test action."
+        }, 500);
 
     } finally {
-        if (client) await client.end().catch(() => {});
+        if (client) {
+            await client.end().catch(() => {});
+        }
     }
 }
