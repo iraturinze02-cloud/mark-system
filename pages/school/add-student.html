@@ -643,8 +643,6 @@ async function loadClasses() {
 
     renderClassCards();
     renderFormClassCards();
-
-    addStudentBtn.disabled = classes.length === 0;
 }
 
 /* =====================================
@@ -1236,11 +1234,8 @@ async function initializePage() {
         studentsContainer.appendChild(message);
 
     } finally {
-
-        addStudentBtn.disabled = classes.length === 0;
-
-    }
-
+    addStudentBtn.disabled = false;
+}
 }
 
 initializePage();
