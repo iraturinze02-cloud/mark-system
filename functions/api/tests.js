@@ -1,3 +1,4 @@
+
 import {
     connectDB,
     requireTestUser,
@@ -52,7 +53,7 @@ async function closeExpiredTests(client) {
 }
 
 /* =====================================================
-   GET: LOAD TESTS AND FORM DATA
+   GET: LOAD TESTS
 ===================================================== */
 
 export async function onRequestGet(context) {
@@ -72,14 +73,26 @@ export async function onRequestGet(context) {
         let visibilityCondition = "";
         let parameters = [];
 
+        /* ---------------------------------------------
+           SECTOR ADMIN VISIBILITY
+        --------------------------------------------- */
+
         if (auth.role === "sector_admin") {
             visibilityCondition = `
                 t.sector_id = $1
             `;
 
             parameters = [auth.sectorId];
+        }
 
-        } else if (auth.role === "school_admin") {
+        /* ---------------------------------------------
+           SCHOOL ADMIN VISIBILITY
+
+           Own school tests and sector tests assigned
+           to their school.
+        --------------------------------------------- */
+
+        else if (auth.role === "school_admin") {
             visibilityCondition = `
                 (
                     t.school_id = $1
@@ -94,8 +107,16 @@ export async function onRequestGet(context) {
             `;
 
             parameters = [auth.schoolId];
+        }
 
-        } else if (auth.role === "teacher") {
+        /* ---------------------------------------------
+           TEACHER VISIBILITY
+
+           A teacher must have an assignment matching
+           the test's school, class and subject.
+        --------------------------------------------- */
+
+        else if (auth.role === "teacher") {
             visibilityCondition = `
                 EXISTS (
                     SELECT 1
@@ -103,6 +124,7 @@ export async function onRequestGet(context) {
 
                     INNER JOIN teacher_assignments ta
                         ON ta.teacher_id = tr.id
+                       AND ta.school_id = tr.school_id
 
                     INNER JOIN test_classes tc
                         ON tc.test_id = t.id
@@ -114,12 +136,30 @@ export async function onRequestGet(context) {
                        AND tsu.subject_id = ta.subject_id
 
                     WHERE tr.user_id = $1
-                      AND tr.school_id = ta.school_id
+                      AND tr.school_id = tc.school_id
                 )
             `;
 
             parameters = [auth.userId];
         }
+
+        else {
+            return json({
+                success: false,
+                message: "Not authorized."
+            }, 403);
+        }
+
+        /* ---------------------------------------------
+           LOAD TESTS WITH RELATED DATA
+
+           The HTML expects:
+           schools[]
+           classes[]
+           subjects[]
+           creator_name
+           can_manage
+        --------------------------------------------- */
 
         const testsResult = await client.query(
             `
@@ -136,7 +176,7 @@ export async function onRequestGet(context) {
                 t.created_at,
                 t.updated_at,
 
-                creator.full_name AS created_by_name,
+                creator.full_name AS creator_name,
 
                 CASE
                     WHEN $${parameters.length + 1} = 'sector_admin'
@@ -148,12 +188,73 @@ export async function onRequestGet(context) {
                     THEN TRUE
 
                     ELSE FALSE
-                END AS can_manage
+                END AS can_manage,
+
+                COALESCE(
+                    test_schools.data,
+                    '[]'::json
+                ) AS schools,
+
+                COALESCE(
+                    test_classes.data,
+                    '[]'::json
+                ) AS classes,
+
+                COALESCE(
+                    test_subjects.data,
+                    '[]'::json
+                ) AS subjects
 
             FROM tests t
 
             LEFT JOIN users creator
                 ON creator.id = t.created_by
+
+            LEFT JOIN LATERAL (
+                SELECT json_agg(
+                    json_build_object(
+                        'id', s.id,
+                        'school_name', s.school_name
+                    )
+                    ORDER BY s.school_name
+                ) AS data
+                FROM test_schools ts
+                INNER JOIN schools s
+                    ON s.id = ts.school_id
+                WHERE ts.test_id = t.id
+            ) test_schools ON TRUE
+
+            LEFT JOIN LATERAL (
+                SELECT json_agg(
+                    json_build_object(
+                        'id', c.id,
+                        'class_name', c.class_name,
+                        'class_level', c.class_level,
+                        'school_id', c.school_id
+                    )
+                    ORDER BY c.class_name
+                ) AS data
+                FROM test_classes tc
+                INNER JOIN classes c
+                    ON c.id = tc.class_id
+                   AND c.school_id = tc.school_id
+                WHERE tc.test_id = t.id
+            ) test_classes ON TRUE
+
+            LEFT JOIN LATERAL (
+                SELECT json_agg(
+                    json_build_object(
+                        'id', s.id,
+                        'subject_name', s.subject_name,
+                        'subject_code', s.subject_code
+                    )
+                    ORDER BY s.subject_name
+                ) AS data
+                FROM test_subjects ts
+                INNER JOIN subjects s
+                    ON s.id = ts.subject_id
+                WHERE ts.test_id = t.id
+            ) test_subjects ON TRUE
 
             WHERE ${visibilityCondition}
 
@@ -169,7 +270,7 @@ export async function onRequestGet(context) {
         );
 
         /* ---------------------------------------------
-           LOAD SCHOOLS
+           LOAD SCHOOLS FOR TEST FORM
         --------------------------------------------- */
 
         let schools = [];
@@ -190,8 +291,9 @@ export async function onRequestGet(context) {
             );
 
             schools = result.rows;
+        }
 
-        } else if (auth.role === "school_admin") {
+        else if (auth.role === "school_admin") {
             const result = await client.query(
                 `
                 SELECT
@@ -209,7 +311,7 @@ export async function onRequestGet(context) {
         }
 
         /* ---------------------------------------------
-           LOAD CLASSES
+           LOAD CLASSES FOR TEST FORM
         --------------------------------------------- */
 
         let classes = [];
@@ -234,8 +336,9 @@ export async function onRequestGet(context) {
             );
 
             classes = result.rows;
+        }
 
-        } else if (auth.role === "school_admin") {
+        else if (auth.role === "school_admin") {
             const result = await client.query(
                 `
                 SELECT
@@ -251,8 +354,9 @@ export async function onRequestGet(context) {
             );
 
             classes = result.rows;
+        }
 
-        } else if (auth.role === "teacher") {
+        else if (auth.role === "teacher") {
             const result = await client.query(
                 `
                 SELECT DISTINCT
@@ -263,11 +367,11 @@ export async function onRequestGet(context) {
                 FROM teachers tr
                 INNER JOIN teacher_assignments ta
                     ON ta.teacher_id = tr.id
+                   AND ta.school_id = tr.school_id
                 INNER JOIN classes c
                     ON c.id = ta.class_id
                    AND c.school_id = ta.school_id
                 WHERE tr.user_id = $1
-                  AND tr.school_id = ta.school_id
                 ORDER BY c.class_name
                 `,
                 [auth.userId]
@@ -280,16 +384,14 @@ export async function onRequestGet(context) {
            LOAD SUBJECTS
         --------------------------------------------- */
 
-        const subjectsResult = await client.query(
-            `
+        const subjectsResult = await client.query(`
             SELECT
                 id,
                 subject_name,
                 subject_code
             FROM subjects
             ORDER BY subject_name
-            `
-        );
+        `);
 
         return json({
             success: true,
@@ -297,6 +399,7 @@ export async function onRequestGet(context) {
             schools,
             classes,
             subjects: subjectsResult.rows,
+
             user: {
                 id: auth.userId,
                 role: auth.role,
@@ -352,8 +455,12 @@ export async function onRequestPost(context) {
         }, 400);
     }
 
+    /* ---------------------------------------------
+       READ BOTH SNAKE_CASE AND CAMELCASE
+    --------------------------------------------- */
+
     const testName = String(
-        data.testName || data.test_name || ""
+        data.test_name ?? data.testName ?? ""
     ).trim();
 
     if (!testName || testName.length > 200) {
@@ -363,9 +470,25 @@ export async function onRequestPost(context) {
         }, 400);
     }
 
-    const schoolIds = uniqueIds(data.schoolIds);
-    const classIds = uniqueIds(data.classIds);
-    const subjectIds = uniqueIds(data.subjectIds);
+    let schoolIds;
+
+    if (auth.role === "school_admin") {
+        // School Admin always uses their own school.
+        // The frontend does not need to send school_ids.
+        schoolIds = [String(auth.schoolId)];
+    } else {
+        schoolIds = uniqueIds(
+            data.school_ids ?? data.schoolIds
+        );
+    }
+
+    const classIds = uniqueIds(
+        data.class_ids ?? data.classIds
+    );
+
+    const subjectIds = uniqueIds(
+        data.subject_ids ?? data.subjectIds
+    );
 
     if (schoolIds.length === 0) {
         return json({
@@ -389,7 +512,7 @@ export async function onRequestPost(context) {
     }
 
     const closingAt = validClosingAt(
-        data.closingAt ?? data.closing_at
+        data.closing_at ?? data.closingAt
     );
 
     if (closingAt === undefined) {
@@ -425,8 +548,9 @@ export async function onRequestPost(context) {
                 `,
                 [schoolIds, auth.sectorId]
             );
+        }
 
-        } else {
+        else {
             validSchools = await client.query(
                 `
                 SELECT id
@@ -436,19 +560,6 @@ export async function onRequestPost(context) {
                 `,
                 [auth.schoolId]
             );
-
-            if (
-                schoolIds.length !== 1 ||
-                schoolIds[0] !== String(auth.schoolId)
-            ) {
-                await client.query("ROLLBACK");
-                transactionStarted = false;
-
-                return json({
-                    success: false,
-                    message: "You can only create tests for your own school."
-                }, 403);
-            }
         }
 
         if (validSchools.rows.length !== schoolIds.length) {
@@ -542,7 +653,9 @@ export async function onRequestPost(context) {
 
         /* ---------------------------------------------
            INSERT TEST SCHOOLS FIRST
-           Required by the test_classes foreign key.
+
+           Required by the composite foreign key
+           in test_classes.
         --------------------------------------------- */
 
         for (const schoolId of schoolIds) {
