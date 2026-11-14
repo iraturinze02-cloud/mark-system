@@ -126,6 +126,9 @@ export async function onRequestGet(context) {
                 ts.subject_id,
                 sub.subject_name,
 
+                -- Maximum mark assigned to this Test subject
+                ts.total_marks,
+
                 CASE
                     WHEN t.status = 'open'
                      AND (
