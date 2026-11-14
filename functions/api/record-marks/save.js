@@ -5,10 +5,9 @@ import {
     json
 } from "../../_utils.js";
 
-function validId(value) {
-    const id = String(value ?? "").trim();
-    return /^\d+$/.test(id) && Number(id) > 0 ? id : null;
-}
+/* =====================================================
+   POST: SAVE TEST MARKS
+===================================================== */
 
 export async function onRequestPost(context) {
     const auth = await requireTestUser(context);
@@ -18,59 +17,55 @@ export async function onRequestPost(context) {
     if (auth.role !== "teacher") {
         return json({
             success: false,
-            message: "Only teachers can save marks."
+            message: "Only teachers can record marks."
         }, 403);
     }
 
-    let data;
+    let body;
 
     try {
-        data = await context.request.json();
+        body = await context.request.json();
     } catch {
         return json({
             success: false,
-            message: "Invalid JSON request."
+            message: "Invalid request data."
         }, 400);
     }
 
-    const type = data.assessment_type;
-    const assessmentId = validId(data.assessment_id);
-    const assignmentId = validId(data.assignment_id);
+    const testId = Number(body.test_id || body.assessment_id);
+    const assignmentId = Number(body.assignment_id);
+    const submittedMarks = body.marks;
 
     if (
-        !["test", "examination"].includes(type) ||
-        !assessmentId ||
-        !assignmentId ||
-        !Array.isArray(data.marks) ||
-        data.marks.length === 0
+        !Number.isInteger(testId) || testId <= 0 ||
+        !Number.isInteger(assignmentId) || assignmentId <= 0 ||
+        !Array.isArray(submittedMarks) ||
+        submittedMarks.length === 0 ||
+        submittedMarks.length > 1000
     ) {
         return json({
             success: false,
-            message: "Invalid marks submission."
+            message: "Please provide a valid Test, assignment and marks."
         }, 400);
     }
 
-    if (data.marks.length > 1000) {
-        return json({
-            success: false,
-            message: "Too many student marks in one submission."
-        }, 400);
-    }
-
-    /* ---------------------------------------------
-       VALIDATE MARK VALUES AND STUDENT IDS
-    --------------------------------------------- */
-
-    const submittedMarks = [];
+    const marks = [];
     const seenStudents = new Set();
 
-    for (const item of data.marks) {
-        const studentId = validId(item.student_id);
-
-        if (!studentId) {
+    for (const item of submittedMarks) {
+        if (!item || typeof item !== "object") {
             return json({
                 success: false,
-                message: "An invalid student was submitted."
+                message: "Invalid student mark data."
+            }, 400);
+        }
+
+        const studentId = Number(item.student_id);
+
+        if (!Number.isInteger(studentId) || studentId <= 0) {
+            return json({
+                success: false,
+                message: "Invalid student selected."
             }, 400);
         }
 
@@ -83,20 +78,16 @@ export async function onRequestPost(context) {
 
         seenStudents.add(studentId);
 
-        /*
-         * Blank entries are ignored. This allows a teacher
-         * to save marks for only the students entered.
-         */
-
+        // Empty scores are skipped, allowing partially completed class lists.
         if (
-            item.mark === null ||
-            item.mark === undefined ||
-            String(item.mark).trim() === ""
+            item.score === null ||
+            item.score === undefined ||
+            String(item.score).trim() === ""
         ) {
             continue;
         }
 
-        const score = Number(item.mark);
+        const score = Number(item.score);
 
         if (!Number.isFinite(score) || score < 0) {
             return json({
@@ -105,13 +96,16 @@ export async function onRequestPost(context) {
             }, 400);
         }
 
-        submittedMarks.push({
-            student_id: studentId,
-            score
+        marks.push({
+            studentId,
+            score,
+            remarks: item.remarks == null
+                ? null
+                : String(item.remarks).trim()
         });
     }
 
-    if (submittedMarks.length === 0) {
+    if (marks.length === 0) {
         return json({
             success: false,
             message: "Enter at least one student's mark."
@@ -128,13 +122,13 @@ export async function onRequestPost(context) {
         transactionStarted = true;
 
         /* ---------------------------------------------
-           VERIFY TEACHER ASSIGNMENT
+           1. VERIFY TEACHER ASSIGNMENT
         --------------------------------------------- */
 
         const assignmentResult = await client.query(
             `
             SELECT
-                ta.id,
+                ta.id AS assignment_id,
                 ta.school_id,
                 ta.class_id,
                 ta.subject_id
@@ -156,246 +150,173 @@ export async function onRequestPost(context) {
 
             return json({
                 success: false,
-                message: "You are not authorized for this class and subject."
+                message: "This class and subject are not assigned to you."
             }, 403);
         }
 
         const assignment = assignmentResult.rows[0];
 
         /* ---------------------------------------------
-           VERIFY TEST OR EXAMINATION
+           2. LOCK AND VERIFY TEST
         --------------------------------------------- */
 
-        let examinationId;
-        let totalMarks;
-
-        if (type === "test") {
-            const testResult = await client.query(
-                `
-                SELECT
-                    t.id,
-                    t.status,
-                    t.closing_at,
-                    te.examination_id,
-                    e.total_marks,
-                    e.school_id,
-                    e.class_id,
-                    e.subject_id
-                FROM tests t
-                INNER JOIN test_classes tc
-                    ON tc.test_id = t.id
-                INNER JOIN test_subjects ts
-                    ON ts.test_id = t.id
-                LEFT JOIN test_examinations te
-                    ON te.test_id = t.id
-                LEFT JOIN examinations e
-                    ON e.id = te.examination_id
-                WHERE t.id = $1
-                  AND tc.school_id = $2
-                  AND tc.class_id = $3
-                  AND ts.subject_id = $4
-                FOR UPDATE OF t
-                `,
-                [
-                    assessmentId,
-                    assignment.school_id,
-                    assignment.class_id,
-                    assignment.subject_id
-                ]
-            );
-
-            if (testResult.rows.length === 0) {
-                await client.query("ROLLBACK");
-                transactionStarted = false;
-
-                return json({
-                    success: false,
-                    message: "This Test is not assigned to your class and subject."
-                }, 403);
-            }
-
-            const test = testResult.rows[0];
-
-            if (
-                test.status === "open" &&
-                test.closing_at &&
-                new Date(test.closing_at).getTime() <= Date.now()
-            ) {
-                await client.query(
-                    `
-                    UPDATE tests
-                    SET
-                        status = 'closed',
-                        closed_at = NOW(),
-                        closed_by = NULL,
-                        updated_at = NOW()
-                    WHERE id = $1
-                      AND status = 'open'
-                    `,
-                    [assessmentId]
-                );
-
-                await client.query("COMMIT");
-                transactionStarted = false;
-
-                return json({
-                    success: false,
-                    message: "This Test has reached its closing time."
-                }, 403);
-            }
-
-            if (test.status !== "open") {
-                await client.query("ROLLBACK");
-                transactionStarted = false;
-
-                return json({
-                    success: false,
-                    message: "Marks can only be recorded while the Test is open."
-                }, 403);
-            }
-
-            if (!test.examination_id || !test.total_marks) {
-                await client.query("ROLLBACK");
-                transactionStarted = false;
-
-                return json({
-                    success: false,
-                    message: "This Test has no valid connected Examination yet."
-                }, 409);
-            }
-
-            if (
-                String(test.school_id) !== String(assignment.school_id) ||
-                String(test.class_id) !== String(assignment.class_id) ||
-                String(test.subject_id) !== String(assignment.subject_id)
-            ) {
-                await client.query("ROLLBACK");
-                transactionStarted = false;
-
-                return json({
-                    success: false,
-                    message: "The connected Examination does not match this assignment."
-                }, 409);
-            }
-
-            examinationId = test.examination_id;
-            totalMarks = Number(test.total_marks);
-
-        } else {
-            const examResult = await client.query(
-                `
-                SELECT
-                    id,
-                    total_marks
-                FROM examinations
-                WHERE id = $1
-                  AND school_id = $2
-                  AND class_id = $3
-                  AND subject_id = $4
-                FOR UPDATE
-                `,
-                [
-                    assessmentId,
-                    assignment.school_id,
-                    assignment.class_id,
-                    assignment.subject_id
-                ]
-            );
-
-            if (examResult.rows.length === 0) {
-                await client.query("ROLLBACK");
-                transactionStarted = false;
-
-                return json({
-                    success: false,
-                    message: "This Examination is not assigned to your class and subject."
-                }, 403);
-            }
-
-            examinationId = examResult.rows[0].id;
-            totalMarks = Number(examResult.rows[0].total_marks);
-        }
-
-        /* ---------------------------------------------
-           VALIDATE SCORES AGAINST MAXIMUM MARKS
-        --------------------------------------------- */
-
-        for (const item of submittedMarks) {
-            if (item.score > totalMarks) {
-                await client.query("ROLLBACK");
-                transactionStarted = false;
-
-                return json({
-                    success: false,
-                    message: `A mark cannot exceed ${totalMarks}.`
-                }, 400);
-            }
-        }
-
-        /* ---------------------------------------------
-           VERIFY ALL STUDENTS BELONG TO THIS CLASS
-        --------------------------------------------- */
-
-        const studentIds = submittedMarks.map(
-            item => item.student_id
-        );
-
-        const studentsResult = await client.query(
+        const testResult = await client.query(
             `
-            SELECT id
-            FROM students
-            WHERE id = ANY($1::bigint[])
-              AND school_id = $2
-              AND class_id = $3
+            SELECT
+                t.id,
+                t.test_name,
+                t.status,
+                t.closing_at
+            FROM tests t
+            INNER JOIN test_classes tc
+                ON tc.test_id = t.id
+               AND tc.school_id = $2
+               AND tc.class_id = $3
+            INNER JOIN test_subjects ts
+                ON ts.test_id = t.id
+               AND ts.subject_id = $4
+            WHERE t.id = $1
+            FOR UPDATE OF t
             `,
             [
-                studentIds,
+                testId,
                 assignment.school_id,
-                assignment.class_id
+                assignment.class_id,
+                assignment.subject_id
             ]
         );
 
-        if (studentsResult.rows.length !== submittedMarks.length) {
+        if (testResult.rows.length === 0) {
             await client.query("ROLLBACK");
             transactionStarted = false;
 
             return json({
                 success: false,
-                message: "One or more students do not belong to your assigned class."
+                message: "This Test does not match the selected class and subject."
+            }, 403);
+        }
+
+        const test = testResult.rows[0];
+
+        if (test.status !== "open") {
+            await client.query("ROLLBACK");
+            transactionStarted = false;
+
+            return json({
+                success: false,
+                message: "This Test is not open. Marks cannot be recorded."
+            }, 403);
+        }
+
+        if (
+            test.closing_at &&
+            new Date(test.closing_at).getTime() <= Date.now()
+        ) {
+            await client.query(
+                `
+                UPDATE tests
+                SET
+                    status = 'closed',
+                    closed_at = NOW(),
+                    updated_at = NOW()
+                WHERE id = $1
+                  AND status = 'open'
+                `,
+                [testId]
+            );
+
+            await client.query("COMMIT");
+            transactionStarted = false;
+
+            return json({
+                success: false,
+                message: "This Test has reached its closing time and is now closed."
             }, 403);
         }
 
         /* ---------------------------------------------
-           SAVE TO THE EXISTING MARKS TABLE
+           3. VERIFY ALL STUDENTS BELONG TO THIS CLASS
+        --------------------------------------------- */
+
+        const studentIds = marks.map(item => item.studentId);
+
+        const studentsResult = await client.query(
+            `
+            SELECT id
+            FROM students
+            WHERE school_id = $1
+              AND class_id = $2
+              AND id = ANY($3::bigint[])
+            `,
+            [
+                assignment.school_id,
+                assignment.class_id,
+                studentIds
+            ]
+        );
+
+        if (studentsResult.rows.length !== studentIds.length) {
+            await client.query("ROLLBACK");
+            transactionStarted = false;
+
+            return json({
+                success: false,
+                message: "One or more students do not belong to this class."
+            }, 400);
+        }
+
+        /* ---------------------------------------------
+           4. SAVE OR UPDATE TEST MARKS
         --------------------------------------------- */
 
         let savedCount = 0;
 
-        for (const item of submittedMarks) {
+        for (const item of marks) {
             await client.query(
                 `
                 INSERT INTO marks (
                     examination_id,
+                    test_id,
                     student_id,
                     class_id,
+                    subject_id,
                     score,
+                    remarks,
                     recorded_by,
                     created_at,
                     updated_at
                 )
-                VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
-
-                ON CONFLICT (examination_id, student_id)
+                VALUES (
+                    NULL,
+                    $1,
+                    $2,
+                    $3,
+                    $4,
+                    $5,
+                    $6,
+                    $7,
+                    NOW(),
+                    NOW()
+                )
+                ON CONFLICT (
+                    test_id,
+                    student_id,
+                    subject_id
+                )
+                WHERE test_id IS NOT NULL
                 DO UPDATE SET
                     score = EXCLUDED.score,
+                    remarks = EXCLUDED.remarks,
                     recorded_by = EXCLUDED.recorded_by,
                     updated_at = NOW()
                 `,
                 [
-                    examinationId,
-                    item.student_id,
+                    testId,
+                    item.studentId,
                     assignment.class_id,
+                    assignment.subject_id,
                     item.score,
+                    item.remarks,
                     auth.userId
                 ]
             );
@@ -408,9 +329,9 @@ export async function onRequestPost(context) {
 
         return json({
             success: true,
-            message: "Marks saved successfully.",
+            message: "Test marks saved successfully.",
             saved_count: savedCount,
-            total_marks: totalMarks
+            test_id: testId
         });
 
     } catch (error) {
@@ -418,11 +339,11 @@ export async function onRequestPost(context) {
             await client.query("ROLLBACK").catch(() => {});
         }
 
-        console.error("Save marks error:", error);
+        console.error("Record Marks save error:", error);
 
         return json({
             success: false,
-            message: "Unable to save marks."
+            message: "Unable to save Test marks."
         }, 500);
 
     } finally {
