@@ -88,6 +88,7 @@ export async function onRequestGet(context) {
 
         /* ---------------------------------------------
            2. VERIFY TEST MATCHES ASSIGNMENT
+              AND GET MAXIMUM MARK
         --------------------------------------------- */
 
         const testResult = await client.query(
@@ -97,28 +98,41 @@ export async function onRequestGet(context) {
                 t.test_name,
                 t.status,
                 t.closing_at,
+
                 t.created_by,
                 creator.full_name AS creator_name,
+
                 t.initiated_by,
                 opener.full_name AS initiated_by_name,
                 t.initiated_at,
+
                 t.closed_by,
                 closer.full_name AS closed_by_name,
-                t.closed_at
+                t.closed_at,
+
+                ts.subject_id,
+                ts.total_marks
+
             FROM tests t
+
             INNER JOIN test_classes tc
                 ON tc.test_id = t.id
                AND tc.school_id = $2
                AND tc.class_id = $3
+
             INNER JOIN test_subjects ts
                 ON ts.test_id = t.id
                AND ts.subject_id = $4
+
             LEFT JOIN users creator
                 ON creator.id = t.created_by
+
             LEFT JOIN users opener
                 ON opener.id = t.initiated_by
+
             LEFT JOIN users closer
                 ON closer.id = t.closed_by
+
             WHERE t.id = $1
             LIMIT 1
             `,
@@ -137,10 +151,26 @@ export async function onRequestGet(context) {
             }, 403);
         }
 
-        let test = testResult.rows[0];
+        const test = testResult.rows[0];
 
         /* ---------------------------------------------
-           3. AUTOMATIC CLOSING TIME CHECK
+           3. VERIFY MAXIMUM MARK
+        --------------------------------------------- */
+
+        if (
+            test.total_marks === null ||
+            test.total_marks === undefined ||
+            !Number.isFinite(Number(test.total_marks)) ||
+            Number(test.total_marks) <= 0
+        ) {
+            return json({
+                success: false,
+                message: "The maximum mark for this Test subject has not been configured. Please contact the Test administrator."
+            }, 400);
+        }
+
+        /* ---------------------------------------------
+           4. AUTOMATIC CLOSING TIME CHECK
         --------------------------------------------- */
 
         if (
@@ -177,7 +207,7 @@ export async function onRequestGet(context) {
         }
 
         /* ---------------------------------------------
-           4. LOAD STUDENTS AND EXISTING TEST MARKS
+           5. LOAD STUDENTS AND EXISTING TEST MARKS
         --------------------------------------------- */
 
         const studentsResult = await client.query(
@@ -213,10 +243,20 @@ export async function onRequestGet(context) {
             ]
         );
 
+        /* ---------------------------------------------
+           6. RETURN DATA
+        --------------------------------------------- */
+
         return json({
             success: true,
-            test,
+
+            test: {
+                ...test,
+                total_marks: Number(test.total_marks)
+            },
+
             assignment,
+
             students: studentsResult.rows
         });
 
