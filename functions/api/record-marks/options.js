@@ -91,11 +91,12 @@ export async function onRequestGet(context) {
         const testsResult = await client.query(
             `
             SELECT DISTINCT
-                t.id AS test_id,
-                t.test_name,
-                t.status,
-                t.closing_at,
-                t.created_by,
+    t.id AS test_id,
+    t.test_name,
+    t.status,
+    t.closing_at,
+    t.created_at,
+    t.created_by,
                 creator.full_name AS creator_name,
                 t.initiated_by,
                 opener.full_name AS initiated_by_name,
