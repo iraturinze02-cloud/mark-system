@@ -1,4 +1,3 @@
-
 import { connectDB, requireSectorAdmin, json } from "../_utils.js";
 
 export async function onRequestGet(context) {
@@ -26,17 +25,18 @@ export async function onRequestGet(context) {
                     (
                         SELECT json_agg(
                             json_build_object(
-                                'id', c.id::text,
-                                'class_name', c.class_name,
-                                'class_level', c.class_level
+                                'id', el.id::text,
+                                'level_name', el.level_name
                             )
-                            ORDER BY c.class_name ASC
+                            ORDER BY el.id
                         )
-                        FROM classes c
-                        WHERE c.school_id = u.school_id
+                        FROM school_levels sl
+                        INNER JOIN education_levels el
+                            ON el.id = sl.level_id
+                        WHERE sl.school_id = u.school_id
                     ),
                     '[]'::json
-                ) AS classes
+                ) AS levels
 
              FROM users u
 

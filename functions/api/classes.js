@@ -1,4 +1,3 @@
-
 import {
     connectDB,
     requireSchoolAdmin,
@@ -16,12 +15,17 @@ export async function onRequestGet(context) {
 
         const result = await client.query(
             `SELECT
-                id::text AS id,
-                class_name,
-                class_level
-             FROM classes
-             WHERE school_id = $1
-             ORDER BY class_name ASC`,
+                c.id::text AS id,
+                c.class_name,
+                el.id::text AS level_id,
+                el.level_name AS class_level
+             FROM classes c
+             INNER JOIN school_levels sl
+                ON sl.level_id = c.level_id
+               AND sl.school_id = $1
+             INNER JOIN education_levels el
+                ON el.id = c.level_id
+             ORDER BY c.id ASC`,
             [auth.schoolId]
         );
 
