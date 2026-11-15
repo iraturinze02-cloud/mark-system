@@ -728,11 +728,9 @@ function handleTestChange() {
 
     /* Reset school filter when changing test */
 
-    selectedSchoolId = "all";
-
     populateSchoolDropdown(test);
 
-    displaySelectedTest();
+displaySelectedTest();
 
 }
 
@@ -789,10 +787,20 @@ function populateSchoolDropdown(test) {
 
     });
 
+   // Automatically select the first school
+if (sortedSchools.length > 0) {
+
+    schoolSelect.value = sortedSchools[0][0];
+
+    selectedSchoolId = sortedSchools[0][0];
+
+} else {
+
     schoolSelect.value = "all";
 
     selectedSchoolId = "all";
 
+}
 }
 
 
