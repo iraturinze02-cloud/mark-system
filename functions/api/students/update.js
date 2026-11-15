@@ -24,9 +24,11 @@ export async function onRequestPost(context) {
     const studentId = Number(data.id);
     const classId = Number(data.class_id);
     const fullName = String(data.full_name || "").trim();
+
     const gender = data.gender
         ? String(data.gender).trim()
         : null;
+
     const dateOfBirth = data.date_of_birth || null;
     const admissionDate = data.admission_date || null;
 
@@ -48,6 +50,13 @@ export async function onRequestPost(context) {
         }, 400);
     }
 
+    if (gender && gender.length > 20) {
+        return json({
+            success: false,
+            message: "Invalid gender value."
+        }, 400);
+    }
+
     let client;
 
     try {
@@ -66,8 +75,10 @@ export async function onRequestPost(context) {
                AND EXISTS (
                    SELECT 1
                    FROM classes c
+                   JOIN school_levels sl
+                     ON sl.level_id = c.level_id
                    WHERE c.id = $1
-                     AND c.school_id = $7
+                     AND sl.school_id = $7
                )
              RETURNING
                 st.id,
