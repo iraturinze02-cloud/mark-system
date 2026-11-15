@@ -3,89 +3,63 @@ import { connectDB, json, requireSectorAdmin } from "../../_utils.js";
 import bcrypt from "bcryptjs";
 
 /* =====================================================
-   CLASS HELPERS
+   EDUCATION LEVEL HELPERS
 ===================================================== */
 
-const CLASS_LEVELS = {
-    P1: "Primary",
-    P2: "Primary",
-    P3: "Primary",
-    P4: "Primary",
-    P5: "Primary",
-    P6: "Primary",
-
-    S1: "Lower Secondary",
-    S2: "Lower Secondary",
-    S3: "Lower Secondary",
-
-    S4: "Upper Secondary",
-    S5: "Upper Secondary",
-    S6: "Upper Secondary"
+const EDUCATION_LEVELS = {
+    1: "Primary",
+    2: "Ordinary Level",
+    3: "Advanced Level"
 };
 
-function validateClasses(value) {
+function validateLevelIds(value) {
     if (!Array.isArray(value) || value.length === 0) {
         return {
-            error: "Please select at least one class for this school."
+            error: "Please select at least one education level for this school."
         };
     }
 
-    const classes = [
+    const levelIds = [
         ...new Set(
-            value.map(item => String(item).trim().toUpperCase())
+            value.map(item => {
+                if (
+                    typeof item !== "number" &&
+                    !(typeof item === "string" && /^\\d+$/.test(item.trim()))
+                ) {
+                    return NaN;
+                }
+
+                return Number(item);
+            })
         )
     ];
 
-    const invalid = classes.filter(
-        className => !Object.prototype.hasOwnProperty.call(
-            CLASS_LEVELS,
-            className
-        )
+    const invalid = levelIds.filter(
+        levelId =>
+            !Number.isSafeInteger(levelId) ||
+            !Object.prototype.hasOwnProperty.call(
+                EDUCATION_LEVELS,
+                levelId
+            )
     );
 
     if (invalid.length > 0) {
         return {
-            error: "One or more selected classes are invalid."
+            error: "One or more selected education levels are invalid."
         };
     }
 
-    return { classes };
+    return { levelIds };
 }
 
-async function ensureSchoolClasses(client, schoolId, classes) {
-    for (const className of classes) {
-        // Prevent simultaneous duplicate creation of this school class.
-        const lockKey = `school-class:${schoolId}:${className}`;
-
+async function ensureSchoolLevels(client, schoolId, levelIds) {
+    for (const levelId of levelIds) {
         await client.query(
-            "SELECT pg_advisory_xact_lock(hashtext($1))",
-            [lockKey]
+            `INSERT INTO school_levels (school_id, level_id)
+             VALUES ($1, $2)
+             ON CONFLICT (school_id, level_id) DO NOTHING`,
+            [schoolId, levelId]
         );
-
-        const existing = await client.query(
-            `SELECT id
-             FROM classes
-             WHERE school_id = $1
-               AND class_name = $2
-             LIMIT 1`,
-            [schoolId, className]
-        );
-
-        if (existing.rowCount === 0) {
-            await client.query(
-                `INSERT INTO classes (
-                    school_id,
-                    class_name,
-                    class_level
-                )
-                VALUES ($1, $2, $3)`,
-                [
-                    schoolId,
-                    className,
-                    CLASS_LEVELS[className]
-                ]
-            );
-        }
     }
 }
 
@@ -114,16 +88,16 @@ export async function onRequestPost(context) {
     const password = String(data.password || "");
     const schoolName = String(data.school_name || "").trim();
 
-    const classValidation = validateClasses(data.classes);
+    const levelValidation = validateLevelIds(data.level_ids);
 
-    if (classValidation.error) {
+    if (levelValidation.error) {
         return json({
             success: false,
-            message: classValidation.error
+            message: levelValidation.error
         }, 400);
     }
 
-    const selectedClasses = classValidation.classes;
+    const selectedLevelIds = levelValidation.levelIds;
 
     if (!id || !/^\d+$/.test(id) || !fullName || !phone || !schoolName) {
         return json({
@@ -238,12 +212,12 @@ export async function onRequestPost(context) {
             schoolId = newSchool.rows[0].id;
         }
 
-        // Add selected classes that are missing from the target school.
-        // Existing class records are not deleted.
-        await ensureSchoolClasses(
+        // Add selected education levels to the target school.
+        // Existing levels are preserved; no level is removed here.
+        await ensureSchoolLevels(
             client,
             schoolId,
-            selectedClasses
+            selectedLevelIds
         );
 
         let result;
