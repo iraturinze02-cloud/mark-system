@@ -204,6 +204,27 @@ thead {
         break-inside: avoid;
     }
 }
+    
+.test-selector {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.test-selector label {
+    font-weight: bold;
+}
+
+.test-selector select {
+    min-width: 220px;
+    padding: 10px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    background: white;
+    font-size: 14px;
+}
+
 </style>
 </head>
 
@@ -223,6 +244,28 @@ thead {
         Download / Print All Results
     </button>
 </div>
+    
+<div class="toolbar">
+    <button class="logout-btn" onclick="logout()">
+        Logout
+    </button>
+
+    <div class="test-selector">
+        <label for="testSelect">Select Test:</label>
+        <select id="testSelect" onchange="displaySelectedTest()">
+            <option value="">Loading tests...</option>
+        </select>
+    </div>
+
+    <button class="download-btn" onclick="window.print()">
+        Download / Print Results
+    </button>
+</div>
+
+<div class="container" id="results">
+    <div class="message">Loading school marks...</div>
+</div>
+
 
 <div class="container" id="results">
 
@@ -272,6 +315,14 @@ function formatNumber(value) {
     return Number(value).toFixed(2).replace(/\.00$/, "");
 }
 
+
+/* =====================================================
+   SCHOOL MARKS - TEST DROPDOWN
+===================================================== */
+
+let allTests = [];
+let selectedTestId = null;
+
 /* =====================================================
    LOAD SCHOOL MARKS
 ===================================================== */
@@ -279,6 +330,11 @@ function formatNumber(value) {
 async function loadMarks() {
 
     const container = document.getElementById("results");
+    const testSelect = document.getElementById("testSelect");
+
+    container.innerHTML = `
+        <div class="message">Loading school marks...</div>
+    `;
 
     try {
 
@@ -304,282 +360,81 @@ async function loadMarks() {
             );
         }
 
-        if (!data.tests || data.tests.length === 0) {
+        allTests = Array.isArray(data.tests) ? data.tests : [];
+
+        if (allTests.length === 0) {
+
+            if (testSelect) {
+                testSelect.innerHTML = `
+                    <option value="">No tests available</option>
+                `;
+            }
+
             container.innerHTML = `
                 <div class="message">
                     No tests are available.
                 </div>
             `;
+
             return;
         }
 
-        container.innerHTML = "";
+        /* -------------------------------------
+           SORT TESTS BY CREATION DATE
+        ------------------------------------- */
 
-        data.tests.forEach(test => {
+        allTests.sort((a, b) => {
+            return new Date(b.created_at || 0) -
+                   new Date(a.created_at || 0);
+        });
 
-            const testCard = document.createElement("section");
-            testCard.className = "test-card";
+        /* -------------------------------------
+           POPULATE TEST DROPDOWN
+        ------------------------------------- */
 
-            let html = `
-                <div class="test-heading">
-                    <div>
-                        <h2>${escapeHTML(test.name)}</h2>
-                        <span class="status">
-                            ${escapeHTML(test.status)}
-                        </span>
-                    </div>
+        if (!testSelect) {
+            throw new Error(
+                "Test dropdown not found. Add the element with id='testSelect' to your HTML."
+            );
+        }
 
-                    <button class="download-btn"
-                        onclick="downloadTest('${escapeHTML(test.id)}')">
-                        Download
-                    </button>
-                </div>
-            `;
+        testSelect.innerHTML = `
+            <option value="">Select a test</option>
+        `;
 
-            test.classes.forEach(classItem => {
+        allTests.forEach(test => {
 
-                const subjects = classItem.subjects || [];
-                const students = [...(classItem.students || [])];
+            const option = document.createElement("option");
 
-                /* -------------------------------------
-                   CALCULATE TOTALS AND PERCENTAGES
-                ------------------------------------- */
+            option.value = test.id;
 
-                students.forEach(student => {
+            option.textContent =
+                `${test.name} (${test.status})`;
 
-                    let total = 0;
-                    let maximum = 0;
-                    let recorded = 0;
-
-                    subjects.forEach(subject => {
-
-                        const score = student.marks[subject.id];
-
-                        maximum += subject.maximum_mark;
-
-                        if (score !== null && score !== undefined) {
-                            total += Number(score);
-                            recorded++;
-                        }
-
-                    });
-
-                    student.total = total;
-                    student.maximum = maximum;
-                    student.recorded = recorded;
-
-                    student.percentage = recorded > 0 && maximum > 0
-                        ? (total / maximum) * 100
-                        : null;
-
-                });
-
-                /* -------------------------------------
-                   SORT STUDENTS
-                ------------------------------------- */
-
-                students.sort((a,b) => {
-
-                    if (a.percentage === null) return 1;
-                    if (b.percentage === null) return -1;
-
-                    return b.percentage - a.percentage;
-                });
-
-                html += `
-                    <div class="class-card">
-
-                        <div class="class-heading">
-
-                            <div>
-                                <h3>
-                                    ${escapeHTML(classItem.class_name)}
-                                </h3>
-
-                                <div class="school-name">
-                                    ${escapeHTML(classItem.school_name)}
-                                </div>
-                            </div>
-
-                        </div>
-                `;
-
-                if (subjects.length === 0) {
-
-                    html += `
-                        <p class="no-marks">
-                            No subjects configured for this test.
-                        </p>
-                    `;
-
-                    html += `</div>`;
-                    return;
-                }
-
-                /* -------------------------------------
-                   RESULTS TABLE
-                ------------------------------------- */
-
-                html += `
-                    <div class="table-wrapper">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Position</th>
-                                <th>Student</th>
-                                ${subjects.map(subject => `
-                                    <th>${escapeHTML(subject.name)}</th>
-                                `).join("")}
-                                <th>Total</th>
-                                <th>%</th>
-                                <th>Category</th>
-                            </tr>
-                        </thead>
-
-                        <tbody>
-                `;
-
-                students.forEach((student,index) => {
-
-                    html += `
-                        <tr>
-                            <td>
-                                ${student.percentage === null ? "—" : index + 1}
-                            </td>
-
-                            <td>
-                                ${escapeHTML(student.name)}
-                            </td>
-
-                            ${subjects.map(subject => {
-                                const score = student.marks[subject.id];
-
-                                return `
-                                    <td>
-                                        ${score === null || score === undefined
-                                            ? "—"
-                                            : formatNumber(score)}
-                                    </td>
-                                `;
-                            }).join("")}
-
-                            <td>
-                                ${student.recorded
-                                    ? formatNumber(student.total) + " / " +
-                                      formatNumber(student.maximum)
-                                    : "—"}
-                            </td>
-
-                            <td>
-                                ${student.percentage === null
-                                    ? "—"
-                                    : student.percentage.toFixed(2) + "%"}
-                            </td>
-
-                            <td>
-                                ${student.percentage === null
-                                    ? "No marks"
-                                    : getCategory(student.percentage)}
-                            </td>
-                        </tr>
-                    `;
-
-                });
-
-                if (students.length === 0) {
-                    html += `
-                        <tr>
-                            <td colspan="${subjects.length + 5}">
-                                No students registered in this class.
-                            </td>
-                        </tr>
-                    `;
-                }
-
-                html += `
-                        </tbody>
-                    </table>
-                    </div>
-                `;
-
-                /* -------------------------------------
-                   SUBJECT ANALYSIS
-                ------------------------------------- */
-
-                html += `
-                    <div class="analysis-box">
-                        <h4>Subject Analysis</h4>
-
-                        <div class="table-wrapper">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Subject</th>
-                                    <th>Average (%)</th>
-                                    <th>Passed</th>
-                                    <th>Failed</th>
-                                    <th>Pass Rate</th>
-                                </tr>
-                            </thead>
-
-                            <tbody>
-                `;
-
-                subjects.forEach(subject => {
-
-                    const recordedMarks = students
-                        .map(student => student.marks[subject.id])
-                        .filter(score =>
-                            score !== null && score !== undefined
-                        )
-                        .map(Number);
-
-                    if (recordedMarks.length === 0) return;
-
-                    const percentages = recordedMarks.map(
-                        score => (score / subject.maximum_mark) * 100
-                    );
-
-                    const average = percentages.reduce(
-                        (a,b) => a + b, 0
-                    ) / percentages.length;
-
-                    const passed = percentages.filter(
-                        percentage => percentage >= 50
-                    ).length;
-
-                    const failed = percentages.length - passed;
-
-                    const passRate =
-                        (passed / percentages.length) * 100;
-
-                    html += `
-                        <tr>
-                            <td>${escapeHTML(subject.name)}</td>
-                            <td>${average.toFixed(2)}%</td>
-                            <td>${passed}</td>
-                            <td>${failed}</td>
-                            <td>${passRate.toFixed(2)}%</td>
-                        </tr>
-                    `;
-
-                });
-
-                html += `
-                            </tbody>
-                        </table>
-                        </div>
-                    </div>
-
-                    </div>
-                `;
-
-            });
-
-            testCard.innerHTML = html;
-            container.appendChild(testCard);
+            testSelect.appendChild(option);
 
         });
+
+        /* -------------------------------------
+           AUTO-SELECT LATEST OPEN OR CLOSED TEST
+        ------------------------------------- */
+
+        const preferredTest = allTests.find(test => {
+
+            const status = String(test.status || "")
+                .toLowerCase();
+
+            return status === "open" || status === "closed";
+
+        });
+
+        const testToSelect = preferredTest || allTests[0];
+
+        testSelect.value = String(testToSelect.id);
+
+        selectedTestId = String(testToSelect.id);
+
+        displaySelectedTest();
 
     } catch (error) {
 
@@ -594,25 +449,377 @@ async function loadMarks() {
 }
 
 /* =====================================================
-   DOWNLOAD INDIVIDUAL TEST
+   DISPLAY SELECTED TEST
+===================================================== */
+
+function displaySelectedTest() {
+
+    const container = document.getElementById("results");
+    const testSelect = document.getElementById("testSelect");
+
+    if (!testSelect || !testSelect.value) {
+
+        container.innerHTML = `
+            <div class="message">
+                Please select a test.
+            </div>
+        `;
+
+        return;
+    }
+
+    selectedTestId = String(testSelect.value);
+
+    const test = allTests.find(item =>
+        String(item.id) === selectedTestId
+    );
+
+    if (!test) {
+
+        container.innerHTML = `
+            <div class="message">
+                Selected test could not be found.
+            </div>
+        `;
+
+        return;
+    }
+
+    const classes = test.classes || [];
+
+    let html = `
+        <section class="test-card">
+
+            <div class="test-heading">
+
+                <div>
+                    <h2>${escapeHTML(test.name)}</h2>
+
+                    <span class="status">
+                        ${escapeHTML(test.status)}
+                    </span>
+                </div>
+
+                <button class="download-btn"
+                    onclick="downloadTest('${escapeHTML(test.id)}')">
+                    Download
+                </button>
+
+            </div>
+    `;
+
+    /* =================================================
+       DISPLAY EACH CLASS
+    ================================================= */
+
+    classes.forEach((classItem, classIndex) => {
+
+        const subjects = classItem.subjects || [];
+        const students = [...(classItem.students || [])];
+
+        /* -------------------------------------
+           CALCULATE TOTALS AND PERCENTAGES
+        ------------------------------------- */
+
+        students.forEach(student => {
+
+            let total = 0;
+            let maximum = 0;
+            let recorded = 0;
+
+            subjects.forEach(subject => {
+
+                const score = student.marks
+                    ? student.marks[subject.id]
+                    : null;
+
+                maximum += Number(subject.maximum_mark || 0);
+
+                if (score !== null && score !== undefined) {
+
+                    total += Number(score);
+                    recorded++;
+
+                }
+
+            });
+
+            student.total = total;
+            student.maximum = maximum;
+            student.recorded = recorded;
+
+            student.percentage =
+                recorded > 0 && maximum > 0
+                    ? (total / maximum) * 100
+                    : null;
+
+        });
+
+        /* -------------------------------------
+           SORT STUDENTS BY PERCENTAGE
+        ------------------------------------- */
+
+        students.sort((a, b) => {
+
+            if (a.percentage === null) return 1;
+            if (b.percentage === null) return -1;
+
+            return b.percentage - a.percentage;
+
+        });
+
+        html += `
+            <div class="class-card"
+                 data-class-index="${classIndex}">
+
+                <div class="class-heading">
+
+                    <div>
+                        <h3>
+                            ${escapeHTML(classItem.class_name)}
+                        </h3>
+
+                        <div class="school-name">
+                            ${escapeHTML(classItem.school_name || "")}
+                        </div>
+                    </div>
+
+                </div>
+        `;
+
+        /* -------------------------------------
+           NO SUBJECTS
+        ------------------------------------- */
+
+        if (subjects.length === 0) {
+
+            html += `
+                <p class="no-marks">
+                    No subjects configured for this test.
+                </p>
+            `;
+
+            html += `</div>`;
+
+            return;
+        }
+
+        /* =================================================
+           RESULTS TABLE
+        ================================================= */
+
+        html += `
+            <div class="table-wrapper">
+
+                <table>
+
+                    <thead>
+                        <tr>
+                            <th>Position</th>
+                            <th>Student</th>
+
+                            ${subjects.map(subject => `
+                                <th>${escapeHTML(subject.name)}</th>
+                            `).join("")}
+
+                            <th>Total</th>
+                            <th>%</th>
+                            <th>Category</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+        `;
+
+        students.forEach((student, index) => {
+
+            html += `
+                <tr>
+
+                    <td>
+                        ${student.percentage === null
+                            ? "—"
+                            : index + 1}
+                    </td>
+
+                    <td>
+                        ${escapeHTML(student.name)}
+                    </td>
+
+                    ${subjects.map(subject => {
+
+                        const score = student.marks
+                            ? student.marks[subject.id]
+                            : null;
+
+                        return `
+                            <td>
+                                ${score === null || score === undefined
+                                    ? "—"
+                                    : formatNumber(score)}
+                            </td>
+                        `;
+
+                    }).join("")}
+
+                    <td>
+                        ${student.recorded
+                            ? formatNumber(student.total) + " / " +
+                              formatNumber(student.maximum)
+                            : "—"}
+                    </td>
+
+                    <td>
+                        ${student.percentage === null
+                            ? "—"
+                            : student.percentage.toFixed(2) + "%"}
+                    </td>
+
+                    <td>
+                        ${student.percentage === null
+                            ? "No marks"
+                            : getCategory(student.percentage)}
+                    </td>
+
+                </tr>
+            `;
+
+        });
+
+        if (students.length === 0) {
+
+            html += `
+                <tr>
+                    <td colspan="${subjects.length + 5}">
+                        No students registered in this class.
+                    </td>
+                </tr>
+            `;
+
+        }
+
+        html += `
+                    </tbody>
+
+                </table>
+
+            </div>
+        `;
+
+        /* =================================================
+           SUBJECT ANALYSIS
+        ================================================= */
+
+        html += `
+            <div class="analysis-box">
+
+                <h4>Subject Analysis</h4>
+
+                <div class="table-wrapper">
+
+                    <table>
+
+                        <thead>
+                            <tr>
+                                <th>Subject</th>
+                                <th>Average (%)</th>
+                                <th>Passed</th>
+                                <th>Failed</th>
+                                <th>Pass Rate</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+        `;
+
+        subjects.forEach(subject => {
+
+            const recordedMarks = students
+                .map(student =>
+                    student.marks
+                        ? student.marks[subject.id]
+                        : null
+                )
+                .filter(score =>
+                    score !== null && score !== undefined
+                )
+                .map(Number);
+
+            if (recordedMarks.length === 0) return;
+
+            const percentages = recordedMarks.map(score =>
+                Number(subject.maximum_mark) > 0
+                    ? (score / Number(subject.maximum_mark)) * 100
+                    : 0
+            );
+
+            const average = percentages.reduce(
+                (a, b) => a + b, 0
+            ) / percentages.length;
+
+            const passed = percentages.filter(
+                percentage => percentage >= 50
+            ).length;
+
+            const failed = percentages.length - passed;
+
+            const passRate =
+                (passed / percentages.length) * 100;
+
+            html += `
+                <tr>
+                    <td>${escapeHTML(subject.name)}</td>
+                    <td>${average.toFixed(2)}%</td>
+                    <td>${passed}</td>
+                    <td>${failed}</td>
+                    <td>${passRate.toFixed(2)}%</td>
+                </tr>
+            `;
+
+        });
+
+        html += `
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+            </div>
+        `;
+
+    });
+
+    html += `
+        </section>
+    `;
+
+    container.innerHTML = html;
+}
+
+/* =====================================================
+   DOWNLOAD SELECTED TEST
 ===================================================== */
 
 function downloadTest(testId) {
 
-    const cards = document.querySelectorAll(".test-card");
+    const test = allTests.find(item =>
+        String(item.id) === String(testId)
+    );
 
-    const card = [...cards].find(item => {
-        const heading = item.querySelector(".test-heading h2");
-        return heading &&
-            item.querySelector(".download-btn") &&
-            item.innerHTML.includes(
-                `onclick="downloadTest('${testId}')"`
-            );
-    });
+    if (!test) return;
 
-    if (!card) return;
+    const container = document.getElementById("results");
 
-    const content = card.cloneNode(true);
+    const testCard = container.querySelector(".test-card");
+
+    if (!testCard) return;
+
+    const content = testCard.cloneNode(true);
+
+    /* Remove download buttons from printed content */
 
     content.querySelectorAll("button").forEach(button => {
         button.remove();
@@ -621,7 +828,9 @@ function downloadTest(testId) {
     const printWindow = window.open("", "_blank");
 
     if (!printWindow) {
+
         alert("Please allow pop-ups to download results.");
+
         return;
     }
 
@@ -629,11 +838,33 @@ function downloadTest(testId) {
         <!DOCTYPE html>
         <html>
         <head>
-            <title>School Marks</title>
+
+            <title>${escapeHTML(test.name)} - School Marks</title>
+
             <style>
+
                 body {
-                    font-family: Arial;
+                    font-family: Arial, sans-serif;
                     padding: 20px;
+                    color: #000;
+                }
+
+                h2, h3, h4 {
+                    margin-top: 15px;
+                }
+
+                .status {
+                    display: inline-block;
+                    margin: 10px 0;
+                }
+
+                .school-name {
+                    margin: 5px 0 15px;
+                }
+
+                .class-card {
+                    margin-bottom: 30px;
+                    page-break-inside: avoid;
                 }
 
                 table {
@@ -652,31 +883,46 @@ function downloadTest(testId) {
                     background: #eee;
                 }
 
-                .status {
-                    display: inline-block;
-                    margin: 10px 0;
-                }
-
                 @media print {
+
                     body {
                         padding: 0;
                     }
+
+                    .class-card {
+                        page-break-inside: avoid;
+                    }
+
                 }
+
             </style>
+
         </head>
+
         <body>
+
             ${content.innerHTML}
+
         </body>
         </html>
     `);
 
     printWindow.document.close();
+
     printWindow.focus();
 
     printWindow.onload = () => {
         printWindow.print();
     };
 }
+
+/* =====================================================
+   TEST DROPDOWN CHANGE
+===================================================== */
+
+document.getElementById("testSelect")
+    ?.addEventListener("change", displaySelectedTest);
+
 
 /* =====================================================
    LOGOUT
