@@ -557,7 +557,7 @@ async function loadMarks() {
 
         if (response.status === 401) {
 
-            location.href = "index.html";
+            location.href = "../../index.html";
 
             return;
 
@@ -575,7 +575,7 @@ async function loadMarks() {
            GET AUTHENTICATED ROLE FROM SERVER
         ------------------------------------- */
 
-        currentUserRole = data.role;
+        currentUserRole = data.role || data.user?.role || null;
 
         if (
             currentUserRole !== "sector_admin" &&
