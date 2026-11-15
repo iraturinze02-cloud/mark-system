@@ -633,17 +633,20 @@ function formatClassName(name) {
    LOAD ALL SCHOOL CLASSES
 ===================================== */
 
-async function loadClasses() {
 
+async function loadClasses() {
     const result = await apiRequest("/api/classes");
 
-    classes = Array.isArray(result)
-        ? result
-        : (result.classes || []);
+    if (!Array.isArray(result.classes)) {
+        throw new Error("The server did not return a valid classes list.");
+    }
+
+    classes = result.classes;
 
     renderClassCards();
     renderFormClassCards();
 }
+
 
 /* =====================================
    LOAD STUDENTS
@@ -1209,34 +1212,35 @@ addStudentBtn.addEventListener("click", openAddModal);
    INITIALIZE PAGE
 ===================================== */
 
+
 async function initializePage() {
+    addStudentBtn.disabled = true;
 
     try {
-
-        addStudentBtn.disabled = true;
-
+        // Load all school classes first.
         await loadClasses();
 
+        // Then load students belonging to those classes.
         await loadStudents();
 
     } catch (error) {
-
         showMessage(error.message, "error");
 
         classCards.replaceChildren();
+        formClassCards.replaceChildren();
         studentsContainer.replaceChildren();
 
         const message = document.createElement("p");
-
         message.className = "empty-message";
         message.textContent = error.message;
 
         studentsContainer.appendChild(message);
 
     } finally {
-    addStudentBtn.disabled = false;
+        addStudentBtn.disabled = false;
+    }
 }
-}
+
 
 initializePage();
 
