@@ -1,0 +1,699 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>School Marks</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: #f3f6fb;
+    color: #1e293b;
+}
+
+header {
+    background: linear-gradient(135deg,#1d4ed8,#2563eb);
+    color: white;
+    text-align: center;
+    padding: 25px 15px;
+}
+
+header h1 {
+    margin: 0;
+}
+
+header p {
+    margin-bottom: 0;
+}
+
+.toolbar {
+    width: 95%;
+    max-width: 1400px;
+    margin: 15px auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+button {
+    padding: 10px 15px;
+    border: none;
+    cursor: pointer;
+    border-radius: 6px;
+    font-weight: 600;
+}
+
+.logout-btn {
+    background: #ef4444;
+    color: white;
+}
+
+.download-btn {
+    background: #2563eb;
+    color: white;
+}
+
+.container {
+    width: 95%;
+    max-width: 1400px;
+    margin: 20px auto;
+}
+
+.test-card {
+    background: white;
+    padding: 20px;
+    margin-bottom: 25px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,.05);
+}
+
+.test-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 12px;
+    margin-bottom: 20px;
+}
+
+.test-heading h2 {
+    margin: 0;
+    color: #1d4ed8;
+}
+
+.status {
+    display: inline-block;
+    padding: 5px 10px;
+    border-radius: 20px;
+    background: #e2e8f0;
+    color: #334155;
+    font-size: 12px;
+    text-transform: uppercase;
+    font-weight: bold;
+}
+
+.class-card {
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 15px;
+    margin-top: 20px;
+}
+
+.class-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.class-heading h3 {
+    margin: 5px 0 15px;
+}
+
+.school-name {
+    color: #64748b;
+    font-size: 13px;
+}
+
+.table-wrapper {
+    overflow-x: auto;
+    margin-top: 12px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 700px;
+}
+
+th, td {
+    border: 1px solid #ddd;
+    padding: 9px;
+    text-align: center;
+    white-space: nowrap;
+}
+
+thead {
+    background: #1d4ed8;
+    color: white;
+}
+
+.analysis-box {
+    margin-top: 22px;
+}
+
+.analysis-box h4 {
+    margin-bottom: 10px;
+}
+
+.message {
+    text-align: center;
+    background: white;
+    padding: 30px;
+    border-radius: 10px;
+    margin: 25px auto;
+}
+
+.no-marks {
+    color: #64748b;
+    text-align: center;
+    padding: 20px;
+}
+
+@media(max-width:600px) {
+    .test-card {
+        padding: 12px;
+    }
+
+    .class-card {
+        padding: 10px;
+    }
+
+    header h1 {
+        font-size: 22px;
+    }
+}
+
+@media print {
+    .toolbar,
+    .download-btn,
+    .logout-btn {
+        display: none !important;
+    }
+
+    body {
+        background: white;
+    }
+
+    .test-card,
+    .class-card {
+        box-shadow: none;
+        break-inside: avoid;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <h1>VIEW SCHOOL MARKS</h1>
+    <p>Tests Results Dashboard</p>
+</header>
+
+<div class="toolbar">
+    <button class="logout-btn" onclick="logout()">
+        Logout
+    </button>
+
+    <button class="download-btn" onclick="window.print()">
+        Download / Print All Results
+    </button>
+</div>
+
+<div class="container" id="results">
+
+    <div class="message">
+        Loading school marks...
+    </div>
+
+</div>
+
+<script>
+
+/* =====================================================
+   HTML SECURITY
+===================================================== */
+
+function escapeHTML(value) {
+    return String(value ?? "").replace(/[&<>"']/g, char => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#039;"
+    })[char]);
+}
+
+/* =====================================================
+   CATEGORY
+===================================================== */
+
+function getCategory(percentage) {
+
+    if (percentage >= 80) return "A (Excellent)";
+    if (percentage >= 75) return "B (Very Good)";
+    if (percentage >= 70) return "C (Good)";
+    if (percentage >= 65) return "D (Satisfactory)";
+    if (percentage >= 60) return "E (Adequate)";
+    if (percentage >= 50) return "S (Pass)";
+
+    return "F (Fail)";
+}
+
+/* =====================================================
+   FORMAT NUMBER
+===================================================== */
+
+function formatNumber(value) {
+    return Number(value).toFixed(2).replace(/\.00$/, "");
+}
+
+/* =====================================================
+   LOAD SCHOOL MARKS
+===================================================== */
+
+async function loadMarks() {
+
+    const container = document.getElementById("results");
+
+    try {
+
+        const response = await fetch("/api/school-marks", {
+            method: "GET",
+            credentials: "same-origin",
+            headers: {
+                "Accept": "application/json"
+            },
+            cache: "no-store"
+        });
+
+        const data = await response.json();
+
+        if (response.status === 401) {
+            location.href = "index.html";
+            return;
+        }
+
+        if (!response.ok || !data.success) {
+            throw new Error(
+                data.message || "Failed to load school marks."
+            );
+        }
+
+        if (!data.tests || data.tests.length === 0) {
+            container.innerHTML = `
+                <div class="message">
+                    No tests are available.
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = "";
+
+        data.tests.forEach(test => {
+
+            const testCard = document.createElement("section");
+            testCard.className = "test-card";
+
+            let html = `
+                <div class="test-heading">
+                    <div>
+                        <h2>${escapeHTML(test.name)}</h2>
+                        <span class="status">
+                            ${escapeHTML(test.status)}
+                        </span>
+                    </div>
+
+                    <button class="download-btn"
+                        onclick="downloadTest('${escapeHTML(test.id)}')">
+                        Download
+                    </button>
+                </div>
+            `;
+
+            test.classes.forEach(classItem => {
+
+                const subjects = classItem.subjects || [];
+                const students = [...(classItem.students || [])];
+
+                /* -------------------------------------
+                   CALCULATE TOTALS AND PERCENTAGES
+                ------------------------------------- */
+
+                students.forEach(student => {
+
+                    let total = 0;
+                    let maximum = 0;
+                    let recorded = 0;
+
+                    subjects.forEach(subject => {
+
+                        const score = student.marks[subject.id];
+
+                        maximum += subject.maximum_mark;
+
+                        if (score !== null && score !== undefined) {
+                            total += Number(score);
+                            recorded++;
+                        }
+
+                    });
+
+                    student.total = total;
+                    student.maximum = maximum;
+                    student.recorded = recorded;
+
+                    student.percentage = recorded > 0 && maximum > 0
+                        ? (total / maximum) * 100
+                        : null;
+
+                });
+
+                /* -------------------------------------
+                   SORT STUDENTS
+                ------------------------------------- */
+
+                students.sort((a,b) => {
+
+                    if (a.percentage === null) return 1;
+                    if (b.percentage === null) return -1;
+
+                    return b.percentage - a.percentage;
+                });
+
+                html += `
+                    <div class="class-card">
+
+                        <div class="class-heading">
+
+                            <div>
+                                <h3>
+                                    ${escapeHTML(classItem.class_name)}
+                                </h3>
+
+                                <div class="school-name">
+                                    ${escapeHTML(classItem.school_name)}
+                                </div>
+                            </div>
+
+                        </div>
+                `;
+
+                if (subjects.length === 0) {
+
+                    html += `
+                        <p class="no-marks">
+                            No subjects configured for this test.
+                        </p>
+                    `;
+
+                    html += `</div>`;
+                    return;
+                }
+
+                /* -------------------------------------
+                   RESULTS TABLE
+                ------------------------------------- */
+
+                html += `
+                    <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Position</th>
+                                <th>Student</th>
+                                ${subjects.map(subject => `
+                                    <th>${escapeHTML(subject.name)}</th>
+                                `).join("")}
+                                <th>Total</th>
+                                <th>%</th>
+                                <th>Category</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                `;
+
+                students.forEach((student,index) => {
+
+                    html += `
+                        <tr>
+                            <td>
+                                ${student.percentage === null ? "—" : index + 1}
+                            </td>
+
+                            <td>
+                                ${escapeHTML(student.name)}
+                            </td>
+
+                            ${subjects.map(subject => {
+                                const score = student.marks[subject.id];
+
+                                return `
+                                    <td>
+                                        ${score === null || score === undefined
+                                            ? "—"
+                                            : formatNumber(score)}
+                                    </td>
+                                `;
+                            }).join("")}
+
+                            <td>
+                                ${student.recorded
+                                    ? formatNumber(student.total) + " / " +
+                                      formatNumber(student.maximum)
+                                    : "—"}
+                            </td>
+
+                            <td>
+                                ${student.percentage === null
+                                    ? "—"
+                                    : student.percentage.toFixed(2) + "%"}
+                            </td>
+
+                            <td>
+                                ${student.percentage === null
+                                    ? "No marks"
+                                    : getCategory(student.percentage)}
+                            </td>
+                        </tr>
+                    `;
+
+                });
+
+                if (students.length === 0) {
+                    html += `
+                        <tr>
+                            <td colspan="${subjects.length + 5}">
+                                No students registered in this class.
+                            </td>
+                        </tr>
+                    `;
+                }
+
+                html += `
+                        </tbody>
+                    </table>
+                    </div>
+                `;
+
+                /* -------------------------------------
+                   SUBJECT ANALYSIS
+                ------------------------------------- */
+
+                html += `
+                    <div class="analysis-box">
+                        <h4>Subject Analysis</h4>
+
+                        <div class="table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Subject</th>
+                                    <th>Average (%)</th>
+                                    <th>Passed</th>
+                                    <th>Failed</th>
+                                    <th>Pass Rate</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                `;
+
+                subjects.forEach(subject => {
+
+                    const recordedMarks = students
+                        .map(student => student.marks[subject.id])
+                        .filter(score =>
+                            score !== null && score !== undefined
+                        )
+                        .map(Number);
+
+                    if (recordedMarks.length === 0) return;
+
+                    const percentages = recordedMarks.map(
+                        score => (score / subject.maximum_mark) * 100
+                    );
+
+                    const average = percentages.reduce(
+                        (a,b) => a + b, 0
+                    ) / percentages.length;
+
+                    const passed = percentages.filter(
+                        percentage => percentage >= 50
+                    ).length;
+
+                    const failed = percentages.length - passed;
+
+                    const passRate =
+                        (passed / percentages.length) * 100;
+
+                    html += `
+                        <tr>
+                            <td>${escapeHTML(subject.name)}</td>
+                            <td>${average.toFixed(2)}%</td>
+                            <td>${passed}</td>
+                            <td>${failed}</td>
+                            <td>${passRate.toFixed(2)}%</td>
+                        </tr>
+                    `;
+
+                });
+
+                html += `
+                            </tbody>
+                        </table>
+                        </div>
+                    </div>
+
+                    </div>
+                `;
+
+            });
+
+            testCard.innerHTML = html;
+            container.appendChild(testCard);
+
+        });
+
+    } catch (error) {
+
+        console.error("School Marks error:", error);
+
+        container.innerHTML = `
+            <div class="message">
+                ${escapeHTML(error.message)}
+            </div>
+        `;
+    }
+}
+
+/* =====================================================
+   DOWNLOAD INDIVIDUAL TEST
+===================================================== */
+
+function downloadTest(testId) {
+
+    const cards = document.querySelectorAll(".test-card");
+
+    const card = [...cards].find(item => {
+        const heading = item.querySelector(".test-heading h2");
+        return heading &&
+            item.querySelector(".download-btn") &&
+            item.innerHTML.includes(
+                `onclick="downloadTest('${testId}')"`
+            );
+    });
+
+    if (!card) return;
+
+    const content = card.cloneNode(true);
+
+    content.querySelectorAll("button").forEach(button => {
+        button.remove();
+    });
+
+    const printWindow = window.open("", "_blank");
+
+    if (!printWindow) {
+        alert("Please allow pop-ups to download results.");
+        return;
+    }
+
+    printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>School Marks</title>
+            <style>
+                body {
+                    font-family: Arial;
+                    padding: 20px;
+                }
+
+                table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    margin-bottom: 20px;
+                }
+
+                th, td {
+                    border: 1px solid #000;
+                    padding: 6px;
+                    text-align: center;
+                }
+
+                th {
+                    background: #eee;
+                }
+
+                .status {
+                    display: inline-block;
+                    margin: 10px 0;
+                }
+
+                @media print {
+                    body {
+                        padding: 0;
+                    }
+                }
+            </style>
+        </head>
+        <body>
+            ${content.innerHTML}
+        </body>
+        </html>
+    `);
+
+    printWindow.document.close();
+    printWindow.focus();
+
+    printWindow.onload = () => {
+        printWindow.print();
+    };
+}
+
+/* =====================================================
+   LOGOUT
+===================================================== */
+
+function logout() {
+    localStorage.clear();
+    location.href = "index.html";
+}
+
+/* =====================================================
+   START
+===================================================== */
+
+loadMarks();
+
+</script>
+
+</body>
+</html>
