@@ -6,6 +6,97 @@ import {
     json
 } from "../../_utils.js";
 
+/* =====================================================
+   CLASS HELPERS
+===================================================== */
+
+const CLASS_LEVELS = {
+    P1: "Primary",
+    P2: "Primary",
+    P3: "Primary",
+    P4: "Primary",
+    P5: "Primary",
+    P6: "Primary",
+
+    S1: "Lower Secondary",
+    S2: "Lower Secondary",
+    S3: "Lower Secondary",
+
+    S4: "Upper Secondary",
+    S5: "Upper Secondary",
+    S6: "Upper Secondary"
+};
+
+function validateClasses(value) {
+    if (!Array.isArray(value) || value.length === 0) {
+        return {
+            error: "Please select at least one class for this school."
+        };
+    }
+
+    const classes = [
+        ...new Set(
+            value.map(item => String(item).trim().toUpperCase())
+        )
+    ];
+
+    const invalid = classes.filter(
+        className => !Object.prototype.hasOwnProperty.call(
+            CLASS_LEVELS,
+            className
+        )
+    );
+
+    if (invalid.length > 0) {
+        return {
+            error: "One or more selected classes are invalid."
+        };
+    }
+
+    return { classes };
+}
+
+async function ensureSchoolClasses(client, schoolId, classes) {
+    for (const className of classes) {
+        // Prevent simultaneous duplicate creation of this school class.
+        const lockKey = `school-class:${schoolId}:${className}`;
+
+        await client.query(
+            "SELECT pg_advisory_xact_lock(hashtext($1))",
+            [lockKey]
+        );
+
+        const existing = await client.query(
+            `SELECT id
+             FROM classes
+             WHERE school_id = $1
+               AND class_name = $2
+             LIMIT 1`,
+            [schoolId, className]
+        );
+
+        if (existing.rowCount === 0) {
+            await client.query(
+                `INSERT INTO classes (
+                    school_id,
+                    class_name,
+                    class_level
+                )
+                VALUES ($1, $2, $3)`,
+                [
+                    schoolId,
+                    className,
+                    CLASS_LEVELS[className]
+                ]
+            );
+        }
+    }
+}
+
+/* =====================================================
+   CREATE SCHOOL ADMIN
+===================================================== */
+
 export async function onRequestPost(context) {
     const auth = await requireSectorAdmin(context);
 
@@ -26,6 +117,17 @@ export async function onRequestPost(context) {
     const phone = String(data.phone || "").trim();
     const password = String(data.password || "");
     const schoolName = String(data.school_name || "").trim();
+
+    const classValidation = validateClasses(data.classes);
+
+    if (classValidation.error) {
+        return json({
+            success: false,
+            message: classValidation.error
+        }, 400);
+    }
+
+    const selectedClasses = classValidation.classes;
 
     const missing = [];
 
@@ -113,6 +215,13 @@ export async function onRequestPost(context) {
             schoolId = newSchool.rows[0].id;
         }
 
+        // Create any selected classes that do not already exist.
+        await ensureSchoolClasses(
+            client,
+            schoolId,
+            selectedClasses
+        );
+
         // Check duplicate phone number.
         const duplicate = await client.query(
             `SELECT id FROM users WHERE phone = $1 LIMIT 1`,
@@ -161,6 +270,7 @@ export async function onRequestPost(context) {
     } catch (error) {
         if (client && transactionStarted) {
             await client.query("ROLLBACK").catch(() => {});
+            transactionStarted = false;
         }
 
         console.error("Create school administrator error:", error);
