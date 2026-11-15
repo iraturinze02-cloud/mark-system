@@ -643,6 +643,11 @@ async function loadClasses() {
 
     classes = result.classes;
 
+    // Automatically select the first class card
+    selectedClassId = classes.length > 0
+        ? String(classes[0].id)
+        : "";
+
     renderClassCards();
     renderFormClassCards();
 }
