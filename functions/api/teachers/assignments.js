@@ -68,13 +68,13 @@ export async function onRequestPost(context) {
                ON s.id = $3
              JOIN subject_class_levels scl
                ON scl.subject_id = s.id
-              AND scl.education_level =
-                  CASE c.level_id
-                      WHEN 1 THEN 'Primary'
-                      WHEN 2 THEN 'Ordinary Level'
-                      WHEN 3 THEN 'Advanced Level'
-                      ELSE 'Unknown'
-                  END
+              AND scl.education_level = CASE c.level_id
+    WHEN 1 THEN 'Primary'
+    WHEN 2 THEN 'Lower Secondary'
+    WHEN 3 THEN 'Upper Secondary'
+    ELSE 'Unknown'
+END
+                  
              WHERE t.id = $1
                AND t.school_id = $4`,
             [
