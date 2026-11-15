@@ -26,11 +26,18 @@ export async function onRequestGet(context) {
                 st.status,
                 st.class_id,
                 c.class_name,
-                c.class_level
+                CASE c.level_id
+                    WHEN 1 THEN 'Primary'
+                    WHEN 2 THEN 'Ordinary Level'
+                    WHEN 3 THEN 'Advanced Level'
+                    ELSE 'Unknown'
+                END AS class_level
              FROM students st
              JOIN classes c
                ON c.id = st.class_id
-              AND c.school_id = st.school_id
+             JOIN school_levels sl
+               ON sl.school_id = st.school_id
+              AND sl.level_id = c.level_id
              WHERE st.school_id = $1
              ORDER BY c.class_name ASC, st.full_name ASC`,
             [auth.schoolId]
@@ -108,16 +115,19 @@ export async function onRequestPost(context) {
         client = await connectDB(context);
 
         const classResult = await client.query(
-            `SELECT id
-             FROM classes
-             WHERE id = $1 AND school_id = $2`,
+            `SELECT c.id
+             FROM classes c
+             JOIN school_levels sl
+               ON sl.level_id = c.level_id
+             WHERE c.id = $1
+               AND sl.school_id = $2`,
             [classId, auth.schoolId]
         );
 
         if (classResult.rowCount === 0) {
             return json({
                 success: false,
-                message: "The selected class does not belong to your school."
+                message: "The selected class is not available to your school."
             }, 403);
         }
 
@@ -132,8 +142,15 @@ export async function onRequestPost(context) {
                 admission_date
              )
              VALUES ($1, $2, $3, $4, $5, $6, $7)
-             RETURNING id, student_code, full_name, class_id, gender,
-                       date_of_birth, admission_date, status`,
+             RETURNING
+                id,
+                student_code,
+                full_name,
+                class_id,
+                gender,
+                date_of_birth,
+                admission_date,
+                status`,
             [
                 auth.schoolId,
                 classId,
