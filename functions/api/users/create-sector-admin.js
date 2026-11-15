@@ -1,30 +1,71 @@
 
 import bcrypt from "bcryptjs";
+
 import {
     connectDB,
     json,
     requireOwner
 } from "../../_utils.js";
 
+/* =====================================================
+   CREATE SECTOR AND SECTOR ADMINISTRATOR
+===================================================== */
+
 export async function onRequestPost(context) {
     const auth = await requireOwner(context);
+
     if (auth.error) return auth.error;
 
     let client;
+    let transactionStarted = false;
 
     try {
-        const data = await context.request.json();
+        let data;
+
+        try {
+            data = await context.request.json();
+        } catch {
+            return json({
+                success: false,
+                message: "Invalid request data."
+            }, 400);
+        }
 
         const sectorName = String(data.sector_name || "").trim();
-        const sectorCode = String(data.sector_code || "").trim().toUpperCase();
+        const sectorCode = String(data.sector_code || "")
+            .trim()
+            .toUpperCase();
+
         const fullName = String(data.full_name || "").trim();
         const phone = String(data.phone || "").trim();
-        const password = data.password;
+        const password = String(data.password || "");
 
-        if (!sectorName || !sectorCode || !fullName || !phone || !password) {
+        /* =============================================
+           VALIDATION
+        ============================================= */
+
+        if (
+            !sectorName ||
+            !sectorCode ||
+            !fullName ||
+            !phone ||
+            !password
+        ) {
             return json({
                 success: false,
                 message: "Please complete all required fields."
+            }, 400);
+        }
+
+        if (
+            sectorName.length > 200 ||
+            sectorCode.length > 30 ||
+            fullName.length > 200 ||
+            phone.length > 30
+        ) {
+            return json({
+                success: false,
+                message: "One or more fields exceed the allowed length."
             }, 400);
         }
 
@@ -35,25 +76,44 @@ export async function onRequestPost(context) {
             }, 400);
         }
 
+        /* =============================================
+           HASH PASSWORD
+        ============================================= */
+
         const passwordHash = await bcrypt.hash(password, 12);
 
-        client = await connectDB(context);
-        await client.query("BEGIN");
+        /* =============================================
+           DATABASE TRANSACTION
+        ============================================= */
 
-        const sectorResult = await client.query(`
-            INSERT INTO sectors (
+        client = await connectDB(context);
+
+        await client.query("BEGIN");
+        transactionStarted = true;
+
+        /* =============================================
+           CREATE SECTOR
+        ============================================= */
+
+        const sectorResult = await client.query(
+            `INSERT INTO sectors (
                 sector_name,
                 sector_code,
                 status
             )
             VALUES ($1, $2, 'active')
-            RETURNING id
-        `, [sectorName, sectorCode]);
+            RETURNING id, sector_name, sector_code`,
+            [sectorName, sectorCode]
+        );
 
         const sectorId = sectorResult.rows[0].id;
 
-        const adminResult = await client.query(`
-            INSERT INTO users (
+        /* =============================================
+           CREATE SECTOR ADMINISTRATOR
+        ============================================= */
+
+        const adminResult = await client.query(
+            `INSERT INTO users (
                 full_name,
                 phone,
                 password_hash,
@@ -63,19 +123,34 @@ export async function onRequestPost(context) {
                 status
             )
             VALUES ($1, $2, $3, 'sector_admin', $4, NULL, 'active')
-            RETURNING id, full_name, phone, sector_id
-        `, [fullName, phone, passwordHash, sectorId]);
+            RETURNING id, full_name, phone, sector_id`,
+            [
+                fullName,
+                phone,
+                passwordHash,
+                sectorId
+            ]
+        );
+
+        /* =============================================
+           COMMIT
+        ============================================= */
 
         await client.query("COMMIT");
+        transactionStarted = false;
 
         return json({
             success: true,
             message: "Sector and administrator registered successfully.",
+            sector: sectorResult.rows[0],
             admin: adminResult.rows[0]
         }, 201);
 
     } catch (error) {
-        if (client) await client.query("ROLLBACK");
+        if (client && transactionStarted) {
+            await client.query("ROLLBACK").catch(() => {});
+            transactionStarted = false;
+        }
 
         console.error("Create sector error:", error);
 
@@ -92,6 +167,8 @@ export async function onRequestPost(context) {
         }, 500);
 
     } finally {
-        if (client) await client.end();
+        if (client) {
+            await client.end().catch(() => {});
+        }
     }
 }
