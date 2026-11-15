@@ -542,117 +542,54 @@
                     </small>
                 </div>
 
-                <!-- SCHOOL CLASSES -->
+                <!-- SCHOOL EDUCATION LEVELS -->
 
-<div class="form-group">
+                <div class="form-group">
 
-    <label>Classes in This School</label>
+                    <label>Education Levels Offered by This School</label>
 
-    <div class="class-selection">
+                    <div class="class-selection">
 
-        <h3>Select Classes</h3>
+                        <h3>Select Education Levels</h3>
 
-        <div class="class-group">
+                        <div class="class-group">
+                            <div class="class-group-title">PRIMARY</div>
+                            <div class="class-options">
+                                <label class="class-option">
+                                    <input type="checkbox" name="level_ids" value="1">
+                                    Primary (P1–P6)
+                                </label>
+                            </div>
+                        </div>
 
-            <div class="class-group-title">
-                PRIMARY
-            </div>
+                        <div class="class-group">
+                            <div class="class-group-title">ORDINARY LEVEL</div>
+                            <div class="class-options">
+                                <label class="class-option">
+                                    <input type="checkbox" name="level_ids" value="2">
+                                    Ordinary Level (S1–S3)
+                                </label>
+                            </div>
+                        </div>
 
-            <div class="class-options">
+                        <div class="class-group">
+                            <div class="class-group-title">ADVANCED LEVEL</div>
+                            <div class="class-options">
+                                <label class="class-option">
+                                    <input type="checkbox" name="level_ids" value="3">
+                                    Advanced Level (S4–S6)
+                                </label>
+                            </div>
+                        </div>
 
-                <label class="class-option">
-                    <input type="checkbox" name="classes" value="P1">
-                    P1
-                </label>
+                        <small class="class-selection-hint">
+                            Select every education level offered by this school.
+                            Classes will be provided automatically from the selected levels.
+                        </small>
 
-                <label class="class-option">
-                    <input type="checkbox" name="classes" value="P2">
-                    P2
-                </label>
+                    </div>
 
-                <label class="class-option">
-                    <input type="checkbox" name="classes" value="P3">
-                    P3
-                </label>
-
-                <label class="class-option">
-                    <input type="checkbox" name="classes" value="P4">
-                    P4
-                </label>
-
-                <label class="class-option">
-                    <input type="checkbox" name="classes" value="P5">
-                    P5
-                </label>
-
-                <label class="class-option">
-                    <input type="checkbox" name="classes" value="P6">
-                    P6
-                </label>
-
-            </div>
-        </div>
-
-        <div class="class-group">
-
-            <div class="class-group-title">
-                LOWER SECONDARY
-            </div>
-
-            <div class="class-options">
-
-                <label class="class-option">
-                    <input type="checkbox" name="classes" value="S1">
-                    S1
-                </label>
-
-                <label class="class-option">
-                    <input type="checkbox" name="classes" value="S2">
-                    S2
-                </label>
-
-                <label class="class-option">
-                    <input type="checkbox" name="classes" value="S3">
-                    S3
-                </label>
-
-            </div>
-        </div>
-
-        <div class="class-group">
-
-            <div class="class-group-title">
-                UPPER SECONDARY
-            </div>
-
-            <div class="class-options">
-
-                <label class="class-option">
-                    <input type="checkbox" name="classes" value="S4">
-                    S4
-                </label>
-
-                <label class="class-option">
-                    <input type="checkbox" name="classes" value="S5">
-                    S5
-                </label>
-
-                <label class="class-option">
-                    <input type="checkbox" name="classes" value="S6">
-                    S6
-                </label>
-
-            </div>
-        </div>
-
-        <small class="class-selection-hint">
-            Select all classes that exist in this school.
-            At least one class must be selected.
-        </small>
-
-    </div>
-
-</div>
+                </div>
 
                 <div class="modal-actions">
 
@@ -896,7 +833,7 @@
 
     document.getElementById("editId").value = "";
 
-    clearSelectedClasses();
+    clearSelectedLevels();
 
     document.getElementById("modalTitle").textContent =
         "Add School Admin";
@@ -930,8 +867,8 @@
 
     adminPasswordInput.value = "";
 
-    // Preselect classes already assigned to this school
-    setSelectedClasses(admin.classes || []);
+    // Preselect education levels already assigned to this school
+    setSelectedLevels(admin.levels || []);
 
     document.getElementById("modalTitle").textContent =
         "Edit School Admin";
@@ -1001,29 +938,29 @@
 // SCHOOL CLASS SELECTION
 // ==================================================
 
-function getSelectedClasses() {
+function getSelectedLevels() {
 
     return Array.from(
         document.querySelectorAll(
-            'input[name="classes"]:checked'
+            'input[name="level_ids"]:checked'
         )
     ).map(input => input.value);
 }
 
 
-function setSelectedClasses(classes = []) {
+function setSelectedLevels(levels = []) {
 
     const selected = new Set(
-        (Array.isArray(classes) ? classes : [])
+        (Array.isArray(levels) ? levels : [])
             .map(item => {
                 return typeof item === "string"
                     ? item
-                    : item.class_name;
+                    : item.id;
             })
     );
 
     document.querySelectorAll(
-        'input[name="classes"]'
+        'input[name="level_ids"]'
     ).forEach(input => {
 
         input.checked = selected.has(input.value);
@@ -1032,10 +969,10 @@ function setSelectedClasses(classes = []) {
 }
 
 
-function clearSelectedClasses() {
+function clearSelectedLevels() {
 
     document.querySelectorAll(
-        'input[name="classes"]'
+        'input[name="level_ids"]'
     ).forEach(input => {
 
         input.checked = false;
@@ -1085,12 +1022,12 @@ function clearSelectedClasses() {
                 return;
             }
 
-            const selectedClasses = getSelectedClasses();
+            const selectedLevels = getSelectedLevels();
 
-if (selectedClasses.length === 0) {
+if (selectedLevels.length === 0) {
 
     showFormMessage(
-        "Please select at least one class for this school.",
+        "Please select at least one education level for this school.",
         "error"
     );
 
@@ -1101,7 +1038,7 @@ const payload = {
     full_name,
     phone,
     school_name,
-    classes: selectedClasses
+    level_ids: selectedLevels
 };
 
             if (password) {
