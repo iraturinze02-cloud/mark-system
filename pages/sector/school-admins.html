@@ -88,7 +88,79 @@
             color: #64748b;
             font-size: 13px;
         }
+/* CLASS SELECTION */
 
+.class-selection {
+    border: 1px solid #cbd5e1;
+    border-radius: 9px;
+    padding: 14px;
+    background: #f8fafc;
+}
+
+.class-selection h3 {
+    margin: 0 0 12px;
+    color: #1e40af;
+    font-size: 14px;
+}
+
+.class-group {
+    margin-bottom: 15px;
+}
+
+.class-group:last-child {
+    margin-bottom: 0;
+}
+
+.class-group-title {
+    font-size: 12px;
+    font-weight: bold;
+    color: #475569;
+    margin-bottom: 9px;
+}
+
+.class-options {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.class-option {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 9px;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 7px;
+    cursor: pointer;
+    font-size: 13px;
+}
+
+.class-option input {
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    accent-color: #2563eb;
+}
+
+.class-option:has(input:checked) {
+    background: #eff6ff;
+    border-color: #2563eb;
+}
+
+.class-selection-hint {
+    display: block;
+    margin-top: 10px;
+    color: #64748b;
+    font-size: 11px;
+    line-height: 1.5;
+}
+
+@media (max-width: 400px) {
+    .class-options {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
         .btn {
             display: inline-flex;
             align-items: center;
@@ -470,6 +542,118 @@
                     </small>
                 </div>
 
+                <!-- SCHOOL CLASSES -->
+
+<div class="form-group">
+
+    <label>Classes in This School</label>
+
+    <div class="class-selection">
+
+        <h3>Select Classes</h3>
+
+        <div class="class-group">
+
+            <div class="class-group-title">
+                PRIMARY
+            </div>
+
+            <div class="class-options">
+
+                <label class="class-option">
+                    <input type="checkbox" name="classes" value="P1">
+                    P1
+                </label>
+
+                <label class="class-option">
+                    <input type="checkbox" name="classes" value="P2">
+                    P2
+                </label>
+
+                <label class="class-option">
+                    <input type="checkbox" name="classes" value="P3">
+                    P3
+                </label>
+
+                <label class="class-option">
+                    <input type="checkbox" name="classes" value="P4">
+                    P4
+                </label>
+
+                <label class="class-option">
+                    <input type="checkbox" name="classes" value="P5">
+                    P5
+                </label>
+
+                <label class="class-option">
+                    <input type="checkbox" name="classes" value="P6">
+                    P6
+                </label>
+
+            </div>
+        </div>
+
+        <div class="class-group">
+
+            <div class="class-group-title">
+                LOWER SECONDARY
+            </div>
+
+            <div class="class-options">
+
+                <label class="class-option">
+                    <input type="checkbox" name="classes" value="S1">
+                    S1
+                </label>
+
+                <label class="class-option">
+                    <input type="checkbox" name="classes" value="S2">
+                    S2
+                </label>
+
+                <label class="class-option">
+                    <input type="checkbox" name="classes" value="S3">
+                    S3
+                </label>
+
+            </div>
+        </div>
+
+        <div class="class-group">
+
+            <div class="class-group-title">
+                UPPER SECONDARY
+            </div>
+
+            <div class="class-options">
+
+                <label class="class-option">
+                    <input type="checkbox" name="classes" value="S4">
+                    S4
+                </label>
+
+                <label class="class-option">
+                    <input type="checkbox" name="classes" value="S5">
+                    S5
+                </label>
+
+                <label class="class-option">
+                    <input type="checkbox" name="classes" value="S6">
+                    S6
+                </label>
+
+            </div>
+        </div>
+
+        <small class="class-selection-hint">
+            Select all classes that exist in this school.
+            At least one class must be selected.
+        </small>
+
+    </div>
+
+</div>
+
                 <div class="modal-actions">
 
                     <button
@@ -706,58 +890,63 @@
 
         function openAdd() {
 
-            editMode = false;
+    editMode = false;
 
-            adminForm.reset();
+    adminForm.reset();
 
-            document.getElementById("editId").value = "";
+    document.getElementById("editId").value = "";
 
-            document.getElementById("modalTitle").textContent =
-                "Add School Admin";
+    clearSelectedClasses();
 
-            document.getElementById("passwordHint").textContent =
-                "A password is required when creating an account.";
+    document.getElementById("modalTitle").textContent =
+        "Add School Admin";
 
-            adminPasswordInput.required = true;
+    document.getElementById("passwordHint").textContent =
+        "A password is required when creating an account.";
 
-            clearFormMessage();
+    adminPasswordInput.required = true;
 
-            modal.classList.add("show");
-            schoolNameInput.focus();
-        }
+    clearFormMessage();
 
+    modal.classList.add("show");
+
+    schoolNameInput.focus();
+}
         // ==================================================
         // OPEN EDIT MODAL
         // ==================================================
 
         function openEdit(admin) {
 
-            editMode = true;
+    editMode = true;
 
-            adminForm.reset();
+    adminForm.reset();
 
-            document.getElementById("editId").value = admin.id;
+    document.getElementById("editId").value = admin.id;
 
-            schoolNameInput.value = admin.school_name || "";
-            adminNameInput.value = admin.full_name || "";
-            adminPhoneInput.value = admin.phone || "";
+    schoolNameInput.value = admin.school_name || "";
+    adminNameInput.value = admin.full_name || "";
+    adminPhoneInput.value = admin.phone || "";
 
-            adminPasswordInput.value = "";
+    adminPasswordInput.value = "";
 
-            document.getElementById("modalTitle").textContent =
-                "Edit School Admin";
+    // Preselect classes already assigned to this school
+    setSelectedClasses(admin.classes || []);
 
-            document.getElementById("passwordHint").textContent =
-                "Leave password blank to keep the current password.";
+    document.getElementById("modalTitle").textContent =
+        "Edit School Admin";
 
-            adminPasswordInput.required = false;
+    document.getElementById("passwordHint").textContent =
+        "Leave password blank to keep the current password.";
 
-            clearFormMessage();
+    adminPasswordInput.required = false;
 
-            modal.classList.add("show");
-            schoolNameInput.focus();
-        }
+    clearFormMessage();
 
+    modal.classList.add("show");
+
+    schoolNameInput.focus();
+}
         // ==================================================
         // CLOSE MODAL
         // ==================================================
@@ -808,7 +997,51 @@
             formMessage.textContent = "";
             formMessage.className = "message";
         }
+// ==================================================
+// SCHOOL CLASS SELECTION
+// ==================================================
 
+function getSelectedClasses() {
+
+    return Array.from(
+        document.querySelectorAll(
+            'input[name="classes"]:checked'
+        )
+    ).map(input => input.value);
+}
+
+
+function setSelectedClasses(classes = []) {
+
+    const selected = new Set(
+        (Array.isArray(classes) ? classes : [])
+            .map(item => {
+                return typeof item === "string"
+                    ? item
+                    : item.class_name;
+            })
+    );
+
+    document.querySelectorAll(
+        'input[name="classes"]'
+    ).forEach(input => {
+
+        input.checked = selected.has(input.value);
+
+    });
+}
+
+
+function clearSelectedClasses() {
+
+    document.querySelectorAll(
+        'input[name="classes"]'
+    ).forEach(input => {
+
+        input.checked = false;
+
+    });
+}
         // ==================================================
         // SAVE SCHOOL ADMIN
         // ==================================================
@@ -852,11 +1085,24 @@
                 return;
             }
 
-            const payload = {
-                full_name,
-                phone,
-                school_name
-            };
+            const selectedClasses = getSelectedClasses();
+
+if (selectedClasses.length === 0) {
+
+    showFormMessage(
+        "Please select at least one class for this school.",
+        "error"
+    );
+
+    return;
+}
+
+const payload = {
+    full_name,
+    phone,
+    school_name,
+    classes: selectedClasses
+};
 
             if (password) {
                 payload.password = password;
