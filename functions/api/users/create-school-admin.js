@@ -1,5 +1,6 @@
 
 import bcrypt from "bcryptjs";
+
 import {
     connectDB,
     requireSectorAdmin,
@@ -28,7 +29,10 @@ function validateLevelIds(value) {
             value.map(item => {
                 if (
                     typeof item !== "number" &&
-                    !(typeof item === "string" && /^\\d+$/.test(item.trim()))
+                    !(
+                        typeof item === "string" &&
+                        /^\d+$/.test(item.trim())
+                    )
                 ) {
                     return NaN;
                 }
@@ -56,12 +60,19 @@ function validateLevelIds(value) {
     return { levelIds };
 }
 
+/* =====================================================
+   SCHOOL EDUCATION LEVELS
+===================================================== */
+
 async function ensureSchoolLevels(client, schoolId, levelIds) {
     for (const levelId of levelIds) {
         await client.query(
-            `INSERT INTO school_levels (school_id, level_id)
-             VALUES ($1, $2)
-             ON CONFLICT (school_id, level_id) DO NOTHING`,
+            `INSERT INTO school_levels (
+                school_id,
+                level_id
+            )
+            VALUES ($1, $2)
+            ON CONFLICT (school_id, level_id) DO NOTHING`,
             [schoolId, levelId]
         );
     }
@@ -92,6 +103,10 @@ export async function onRequestPost(context) {
     const password = String(data.password || "");
     const schoolName = String(data.school_name || "").trim();
 
+    /* =============================================
+       VALIDATE EDUCATION LEVELS
+    ============================================= */
+
     const levelValidation = validateLevelIds(data.level_ids);
 
     if (levelValidation.error) {
@@ -103,6 +118,10 @@ export async function onRequestPost(context) {
 
     const selectedLevelIds = levelValidation.levelIds;
 
+    /* =============================================
+       VALIDATE REQUIRED FIELDS
+    ============================================= */
+
     const missing = [];
 
     if (!fullName) missing.push("full_name");
@@ -110,7 +129,7 @@ export async function onRequestPost(context) {
     if (!password) missing.push("password");
     if (!schoolName) missing.push("school_name");
 
-    if (missing.length) {
+    if (missing.length > 0) {
         return json({
             success: false,
             message: "Please complete all required fields.",
@@ -145,7 +164,10 @@ export async function onRequestPost(context) {
         await client.query("BEGIN");
         transactionStarted = true;
 
-        // Prevent simultaneous creation of the same school.
+        /* =============================================
+           PREVENT DUPLICATE SCHOOL CREATION
+        ============================================= */
+
         const lockKey =
             `${auth.sectorId}:${schoolName.toLowerCase()}`;
 
@@ -154,8 +176,11 @@ export async function onRequestPost(context) {
             [lockKey]
         );
 
-        // Find the school within the logged-in admin's sector.
-        let schoolResult = await client.query(
+        /* =============================================
+           FIND EXISTING SCHOOL
+        ============================================= */
+
+        const schoolResult = await client.query(
             `SELECT id
              FROM schools
              WHERE sector_id = $1
@@ -166,10 +191,14 @@ export async function onRequestPost(context) {
 
         let schoolId;
 
-        if (schoolResult.rowCount > 0) {
+        if (schoolResult.rows.length > 0) {
             schoolId = schoolResult.rows[0].id;
+
         } else {
-            // Generate a unique school code.
+            /* =========================================
+               CREATE NEW SCHOOL
+            ========================================= */
+
             const schoolCode =
                 `SCH-${Date.now()}-${crypto.randomUUID()
                     .slice(0, 8).toUpperCase()}`;
@@ -183,27 +212,42 @@ export async function onRequestPost(context) {
                 )
                 VALUES ($1, $2, $3, 'active')
                 RETURNING id`,
-                [auth.sectorId, schoolName, schoolCode]
+                [
+                    auth.sectorId,
+                    schoolName,
+                    schoolCode
+                ]
             );
 
             schoolId = newSchool.rows[0].id;
         }
 
-        // Save the education levels offered by this school.
-        // Existing levels are preserved; newly selected levels are added.
+        /* =============================================
+           SAVE SCHOOL EDUCATION LEVELS
+
+           Existing levels are preserved.
+           Missing selected levels are added.
+        ============================================= */
+
         await ensureSchoolLevels(
             client,
             schoolId,
             selectedLevelIds
         );
 
-        // Check duplicate phone number.
+        /* =============================================
+           CHECK DUPLICATE PHONE NUMBER
+        ============================================= */
+
         const duplicate = await client.query(
-            `SELECT id FROM users WHERE phone = $1 LIMIT 1`,
+            `SELECT id
+             FROM users
+             WHERE phone = $1
+             LIMIT 1`,
             [phone]
         );
 
-        if (duplicate.rowCount > 0) {
+        if (duplicate.rows.length > 0) {
             await client.query("ROLLBACK");
             transactionStarted = false;
 
@@ -213,8 +257,15 @@ export async function onRequestPost(context) {
             }, 409);
         }
 
-        // Hash the password before saving.
+        /* =============================================
+           HASH PASSWORD
+        ============================================= */
+
         const passwordHash = await bcrypt.hash(password, 12);
+
+        /* =============================================
+           CREATE SCHOOL ADMINISTRATOR
+        ============================================= */
 
         const result = await client.query(
             `INSERT INTO users (
@@ -227,8 +278,17 @@ export async function onRequestPost(context) {
             )
             VALUES ($1, $2, $3, 'school_admin', $4, 'active')
             RETURNING id, full_name, phone, school_id, role`,
-            [fullName, phone, passwordHash, schoolId]
+            [
+                fullName,
+                phone,
+                passwordHash,
+                schoolId
+            ]
         );
+
+        /* =============================================
+           COMMIT TRANSACTION
+        ============================================= */
 
         await client.query("COMMIT");
         transactionStarted = false;
@@ -248,7 +308,10 @@ export async function onRequestPost(context) {
             transactionStarted = false;
         }
 
-        console.error("Create school administrator error:", error);
+        console.error(
+            "Create school administrator error:",
+            error
+        );
 
         if (error.code === "23505") {
             return json({
