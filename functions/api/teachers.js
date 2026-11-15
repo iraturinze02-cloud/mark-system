@@ -38,7 +38,9 @@ export async function onRequestGet(context) {
                         FROM teacher_assignments ta
                         JOIN classes c
                           ON c.id = ta.class_id
-                         AND c.school_id = ta.school_id
+                        JOIN school_levels sl
+                          ON sl.school_id = ta.school_id
+                         AND sl.level_id = c.level_id
                         JOIN subjects s
                           ON s.id = ta.subject_id
                         WHERE ta.teacher_id = t.id
@@ -47,8 +49,10 @@ export async function onRequestGet(context) {
                     '[]'::json
                 ) AS assignments
              FROM teachers t
-             JOIN users u ON u.id = t.user_id
+             JOIN users u
+               ON u.id = t.user_id
              WHERE t.school_id = $1
+               AND u.school_id = $1
                AND u.role = 'teacher'
              ORDER BY u.full_name ASC`,
             [auth.schoolId]
@@ -90,7 +94,8 @@ export async function onRequestPost(context) {
     const fullName = String(data.full_name || "").trim();
     const phone = String(data.phone || "").trim();
     const password = String(data.password || "");
-    const staffNumber = String(data.staff_number || "").trim() || null;
+    const staffNumber =
+        String(data.staff_number || "").trim() || null;
 
     if (!fullName || !phone || !password) {
         return json({
@@ -127,7 +132,10 @@ export async function onRequestPost(context) {
         transactionStarted = true;
 
         const duplicate = await client.query(
-            `SELECT id FROM users WHERE phone = $1 LIMIT 1`,
+            `SELECT id
+             FROM users
+             WHERE phone = $1
+             LIMIT 1`,
             [phone]
         );
 
@@ -154,7 +162,12 @@ export async function onRequestPost(context) {
             )
             VALUES ($1, $2, $3, 'teacher', $4, 'active')
             RETURNING id, full_name, phone`,
-            [fullName, phone, passwordHash, auth.schoolId]
+            [
+                fullName,
+                phone,
+                passwordHash,
+                auth.schoolId
+            ]
         );
 
         const user = userResult.rows[0];
@@ -167,7 +180,11 @@ export async function onRequestPost(context) {
             )
             VALUES ($1, $2, $3)
             RETURNING id, user_id, staff_number`,
-            [user.id, auth.schoolId, staffNumber]
+            [
+                user.id,
+                auth.schoolId,
+                staffNumber
+            ]
         );
 
         await client.query("COMMIT");
