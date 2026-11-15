@@ -5,52 +5,81 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>School Marks</title>
+<title>School Marks | Results Dashboard</title>
 
 <style>
 * {
     box-sizing: border-box;
 }
 
+:root {
+    --primary: #1d4ed8;
+    --primary-dark: #1e40af;
+    --background: #f3f6fb;
+    --text: #1e293b;
+    --muted: #64748b;
+    --border: #e2e8f0;
+    --white: #ffffff;
+}
+
 body {
     margin: 0;
     font-family: 'Segoe UI', Arial, sans-serif;
-    background: #f3f6fb;
-    color: #1e293b;
+    background: var(--background);
+    color: var(--text);
 }
 
+/* HEADER */
+
 header {
-    background: linear-gradient(135deg,#1d4ed8,#2563eb);
+    background: linear-gradient(135deg, #1d4ed8, #2563eb);
     color: white;
     text-align: center;
-    padding: 25px 15px;
+    padding: 30px 15px;
 }
 
 header h1 {
     margin: 0;
+    font-size: 27px;
+    letter-spacing: .5px;
 }
 
 header p {
-    margin-bottom: 0;
+    margin: 8px 0 0;
+    opacity: .9;
 }
+
+/* TOOLBAR */
 
 .toolbar {
     width: 95%;
     max-width: 1400px;
-    margin: 15px auto;
+    margin: 20px auto;
+    padding: 16px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,.05);
+
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 10px;
+    gap: 15px;
     flex-wrap: wrap;
 }
 
 button {
-    padding: 10px 15px;
+    padding: 11px 17px;
     border: none;
     cursor: pointer;
-    border-radius: 6px;
+    border-radius: 7px;
     font-weight: 600;
+    font-size: 14px;
+    transition: .2s;
+}
+
+button:hover {
+    opacity: .9;
+    transform: translateY(-1px);
 }
 
 .logout-btn {
@@ -59,19 +88,66 @@ button {
 }
 
 .download-btn {
-    background: #2563eb;
+    background: var(--primary);
     color: white;
 }
+
+/* SELECTORS */
+
+.selectors {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    flex-wrap: wrap;
+    flex: 1;
+}
+
+.selector-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.selector-group label {
+    font-size: 13px;
+    font-weight: 700;
+    color: #475569;
+}
+
+.selector-group select {
+    min-width: 220px;
+    max-width: 100%;
+    padding: 11px 13px;
+    border: 1px solid #cbd5e1;
+    border-radius: 7px;
+    background: white;
+    color: var(--text);
+    font-size: 14px;
+    outline: none;
+}
+
+.selector-group select:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(37,99,235,.12);
+}
+
+.school-selector[hidden] {
+    display: none;
+}
+
+/* MAIN CONTAINER */
 
 .container {
     width: 95%;
     max-width: 1400px;
-    margin: 20px auto;
+    margin: 20px auto 40px;
 }
+
+/* TEST CARD */
 
 .test-card {
     background: white;
-    padding: 20px;
+    padding: 22px;
     margin-bottom: 25px;
     border-radius: 12px;
     box-shadow: 0 2px 8px rgba(0,0,0,.05);
@@ -81,34 +157,38 @@ button {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 10px;
+    gap: 15px;
     flex-wrap: wrap;
-    border-bottom: 1px solid #ddd;
-    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 16px;
     margin-bottom: 20px;
 }
 
 .test-heading h2 {
-    margin: 0;
-    color: #1d4ed8;
+    margin: 0 0 10px;
+    color: var(--primary-dark);
+    font-size: 22px;
 }
 
 .status {
     display: inline-block;
-    padding: 5px 10px;
+    padding: 5px 11px;
     border-radius: 20px;
     background: #e2e8f0;
     color: #334155;
-    font-size: 12px;
+    font-size: 11px;
     text-transform: uppercase;
     font-weight: bold;
 }
 
+/* CLASS CARD */
+
 .class-card {
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--border);
     border-radius: 10px;
-    padding: 15px;
+    padding: 17px;
     margin-top: 20px;
+    background: #fff;
 }
 
 .class-heading {
@@ -120,111 +200,195 @@ button {
 }
 
 .class-heading h3 {
-    margin: 5px 0 15px;
+    margin: 5px 0 8px;
+    color: #1e293b;
+    font-size: 19px;
 }
 
 .school-name {
-    color: #64748b;
+    color: var(--muted);
     font-size: 13px;
+    margin-bottom: 10px;
 }
+
+/* TABLES */
 
 .table-wrapper {
     overflow-x: auto;
     margin-top: 12px;
+    border-radius: 7px;
 }
 
 table {
     width: 100%;
     border-collapse: collapse;
     min-width: 700px;
+    background: white;
 }
 
 th, td {
-    border: 1px solid #ddd;
-    padding: 9px;
+    border: 1px solid #e2e8f0;
+    padding: 10px;
     text-align: center;
     white-space: nowrap;
+    font-size: 13px;
 }
 
 thead {
-    background: #1d4ed8;
+    background: var(--primary);
     color: white;
 }
 
+thead th {
+    font-weight: 600;
+}
+
+tbody tr:nth-child(even) {
+    background: #f8fafc;
+}
+
+tbody tr:hover {
+    background: #eff6ff;
+}
+
+/* ANALYSIS */
+
 .analysis-box {
-    margin-top: 22px;
+    margin-top: 25px;
 }
 
 .analysis-box h4 {
-    margin-bottom: 10px;
+    margin: 0 0 10px;
+    color: var(--primary-dark);
+    font-size: 16px;
 }
+
+/* MESSAGES */
 
 .message {
     text-align: center;
     background: white;
-    padding: 30px;
+    padding: 35px 20px;
     border-radius: 10px;
     margin: 25px auto;
+    color: var(--muted);
+    box-shadow: 0 2px 8px rgba(0,0,0,.04);
 }
 
 .no-marks {
-    color: #64748b;
+    color: var(--muted);
     text-align: center;
-    padding: 20px;
+    padding: 25px;
+    background: #f8fafc;
+    border-radius: 7px;
 }
 
-@media(max-width:600px) {
+/* RESPONSIVE */
+
+@media(max-width: 700px) {
+
+    header {
+        padding: 23px 12px;
+    }
+
+    header h1 {
+        font-size: 22px;
+    }
+
+    .toolbar {
+        padding: 13px;
+        align-items: stretch;
+    }
+
+    .selectors {
+        width: 100%;
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .selector-group {
+        width: 100%;
+    }
+
+    .selector-group select {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .toolbar > button {
+        width: 100%;
+    }
+
     .test-card {
-        padding: 12px;
+        padding: 13px;
     }
 
     .class-card {
         padding: 10px;
     }
 
-    header h1 {
-        font-size: 22px;
+    .test-heading h2 {
+        font-size: 19px;
+    }
+
+    .class-heading h3 {
+        font-size: 17px;
     }
 }
 
+/* PRINT */
+
 @media print {
+
+    body {
+        background: white;
+        color: black;
+    }
+
+    header {
+        background: white !important;
+        color: black !important;
+        border-bottom: 2px solid black;
+    }
+
     .toolbar,
     .download-btn,
     .logout-btn {
         display: none !important;
     }
 
-    body {
-        background: white;
+    .container {
+        width: 100%;
+        max-width: none;
+        margin: 0;
     }
 
     .test-card,
     .class-card {
         box-shadow: none;
+        border: 1px solid #aaa;
+    }
+
+    .class-card {
         break-inside: avoid;
     }
-}
-    
-.test-selector {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    flex-wrap: wrap;
-}
 
-.test-selector label {
-    font-weight: bold;
-}
+    table {
+        min-width: 0;
+    }
 
-.test-selector select {
-    min-width: 220px;
-    padding: 10px;
-    border: 1px solid #cbd5e1;
-    border-radius: 6px;
-    background: white;
-    font-size: 14px;
-}
+    th, td {
+        font-size: 10px;
+        padding: 5px;
+    }
 
+    thead {
+        background: #ddd !important;
+        color: black !important;
+        print-color-adjust: exact;
+        -webkit-print-color-adjust: exact;
+    }
+}
 </style>
 </head>
 
@@ -235,37 +399,59 @@ thead {
     <p>Tests Results Dashboard</p>
 </header>
 
+<!-- =====================================================
+     TOOLBAR
+===================================================== -->
+
 <div class="toolbar">
+
     <button class="logout-btn" onclick="logout()">
         Logout
     </button>
 
-    <button class="download-btn" onclick="window.print()">
-        Download / Print All Results
-    </button>
-</div>
-    
-<div class="toolbar">
-    <button class="logout-btn" onclick="logout()">
-        Logout
-    </button>
+    <div class="selectors">
 
-    <div class="test-selector">
-        <label for="testSelect">Select Test:</label>
-        <select id="testSelect" onchange="displaySelectedTest()">
-            <option value="">Loading tests...</option>
-        </select>
+        <!-- TEST SELECTOR -->
+
+        <div class="selector-group">
+
+            <label for="testSelect">
+                Select Test
+            </label>
+
+            <select id="testSelect" onchange="handleTestChange()">
+                <option value="">Loading tests...</option>
+            </select>
+
+        </div>
+
+        <!-- SCHOOL SELECTOR: SECTOR ADMIN ONLY -->
+
+        <div class="selector-group school-selector"
+             id="schoolSelector"
+             hidden>
+
+            <label for="schoolSelect">
+                Select School
+            </label>
+
+            <select id="schoolSelect" onchange="displaySelectedTest()">
+                <option value="all">All Schools</option>
+            </select>
+
+        </div>
+
     </div>
 
     <button class="download-btn" onclick="window.print()">
         Download / Print Results
     </button>
+
 </div>
 
-<div class="container" id="results">
-    <div class="message">Loading school marks...</div>
-</div>
-
+<!-- =====================================================
+     RESULTS
+===================================================== -->
 
 <div class="container" id="results">
 
@@ -282,6 +468,7 @@ thead {
 ===================================================== */
 
 function escapeHTML(value) {
+
     return String(value ?? "").replace(/[&<>"']/g, char => ({
         "&": "&amp;",
         "<": "&lt;",
@@ -289,6 +476,7 @@ function escapeHTML(value) {
         '"': "&quot;",
         "'": "&#039;"
     })[char]);
+
 }
 
 /* =====================================================
@@ -305,6 +493,7 @@ function getCategory(percentage) {
     if (percentage >= 50) return "S (Pass)";
 
     return "F (Fail)";
+
 }
 
 /* =====================================================
@@ -312,16 +501,23 @@ function getCategory(percentage) {
 ===================================================== */
 
 function formatNumber(value) {
+
     return Number(value).toFixed(2).replace(/\.00$/, "");
+
 }
 
-
 /* =====================================================
-   SCHOOL MARKS - TEST DROPDOWN
+   GLOBAL VARIABLES
 ===================================================== */
 
 let allTests = [];
+
 let selectedTestId = null;
+
+let currentUserRole = null;
+
+let selectedSchoolId = "all";
+
 
 /* =====================================================
    LOAD SCHOOL MARKS
@@ -330,45 +526,95 @@ let selectedTestId = null;
 async function loadMarks() {
 
     const container = document.getElementById("results");
+
     const testSelect = document.getElementById("testSelect");
 
+    const schoolSelector = document.getElementById("schoolSelector");
+
     container.innerHTML = `
-        <div class="message">Loading school marks...</div>
+        <div class="message">
+            Loading school marks...
+        </div>
     `;
 
     try {
 
         const response = await fetch("/api/school-marks", {
+
             method: "GET",
+
             credentials: "same-origin",
+
             headers: {
                 "Accept": "application/json"
             },
+
             cache: "no-store"
+
         });
 
         const data = await response.json();
 
         if (response.status === 401) {
+
             location.href = "index.html";
+
             return;
+
         }
 
         if (!response.ok || !data.success) {
+
             throw new Error(
                 data.message || "Failed to load school marks."
             );
+
         }
 
-        allTests = Array.isArray(data.tests) ? data.tests : [];
+        /* -------------------------------------
+           GET AUTHENTICATED ROLE FROM SERVER
+        ------------------------------------- */
+
+        currentUserRole = data.role;
+
+        if (
+            currentUserRole !== "sector_admin" &&
+            currentUserRole !== "school_admin"
+        ) {
+
+            throw new Error(
+                "You are not authorized to view school marks."
+            );
+
+        }
+
+        /* -------------------------------------
+           SHOW SCHOOL SELECTOR ONLY FOR SECTOR
+        ------------------------------------- */
+
+        if (currentUserRole === "sector_admin") {
+
+            schoolSelector.hidden = false;
+
+        } else {
+
+            schoolSelector.hidden = true;
+
+        }
+
+        allTests = Array.isArray(data.tests)
+            ? data.tests
+            : [];
+
+        /* -------------------------------------
+           NO TESTS
+        ------------------------------------- */
 
         if (allTests.length === 0) {
 
-            if (testSelect) {
-                testSelect.innerHTML = `
-                    <option value="">No tests available</option>
-                `;
-            }
+            testSelect.innerHTML = `
+                <option value="">No tests available</option>
+            `;
 
             container.innerHTML = `
                 <div class="message">
@@ -377,6 +623,7 @@ async function loadMarks() {
             `;
 
             return;
+
         }
 
         /* -------------------------------------
@@ -384,19 +631,15 @@ async function loadMarks() {
         ------------------------------------- */
 
         allTests.sort((a, b) => {
+
             return new Date(b.created_at || 0) -
                    new Date(a.created_at || 0);
+
         });
 
         /* -------------------------------------
            POPULATE TEST DROPDOWN
         ------------------------------------- */
-
-        if (!testSelect) {
-            throw new Error(
-                "Test dropdown not found. Add the element with id='testSelect' to your HTML."
-            );
-        }
 
         testSelect.innerHTML = `
             <option value="">Select a test</option>
@@ -406,7 +649,7 @@ async function loadMarks() {
 
             const option = document.createElement("option");
 
-            option.value = test.id;
+            option.value = String(test.id);
 
             option.textContent =
                 `${test.name} (${test.status})`;
@@ -416,7 +659,7 @@ async function loadMarks() {
         });
 
         /* -------------------------------------
-           AUTO-SELECT LATEST OPEN OR CLOSED TEST
+           FIND LATEST OPEN OR CLOSED TEST
         ------------------------------------- */
 
         const preferredTest = allTests.find(test => {
@@ -434,6 +677,16 @@ async function loadMarks() {
 
         selectedTestId = String(testToSelect.id);
 
+        /* -------------------------------------
+           POPULATE SCHOOL DROPDOWN
+        ------------------------------------- */
+
+        populateSchoolDropdown(testToSelect);
+
+        /* -------------------------------------
+           DISPLAY SELECTED TEST
+        ------------------------------------- */
+
         displaySelectedTest();
 
     } catch (error) {
@@ -445,8 +698,103 @@ async function loadMarks() {
                 ${escapeHTML(error.message)}
             </div>
         `;
+
     }
+
 }
+
+
+/* =====================================================
+   HANDLE TEST CHANGE
+===================================================== */
+
+function handleTestChange() {
+
+    const testSelect = document.getElementById("testSelect");
+
+    selectedTestId = String(testSelect.value);
+
+    const test = allTests.find(item =>
+        String(item.id) === selectedTestId
+    );
+
+    if (!test) {
+
+        displaySelectedTest();
+
+        return;
+
+    }
+
+    /* Reset school filter when changing test */
+
+    selectedSchoolId = "all";
+
+    populateSchoolDropdown(test);
+
+    displaySelectedTest();
+
+}
+
+
+/* =====================================================
+   POPULATE SCHOOL DROPDOWN
+===================================================== */
+
+function populateSchoolDropdown(test) {
+
+    const schoolSelect = document.getElementById("schoolSelect");
+
+    if (!schoolSelect) return;
+
+    schoolSelect.innerHTML = `
+        <option value="all">All Schools</option>
+    `;
+
+    const schools = new Map();
+
+    (test.classes || []).forEach(classItem => {
+
+        if (
+            classItem.school_id !== null &&
+            classItem.school_id !== undefined &&
+            classItem.school_name
+        ) {
+
+            schools.set(
+                String(classItem.school_id),
+                classItem.school_name
+            );
+
+        }
+
+    });
+
+    /* Sort school names alphabetically */
+
+    const sortedSchools = [...schools.entries()]
+        .sort((a, b) =>
+            String(a[1]).localeCompare(String(b[1]))
+        );
+
+    sortedSchools.forEach(([schoolId, schoolName]) => {
+
+        const option = document.createElement("option");
+
+        option.value = schoolId;
+
+        option.textContent = schoolName;
+
+        schoolSelect.appendChild(option);
+
+    });
+
+    schoolSelect.value = "all";
+
+    selectedSchoolId = "all";
+
+}
+
 
 /* =====================================================
    DISPLAY SELECTED TEST
@@ -455,7 +803,10 @@ async function loadMarks() {
 function displaySelectedTest() {
 
     const container = document.getElementById("results");
+
     const testSelect = document.getElementById("testSelect");
+
+    const schoolSelect = document.getElementById("schoolSelect");
 
     if (!testSelect || !testSelect.value) {
 
@@ -466,6 +817,7 @@ function displaySelectedTest() {
         `;
 
         return;
+
     }
 
     selectedTestId = String(testSelect.value);
@@ -483,9 +835,34 @@ function displaySelectedTest() {
         `;
 
         return;
+
     }
 
-    const classes = test.classes || [];
+    /* -------------------------------------
+       FILTER CLASSES BY SCHOOL
+    ------------------------------------- */
+
+    let classes = test.classes || [];
+
+    if (currentUserRole === "sector_admin") {
+
+        selectedSchoolId = schoolSelect
+            ? schoolSelect.value
+            : "all";
+
+        if (selectedSchoolId !== "all") {
+
+            classes = classes.filter(classItem =>
+                String(classItem.school_id) === selectedSchoolId
+            );
+
+        }
+
+    }
+
+    /* -------------------------------------
+       TEST HEADING
+    ------------------------------------- */
 
     let html = `
         <section class="test-card">
@@ -493,20 +870,42 @@ function displaySelectedTest() {
             <div class="test-heading">
 
                 <div>
+
                     <h2>${escapeHTML(test.name)}</h2>
 
                     <span class="status">
                         ${escapeHTML(test.status)}
                     </span>
+
                 </div>
 
                 <button class="download-btn"
-                    onclick="downloadTest('${escapeHTML(test.id)}')">
+                    onclick="downloadTest()">
                     Download
                 </button>
 
             </div>
     `;
+
+    /* -------------------------------------
+       NO CLASSES
+    ------------------------------------- */
+
+    if (classes.length === 0) {
+
+        html += `
+            <div class="message">
+                No classes are available for this test and school selection.
+            </div>
+        `;
+
+        html += `</section>`;
+
+        container.innerHTML = html;
+
+        return;
+
+    }
 
     /* =================================================
        DISPLAY EACH CLASS
@@ -515,6 +914,7 @@ function displaySelectedTest() {
     classes.forEach((classItem, classIndex) => {
 
         const subjects = classItem.subjects || [];
+
         const students = [...(classItem.students || [])];
 
         /* -------------------------------------
@@ -524,7 +924,9 @@ function displaySelectedTest() {
         students.forEach(student => {
 
             let total = 0;
+
             let maximum = 0;
+
             let recorded = 0;
 
             subjects.forEach(subject => {
@@ -538,6 +940,7 @@ function displaySelectedTest() {
                 if (score !== null && score !== undefined) {
 
                     total += Number(score);
+
                     recorded++;
 
                 }
@@ -545,7 +948,9 @@ function displaySelectedTest() {
             });
 
             student.total = total;
+
             student.maximum = maximum;
+
             student.recorded = recorded;
 
             student.percentage =
@@ -562,19 +967,24 @@ function displaySelectedTest() {
         students.sort((a, b) => {
 
             if (a.percentage === null) return 1;
+
             if (b.percentage === null) return -1;
 
             return b.percentage - a.percentage;
 
         });
 
+        /* -------------------------------------
+           CLASS HEADING
+        ------------------------------------- */
+
         html += `
-            <div class="class-card"
-                 data-class-index="${classIndex}">
+            <div class="class-card">
 
                 <div class="class-heading">
 
                     <div>
+
                         <h3>
                             ${escapeHTML(classItem.class_name)}
                         </h3>
@@ -582,6 +992,7 @@ function displaySelectedTest() {
                         <div class="school-name">
                             ${escapeHTML(classItem.school_name || "")}
                         </div>
+
                     </div>
 
                 </div>
@@ -602,6 +1013,7 @@ function displaySelectedTest() {
             html += `</div>`;
 
             return;
+
         }
 
         /* =================================================
@@ -614,8 +1026,11 @@ function displaySelectedTest() {
                 <table>
 
                     <thead>
+
                         <tr>
+
                             <th>Position</th>
+
                             <th>Student</th>
 
                             ${subjects.map(subject => `
@@ -623,9 +1038,13 @@ function displaySelectedTest() {
                             `).join("")}
 
                             <th>Total</th>
+
                             <th>%</th>
+
                             <th>Category</th>
+
                         </tr>
+
                     </thead>
 
                     <tbody>
@@ -690,9 +1109,11 @@ function displaySelectedTest() {
 
             html += `
                 <tr>
+
                     <td colspan="${subjects.length + 5}">
                         No students registered in this class.
                     </td>
+
                 </tr>
             `;
 
@@ -720,6 +1141,7 @@ function displaySelectedTest() {
                     <table>
 
                         <thead>
+
                             <tr>
                                 <th>Subject</th>
                                 <th>Average (%)</th>
@@ -727,6 +1149,7 @@ function displaySelectedTest() {
                                 <th>Failed</th>
                                 <th>Pass Rate</th>
                             </tr>
+
                         </thead>
 
                         <tbody>
@@ -735,23 +1158,28 @@ function displaySelectedTest() {
         subjects.forEach(subject => {
 
             const recordedMarks = students
+
                 .map(student =>
                     student.marks
                         ? student.marks[subject.id]
                         : null
                 )
+
                 .filter(score =>
                     score !== null && score !== undefined
                 )
+
                 .map(Number);
 
             if (recordedMarks.length === 0) return;
 
-            const percentages = recordedMarks.map(score =>
-                Number(subject.maximum_mark) > 0
+            const percentages = recordedMarks.map(score => {
+
+                return Number(subject.maximum_mark) > 0
                     ? (score / Number(subject.maximum_mark)) * 100
-                    : 0
-            );
+                    : 0;
+
+            });
 
             const average = percentages.reduce(
                 (a, b) => a + b, 0
@@ -768,11 +1196,27 @@ function displaySelectedTest() {
 
             html += `
                 <tr>
-                    <td>${escapeHTML(subject.name)}</td>
-                    <td>${average.toFixed(2)}%</td>
-                    <td>${passed}</td>
-                    <td>${failed}</td>
-                    <td>${passRate.toFixed(2)}%</td>
+
+                    <td>
+                        ${escapeHTML(subject.name)}
+                    </td>
+
+                    <td>
+                        ${average.toFixed(2)}%
+                    </td>
+
+                    <td>
+                        ${passed}
+                    </td>
+
+                    <td>
+                        ${failed}
+                    </td>
+
+                    <td>
+                        ${passRate.toFixed(2)}%
+                    </td>
+
                 </tr>
             `;
 
@@ -797,19 +1241,15 @@ function displaySelectedTest() {
     `;
 
     container.innerHTML = html;
+
 }
 
+
 /* =====================================================
-   DOWNLOAD SELECTED TEST
+   DOWNLOAD CURRENTLY DISPLAYED RESULTS
 ===================================================== */
 
-function downloadTest(testId) {
-
-    const test = allTests.find(item =>
-        String(item.id) === String(testId)
-    );
-
-    if (!test) return;
+function downloadTest() {
 
     const container = document.getElementById("results");
 
@@ -817,9 +1257,15 @@ function downloadTest(testId) {
 
     if (!testCard) return;
 
+    const test = allTests.find(item =>
+        String(item.id) === String(selectedTestId)
+    );
+
+    if (!test) return;
+
     const content = testCard.cloneNode(true);
 
-    /* Remove download buttons from printed content */
+    /* Remove buttons from printed document */
 
     content.querySelectorAll("button").forEach(button => {
         button.remove();
@@ -832,14 +1278,29 @@ function downloadTest(testId) {
         alert("Please allow pop-ups to download results.");
 
         return;
+
     }
+
+    const schoolSelect = document.getElementById("schoolSelect");
+
+    const selectedSchoolName =
+        currentUserRole === "sector_admin" &&
+        schoolSelect &&
+        schoolSelect.value !== "all"
+            ? schoolSelect.options[schoolSelect.selectedIndex].text
+            : "All Schools";
+
+    const printTitle =
+        currentUserRole === "sector_admin"
+            ? `${test.name} - ${selectedSchoolName}`
+            : test.name;
 
     printWindow.document.write(`
         <!DOCTYPE html>
         <html>
         <head>
 
-            <title>${escapeHTML(test.name)} - School Marks</title>
+            <title>${escapeHTML(printTitle)} - School Marks</title>
 
             <style>
 
@@ -865,6 +1326,7 @@ function downloadTest(testId) {
                 .class-card {
                     margin-bottom: 30px;
                     page-break-inside: avoid;
+                    break-inside: avoid;
                 }
 
                 table {
@@ -904,6 +1366,7 @@ function downloadTest(testId) {
             ${content.innerHTML}
 
         </body>
+
         </html>
     `);
 
@@ -914,14 +1377,8 @@ function downloadTest(testId) {
     printWindow.onload = () => {
         printWindow.print();
     };
+
 }
-
-/* =====================================================
-   TEST DROPDOWN CHANGE
-===================================================== */
-
-document.getElementById("testSelect")
-    ?.addEventListener("change", displaySelectedTest);
 
 
 /* =====================================================
@@ -929,9 +1386,13 @@ document.getElementById("testSelect")
 ===================================================== */
 
 function logout() {
+
     localStorage.clear();
+
     location.href = "index.html";
+
 }
+
 
 /* =====================================================
    START
