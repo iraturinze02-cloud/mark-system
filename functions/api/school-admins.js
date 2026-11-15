@@ -1,3 +1,4 @@
+
 import { connectDB, requireSectorAdmin, json } from "../_utils.js";
 
 export async function onRequestGet(context) {
@@ -19,14 +20,36 @@ export async function onRequestGet(context) {
                 u.phone,
                 u.school_id,
                 u.status,
-                s.school_name
+                s.school_name,
+
+                COALESCE(
+                    (
+                        SELECT json_agg(
+                            json_build_object(
+                                'id', c.id::text,
+                                'class_name', c.class_name,
+                                'class_level', c.class_level
+                            )
+                            ORDER BY c.class_name ASC
+                        )
+                        FROM classes c
+                        WHERE c.school_id = u.school_id
+                    ),
+                    '[]'::json
+                ) AS classes
+
              FROM users u
+
              INNER JOIN schools s
                 ON s.id = u.school_id
+
              WHERE
                 u.role = 'school_admin'
                 AND s.sector_id = $1
-             ORDER BY s.school_name ASC, u.full_name ASC`,
+
+             ORDER BY
+                s.school_name ASC,
+                u.full_name ASC`,
             [auth.sectorId]
         );
 
@@ -44,6 +67,8 @@ export async function onRequestGet(context) {
         }, 500);
 
     } finally {
-        if (client) await client.end();
+        if (client) {
+            await client.end().catch(() => {});
+        }
     }
 }
