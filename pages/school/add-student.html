@@ -657,6 +657,7 @@ async function loadClasses() {
    LOAD STUDENTS
 ===================================== */
 
+
 async function loadStudents() {
 
     studentsContainer.replaceChildren();
@@ -671,10 +672,19 @@ async function loadStudents() {
 
     students = result.students || [];
 
-    // Refresh visible class cards after loading learners.
+    // Automatically select the first class that has active students.
+    const firstClassWithStudents = classes.find(cls =>
+        getClassStudents(cls.id).length > 0
+    );
+
+    selectedClassId = firstClassWithStudents
+        ? String(firstClassWithStudents.id)
+        : "";
+
+    // Render class cards with the selected class highlighted.
     renderClassCards();
 
-    // Display the currently selected class.
+    // Display students from the automatically selected class.
     renderStudents();
 }
 
