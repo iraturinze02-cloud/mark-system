@@ -24,7 +24,10 @@ function validateLevelIds(value) {
             value.map(item => {
                 if (
                     typeof item !== "number" &&
-                    !(typeof item === "string" && /^\\d+$/.test(item.trim()))
+                    !(
+                        typeof item === "string" &&
+                        /^\d+$/.test(item.trim())
+                    )
                 ) {
                     return NaN;
                 }
@@ -69,6 +72,7 @@ async function ensureSchoolLevels(client, schoolId, levelIds) {
 
 export async function onRequestPost(context) {
     const auth = await requireSectorAdmin(context);
+
     if (auth.error) return auth.error;
 
     let data;
@@ -88,6 +92,7 @@ export async function onRequestPost(context) {
     const password = String(data.password || "");
     const schoolName = String(data.school_name || "").trim();
 
+    // Validate selected education levels.
     const levelValidation = validateLevelIds(data.level_ids);
 
     if (levelValidation.error) {
@@ -99,7 +104,14 @@ export async function onRequestPost(context) {
 
     const selectedLevelIds = levelValidation.levelIds;
 
-    if (!id || !/^\d+$/.test(id) || !fullName || !phone || !schoolName) {
+    // Validate administrator details.
+    if (
+        !id ||
+        !/^\d+$/.test(id) ||
+        !fullName ||
+        !phone ||
+        !schoolName
+    ) {
         return json({
             success: false,
             message: "Please provide valid administrator details."
@@ -133,9 +145,12 @@ export async function onRequestPost(context) {
         await client.query("BEGIN");
         transactionStarted = true;
 
-        // Confirm that this administrator belongs to the logged-in sector.
+        /* =============================================
+           VERIFY SCHOOL ADMIN BELONGS TO THIS SECTOR
+        ============================================= */
+
         const adminResult = await client.query(
-            `SELECT u.id
+            `SELECT u.id, u.school_id
              FROM users u
              JOIN schools s ON s.id = u.school_id
              WHERE u.id = $1
@@ -155,11 +170,15 @@ export async function onRequestPost(context) {
             }, 404);
         }
 
-        // Check that the phone number is not used by another user.
+        /* =============================================
+           CHECK DUPLICATE PHONE NUMBER
+        ============================================= */
+
         const duplicate = await client.query(
             `SELECT id
              FROM users
-             WHERE phone = $1 AND id <> $2
+             WHERE phone = $1
+               AND id <> $2
              LIMIT 1`,
             [phone, id]
         );
@@ -174,16 +193,19 @@ export async function onRequestPost(context) {
             }, 409);
         }
 
-        // Prevent simultaneous creation of duplicate school records.
-        const lockKey = `${auth.sectorId}:${schoolName.toLowerCase()}`;
+        /* =============================================
+           FIND OR CREATE SCHOOL
+        ============================================= */
+
+        const lockKey =
+            `${auth.sectorId}:${schoolName.toLowerCase()}`;
 
         await client.query(
             "SELECT pg_advisory_xact_lock(hashtext($1))",
             [lockKey]
         );
 
-        // Find the school in the administrator's sector.
-        let schoolResult = await client.query(
+        const schoolResult = await client.query(
             `SELECT id
              FROM schools
              WHERE sector_id = $1
@@ -212,13 +234,22 @@ export async function onRequestPost(context) {
             schoolId = newSchool.rows[0].id;
         }
 
-        // Add selected education levels to the target school.
-        // Existing levels are preserved; no level is removed here.
+        /* =============================================
+           SAVE SCHOOL EDUCATION LEVELS
+
+           Existing levels are preserved.
+           Selected levels are added if missing.
+        ============================================= */
+
         await ensureSchoolLevels(
             client,
             schoolId,
             selectedLevelIds
         );
+
+        /* =============================================
+           UPDATE SCHOOL ADMINISTRATOR
+        ============================================= */
 
         let result;
 
@@ -234,7 +265,13 @@ export async function onRequestPost(context) {
                      updated_at = NOW()
                  WHERE id = $5
                  RETURNING id, full_name, phone, school_id`,
-                [fullName, phone, passwordHash, schoolId, id]
+                [
+                    fullName,
+                    phone,
+                    passwordHash,
+                    schoolId,
+                    id
+                ]
             );
         } else {
             result = await client.query(
@@ -245,9 +282,18 @@ export async function onRequestPost(context) {
                      updated_at = NOW()
                  WHERE id = $4
                  RETURNING id, full_name, phone, school_id`,
-                [fullName, phone, schoolId, id]
+                [
+                    fullName,
+                    phone,
+                    schoolId,
+                    id
+                ]
             );
         }
+
+        /* =============================================
+           COMMIT TRANSACTION
+        ============================================= */
 
         await client.query("COMMIT");
         transactionStarted = false;
