@@ -479,7 +479,7 @@
         </div>
 
         <div class="dashboard-card"
-             onclick="navigateTo('view-all.html')">
+             onclick="navigateTo('../school/school-marks.html')">
 
             <div class="card-icon">📊</div>
 
@@ -494,18 +494,18 @@
         </div>
 
         <div class="dashboard-card"
-             onclick="openManageTests()">
+            onclick="navigateTo('../admin/tests.html')">
 
             <div class="card-icon">📝</div>
 
             <h3>Manage Tests</h3>
 
             <p>
-                Create examinations and select the active
-                examination for your sector.
+                Create Sectorial tests and select the active
+                test for your sector.
             </p>
 
-            <span class="card-link">Manage examinations →</span>
+            <span class="card-link">Manage tests for your sector →</span>
         </div>
 
     </section>
@@ -518,70 +518,10 @@
 </main>
 
 
-<!-- MANAGE TESTS MODAL -->
-
-<div id="manageTestsModal" class="modal">
-
-    <div class="modal-content">
-
-        <div class="modal-header">
-            <h2>Manage Tests</h2>
-            <button class="close-btn" onclick="closeManageTests()">×</button>
-        </div>
-
-        <div id="testsList">
-            <div class="empty-state">Loading examinations...</div>
-        </div>
-
-        <div class="modal-actions">
-            <button class="btn primary" onclick="openCreateTestModal()">
-                + Add New Test
-            </button>
-
-            <button class="btn danger" onclick="closeManageTests()">
-                Close
-            </button>
-        </div>
-
-    </div>
-</div>
 
 
 <!-- CREATE TEST MODAL -->
 
-<div id="createTestModal" class="modal">
-
-    <div class="modal-content">
-
-        <div class="modal-header">
-            <h2>Create New Test</h2>
-            <button class="close-btn" onclick="closeCreateTest()">×</button>
-        </div>
-
-        <label for="testName">Test Name</label>
-
-        <input
-            type="text"
-            id="testName"
-            class="form-input"
-            placeholder="e.g. First Term Examination"
-            maxlength="150"
-        >
-
-        <div id="createMessage" class="message"></div>
-
-        <div class="modal-actions">
-            <button class="btn primary" id="createBtn" onclick="createTest()">
-                Create Test
-            </button>
-
-            <button class="btn danger" onclick="closeCreateTest()">
-                Cancel
-            </button>
-        </div>
-
-    </div>
-</div>
 
 
 <script>
@@ -682,324 +622,16 @@ async function logout() {
     localStorage.removeItem("role");
     localStorage.removeItem("selectedTest");
 
-    window.location.replace("index.html");
+    window.location.replace("../../index.html");
 }
 
 
-// ==========================================
-// 6. MODAL CONTROLS
-// ==========================================
-
-function openManageTests() {
-
-    document.getElementById("manageTestsModal").style.display = "flex";
-
-    loadTests();
-}
-
-function closeManageTests() {
-    document.getElementById("manageTestsModal").style.display = "none";
-}
-
-function openCreateTestModal() {
-
-    document.getElementById("createTestModal").style.display = "flex";
-
-    document.getElementById("testName").value = "";
-
-    document.getElementById("createMessage").className = "message";
-}
-
-function closeCreateTest() {
-    document.getElementById("createTestModal").style.display = "none";
-}
-
-
-// Close modal by clicking outside
-document.querySelectorAll(".modal").forEach(modal => {
-
-    modal.addEventListener("click", function(event) {
-
-        if (event.target === modal) {
-            modal.style.display = "none";
-        }
-
-    });
-
-});
-
-
-// Close modal using Escape
-document.addEventListener("keydown", function(event) {
-
-    if (event.key === "Escape") {
-        document.querySelectorAll(".modal").forEach(modal => {
-            modal.style.display = "none";
-        });
-    }
-
-});
-
-
-// ==========================================
-// 7. LOAD TESTS
-// ==========================================
-
-async function loadTests() {
-
-    const box = document.getElementById("testsList");
-
-    box.textContent = "Loading examinations...";
-
-    try {
-
-        const response = await fetch("/api/tests", {
-            method: "GET",
-            credentials: "same-origin"
-        });
-
-        const data = await readJsonResponse(response);
-
-        if (!response.ok || !data.success) {
-            throw new Error(data.message || "Unable to load tests.");
-        }
-
-        const tests = data.tests || [];
-
-        box.innerHTML = "";
-
-        if (tests.length === 0) {
-
-            box.textContent = "No tests have been created yet.";
-            box.className = "empty-state";
-
-            return;
-        }
-
-        box.className = "";
-
-        tests.forEach(test => {
-
-            const item = document.createElement("div");
-            item.className = "test-item";
-
-            const heading = document.createElement("h3");
-            heading.textContent = test.test_name;
-
-            const date = document.createElement("small");
-
-            date.textContent = test.created_at
-                ? "Created: " + new Date(test.created_at).toLocaleString()
-                : "Creation date unavailable";
-
-            item.appendChild(heading);
-            item.appendChild(date);
-
-            if (test.is_active) {
-
-                const active = document.createElement("div");
-                active.className = "active-label";
-                active.textContent = "ACTIVE TEST";
-
-                item.appendChild(document.createElement("br"));
-                item.appendChild(active);
-
-            } else {
-
-                const actions = document.createElement("div");
-                actions.className = "test-item-actions";
-
-                const button = document.createElement("button");
-                button.className = "btn primary";
-                button.textContent = "Activate";
-
-                button.addEventListener("click", () => {
-                    switchTest(test.id);
-                });
-
-                actions.appendChild(button);
-                item.appendChild(actions);
-            }
-
-            box.appendChild(item);
-
-        });
-
-        updateActiveTest(tests);
-
-    } catch (error) {
-
-        box.className = "empty-state";
-        box.textContent = error.message;
-
-    }
-}
-
-
-// ==========================================
-// 8. UPDATE ACTIVE TEST DISPLAY
-// ==========================================
-
-function updateActiveTest(tests) {
-
-    const activeTest = tests.find(test => test.is_active);
-
-    const display = document.getElementById("activeTestName");
-
-    if (activeTest) {
-        display.textContent = activeTest.test_name;
-    } else {
-        display.textContent = "No active test selected.";
-    }
-}
-
-
-// ==========================================
-// 9. SWITCH ACTIVE TEST
-// ==========================================
-
-async function switchTest(id) {
-
-    if (!confirm("Do you want to activate this test?")) {
-        return;
-    }
-
-    try {
-
-        const response = await fetch("/api/tests/activate", {
-            method: "POST",
-            credentials: "same-origin",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                test_id: id
-            })
-        });
-
-        const data = await readJsonResponse(response);
-
-        if (!response.ok || !data.success) {
-            throw new Error(data.message || "Could not activate test.");
-        }
-
-        localStorage.setItem("selectedTest", String(id));
-
-        showPageMessage("Test activated successfully.", "success");
-
-        await loadTests();
-
-    } catch (error) {
-
-        alert(error.message);
-
-    }
-}
-
-
-// ==========================================
-// 10. CREATE TEST
-// ==========================================
-
-async function createTest() {
-
-    const name = document.getElementById("testName").value.trim();
-
-    const button = document.getElementById("createBtn");
-    const message = document.getElementById("createMessage");
-
-    if (!name) {
-
-        message.textContent = "Please enter a test name.";
-        message.className = "message error";
-
-        return;
-    }
-
-    if (!confirm(`Create "${name}" as a new test?`)) {
-        return;
-    }
-
-    button.disabled = true;
-    button.textContent = "Creating...";
-
-    try {
-
-        const response = await fetch("/api/tests/create", {
-            method: "POST",
-            credentials: "same-origin",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                test_name: name
-            })
-        });
-
-        const data = await readJsonResponse(response);
-
-        if (!response.ok || !data.success) {
-            throw new Error(data.message || "Could not create test.");
-        }
-
-        message.textContent = data.message || "Test created successfully.";
-        message.className = "message success";
-
-        document.getElementById("testName").value = "";
-
-        await loadTests();
-
-        setTimeout(() => {
-            closeCreateTest();
-        }, 900);
-
-        showPageMessage("New test created successfully.", "success");
-
-    } catch (error) {
-
-        message.textContent = error.message;
-        message.className = "message error";
-
-    } finally {
-
-        button.disabled = false;
-        button.textContent = "Create Test";
-
-    }
-}
 
 
 // ==========================================
 // 11. INITIALIZE DASHBOARD
 // ==========================================
 
-async function initializeDashboard() {
-
-    try {
-
-        const response = await fetch("/api/tests", {
-            credentials: "same-origin"
-        });
-
-        const data = await readJsonResponse(response);
-
-        if (!response.ok || !data.success) {
-            throw new Error(data.message || "Unable to load active test.");
-        }
-
-        updateActiveTest(data.tests || []);
-
-    } catch (error) {
-
-        document.getElementById("activeTestName").textContent =
-            "Unable to load active test.";
-
-        console.error("Dashboard initialization:", error);
-
-    }
-}
-
-initializeDashboard();
 
 </script>
 
