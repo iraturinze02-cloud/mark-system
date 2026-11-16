@@ -59,19 +59,41 @@ export async function onRequestGet(context) {
                 ta.class_id,
                 ta.subject_id,
                 c.class_name,
+
+                CASE c.level_id
+                    WHEN 1 THEN 'Primary'
+                    WHEN 2 THEN 'Lower Secondary'
+                    WHEN 3 THEN 'Upper Secondary'
+                    ELSE 'Unknown'
+                END AS class_level,
+
                 sub.subject_name
+
             FROM teacher_assignments ta
+
             INNER JOIN teachers tr
                 ON tr.id = ta.teacher_id
                AND tr.school_id = ta.school_id
+
+            INNER JOIN users u
+                ON u.id = tr.user_id
+               AND u.school_id = tr.school_id
+               AND u.role = 'teacher'
+
             INNER JOIN classes c
                 ON c.id = ta.class_id
-               AND c.school_id = ta.school_id
+
+            INNER JOIN school_levels sl
+                ON sl.school_id = ta.school_id
+               AND sl.level_id = c.level_id
+
             INNER JOIN subjects sub
                 ON sub.id = ta.subject_id
+
             WHERE ta.id = $1
               AND tr.user_id = $2
               AND tr.school_id = $3
+
             LIMIT 1
             `,
             [assignmentId, auth.userId, auth.schoolId]
@@ -134,6 +156,7 @@ export async function onRequestGet(context) {
                 ON closer.id = t.closed_by
 
             WHERE t.id = $1
+
             LIMIT 1
             `,
             [
