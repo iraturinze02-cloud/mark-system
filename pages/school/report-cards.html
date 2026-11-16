@@ -794,8 +794,7 @@ function assignPositions(students, performanceMap) {
    GENERATE REPORT CARDS
 ===================================================== */
 
-
-async function generateReportCards() {
+function generateReportCards() {
     const selectedTestId = testSelect.value;
 
     if (!selectedTestId) {
@@ -803,115 +802,162 @@ async function generateReportCards() {
         return;
     }
 
-    try {
-        generateBtn.disabled = true;
-        printBtn.disabled = true;
+    const test = allTests.find(
+        item => String(item.id) === String(selectedTestId)
+    );
 
-        showMessage("Preparing report cards and calculating positions...");
+    if (!test) {
+        showMessage("Selected test could not be found.", "error");
+        return;
+    }
 
-        const response = await fetch(
-            `/api/school-report-cards?test_id=${encodeURIComponent(selectedTestId)}`,
-            {
-                method: "GET",
-                credentials: "same-origin",
-                headers: {
-                    "Accept": "application/json"
-                }
-            }
-        );
+    if (!Array.isArray(test.classes) || test.classes.length === 0) {
+        showMessage("No classes or students were found for this test.", "error");
+        return;
+    }
 
-        const data = await response.json();
+    const sectorTest = test.creator_role === "sector_admin";
 
-        if (!response.ok || !data.success) {
-            throw new Error(
-                data.message || "Unable to generate report cards."
-            );
-        }
+    /*
+       Performance maps:
+       - School positions: class + school
+       - Sector positions: class across all schools
+    */
 
-        const test = data.test;
-        const classes = data.classes || [];
+    const performanceByStudent = new Map();
+    const sectorStudentsByClass = new Map();
 
-        const sectorTest =
-            test.report_card_type === "school_and_sector";
+    let totalStudents = 0;
 
-        generatedCards = [];
+    /* ---------------------------------------------
+       FIRST PASS: CALCULATE PERFORMANCE
+    --------------------------------------------- */
 
-        classes.forEach(classItem => {
-            (classItem.students || []).forEach(student => {
+    test.classes.forEach(classItem => {
+        const subjects = classItem.subjects || [];
+        const students = classItem.students || [];
 
-                const performance = {
-                    complete: student.complete,
-                    total: student.total,
-                    maximum: student.maximum,
-                    percentage: student.percentage,
-                    grade: student.complete
-                        ? gradeFromPercentage(student.percentage)
-                        : "Incomplete",
+        const schoolPerformance = new Map();
 
-                    schoolPosition: student.school_position,
-                    sectorPosition: student.sector_position
-                };
+        students.forEach(student => {
+            const performance = calculateStudent(student, subjects);
 
-                generatedCards.push({
-                    test,
-                    classItem,
-                    student,
-                    subjects: classItem.subjects || [],
-                    performance,
-                    sectorTest
-                });
+            performanceByStudent.set(student.id, {
+                ...performance,
+                schoolPosition: null,
+                sectorPosition: null
             });
+
+            schoolPerformance.set(student.id,
+                performanceByStudent.get(student.id)
+            );
+
+            totalStudents++;
         });
 
-        if (generatedCards.length === 0) {
-            reportCardsContainer.innerHTML = `
-                <div class="empty-state">
-                    No students were found for this test in your school.
-                </div>
-            `;
+        assignPositions(students, schoolPerformance);
 
-            document.getElementById("summary").style.display = "none";
+        /*
+           Copy school positions into the main performance map.
+        */
 
-            showMessage("No report cards are available.", "error");
-            return;
+        students.forEach(student => {
+            const localResult = schoolPerformance.get(student.id);
+            const mainResult = performanceByStudent.get(student.id);
+
+            mainResult.schoolPosition = localResult.position;
+        });
+
+        /*
+           Build sector-wide groups by universal class ID.
+        */
+
+        if (sectorTest) {
+            const classKey = String(classItem.class_id);
+
+            if (!sectorStudentsByClass.has(classKey)) {
+                sectorStudentsByClass.set(classKey, []);
+            }
+
+            students.forEach(student => {
+                sectorStudentsByClass.get(classKey).push(student);
+            });
         }
+    });
 
-        renderReportCards();
+    /* ---------------------------------------------
+       SECOND PASS: SECTOR POSITIONS
+    --------------------------------------------- */
 
-        const classesCount = new Set(
-            classes.map(item => String(item.class_id))
-        ).size;
+    if (sectorTest) {
 
-        document.getElementById("studentCount").textContent =
-            generatedCards.length;
+        sectorStudentsByClass.forEach(students => {
+            const sectorPerformance = new Map();
 
-        document.getElementById("schoolCount").textContent = "1";
+            students.forEach(student => {
+                sectorPerformance.set(
+                    student.id,
+                    performanceByStudent.get(student.id)
+                );
+            });
 
-        document.getElementById("classCount").textContent =
-            classesCount;
+            assignPositions(students, sectorPerformance);
 
-        document.getElementById("summary").style.display = "flex";
-
-        printBtn.disabled = false;
-
-        showMessage(
-            sectorTest
-                ? `${generatedCards.length} report cards generated with school and sector positions.`
-                : `${generatedCards.length} report cards generated with school positions.`,
-            "success"
-        );
-
-    } catch (error) {
-        console.error("Report card generation error:", error);
-
-        showMessage(
-            error.message || "Unable to generate report cards.",
-            "error"
-        );
-
-    } finally {
-        generateBtn.disabled = false;
+            students.forEach(student => {
+                const result = performanceByStudent.get(student.id);
+                result.sectorPosition =
+                    sectorPerformance.get(student.id).position;
+            });
+        });
     }
+
+    /* ---------------------------------------------
+       BUILD ONE REPORT CARD PER STUDENT
+    --------------------------------------------- */
+
+    generatedCards = [];
+
+    test.classes.forEach(classItem => {
+        const subjects = classItem.subjects || [];
+
+        (classItem.students || []).forEach(student => {
+            generatedCards.push({
+                test,
+                classItem,
+                student,
+                subjects,
+                performance: performanceByStudent.get(student.id),
+                sectorTest
+            });
+        });
+    });
+
+    if (generatedCards.length === 0) {
+        showMessage("No students were found for the selected test.", "error");
+        return;
+    }
+
+    renderReportCards();
+
+    const schools = new Set(
+        test.classes.map(item => String(item.school_id))
+    );
+
+    const classes = new Set(
+        test.classes.map(item => String(item.class_id))
+    );
+
+    document.getElementById("studentCount").textContent = totalStudents;
+    document.getElementById("schoolCount").textContent = schools.size;
+    document.getElementById("classCount").textContent = classes.size;
+    document.getElementById("summary").style.display = "flex";
+
+    printBtn.disabled = false;
+
+    showMessage(
+        `${generatedCards.length} report card(s) generated successfully.`,
+        "success"
+    );
 }
 
 /* =====================================================
