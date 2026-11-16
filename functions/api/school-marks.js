@@ -77,18 +77,7 @@ export async function onRequestGet(context) {
         }
 
         /* ---------------------------------------------
-           LOAD TESTS, CLASSES, STUDENTS AND MARKS
-
-           Universal classes structure:
-           - classes.id
-           - classes.class_name
-           - classes.level_id
-
-           School availability:
-           - school_levels.school_id
-           - school_levels.level_id
-
-           No classes.school_id or classes.class_level.
+           LOAD TESTS, CLASSES, ACTIVE STUDENTS AND MARKS
         --------------------------------------------- */
 
         const result = await client.query(
@@ -143,6 +132,7 @@ export async function onRequestGet(context) {
             LEFT JOIN students st
                 ON st.class_id = c.id
                AND st.school_id = tc.school_id
+               AND st.status = 'active'
 
             INNER JOIN test_subjects ts
                 ON ts.test_id = t.id
@@ -236,7 +226,7 @@ export async function onRequestGet(context) {
             }
 
             /* -----------------------------------------
-               STUDENTS
+               ACTIVE STUDENTS
             ----------------------------------------- */
 
             if (row.student_id === null) continue;
