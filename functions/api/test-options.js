@@ -32,53 +32,48 @@ export async function onRequest(context) {
         client = await connectDB(context);
 
         let schools = [];
-        let schoolIds = [];
 
         // =========================================
         // LOAD AUTHORIZED SCHOOLS
         // =========================================
 
         if (auth.role === "sector_admin") {
-            const schoolResult = await client.query(`
-                SELECT
-                    id,
-                    school_name
+            const result = await client.query(`
+                SELECT id, school_name
                 FROM schools
                 WHERE sector_id = $1
                   AND status = 'active'
                 ORDER BY school_name
             `, [auth.sectorId]);
 
-            schools = schoolResult.rows;
-            schoolIds = schools.map(school => String(school.id));
+            schools = result.rows;
 
         } else {
-            const schoolResult = await client.query(`
-                SELECT
-                    id,
-                    school_name
+            const result = await client.query(`
+                SELECT id, school_name
                 FROM schools
                 WHERE id = $1
                   AND status = 'active'
             `, [auth.schoolId]);
 
-            schools = schoolResult.rows;
-            schoolIds = schools.map(school => String(school.id));
+            schools = result.rows;
         }
+
+        const schoolIds = schools.map(school => String(school.id));
 
         if (!schoolIds.length) {
             return json({
                 success: true,
-                schools,
+                schools: [],
                 classes: [],
                 subjects: []
             });
         }
 
         // =========================================
-        // LOAD CLASSES OFFERED BY AUTHORIZED SCHOOLS
-        // Classes are universal. school_levels
-        // determines which schools offer each class.
+        // LOAD UNIVERSAL CLASSES
+        // Each class appears only once.
+        // school_ids identifies schools offering it.
         // =========================================
 
         const classResult = await client.query(`
@@ -93,8 +88,12 @@ export async function onRequest(context) {
                     ELSE 'Unknown'
                 END AS class_level,
 
-                sl.school_id,
-                s.school_name
+                c.level_id,
+
+                ARRAY_AGG(
+                    DISTINCT sl.school_id
+                    ORDER BY sl.school_id
+                ) AS school_ids
 
             FROM classes c
 
@@ -107,22 +106,42 @@ export async function onRequest(context) {
             WHERE sl.school_id = ANY($1::bigint[])
               AND s.status = 'active'
 
+            GROUP BY
+                c.id,
+                c.class_name,
+                c.level_id
+
             ORDER BY
-                s.school_name,
                 c.level_id,
                 c.class_name
         `, [schoolIds]);
 
         // =========================================
-        // LOAD SUBJECTS
+        // LOAD ONLY SUBJECTS WITH THEIR APPLICABLE
+        // EDUCATION LEVELS
         // =========================================
 
         const subjectResult = await client.query(`
             SELECT
-                id,
-                subject_name
-            FROM subjects
-            ORDER BY subject_name
+                s.id,
+                s.subject_name,
+
+                ARRAY_AGG(
+                    DISTINCT scl.education_level
+                    ORDER BY scl.education_level
+                ) AS education_levels
+
+            FROM subjects s
+
+            INNER JOIN subject_class_levels scl
+                ON scl.subject_id = s.id
+
+            GROUP BY
+                s.id,
+                s.subject_name
+
+            ORDER BY
+                s.subject_name
         `);
 
         return json({
