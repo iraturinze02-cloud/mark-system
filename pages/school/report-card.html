@@ -1,0 +1,1230 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Student Report Cards</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, Helvetica, sans-serif;
+    background: #f1f5f9;
+    color: #1e293b;
+}
+
+.topbar {
+    background: #12345a;
+    color: white;
+    padding: 20px;
+}
+
+.topbar h1 {
+    margin: 0;
+    font-size: 23px;
+}
+
+.topbar p {
+    margin: 6px 0 0;
+    font-size: 13px;
+    opacity: .9;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 25px auto;
+    padding: 0 15px;
+}
+
+.controls {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,.06);
+    margin-bottom: 20px;
+}
+
+.controls label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 8px;
+}
+
+.controls select {
+    width: 100%;
+    max-width: 500px;
+    padding: 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    font-size: 15px;
+    background: white;
+}
+
+.button-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+button {
+    border: none;
+    padding: 12px 18px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+button:disabled {
+    opacity: .5;
+    cursor: not-allowed;
+}
+
+.generate-btn {
+    background: #2563eb;
+    color: white;
+}
+
+.print-btn {
+    background: #15803d;
+    color: white;
+}
+
+.back-btn {
+    background: #475569;
+    color: white;
+}
+
+.message {
+    margin-top: 15px;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.error {
+    color: #dc2626;
+}
+
+.success {
+    color: #15803d;
+}
+
+.info {
+    background: #eff6ff;
+    color: #1e40af;
+    padding: 12px;
+    border-radius: 6px;
+    margin-top: 15px;
+    font-size: 13px;
+}
+
+.summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.summary-item {
+    background: white;
+    padding: 15px 20px;
+    border-radius: 8px;
+    flex: 1;
+    min-width: 140px;
+    box-shadow: 0 2px 6px rgba(0,0,0,.05);
+}
+
+.summary-item strong {
+    display: block;
+    font-size: 23px;
+    color: #12345a;
+}
+
+.summary-item span {
+    font-size: 12px;
+    color: #64748b;
+}
+
+#reportCards {
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+}
+
+/* REPORT CARD */
+
+.report-card {
+    background: white;
+    width: 100%;
+    max-width: 850px;
+    margin: 0 auto;
+    padding: 35px;
+    border: 1px solid #cbd5e1;
+    box-shadow: 0 2px 8px rgba(0,0,0,.06);
+    min-height: 900px;
+}
+
+.report-header {
+    text-align: center;
+    border-bottom: 3px double #12345a;
+    padding-bottom: 15px;
+    margin-bottom: 20px;
+}
+
+.report-header h2 {
+    margin: 0;
+    color: #12345a;
+    font-size: 23px;
+    text-transform: uppercase;
+}
+
+.report-header h3 {
+    margin: 8px 0 0;
+    font-size: 17px;
+    text-transform: uppercase;
+}
+
+.report-header p {
+    margin: 6px 0 0;
+    font-size: 13px;
+    color: #475569;
+}
+
+.student-info {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px 25px;
+    margin: 20px 0;
+    font-size: 14px;
+}
+
+.info-field {
+    border-bottom: 1px solid #cbd5e1;
+    padding: 7px 0;
+}
+
+.info-field strong {
+    color: #334155;
+}
+
+.section-title {
+    background: #eaf0f7;
+    color: #12345a;
+    padding: 9px 12px;
+    font-weight: bold;
+    margin: 22px 0 10px;
+    border-left: 4px solid #12345a;
+    font-size: 14px;
+}
+
+.marks-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.marks-table th,
+.marks-table td {
+    border: 1px solid #cbd5e1;
+    padding: 9px 8px;
+    text-align: center;
+}
+
+.marks-table th {
+    background: #f1f5f9;
+    color: #1e293b;
+}
+
+.marks-table td.subject-name {
+    text-align: left;
+}
+
+.marks-table tfoot td {
+    font-weight: bold;
+    background: #f8fafc;
+}
+
+.performance-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 12px;
+}
+
+.performance-box {
+    border: 1px solid #cbd5e1;
+    padding: 14px;
+    text-align: center;
+    border-radius: 5px;
+}
+
+.performance-box h4 {
+    margin: 0 0 8px;
+    font-size: 12px;
+    color: #475569;
+    text-transform: uppercase;
+}
+
+.performance-box strong {
+    font-size: 22px;
+    color: #12345a;
+}
+
+.performance-box p {
+    margin: 5px 0 0;
+    font-size: 12px;
+    color: #64748b;
+}
+
+.overall-result {
+    margin-top: 15px;
+    padding: 12px;
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    text-align: center;
+}
+
+.overall-result div span {
+    display: block;
+    font-size: 11px;
+    color: #64748b;
+    margin-bottom: 5px;
+}
+
+.overall-result div strong {
+    font-size: 17px;
+    color: #12345a;
+}
+
+.incomplete-note {
+    margin-top: 12px;
+    padding: 10px;
+    background: #fff7ed;
+    color: #9a3412;
+    border: 1px solid #fed7aa;
+    font-size: 12px;
+}
+
+.remarks {
+    margin-top: 22px;
+}
+
+.remarks-box {
+    border: 1px solid #cbd5e1;
+    min-height: 65px;
+    padding: 10px;
+    margin-top: 7px;
+    font-size: 13px;
+}
+
+.signature-area {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 35px;
+    margin-top: 45px;
+}
+
+.signature {
+    text-align: center;
+    font-size: 13px;
+}
+
+.signature-line {
+    border-top: 1px solid #334155;
+    margin-top: 45px;
+    padding-top: 8px;
+}
+
+.report-footer {
+    margin-top: 25px;
+    padding-top: 10px;
+    border-top: 1px solid #cbd5e1;
+    text-align: center;
+    color: #64748b;
+    font-size: 10px;
+}
+
+.empty-state {
+    background: white;
+    padding: 35px;
+    text-align: center;
+    border-radius: 8px;
+    color: #64748b;
+}
+
+@media (max-width: 600px) {
+    .report-card {
+        padding: 18px;
+        min-height: auto;
+    }
+
+    .student-info {
+        grid-template-columns: 1fr;
+    }
+
+    .performance-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .overall-result {
+        grid-template-columns: 1fr;
+    }
+
+    .marks-table {
+        font-size: 11px;
+    }
+
+    .marks-table th,
+    .marks-table td {
+        padding: 6px 4px;
+    }
+}
+
+/* PRINT SETTINGS */
+
+@page {
+    size: A4 portrait;
+    margin: 12mm;
+}
+
+@media print {
+    body {
+        background: white;
+        margin: 0;
+    }
+
+    .topbar,
+    .controls,
+    .summary,
+    .no-print {
+        display: none !important;
+    }
+
+    .container {
+        max-width: none;
+        margin: 0;
+        padding: 0;
+    }
+
+    #reportCards {
+        display: block;
+    }
+
+    .report-card {
+        width: 100%;
+        max-width: none;
+        min-height: 0;
+        margin: 0;
+        padding: 5mm;
+        border: none;
+        box-shadow: none;
+        break-after: page;
+        page-break-after: always;
+    }
+
+    .report-card:last-child {
+        break-after: auto;
+        page-break-after: auto;
+    }
+
+    .report-header h2 {
+        font-size: 20px;
+    }
+
+    .marks-table {
+        font-size: 11px;
+    }
+
+    .marks-table th,
+    .marks-table td {
+        padding: 7px 5px;
+    }
+
+    .section-title {
+        margin-top: 15px;
+    }
+
+    .remarks-box {
+        min-height: 55px;
+    }
+
+    .signature-area {
+        margin-top: 35px;
+    }
+
+    * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<header class="topbar">
+    <h1>STUDENT REPORT CARDS</h1>
+    <p>Generate and print student report cards</p>
+</header>
+
+<div class="container">
+
+    <section class="controls">
+
+        <label for="testSelect">Select Test / Examination</label>
+
+        <select id="testSelect">
+            <option value="">Loading tests...</option>
+        </select>
+
+        <div class="button-row">
+
+            <button
+                class="generate-btn"
+                id="generateBtn"
+                onclick="generateReportCards()"
+                disabled>
+                GENERATE REPORT CARDS
+            </button>
+
+            <button
+                class="print-btn"
+                id="printBtn"
+                onclick="printAllReportCards()"
+                disabled>
+                PRINT ALL REPORT CARDS
+            </button>
+
+            <button
+                class="back-btn"
+                onclick="history.back()">
+                BACK
+            </button>
+
+        </div>
+
+        <div id="message" class="message"></div>
+
+        <div class="info">
+            Each student receives one report card. Sector-admin-created
+            tests include both School Level and Sector Level performance.
+            School-admin-created tests include School Level performance only.
+        </div>
+
+    </section>
+
+    <section class="summary" id="summary" style="display:none;">
+
+        <div class="summary-item">
+            <strong id="studentCount">0</strong>
+            <span>STUDENTS</span>
+        </div>
+
+        <div class="summary-item">
+            <strong id="schoolCount">0</strong>
+            <span>SCHOOLS</span>
+        </div>
+
+        <div class="summary-item">
+            <strong id="classCount">0</strong>
+            <span>CLASSES</span>
+        </div>
+
+    </section>
+
+    <div id="reportCards">
+        <div class="empty-state">
+            Select a test and click GENERATE REPORT CARDS.
+        </div>
+    </div>
+
+</div>
+
+<script>
+"use strict";
+
+/* =====================================================
+   GLOBAL DATA
+===================================================== */
+
+let allTests = [];
+let currentUser = null;
+let generatedCards = [];
+
+/* =====================================================
+   ELEMENTS
+===================================================== */
+
+const testSelect = document.getElementById("testSelect");
+const generateBtn = document.getElementById("generateBtn");
+const printBtn = document.getElementById("printBtn");
+const messageBox = document.getElementById("message");
+const reportCardsContainer = document.getElementById("reportCards");
+
+/* =====================================================
+   HELPERS
+===================================================== */
+
+function escapeHTML(value) {
+    return String(value ?? "").replace(/[&<>"']/g, character => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#039;"
+    })[character]);
+}
+
+function showMessage(message, type = "") {
+    messageBox.textContent = message;
+    messageBox.className = "message " + type;
+}
+
+function formatNumber(value) {
+    return Number(value).toFixed(2).replace(/\.00$/, "");
+}
+
+function formatDate(value) {
+    if (!value) return new Date().toLocaleDateString();
+
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) {
+        return new Date().toLocaleDateString();
+    }
+
+    return date.toLocaleDateString();
+}
+
+function gradeFromPercentage(percentage) {
+    if (percentage >= 80) return "A - Excellent";
+    if (percentage >= 75) return "B - Very Good";
+    if (percentage >= 70) return "C - Good";
+    if (percentage >= 65) return "D - Satisfactory";
+    if (percentage >= 60) return "E - Adequate";
+    if (percentage >= 50) return "S - Minimum Pass";
+    return "F - Fail";
+}
+
+function isValidMark(mark) {
+    return mark !== null &&
+           mark !== undefined &&
+           mark !== "" &&
+           Number.isFinite(Number(mark));
+}
+
+/* =====================================================
+   LOAD TESTS FROM API
+===================================================== */
+
+async function loadTests() {
+    try {
+        showMessage("Loading tests...");
+
+        const response = await fetch("/api/school-marks", {
+            method: "GET",
+            credentials: "same-origin",
+            headers: {
+                "Accept": "application/json"
+            }
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+            throw new Error(data.message || "Unable to load tests.");
+        }
+
+        if (!data.user ||
+            !["sector_admin", "school_admin"].includes(data.user.role)) {
+            throw new Error("You are not authorized to access report cards.");
+        }
+
+        currentUser = data.user;
+        allTests = Array.isArray(data.tests) ? data.tests : [];
+
+        testSelect.innerHTML = '<option value="">Select a test</option>';
+
+        allTests.forEach(test => {
+            const option = document.createElement("option");
+
+            option.value = test.id;
+
+            const creatorType = test.creator_role === "sector_admin"
+                ? "Sector Test"
+                : "School Test";
+
+            option.textContent =
+                `${test.name} — ${creatorType} — ${test.status}`;
+
+            testSelect.appendChild(option);
+        });
+
+        generateBtn.disabled = allTests.length === 0;
+
+        if (allTests.length === 0) {
+            showMessage("No tests with available class records were found.");
+        } else {
+            showMessage(
+                `${allTests.length} test(s) loaded successfully.`,
+                "success"
+            );
+        }
+
+    } catch (error) {
+        console.error("Loading tests error:", error);
+
+        showMessage(
+            error.message || "Unable to load tests. Please log in again.",
+            "error"
+        );
+
+        testSelect.innerHTML =
+            '<option value="">Unable to load tests</option>';
+
+        generateBtn.disabled = true;
+    }
+}
+
+/* =====================================================
+   CALCULATE STUDENT PERFORMANCE
+===================================================== */
+
+function calculateStudent(student, subjects) {
+    let total = 0;
+    let maximum = 0;
+    let complete = true;
+
+    subjects.forEach(subject => {
+        const mark = student.marks
+            ? student.marks[subject.id]
+            : null;
+
+        maximum += Number(subject.maximum_mark || 0);
+
+        if (!isValidMark(mark)) {
+            complete = false;
+        } else {
+            total += Number(mark);
+        }
+    });
+
+    if (!complete || maximum <= 0) {
+        return {
+            complete: false,
+            total: null,
+            maximum,
+            percentage: null,
+            grade: "Incomplete"
+        };
+    }
+
+    const percentage = (total / maximum) * 100;
+
+    return {
+        complete: true,
+        total,
+        maximum,
+        percentage,
+        grade: gradeFromPercentage(percentage)
+    };
+}
+
+/* =====================================================
+   RANK STUDENTS
+   Tied students receive the same position.
+   Incomplete students are not ranked.
+===================================================== */
+
+function assignPositions(students, performanceMap) {
+    const eligible = students
+        .filter(student => {
+            const result = performanceMap.get(student.id);
+            return result && result.complete;
+        })
+        .slice()
+        .sort((a, b) => {
+            return performanceMap.get(b.id).percentage -
+                   performanceMap.get(a.id).percentage;
+        });
+
+    let previousPercentage = null;
+    let previousPosition = null;
+
+    eligible.forEach((student, index) => {
+        const percentage = Number(
+            performanceMap.get(student.id).percentage.toFixed(6)
+        );
+
+        if (previousPercentage !== null &&
+            percentage === previousPercentage) {
+
+            performanceMap.get(student.id).position = previousPosition;
+
+        } else {
+
+            const position = index + 1;
+
+            performanceMap.get(student.id).position = position;
+
+            previousPosition = position;
+            previousPercentage = percentage;
+        }
+    });
+
+    students.forEach(student => {
+        const result = performanceMap.get(student.id);
+
+        if (result && !result.complete) {
+            result.position = null;
+        }
+    });
+}
+
+/* =====================================================
+   GENERATE REPORT CARDS
+===================================================== */
+
+function generateReportCards() {
+    const selectedTestId = testSelect.value;
+
+    if (!selectedTestId) {
+        showMessage("Please select a test first.", "error");
+        return;
+    }
+
+    const test = allTests.find(
+        item => String(item.id) === String(selectedTestId)
+    );
+
+    if (!test) {
+        showMessage("Selected test could not be found.", "error");
+        return;
+    }
+
+    if (!Array.isArray(test.classes) || test.classes.length === 0) {
+        showMessage("No classes or students were found for this test.", "error");
+        return;
+    }
+
+    const sectorTest = test.creator_role === "sector_admin";
+
+    /*
+       Performance maps:
+       - School positions: class + school
+       - Sector positions: class across all schools
+    */
+
+    const performanceByStudent = new Map();
+    const sectorStudentsByClass = new Map();
+
+    let totalStudents = 0;
+
+    /* ---------------------------------------------
+       FIRST PASS: CALCULATE PERFORMANCE
+    --------------------------------------------- */
+
+    test.classes.forEach(classItem => {
+        const subjects = classItem.subjects || [];
+        const students = classItem.students || [];
+
+        const schoolPerformance = new Map();
+
+        students.forEach(student => {
+            const performance = calculateStudent(student, subjects);
+
+            performanceByStudent.set(student.id, {
+                ...performance,
+                schoolPosition: null,
+                sectorPosition: null
+            });
+
+            schoolPerformance.set(student.id,
+                performanceByStudent.get(student.id)
+            );
+
+            totalStudents++;
+        });
+
+        assignPositions(students, schoolPerformance);
+
+        /*
+           Copy school positions into the main performance map.
+        */
+
+        students.forEach(student => {
+            const localResult = schoolPerformance.get(student.id);
+            const mainResult = performanceByStudent.get(student.id);
+
+            mainResult.schoolPosition = localResult.position;
+        });
+
+        /*
+           Build sector-wide groups by universal class ID.
+        */
+
+        if (sectorTest) {
+            const classKey = String(classItem.class_id);
+
+            if (!sectorStudentsByClass.has(classKey)) {
+                sectorStudentsByClass.set(classKey, []);
+            }
+
+            students.forEach(student => {
+                sectorStudentsByClass.get(classKey).push(student);
+            });
+        }
+    });
+
+    /* ---------------------------------------------
+       SECOND PASS: SECTOR POSITIONS
+    --------------------------------------------- */
+
+    if (sectorTest) {
+
+        sectorStudentsByClass.forEach(students => {
+            const sectorPerformance = new Map();
+
+            students.forEach(student => {
+                sectorPerformance.set(
+                    student.id,
+                    performanceByStudent.get(student.id)
+                );
+            });
+
+            assignPositions(students, sectorPerformance);
+
+            students.forEach(student => {
+                const result = performanceByStudent.get(student.id);
+                result.sectorPosition =
+                    sectorPerformance.get(student.id).position;
+            });
+        });
+    }
+
+    /* ---------------------------------------------
+       BUILD ONE REPORT CARD PER STUDENT
+    --------------------------------------------- */
+
+    generatedCards = [];
+
+    test.classes.forEach(classItem => {
+        const subjects = classItem.subjects || [];
+
+        (classItem.students || []).forEach(student => {
+            generatedCards.push({
+                test,
+                classItem,
+                student,
+                subjects,
+                performance: performanceByStudent.get(student.id),
+                sectorTest
+            });
+        });
+    });
+
+    if (generatedCards.length === 0) {
+        showMessage("No students were found for the selected test.", "error");
+        return;
+    }
+
+    renderReportCards();
+
+    const schools = new Set(
+        test.classes.map(item => String(item.school_id))
+    );
+
+    const classes = new Set(
+        test.classes.map(item => String(item.class_id))
+    );
+
+    document.getElementById("studentCount").textContent = totalStudents;
+    document.getElementById("schoolCount").textContent = schools.size;
+    document.getElementById("classCount").textContent = classes.size;
+    document.getElementById("summary").style.display = "flex";
+
+    printBtn.disabled = false;
+
+    showMessage(
+        `${generatedCards.length} report card(s) generated successfully.`,
+        "success"
+    );
+}
+
+/* =====================================================
+   REPORT CARD HTML
+===================================================== */
+
+function createReportCard(item, index) {
+    const {
+        test,
+        classItem,
+        student,
+        subjects,
+        performance,
+        sectorTest
+    } = item;
+
+    const subjectRows = subjects.map((subject, subjectIndex) => {
+        const mark = student.marks
+            ? student.marks[subject.id]
+            : null;
+
+        const displayMark = isValidMark(mark)
+            ? formatNumber(mark)
+            : "—";
+
+        return `
+            <tr>
+                <td>${subjectIndex + 1}</td>
+                <td class="subject-name">${escapeHTML(subject.name)}</td>
+                <td>${displayMark}</td>
+                <td>${formatNumber(subject.maximum_mark)}</td>
+            </tr>
+        `;
+    }).join("");
+
+    const totalDisplay = performance.complete
+        ? formatNumber(performance.total)
+        : "—";
+
+    const maximumDisplay = formatNumber(performance.maximum);
+
+    const percentageDisplay = performance.complete
+        ? formatNumber(performance.percentage) + "%"
+        : "—";
+
+    const gradeDisplay = performance.complete
+        ? performance.grade
+        : "Incomplete";
+
+    const schoolPosition = performance.schoolPosition
+        ? `Position ${performance.schoolPosition}`
+        : "Not ranked";
+
+    const sectorPosition = performance.sectorPosition
+        ? `Position ${performance.sectorPosition}`
+        : "Not ranked";
+
+    const sectorSection = sectorTest
+        ? `
+            <div class="performance-box">
+                <h4>Sector Level Position</h4>
+                <strong>${sectorPosition}</strong>
+                <p>Among students in ${escapeHTML(classItem.class_name)}
+                   across participating schools</p>
+            </div>
+        `
+        : "";
+
+    const performanceColumns = sectorTest
+        ? "1fr 1fr"
+        : "1fr";
+
+    const incompleteNote = !performance.complete
+        ? `
+            <div class="incomplete-note">
+                This student's marks are incomplete. A total, percentage,
+                grade and class position cannot be calculated until all
+                subject marks have been entered.
+            </div>
+        `
+        : "";
+
+    return `
+        <article class="report-card">
+
+            <div class="report-header">
+                <h2>STUDENT REPORT CARD</h2>
+                <h3>${escapeHTML(classItem.school_name)}</h3>
+                <p>${escapeHTML(test.name)}</p>
+                <p>Academic Performance Report</p>
+            </div>
+
+            <div class="student-info">
+
+                <div class="info-field">
+                    <strong>Student Name:</strong>
+                    ${escapeHTML(student.name)}
+                </div>
+
+                <div class="info-field">
+                    <strong>Student Code:</strong>
+                    ${escapeHTML(student.student_code || "—")}
+                </div>
+
+                <div class="info-field">
+                    <strong>Class:</strong>
+                    ${escapeHTML(classItem.class_name)}
+                </div>
+
+                <div class="info-field">
+                    <strong>Education Level:</strong>
+                    ${escapeHTML(classItem.class_level)}
+                </div>
+
+                <div class="info-field">
+                    <strong>School:</strong>
+                    ${escapeHTML(classItem.school_name)}
+                </div>
+
+                <div class="info-field">
+                    <strong>Test:</strong>
+                    ${escapeHTML(test.name)}
+                </div>
+
+            </div>
+
+            <div class="section-title">
+                SUBJECT PERFORMANCE
+            </div>
+
+            <table class="marks-table">
+
+                <thead>
+                    <tr>
+                        <th>No.</th>
+                        <th>Subject</th>
+                        <th>Marks Obtained</th>
+                        <th>Maximum Marks</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    ${subjectRows}
+                </tbody>
+
+                <tfoot>
+                    <tr>
+                        <td colspan="2">TOTAL</td>
+                        <td>${totalDisplay}</td>
+                        <td>${maximumDisplay}</td>
+                    </tr>
+                </tfoot>
+
+            </table>
+
+            <div class="section-title">
+                OVERALL PERFORMANCE
+            </div>
+
+            <div class="overall-result">
+
+                <div>
+                    <span>TOTAL MARKS</span>
+                    <strong>${totalDisplay} / ${maximumDisplay}</strong>
+                </div>
+
+                <div>
+                    <span>PERCENTAGE</span>
+                    <strong>${percentageDisplay}</strong>
+                </div>
+
+                <div>
+                    <span>GRADE / CATEGORY</span>
+                    <strong>${escapeHTML(gradeDisplay)}</strong>
+                </div>
+
+            </div>
+
+            ${incompleteNote}
+
+            <div class="section-title">
+                CLASS POSITION
+            </div>
+
+            <div class="performance-grid"
+                 style="grid-template-columns:${performanceColumns}">
+
+                <div class="performance-box">
+                    <h4>School Level Position</h4>
+                    <strong>${schoolPosition}</strong>
+                    <p>Among students in the same class at this school</p>
+                </div>
+
+                ${sectorSection}
+
+            </div>
+
+            <div class="remarks">
+
+                <div class="section-title">
+                    TEACHER'S REMARKS
+                </div>
+
+                <div class="remarks-box"></div>
+
+                <div class="section-title">
+                    HEADTEACHER'S REMARKS
+                </div>
+
+                <div class="remarks-box"></div>
+
+            </div>
+
+            <div class="signature-area">
+
+                <div class="signature">
+                    <div class="signature-line">
+                        Class Teacher's Signature
+                    </div>
+                </div>
+
+                <div class="signature">
+                    <div class="signature-line">
+                        Headteacher's Signature
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="report-footer">
+                Generated on ${formatDate(new Date())}
+            </div>
+
+        </article>
+    `;
+}
+
+/* =====================================================
+   DISPLAY REPORT CARDS
+===================================================== */
+
+function renderReportCards() {
+    reportCardsContainer.innerHTML = generatedCards
+        .map((item, index) => createReportCard(item, index))
+        .join("");
+}
+
+/* =====================================================
+   PRINT ALL REPORT CARDS
+===================================================== */
+
+function printAllReportCards() {
+    if (!generatedCards.length) {
+        showMessage("Generate report cards before printing.", "error");
+        return;
+    }
+
+    window.print();
+}
+
+/* =====================================================
+   INITIALIZE
+===================================================== */
+
+document.addEventListener("DOMContentLoaded", loadTests);
+
+</script>
+
+</body>
+</html>
