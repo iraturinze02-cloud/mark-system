@@ -5,12 +5,25 @@ import {
     json
 } from "../_utils.js";
 
-export async function onRequestGet(context) {
+export async function onRequest(context) {
     const auth = await requireTestUser(context);
-    if (auth.error) return auth.error;
+
+    if (auth.error) {
+        return auth.error;
+    }
+
+    if (context.request.method !== "GET") {
+        return json({
+            success: false,
+            message: "Method not allowed."
+        }, 405);
+    }
 
     if (!["sector_admin", "school_admin"].includes(auth.role)) {
-        return json({ success: false, message: "Not authorized." }, 403);
+        return json({
+            success: false,
+            message: "You are not allowed to access test creation options."
+        }, 403);
     }
 
     let client;
@@ -19,37 +32,95 @@ export async function onRequestGet(context) {
         client = await connectDB(context);
 
         let schools = [];
+        let schoolIds = [];
+
+        // =========================================
+        // LOAD AUTHORIZED SCHOOLS
+        // =========================================
 
         if (auth.role === "sector_admin") {
-            const result = await client.query(`
-                SELECT id, school_name
+            const schoolResult = await client.query(`
+                SELECT
+                    id,
+                    school_name
                 FROM schools
-                WHERE sector_id = $1 AND status = 'active'
+                WHERE sector_id = $1
+                  AND status = 'active'
                 ORDER BY school_name
             `, [auth.sectorId]);
 
-            schools = result.rows;
+            schools = schoolResult.rows;
+            schoolIds = schools.map(school => String(school.id));
+
         } else {
-            const result = await client.query(`
-                SELECT id, school_name
+            const schoolResult = await client.query(`
+                SELECT
+                    id,
+                    school_name
                 FROM schools
-                WHERE id = $1 AND status = 'active'
+                WHERE id = $1
+                  AND status = 'active'
             `, [auth.schoolId]);
 
-            schools = result.rows;
+            schools = schoolResult.rows;
+            schoolIds = schools.map(school => String(school.id));
         }
 
-        const schoolIds = schools.map(s => String(s.id));
+        if (!schoolIds.length) {
+            return json({
+                success: true,
+                schools,
+                classes: [],
+                subjects: []
+            });
+        }
 
-        const classesResult = await client.query(`
-            SELECT id, school_id, class_name, class_level
-            FROM classes
-            WHERE school_id = ANY($1::bigint[])
-            ORDER BY school_id, class_name
+        // =========================================
+        // LOAD CLASSES OFFERED BY AUTHORIZED SCHOOLS
+        // Classes are universal. school_levels
+        // determines which schools offer each class.
+        // =========================================
+
+        const classResult = await client.query(`
+            SELECT
+                c.id,
+                c.class_name,
+
+                CASE c.level_id
+                    WHEN 1 THEN 'Primary'
+                    WHEN 2 THEN 'Lower Secondary'
+                    WHEN 3 THEN 'Upper Secondary'
+                    ELSE 'Unknown'
+                END AS class_level,
+
+                sl.school_id,
+                s.school_name
+
+            FROM classes c
+
+            INNER JOIN school_levels sl
+                ON sl.level_id = c.level_id
+
+            INNER JOIN schools s
+                ON s.id = sl.school_id
+
+            WHERE sl.school_id = ANY($1::bigint[])
+              AND s.status = 'active'
+
+            ORDER BY
+                s.school_name,
+                c.level_id,
+                c.class_name
         `, [schoolIds]);
 
-        const subjectsResult = await client.query(`
-            SELECT id, subject_name, subject_code
+        // =========================================
+        // LOAD SUBJECTS
+        // =========================================
+
+        const subjectResult = await client.query(`
+            SELECT
+                id,
+                subject_name
             FROM subjects
             ORDER BY subject_name
         `);
@@ -57,17 +128,22 @@ export async function onRequestGet(context) {
         return json({
             success: true,
             schools,
-            classes: classesResult.rows,
-            subjects: subjectsResult.rows
+            classes: classResult.rows,
+            subjects: subjectResult.rows
         });
 
     } catch (error) {
-        console.error("Test options error:", error);
+        console.error("Test options API error:", error);
+
         return json({
             success: false,
-            message: "Unable to load test options."
+            message: error.message ||
+                "Unable to load test creation options."
         }, 500);
+
     } finally {
-        if (client) await client.end().catch(() => {});
+        if (client) {
+            await client.end().catch(() => {});
+        }
     }
 }
