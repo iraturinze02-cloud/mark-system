@@ -447,6 +447,15 @@ tbody tr:hover {
         Download / Print Results
     </button>
 
+    <button
+    id="generateReportCardsBtn"
+    class="download-btn"
+    onclick="openReportCards()"
+    style="display: none;"
+>
+    GENERATE REPORT CARDS
+</button>
+
 </div>
 
 <!-- =====================================================
@@ -576,6 +585,12 @@ async function loadMarks() {
         ------------------------------------- */
 
         currentUserRole = data.role || data.user?.role || null;
+        const reportCardsBtn = document.getElementById("generateReportCardsBtn");
+
+reportCardsBtn.style.display =
+    currentUserRole === "school_admin"
+        ? "inline-block"
+        : "none";
 
         if (
             currentUserRole !== "sector_admin" &&
@@ -1388,6 +1403,21 @@ function downloadTest() {
 
 }
 
+
+    function openReportCards() {
+
+    const testSelect = document.getElementById("testSelect");
+    const testId = testSelect.value;
+
+    if (!testId) {
+        alert("Please select a test first.");
+        return;
+    }
+
+    window.location.href =
+        `report-cards.html?test_id=${encodeURIComponent(testId)}`;
+
+}
 
 /* =====================================================
    LOGOUT
