@@ -68,7 +68,9 @@ function validateSubjectMarks(subjectIds, subjectMarks) {
             item.subject_id ?? item.subjectId ?? ""
         ).trim();
 
-        const totalMarks = Number(item.total_marks ?? item.totalMarks);
+        const totalMarks = Number(
+            item.total_marks ?? item.totalMarks
+        );
 
         if (!/^\d+$/.test(subjectId)) {
             return {
@@ -170,9 +172,6 @@ export async function onRequestGet(context) {
 
         /* ---------------------------------------------
            SCHOOL ADMIN VISIBILITY
-
-           Own school tests and sector tests assigned
-           to their school.
         --------------------------------------------- */
 
         else if (auth.role === "school_admin") {
@@ -182,9 +181,9 @@ export async function onRequestGet(context) {
 
                     OR EXISTS (
                         SELECT 1
-                        FROM test_schools ts
-                        WHERE ts.test_id = t.id
-                          AND ts.school_id = $1
+                        FROM test_schools visible_school
+                        WHERE visible_school.test_id = t.id
+                          AND visible_school.school_id = $1
                     )
                 )
             `;
@@ -194,9 +193,6 @@ export async function onRequestGet(context) {
 
         /* ---------------------------------------------
            TEACHER VISIBILITY
-
-           A teacher must have an assignment matching
-           the test's school, class and subject.
         --------------------------------------------- */
 
         else if (auth.role === "teacher") {
@@ -207,7 +203,6 @@ export async function onRequestGet(context) {
 
                     INNER JOIN teacher_assignments ta
                         ON ta.teacher_id = tr.id
-                       AND ta.school_id = tr.school_id
 
                     INNER JOIN test_classes tc
                         ON tc.test_id = t.id
@@ -218,8 +213,14 @@ export async function onRequestGet(context) {
                         ON tsu.test_id = t.id
                        AND tsu.subject_id = ta.subject_id
 
+                    INNER JOIN school_levels sl
+                        ON sl.school_id = ta.school_id
+
+                    INNER JOIN classes assigned_class
+                        ON assigned_class.id = ta.class_id
+                       AND assigned_class.level_id = sl.level_id
+
                     WHERE tr.user_id = $1
-                      AND tr.school_id = tc.school_id
                 )
             `;
 
@@ -234,7 +235,18 @@ export async function onRequestGet(context) {
         }
 
         /* ---------------------------------------------
-           LOAD TESTS WITH RELATED DATA
+           CAN MANAGE TESTS
+        --------------------------------------------- */
+
+        const manageScopeId =
+            auth.role === "sector_admin"
+                ? auth.sectorId
+                : auth.role === "school_admin"
+                    ? auth.schoolId
+                    : 0;
+
+        /* ---------------------------------------------
+           LOAD TESTS AND RELATED DATA
         --------------------------------------------- */
 
         const testsResult = await client.query(
@@ -255,12 +267,12 @@ export async function onRequestGet(context) {
                 creator.full_name AS creator_name,
 
                 CASE
-                    WHEN $${parameters.length + 1} = 'sector_admin'
-                         AND t.sector_id = $${parameters.length + 2}
+                    WHEN $${parameters.length + 1}::text = 'sector_admin'
+                         AND t.sector_id = $${parameters.length + 2}::bigint
                     THEN TRUE
 
-                    WHEN $${parameters.length + 1} = 'school_admin'
-                         AND t.school_id = $${parameters.length + 2}
+                    WHEN $${parameters.length + 1}::text = 'school_admin'
+                         AND t.school_id = $${parameters.length + 2}::bigint
                     THEN TRUE
 
                     ELSE FALSE
@@ -294,9 +306,12 @@ export async function onRequestGet(context) {
                     )
                     ORDER BY s.school_name
                 ) AS data
+
                 FROM test_schools ts
+
                 INNER JOIN schools s
                     ON s.id = ts.school_id
+
                 WHERE ts.test_id = t.id
             ) test_schools ON TRUE
 
@@ -305,15 +320,31 @@ export async function onRequestGet(context) {
                     json_build_object(
                         'id', c.id,
                         'class_name', c.class_name,
-                        'class_level', c.class_level,
-                        'school_id', c.school_id
+
+                        'class_level',
+                            CASE c.level_id
+                                WHEN 1 THEN 'Primary'
+                                WHEN 2 THEN 'Lower Secondary'
+                                WHEN 3 THEN 'Upper Secondary'
+                                ELSE 'Unknown'
+                            END,
+
+                        'school_id', tc.school_id
                     )
-                    ORDER BY c.class_name
+                    ORDER BY
+                        tc.school_id,
+                        c.class_name
                 ) AS data
+
                 FROM test_classes tc
+
                 INNER JOIN classes c
                     ON c.id = tc.class_id
-                   AND c.school_id = tc.school_id
+
+                INNER JOIN school_levels sl
+                    ON sl.school_id = tc.school_id
+                   AND sl.level_id = c.level_id
+
                 WHERE tc.test_id = t.id
             ) test_classes ON TRUE
 
@@ -327,9 +358,12 @@ export async function onRequestGet(context) {
                     )
                     ORDER BY s.subject_name
                 ) AS data
+
                 FROM test_subjects ts
+
                 INNER JOIN subjects s
                     ON s.id = ts.subject_id
+
                 WHERE ts.test_id = t.id
             ) test_subjects ON TRUE
 
@@ -340,9 +374,7 @@ export async function onRequestGet(context) {
             [
                 ...parameters,
                 auth.role,
-                auth.role === "sector_admin"
-                    ? auth.sectorId
-                    : auth.schoolId
+                manageScopeId
             ]
         );
 
@@ -389,6 +421,10 @@ export async function onRequestGet(context) {
 
         /* ---------------------------------------------
            LOAD CLASSES FOR TEST FORM
+
+           Classes are universal.
+           school_levels determines which schools
+           offer each education level.
         --------------------------------------------- */
 
         let classes = [];
@@ -399,15 +435,32 @@ export async function onRequestGet(context) {
                 SELECT
                     c.id,
                     c.class_name,
-                    c.class_level,
-                    c.school_id,
+
+                    CASE c.level_id
+                        WHEN 1 THEN 'Primary'
+                        WHEN 2 THEN 'Lower Secondary'
+                        WHEN 3 THEN 'Upper Secondary'
+                        ELSE 'Unknown'
+                    END AS class_level,
+
+                    sl.school_id,
                     s.school_name
+
                 FROM classes c
+
+                INNER JOIN school_levels sl
+                    ON sl.level_id = c.level_id
+
                 INNER JOIN schools s
-                    ON s.id = c.school_id
+                    ON s.id = sl.school_id
+
                 WHERE s.sector_id = $1
                   AND s.status = 'active'
-                ORDER BY s.school_name, c.class_name
+
+                ORDER BY
+                    s.school_name,
+                    c.level_id,
+                    c.class_name
                 `,
                 [auth.sectorId]
             );
@@ -419,13 +472,28 @@ export async function onRequestGet(context) {
             const result = await client.query(
                 `
                 SELECT
-                    id,
-                    class_name,
-                    class_level,
-                    school_id
-                FROM classes
-                WHERE school_id = $1
-                ORDER BY class_name
+                    c.id,
+                    c.class_name,
+
+                    CASE c.level_id
+                        WHEN 1 THEN 'Primary'
+                        WHEN 2 THEN 'Lower Secondary'
+                        WHEN 3 THEN 'Upper Secondary'
+                        ELSE 'Unknown'
+                    END AS class_level,
+
+                    sl.school_id
+
+                FROM classes c
+
+                INNER JOIN school_levels sl
+                    ON sl.level_id = c.level_id
+
+                WHERE sl.school_id = $1
+
+                ORDER BY
+                    c.level_id,
+                    c.class_name
                 `,
                 [auth.schoolId]
             );
@@ -439,16 +507,30 @@ export async function onRequestGet(context) {
                 SELECT DISTINCT
                     c.id,
                     c.class_name,
-                    c.class_level,
-                    c.school_id
+
+                    CASE c.level_id
+                        WHEN 1 THEN 'Primary'
+                        WHEN 2 THEN 'Lower Secondary'
+                        WHEN 3 THEN 'Upper Secondary'
+                        ELSE 'Unknown'
+                    END AS class_level,
+
+                    ta.school_id
+
                 FROM teachers tr
+
                 INNER JOIN teacher_assignments ta
                     ON ta.teacher_id = tr.id
-                   AND ta.school_id = tr.school_id
+
                 INNER JOIN classes c
                     ON c.id = ta.class_id
-                   AND c.school_id = ta.school_id
+
+                INNER JOIN school_levels sl
+                    ON sl.school_id = ta.school_id
+                   AND sl.level_id = c.level_id
+
                 WHERE tr.user_id = $1
+
                 ORDER BY c.class_name
                 `,
                 [auth.userId]
@@ -490,7 +572,7 @@ export async function onRequestGet(context) {
 
         return json({
             success: false,
-            message: "Unable to load tests."
+            message: error.message || "Unable to load tests."
         }, 500);
 
     } finally {
@@ -668,37 +750,52 @@ export async function onRequestPost(context) {
         }
 
         if (validSchools.rows.length !== schoolIds.length) {
-            await client.query("ROLLBACK");
-            transactionStarted = false;
-
-            return json({
-                success: false,
-                message: "One or more selected schools are invalid."
-            }, 400);
+            throw new Error(
+                "One or more selected schools are invalid."
+            );
         }
 
         /* ---------------------------------------------
-           VALIDATE CLASSES
+           VALIDATE SELECTED CLASSES
+
+           A class is valid if at least one selected
+           school offers its education level.
+
+           Every valid school/class combination is
+           inserted into test_classes.
         --------------------------------------------- */
 
         const validClasses = await client.query(
             `
-            SELECT id, school_id
-            FROM classes
-            WHERE id = ANY($1::bigint[])
-              AND school_id = ANY($2::bigint[])
+            SELECT
+                c.id,
+                sl.school_id
+
+            FROM classes c
+
+            INNER JOIN school_levels sl
+                ON sl.level_id = c.level_id
+
+            WHERE c.id = ANY($1::bigint[])
+              AND sl.school_id = ANY($2::bigint[])
+
+            ORDER BY
+                sl.school_id,
+                c.class_name
             `,
             [classIds, schoolIds]
         );
 
-        if (validClasses.rows.length !== classIds.length) {
-            await client.query("ROLLBACK");
-            transactionStarted = false;
+        const validClassIds = [
+            ...new Set(
+                validClasses.rows.map(row => String(row.id))
+            )
+        ];
 
-            return json({
-                success: false,
-                message: "One or more selected classes do not belong to the selected schools."
-            }, 400);
+        if (validClassIds.length !== classIds.length) {
+            throw new Error(
+                "One or more selected classes are not offered by the selected schools."
+            );
         }
 
         /* ---------------------------------------------
@@ -715,13 +812,9 @@ export async function onRequestPost(context) {
         );
 
         if (validSubjects.rows.length !== subjectIds.length) {
-            await client.query("ROLLBACK");
-            transactionStarted = false;
-
-            return json({
-                success: false,
-                message: "One or more selected subjects are invalid."
-            }, 400);
+            throw new Error(
+                "One or more selected subjects are invalid."
+            );
         }
 
         /* ---------------------------------------------
@@ -838,7 +931,8 @@ export async function onRequestPost(context) {
 
         return json({
             success: false,
-            message: "Unable to create the test."
+            message: error.message ||
+                "Unable to create the test."
         }, 500);
 
     } finally {
