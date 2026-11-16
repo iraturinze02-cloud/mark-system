@@ -7,6 +7,7 @@ import {
 
 /* =====================================================
    GET: SCHOOL MARKS — VIEW ONLY
+   Includes test creator information for report cards.
 ===================================================== */
 
 export async function onRequestGet(context) {
@@ -77,7 +78,8 @@ export async function onRequestGet(context) {
         }
 
         /* ---------------------------------------------
-           LOAD TESTS, CLASSES, ACTIVE STUDENTS AND MARKS
+           LOAD TESTS, CREATORS, CLASSES, STUDENTS,
+           SUBJECTS AND MARKS
         --------------------------------------------- */
 
         const result = await client.query(
@@ -87,6 +89,12 @@ export async function onRequestGet(context) {
                 t.test_name,
                 t.status,
                 t.created_at AS test_created_at,
+                t.created_by,
+                t.sector_id AS test_sector_id,
+                t.school_id AS test_school_id,
+
+                creator.full_name AS creator_name,
+                creator.role AS creator_role,
 
                 tc.school_id,
 
@@ -115,6 +123,9 @@ export async function onRequestGet(context) {
                 m.score
 
             FROM tests t
+
+            INNER JOIN users creator
+                ON creator.id = t.created_by
 
             INNER JOIN test_classes tc
                 ON tc.test_id = t.id
@@ -175,6 +186,26 @@ export async function onRequestGet(context) {
                     name: row.test_name,
                     status: row.status,
                     created_at: row.test_created_at,
+
+                    // Test creator information
+                    created_by: String(row.created_by),
+                    creator_name: row.creator_name,
+                    creator_role: row.creator_role,
+
+                    // Original test ownership
+                    sector_id: row.test_sector_id === null
+                        ? null
+                        : String(row.test_sector_id),
+
+                    school_id: row.test_school_id === null
+                        ? null
+                        : String(row.test_school_id),
+
+                    // Used by the frontend to choose report-card sections
+                    report_card_type: row.creator_role === "sector_admin"
+                        ? "school_and_sector"
+                        : "school_only",
+
                     classes: []
                 });
 
@@ -201,7 +232,6 @@ export async function onRequestGet(context) {
                 };
 
                 test.classes.push(classItem);
-
             }
 
             /* -----------------------------------------
@@ -247,7 +277,6 @@ export async function onRequestGet(context) {
                 };
 
                 classItem.students.push(student);
-
             }
 
             student.marks[subjectId] =
