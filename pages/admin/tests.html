@@ -1106,17 +1106,31 @@ function renderClasses() {
 
     const allowedSchools = role === "sector_admin"
         ? selectedSchools
-        : options.schools.map(s => String(s.id));
+        : options.schools.map(school => String(school.id));
 
-    const availableClasses = options.classes.filter(item =>
-        allowedSchools.includes(String(item.school_id))
-    );
+    // Keep only classes offered by at least one selected school.
+    // Then remove duplicates using the universal class ID.
+    const uniqueClasses = new Map();
+
+    options.classes.forEach(item => {
+        const classId = String(item.id);
+        const schoolId = String(item.school_id);
+
+        if (
+            allowedSchools.includes(schoolId) &&
+            !uniqueClasses.has(classId)
+        ) {
+            uniqueClasses.set(classId, item);
+        }
+    });
+
+    const availableClasses = Array.from(uniqueClasses.values());
 
     if (!availableClasses.length) {
         grid.innerHTML = `
             <p class="hint">
                 ${role === "sector_admin"
-                    ? "Select schools first to see their classes."
+                    ? "Select schools first to see the classes they offer."
                     : "No classes found for this school."}
             </p>
         `;
@@ -1124,13 +1138,14 @@ function renderClasses() {
     }
 
     grid.innerHTML = availableClasses.map(item => {
-        const selected =
-            selectedClasses.includes(String(item.id));
+        const id = String(item.id);
+        const selected = selectedClasses.includes(id);
 
         return `
-            <button type="button"
+            <button
+                type="button"
                 class="selection-card ${selected ? "selected" : ""}"
-                onclick="toggleClass('${item.id}')">
+                onclick="toggleClass('${id}')">
 
                 ${selected ? "✓ " : ""}
                 ${escapeHTML(item.class_name)}
@@ -1142,8 +1157,6 @@ function renderClasses() {
         `;
     }).join("");
 }
-
-
 /* =========================================
    RENDER SUBJECTS AND MAXIMUM MARK INPUTS
 ========================================= */
@@ -1232,19 +1245,8 @@ function toggleSchool(id) {
 
     if (selectedSchools.includes(id)) {
         selectedSchools = selectedSchools.filter(
-            item => item !== id
+            schoolId => schoolId !== id
         );
-
-        const allowedClasses = options.classes
-            .filter(c =>
-                selectedSchools.includes(String(c.school_id))
-            )
-            .map(c => String(c.id));
-
-        selectedClasses = selectedClasses.filter(id =>
-            allowedClasses.includes(id)
-        );
-
     } else {
         selectedSchools.push(id);
     }
@@ -1252,40 +1254,6 @@ function toggleSchool(id) {
     renderSchools();
     renderClasses();
 }
-
-function toggleClass(id) {
-    id = String(id);
-
-    if (selectedClasses.includes(id)) {
-        selectedClasses = selectedClasses.filter(
-            item => item !== id
-        );
-    } else {
-        selectedClasses.push(id);
-    }
-
-    renderClasses();
-}
-
-function toggleSubject(id) {
-    id = String(id);
-
-    if (selectedSubjects.includes(id)) {
-        selectedSubjects = selectedSubjects.filter(
-            item => item !== id
-        );
-
-        // Remove the deselected subject's maximum mark.
-        delete subjectTotalMarks[id];
-
-    } else {
-        selectedSubjects.push(id);
-    }
-
-    renderSubjects();
-}
-
-
 /* =========================================
    VALIDATE SUBJECT MAXIMUM MARKS
 ========================================= */
