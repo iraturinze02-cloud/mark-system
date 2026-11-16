@@ -435,15 +435,29 @@ async function loadTeacherAssignments() {
 
         let data;
 
-        if (storedRole === "sector_admin") {
-            data = await loadSectorAdminTeacher();
-        } else {
-            data = await fetchJSON("/api/teacher-results");
-            activeTeacher = data.teacher;
-            assignments = data.assignments || [];
-            document.getElementById("teacherName").textContent =
-                data.teacher?.full_name || "Teacher";
-        }
+       
+if (storedRole === "sector_admin") {
+
+    data = await loadSectorAdminTeacher();
+
+} else if (storedRole === "school_admin") {
+
+    data = await loadSchoolAdminTeacher();
+
+} else {
+
+    data = await fetchJSON("/api/teacher-results");
+
+    activeTeacher = data.teacher;
+    assignments = data.assignments || [];
+
+    document.getElementById("teacherName").textContent =
+        data.teacher?.full_name || "Teacher";
+
+    document.getElementById("schoolName").textContent =
+        data.teacher?.school_name || "—";
+}
+
 
         renderAssignments();
 
@@ -533,6 +547,53 @@ async function loadSectorAdminTeacher() {
 
     return results;
 }
+    
+async function loadSchoolAdminTeacher() {
+
+    const targetTeacher =
+        localStorage.getItem("targetTeacher");
+
+    if (!targetTeacher) {
+        throw new Error("Please select a teacher first.");
+    }
+
+    const teacherData = await fetchJSON("/api/teachers");
+
+    const teachers = teacherData.teachers || [];
+
+    const teacher = teachers.find(item =>
+        String(item.id) === String(targetTeacher) ||
+        item.full_name === targetTeacher ||
+        item.phone === targetTeacher
+    );
+
+    if (!teacher) {
+        throw new Error(
+            "The selected teacher was not found in your school."
+        );
+    }
+
+    const results = await fetchJSON(
+        "/api/teacher-results?teacher_id=" +
+        encodeURIComponent(teacher.id)
+    );
+
+    activeTeacher = {
+        id: teacher.id,
+        full_name: teacher.full_name
+    };
+
+    document.getElementById("teacherName").textContent =
+        teacher.full_name || "—";
+
+    document.getElementById("schoolName").textContent =
+        results.teacher?.school_name || "—";
+
+    assignments = results.assignments || [];
+
+    return results;
+}
+
 
 /* =====================================================
    DISPLAY ASSIGNMENTS
