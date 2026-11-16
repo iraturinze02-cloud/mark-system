@@ -820,8 +820,19 @@ async function generateReportCards() {
             }
         );
 
-        const data = await response.json();
+       const responseText = await response.text();
 
+let data;
+
+try {
+    data = JSON.parse(responseText);
+} catch (error) {
+    console.error("API returned HTML or invalid JSON:", responseText);
+
+    throw new Error(
+        `Report card API did not return JSON. HTTP Status: ${response.status}. Check the API file location and Cloudflare deployment.`
+    );
+}
         if (!response.ok || !data.success) {
             throw new Error(
                 data.message || "Unable to generate report cards."
