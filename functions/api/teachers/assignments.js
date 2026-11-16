@@ -93,14 +93,14 @@ export async function onRequestPost(context) {
 
         await client.query(
             `INSERT INTO teacher_assignments (
-                school_id,
-                teacher_id,
-                class_id,
-                subject_id
-            )
-            VALUES ($1, $2, $3, $4)
-            ON CONFLICT (teacher_id, class_id, subject_id)
-            DO NOTHING`,
+    school_id,
+    teacher_id,
+    class_id,
+    subject_id
+)
+VALUES ($1, $2, $3, $4)
+ON CONFLICT (teacher_id, school_id, class_id, subject_id)
+DO NOTHING`,
             [
                 auth.schoolId,
                 teacherId,
