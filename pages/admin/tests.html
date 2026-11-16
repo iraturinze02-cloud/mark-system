@@ -1101,38 +1101,44 @@ function renderSchools() {
    RENDER CLASSES
 ========================================= */
 
+
 function renderClasses() {
     const grid = document.getElementById("classesGrid");
 
-    const allowedSchools = role === "sector_admin"
-        ? selectedSchools
-        : options.schools.map(school => String(school.id));
-
-    // Keep only classes offered by at least one selected school.
-    // Then remove duplicates using the universal class ID.
+    // Classes are universal. Do not filter them by selected schools.
+    // Remove duplicate class IDs because several schools may offer
+    // the same universal class.
     const uniqueClasses = new Map();
 
     options.classes.forEach(item => {
-        const classId = String(item.id);
-        const schoolId = String(item.school_id);
+        const id = String(item.id);
 
-        if (
-            allowedSchools.includes(schoolId) &&
-            !uniqueClasses.has(classId)
-        ) {
-            uniqueClasses.set(classId, item);
+        if (!uniqueClasses.has(id)) {
+            uniqueClasses.set(id, item);
         }
     });
 
-    const availableClasses = Array.from(uniqueClasses.values());
+    const levelOrder = {
+        "Primary": 1,
+        "Lower Secondary": 2,
+        "Upper Secondary": 3
+    };
+
+    const availableClasses = Array.from(uniqueClasses.values())
+        .sort((a, b) => {
+            const levelA = levelOrder[a.class_level] || 99;
+            const levelB = levelOrder[b.class_level] || 99;
+
+            if (levelA !== levelB) {
+                return levelA - levelB;
+            }
+
+            return a.class_name.localeCompare(b.class_name);
+        });
 
     if (!availableClasses.length) {
         grid.innerHTML = `
-            <p class="hint">
-                ${role === "sector_admin"
-                    ? "Select schools first to see the classes they offer."
-                    : "No classes found for this school."}
-            </p>
+            <p class="hint">No classes available.</p>
         `;
         return;
     }
@@ -1157,6 +1163,7 @@ function renderClasses() {
         `;
     }).join("");
 }
+
 /* =========================================
    RENDER SUBJECTS AND MAXIMUM MARK INPUTS
 ========================================= */
@@ -1240,6 +1247,7 @@ function setSubjectTotalMarks(subjectId, value) {
    SELECTION HANDLERS
 ========================================= */
 
+
 function toggleSchool(id) {
     id = String(id);
 
@@ -1251,9 +1259,25 @@ function toggleSchool(id) {
         selectedSchools.push(id);
     }
 
+    // School selection must not remove selected classes.
     renderSchools();
     renderClasses();
 }
+
+function toggleClass(id) {
+    id = String(id);
+
+    if (selectedClasses.includes(id)) {
+        selectedClasses = selectedClasses.filter(
+            classId => classId !== id
+        );
+    } else {
+        selectedClasses.push(id);
+    }
+
+    renderClasses();
+}
+
 /* =========================================
    VALIDATE SUBJECT MAXIMUM MARKS
 ========================================= */
