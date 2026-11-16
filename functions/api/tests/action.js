@@ -141,13 +141,11 @@ function validateSubjectMarks(subjectIds, subjectMarks) {
    - close
    - delete
 
-   Permissions are based on organizational scope.
-
    Sector admin:
-   Manages Tests belonging to their sector.
+   Manages tests belonging to their sector.
 
    School admin:
-   Manages Tests belonging to their school.
+   Manages tests belonging to their school.
 ===================================================== */
 
 export async function onRequestPost(context) {
@@ -212,10 +210,10 @@ export async function onRequestPost(context) {
         transactionStarted = true;
 
         /* ---------------------------------------------
-           FIND TEST AND LOCK IT
+           FIND AND LOCK TEST
 
-           Authorization is based on the administrator's
-           organizational scope, not who created it.
+           Authorization is based on organizational
+           scope, not on who created the test.
         --------------------------------------------- */
 
         let testResult;
@@ -376,8 +374,6 @@ export async function onRequestPost(context) {
 
         /* ---------------------------------------------
            CLOSE TEST
-
-           Record the administrator who closed it.
         --------------------------------------------- */
 
         if (action === "close") {
@@ -564,18 +560,33 @@ export async function onRequestPost(context) {
             }
 
             /* -----------------------------------------
-               VALIDATE CLASSES
+               VALIDATE CLASSES USING UNIVERSAL CLASSES
 
-               Every class must belong to one of the
-               selected schools.
+               classes no longer contains school_id.
+
+               A school offers a class when:
+               school_levels.school_id = selected school
+               school_levels.level_id = classes.level_id
+
+               A selected class can therefore be offered
+               by multiple selected schools.
             ----------------------------------------- */
 
             const validClasses = await client.query(
                 `
-                SELECT id, school_id
-                FROM classes
-                WHERE id = ANY($1::bigint[])
-                  AND school_id = ANY($2::bigint[])
+                SELECT
+                    c.id,
+                    c.class_name,
+                    c.level_id,
+                    sl.school_id
+                FROM classes c
+                INNER JOIN school_levels sl
+                    ON sl.level_id = c.level_id
+                WHERE c.id = ANY($1::bigint[])
+                  AND sl.school_id = ANY($2::bigint[])
+                ORDER BY
+                    sl.school_id,
+                    c.class_name
                 `,
                 [
                     classIds,
@@ -583,13 +594,26 @@ export async function onRequestPost(context) {
                 ]
             );
 
-            if (validClasses.rows.length !== classIds.length) {
+            /* -----------------------------------------
+               CONFIRM EVERY SELECTED CLASS IS OFFERED
+               BY AT LEAST ONE SELECTED SCHOOL
+            ----------------------------------------- */
+
+            const validClassIds = new Set(
+                validClasses.rows.map(row => String(row.id))
+            );
+
+            const missingClassIds = classIds.filter(
+                id => !validClassIds.has(id)
+            );
+
+            if (missingClassIds.length > 0) {
                 await client.query("ROLLBACK");
                 transactionStarted = false;
 
                 return json({
                     success: false,
-                    message: "One or more selected classes do not belong to the selected schools."
+                    message: "One or more selected classes are not offered by the selected schools."
                 }, 400);
             }
 
@@ -639,10 +663,17 @@ export async function onRequestPost(context) {
             /* -----------------------------------------
                REMOVE OLD RELATIONSHIPS
 
-               Removing test_schools also removes its
-               dependent test_classes if the existing
-               foreign key uses ON DELETE CASCADE.
+               Delete test_classes before test_schools
+               to respect possible foreign-key references.
             ----------------------------------------- */
+
+            await client.query(
+                `
+                DELETE FROM test_classes
+                WHERE test_id = $1
+                `,
+                [testId]
+            );
 
             await client.query(
                 `
@@ -662,6 +693,8 @@ export async function onRequestPost(context) {
 
             /* -----------------------------------------
                INSERT UPDATED SCHOOLS FIRST
+
+               test_classes may reference test_schools.
             ----------------------------------------- */
 
             for (const schoolId of schoolIds) {
@@ -681,7 +714,11 @@ export async function onRequestPost(context) {
             }
 
             /* -----------------------------------------
-               INSERT UPDATED CLASSES
+               INSERT SCHOOL/CLASS COMBINATIONS
+
+               Example:
+               If P6 is offered by School 1 and School 2,
+               two test_classes records are inserted.
             ----------------------------------------- */
 
             for (const selectedClass of validClasses.rows) {
@@ -703,7 +740,7 @@ export async function onRequestPost(context) {
             }
 
             /* -----------------------------------------
-               INSERT UPDATED SUBJECTS WITH MAXIMUM MARKS
+               INSERT SUBJECTS WITH MAXIMUM MARKS
             ----------------------------------------- */
 
             for (const subject of subjectMarks) {
