@@ -1119,17 +1119,22 @@ function renderClasses() {
     // For school_admin, the API already returns classes
     // belonging to that administrator's school.
     const availableClasses = options.classes.filter(item => {
-        if (role === "school_admin") {
-            return true;
-        }
+    if (role === "school_admin") {
+        return true;
+    }
 
-        const offeredBy = (item.school_ids || [])
-            .map(id => String(id));
+    // Support both the new school_ids array and
+    // the older school_id field.
+    const offeredBy = Array.isArray(item.school_ids)
+        ? item.school_ids.map(id => String(id))
+        : item.school_id !== undefined
+            ? [String(item.school_id)]
+            : [];
 
-        return selectedSchools.some(schoolId =>
-            offeredBy.includes(String(schoolId))
-        );
-    });
+    return selectedSchools.some(schoolId =>
+        offeredBy.includes(String(schoolId))
+    );
+});
 
     // Remove duplicate universal class IDs.
     const uniqueClasses = new Map();
