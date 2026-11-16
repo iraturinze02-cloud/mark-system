@@ -1342,7 +1342,7 @@ function toggleSchool(id) {
         selectedSchools.push(id);
     }
 
-    // School selection must not remove selected classes.
+   // School selection must not remove selected classes.
     renderSchools();
     renderClasses();
 }
@@ -1359,6 +1359,30 @@ function toggleClass(id) {
     }
 
     renderClasses();
+}
+    function toggleSubject(id) {
+    id = String(id);
+
+    const index = selectedSubjects.indexOf(id);
+
+    if (index !== -1) {
+        // Remove the subject from the selection.
+        selectedSubjects.splice(index, 1);
+
+        // Also remove its saved maximum mark.
+        delete subjectTotalMarks[id];
+
+    } else {
+        // Add the subject.
+        selectedSubjects.push(id);
+
+        // Start with a blank maximum mark.
+        if (subjectTotalMarks[id] === undefined) {
+            subjectTotalMarks[id] = "";
+        }
+    }
+
+    renderSubjects();
 }
 
 /* =========================================
