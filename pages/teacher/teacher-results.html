@@ -1,0 +1,816 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teacher Results</title>
+    <link rel="stylesheet" href="style.css">
+
+    <style>
+        .results-page {
+            max-width: 1200px;
+            margin: 25px auto;
+            padding: 20px;
+        }
+
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .results-header h1 {
+            margin: 0;
+        }
+
+        .results-controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .results-controls label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 7px;
+        }
+
+        .results-controls select {
+            width: 100%;
+            padding: 11px;
+            border: 1px solid #ccc;
+            border-radius: 7px;
+            background: white;
+        }
+
+        .results-card {
+            background: white;
+            border-radius: 10px;
+            padding: 18px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,.07);
+        }
+
+        .teacher-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+        }
+
+        .info-item small {
+            display: block;
+            color: #666;
+            margin-bottom: 4px;
+        }
+
+        .info-item strong {
+            overflow-wrap: anywhere;
+        }
+
+        .table-container {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 600px;
+        }
+
+        .results-table th,
+        .results-table td {
+            padding: 12px;
+            border-bottom: 1px solid #e5e5e5;
+            text-align: left;
+        }
+
+        .results-table th {
+            background: #f5f6f8;
+        }
+
+        .grade {
+            font-weight: 700;
+        }
+
+        .analysis-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px;
+        }
+
+        .analysis-item {
+            background: #f5f6f8;
+            border-radius: 8px;
+            padding: 15px;
+        }
+
+        .analysis-item small {
+            display: block;
+            color: #666;
+            margin-bottom: 7px;
+        }
+
+        .analysis-item strong {
+            font-size: 22px;
+        }
+
+        .results-message {
+            padding: 13px;
+            border-radius: 7px;
+            margin: 15px 0;
+            display: none;
+        }
+
+        .results-message.error {
+            display: block;
+            background: #fdecec;
+            color: #a32020;
+        }
+
+        .results-message.info {
+            display: block;
+            background: #edf4ff;
+            color: #174a83;
+        }
+
+        .download-btn {
+            border: none;
+            border-radius: 7px;
+            padding: 11px 17px;
+            cursor: pointer;
+            background: #1769aa;
+            color: white;
+            font-weight: 600;
+        }
+
+        .download-btn:disabled {
+            opacity: .5;
+            cursor: not-allowed;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 25px 10px;
+            color: #666;
+        }
+
+        @media print {
+            .results-controls,
+            .download-btn,
+            .results-header button {
+                display: none !important;
+            }
+
+            .results-page {
+                margin: 0;
+                padding: 0;
+            }
+
+            .results-card {
+                box-shadow: none;
+                border: 1px solid #ddd;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="results-page">
+
+    <div class="results-header">
+        <h1>Teacher Results</h1>
+        <button
+            type="button"
+            class="download-btn"
+            id="downloadBtn"
+            onclick="downloadResults()"
+            disabled
+        >
+            Download Results
+        </button>
+    </div>
+
+    <div id="message" class="results-message"></div>
+
+    <div class="results-card">
+        <div class="results-controls">
+
+            <div>
+                <label for="assignmentSelect">Class and Subject</label>
+                <select id="assignmentSelect" disabled>
+                    <option value="">Loading assignments...</option>
+                </select>
+            </div>
+
+            <div>
+                <label for="testSelect">Test</label>
+                <select id="testSelect" disabled>
+                    <option value="">Select a test</option>
+                </select>
+            </div>
+
+        </div>
+
+        <div class="teacher-info">
+            <div class="info-item">
+                <small>Teacher</small>
+                <strong id="teacherName">—</strong>
+            </div>
+
+            <div class="info-item">
+                <small>School</small>
+                <strong id="schoolName">—</strong>
+            </div>
+
+            <div class="info-item">
+                <small>Class</small>
+                <strong id="className">—</strong>
+            </div>
+
+            <div class="info-item">
+                <small>Subject</small>
+                <strong id="subjectName">—</strong>
+            </div>
+
+            <div class="info-item">
+                <small>Test</small>
+                <strong id="testName">—</strong>
+            </div>
+
+            <div class="info-item">
+                <small>Maximum Mark</small>
+                <strong id="maximumMark">—</strong>
+            </div>
+        </div>
+    </div>
+
+    <div class="results-card">
+        <h3>Students' Results</h3>
+
+        <div class="table-container">
+            <table class="results-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Student Name</th>
+                        <th>Marks</th>
+                        <th>Category</th>
+                    </tr>
+                </thead>
+
+                <tbody id="resultsBody">
+                    <tr>
+                        <td colspan="4" class="empty-state">
+                            Select an assignment and test to view results.
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="results-card">
+        <h3>Results Analysis</h3>
+
+        <div class="analysis-grid">
+            <div class="analysis-item">
+                <small>Total Students</small>
+                <strong id="totalStudents">0</strong>
+            </div>
+
+            <div class="analysis-item">
+                <small>Passed</small>
+                <strong id="passedStudents">0</strong>
+            </div>
+
+            <div class="analysis-item">
+                <small>Failed</small>
+                <strong id="failedStudents">0</strong>
+            </div>
+
+            <div class="analysis-item">
+                <small>Pass Percentage</small>
+                <strong id="passPercentage">0%</strong>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+"use strict";
+
+/* =====================================================
+   PAGE STATE
+===================================================== */
+
+let assignments = [];
+let activeTeacher = null;
+let selectedAssignment = null;
+let selectedTest = null;
+let currentResults = [];
+
+/* =====================================================
+   ELEMENTS
+===================================================== */
+
+const assignmentSelect =
+    document.getElementById("assignmentSelect");
+
+const testSelect =
+    document.getElementById("testSelect");
+
+const resultsBody =
+    document.getElementById("resultsBody");
+
+const messageBox =
+    document.getElementById("message");
+
+const downloadBtn =
+    document.getElementById("downloadBtn");
+
+/* =====================================================
+   HELPERS
+===================================================== */
+
+function escapeHTML(value) {
+    return String(value ?? "").replace(/[&<>"']/g, character => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#039;"
+    })[character]);
+}
+
+function showMessage(message, type = "info") {
+    messageBox.textContent = message;
+    messageBox.className = "results-message " + type;
+}
+
+function clearMessage() {
+    messageBox.textContent = "";
+    messageBox.className = "results-message";
+}
+
+async function fetchJSON(url) {
+    const response = await fetch(url, {
+        method: "GET",
+        credentials: "same-origin",
+        headers: {
+            "Accept": "application/json"
+        }
+    });
+
+    const data = await response.json().catch(() => null);
+
+    if (!response.ok || !data || data.success !== true) {
+        throw new Error(
+            data?.message || "The request could not be completed."
+        );
+    }
+
+    return data;
+}
+
+function gradeForPercentage(percentage) {
+    if (percentage >= 80) return "A - Excellent";
+    if (percentage >= 75) return "B - Very Good";
+    if (percentage >= 70) return "C - Good";
+    if (percentage >= 65) return "D - Satisfactory";
+    if (percentage >= 60) return "E - Adequate";
+    if (percentage >= 50) return "S - Minimum Pass";
+    return "F - Fail";
+}
+
+function resetResults(message) {
+    currentResults = [];
+    selectedTest = null;
+
+    resultsBody.innerHTML = `
+        <tr>
+            <td colspan="4" class="empty-state">
+                ${escapeHTML(message)}
+            </td>
+        </tr>
+    `;
+
+    document.getElementById("testName").textContent = "—";
+    document.getElementById("maximumMark").textContent = "—";
+
+    document.getElementById("totalStudents").textContent = "0";
+    document.getElementById("passedStudents").textContent = "0";
+    document.getElementById("failedStudents").textContent = "0";
+    document.getElementById("passPercentage").textContent = "0%";
+
+    downloadBtn.disabled = true;
+}
+
+/* =====================================================
+   LOAD TEACHER'S ASSIGNMENTS
+===================================================== */
+
+async function loadTeacherAssignments() {
+    clearMessage();
+
+    try {
+        const role = sessionStorage.getItem("unused-role-check");
+
+        /*
+         * The server determines the real role from the
+         * authenticated session. This page uses the
+         * navigation context only to select the display.
+         */
+
+        const storedRole =
+            localStorage.getItem("userRole") ||
+            localStorage.getItem("role");
+
+        let data;
+
+        if (storedRole === "sector_admin") {
+            data = await loadSectorAdminTeacher();
+        } else {
+            data = await fetchJSON("/api/teacher-results");
+            activeTeacher = data.teacher;
+            assignments = data.assignments || [];
+            document.getElementById("teacherName").textContent =
+                data.teacher?.full_name || "Teacher";
+        }
+
+        renderAssignments();
+
+        if (assignments.length === 0) {
+            showMessage(
+                "No teaching assignments were found for this teacher."
+            );
+            resetResults("No assignments are available.");
+            return;
+        }
+
+    } catch (error) {
+        console.error(error);
+        showMessage(error.message, "error");
+        resetResults("Unable to load results.");
+    }
+}
+
+/* =====================================================
+   SECTOR ADMIN: LOAD SELECTED SCHOOL AND TEACHER
+===================================================== */
+
+async function loadSectorAdminTeacher() {
+    const targetSchoolId =
+        localStorage.getItem("targetSchoolId");
+
+    const targetSchoolName =
+        localStorage.getItem("targetSchool");
+
+    const targetTeacher =
+        localStorage.getItem("targetTeacher");
+
+    if (!targetTeacher) {
+        throw new Error("No teacher has been selected.");
+    }
+
+    const data = await fetchJSON("/api/sector-schools");
+
+    const schools = data.schools || [];
+
+    const school = schools.find(item =>
+        targetSchoolId
+            ? String(item.id) === String(targetSchoolId)
+            : item.school_name === targetSchoolName
+    );
+
+    if (!school) {
+        throw new Error(
+            "The selected school could not be found in your sector."
+        );
+    }
+
+    const teachers = school.teachers || [];
+
+    const teacher = teachers.find(item =>
+        String(item.id) === String(targetTeacher) ||
+        item.full_name === targetTeacher ||
+        item.phone === targetTeacher
+    );
+
+    if (!teacher) {
+        throw new Error(
+            "The selected teacher could not be found in this school."
+        );
+    }
+
+    const results = await fetchJSON(
+        "/api/teacher-results?school_id=" +
+        encodeURIComponent(school.id) +
+        "&teacher_id=" +
+        encodeURIComponent(teacher.id)
+    );
+
+    activeTeacher = {
+        id: teacher.id,
+        full_name: teacher.full_name,
+        school_name: school.school_name
+    };
+
+    document.getElementById("teacherName").textContent =
+        teacher.full_name || "—";
+
+    document.getElementById("schoolName").textContent =
+        school.school_name || "—";
+
+    assignments = results.assignments || [];
+
+    return results;
+}
+
+/* =====================================================
+   DISPLAY ASSIGNMENTS
+===================================================== */
+
+function renderAssignments() {
+    assignmentSelect.innerHTML = "";
+
+    if (assignments.length === 0) {
+        assignmentSelect.innerHTML =
+            '<option value="">No assignments available</option>';
+
+        assignmentSelect.disabled = true;
+        testSelect.disabled = true;
+        return;
+    }
+
+    assignments.forEach((assignment, index) => {
+        const option = document.createElement("option");
+
+        option.value = String(index);
+        option.textContent =
+            assignment.class_name + " - " +
+            assignment.subject_name;
+
+        assignmentSelect.appendChild(option);
+    });
+
+    assignmentSelect.disabled = false;
+
+    assignmentSelect.addEventListener(
+        "change",
+        changeAssignment
+    );
+
+    testSelect.addEventListener(
+        "change",
+        changeTest
+    );
+
+    changeAssignment();
+}
+
+/* =====================================================
+   CHANGE ASSIGNMENT
+===================================================== */
+
+function changeAssignment() {
+    const index = Number(assignmentSelect.value);
+
+    selectedAssignment = assignments[index] || null;
+
+    if (!selectedAssignment) {
+        testSelect.innerHTML =
+            '<option value="">No test available</option>';
+
+        testSelect.disabled = true;
+        resetResults("Select an assignment.");
+        return;
+    }
+
+    document.getElementById("schoolName").textContent =
+        selectedAssignment.school_name || "—";
+
+    document.getElementById("className").textContent =
+        selectedAssignment.class_name || "—";
+
+    document.getElementById("subjectName").textContent =
+        selectedAssignment.subject_name || "—";
+
+    const tests = selectedAssignment.tests || [];
+
+    testSelect.innerHTML = "";
+
+    if (tests.length === 0) {
+        testSelect.innerHTML =
+            '<option value="">No tests available</option>';
+
+        testSelect.disabled = true;
+        resetResults("No tests have been assigned to this class and subject.");
+        return;
+    }
+
+    tests.forEach((test, testIndex) => {
+        const option = document.createElement("option");
+
+        option.value = String(testIndex);
+        option.textContent =
+            test.name + " (" + test.status + ")";
+
+        testSelect.appendChild(option);
+    });
+
+    testSelect.disabled = false;
+    changeTest();
+}
+
+/* =====================================================
+   CHANGE TEST
+===================================================== */
+
+function changeTest() {
+    if (!selectedAssignment) return;
+
+    const index = Number(testSelect.value);
+
+    selectedTest =
+        selectedAssignment.tests[index] || null;
+
+    if (!selectedTest) {
+        resetResults("Select a test.");
+        return;
+    }
+
+    document.getElementById("testName").textContent =
+        selectedTest.name || "—";
+
+    document.getElementById("maximumMark").textContent =
+        selectedTest.maximum_mark;
+
+    renderResults();
+}
+
+/* =====================================================
+   RENDER RESULTS
+===================================================== */
+
+function renderResults() {
+    clearMessage();
+
+    const students = selectedTest?.students || [];
+    const maximumMark = Number(selectedTest?.maximum_mark);
+
+    currentResults = students.map(student => {
+        const mark = student.mark === null
+            ? null
+            : Number(student.mark);
+
+        const percentage =
+            mark === null || !maximumMark
+                ? null
+                : (mark / maximumMark) * 100;
+
+        return {
+            ...student,
+            percentage,
+            category: percentage === null
+                ? "Not recorded"
+                : gradeForPercentage(percentage)
+        };
+    });
+
+    if (currentResults.length === 0) {
+        resetResults("There are no active students in this class.");
+        return;
+    }
+
+    resultsBody.innerHTML = currentResults.map((student, index) => `
+        <tr>
+            <td>${index + 1}</td>
+            <td>${escapeHTML(student.name)}</td>
+            <td>
+                ${student.mark === null
+                    ? "Not recorded"
+                    : escapeHTML(student.mark) + " / " +
+                      escapeHTML(maximumMark)}
+            </td>
+            <td class="grade">
+                ${escapeHTML(student.category)}
+            </td>
+        </tr>
+    `).join("");
+
+    updateAnalysis();
+    downloadBtn.disabled = false;
+}
+
+/* =====================================================
+   RESULTS ANALYSIS
+===================================================== */
+
+function updateAnalysis() {
+    const recorded = currentResults.filter(
+        student => student.percentage !== null
+    );
+
+    const passed = recorded.filter(
+        student => student.percentage >= 50
+    ).length;
+
+    const failed = recorded.length - passed;
+
+    const percentage = recorded.length
+        ? (passed / recorded.length) * 100
+        : 0;
+
+    document.getElementById("totalStudents").textContent =
+        currentResults.length;
+
+    document.getElementById("passedStudents").textContent =
+        passed;
+
+    document.getElementById("failedStudents").textContent =
+        failed;
+
+    document.getElementById("passPercentage").textContent =
+        percentage.toFixed(1) + "%";
+}
+
+/* =====================================================
+   DOWNLOAD RESULTS AS CSV
+===================================================== */
+
+function downloadResults() {
+    if (!selectedAssignment || !selectedTest ||
+        currentResults.length === 0) {
+        return;
+    }
+
+    const maximumMark = selectedTest.maximum_mark;
+
+    const rows = [
+        ["Teacher", activeTeacher?.full_name || ""],
+        ["School", selectedAssignment.school_name || ""],
+        ["Class", selectedAssignment.class_name],
+        ["Subject", selectedAssignment.subject_name],
+        ["Test", selectedTest.name],
+        ["Maximum Mark", maximumMark],
+        [],
+        ["No.", "Student Name", "Marks", "Category"]
+    ];
+
+    currentResults.forEach((student, index) => {
+        rows.push([
+            index + 1,
+            student.name,
+            student.mark === null
+                ? "Not recorded"
+                : student.mark + " / " + maximumMark,
+            student.category
+        ]);
+    });
+
+    const csv = rows.map(row =>
+        row.map(value => {
+            const text = String(value ?? "");
+            return '"' + text.replace(/"/g, '""') + '"';
+        }).join(",")
+    ).join("\r\n");
+
+    const blob = new Blob(
+        ["\uFEFF" + csv],
+        { type: "text/csv;charset=utf-8;" }
+    );
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+
+    link.href = url;
+    link.download =
+        (selectedAssignment.class_name + "_" +
+         selectedAssignment.subject_name + "_" +
+         selectedTest.name)
+        .replace(/[^a-z0-9_-]/gi, "_") + "_results.csv";
+
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+
+    URL.revokeObjectURL(url);
+}
+
+/* =====================================================
+   START PAGE
+===================================================== */
+
+loadTeacherAssignments();
+</script>
+
+</body>
+</html>
