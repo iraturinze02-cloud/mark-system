@@ -55,7 +55,27 @@ function validateLevelIds(value) {
     return { levelIds };
 }
 
-async function ensureSchoolLevels(client, schoolId, levelIds) {
+/*
+   Synchronize the school's education levels.
+
+   - Add newly selected levels.
+   - Remove unchecked levels.
+   - Preserve all other school data.
+
+   The database trigger will prevent removing a level
+   that is still used by existing records.
+*/
+async function syncSchoolLevels(client, schoolId, levelIds) {
+
+    // Remove levels that are no longer selected.
+    await client.query(
+        `DELETE FROM school_levels
+         WHERE school_id = $1
+           AND NOT (level_id = ANY($2::bigint[]))`,
+        [schoolId, levelIds]
+    );
+
+    // Add selected levels that do not already exist.
     for (const levelId of levelIds) {
         await client.query(
             `INSERT INTO school_levels (school_id, level_id)
@@ -71,6 +91,7 @@ async function ensureSchoolLevels(client, schoolId, levelIds) {
 ===================================================== */
 
 export async function onRequestPost(context) {
+
     const auth = await requireSectorAdmin(context);
 
     if (auth.error) return auth.error;
@@ -92,7 +113,6 @@ export async function onRequestPost(context) {
     const password = String(data.password || "");
     const schoolName = String(data.school_name || "").trim();
 
-    // Validate selected education levels.
     const levelValidation = validateLevelIds(data.level_ids);
 
     if (levelValidation.error) {
@@ -104,7 +124,10 @@ export async function onRequestPost(context) {
 
     const selectedLevelIds = levelValidation.levelIds;
 
-    // Validate administrator details.
+    /* =============================================
+       VALIDATE ADMINISTRATOR DETAILS
+    ============================================= */
+
     if (
         !id ||
         !/^\d+$/.test(id) ||
@@ -140,6 +163,7 @@ export async function onRequestPost(context) {
     let transactionStarted = false;
 
     try {
+
         client = await connectDB(context);
 
         await client.query("BEGIN");
@@ -152,7 +176,8 @@ export async function onRequestPost(context) {
         const adminResult = await client.query(
             `SELECT u.id, u.school_id
              FROM users u
-             JOIN schools s ON s.id = u.school_id
+             INNER JOIN schools s
+                ON s.id = u.school_id
              WHERE u.id = $1
                AND u.role = 'school_admin'
                AND s.sector_id = $2
@@ -217,8 +242,11 @@ export async function onRequestPost(context) {
         let schoolId;
 
         if (schoolResult.rows.length > 0) {
+
             schoolId = schoolResult.rows[0].id;
+
         } else {
+
             const schoolCode =
                 `SCH-${Date.now()}-${crypto.randomUUID()
                     .slice(0, 8).toUpperCase()}`;
@@ -235,13 +263,17 @@ export async function onRequestPost(context) {
         }
 
         /* =============================================
-           SAVE SCHOOL EDUCATION LEVELS
+           UPDATE SCHOOL EDUCATION LEVELS
 
-           Existing levels are preserved.
-           Selected levels are added if missing.
+           This now adds selected levels and removes
+           unchecked levels.
+
+           Existing database protection triggers remain
+           active. If a level is still being used by
+           records, the transaction will be rejected.
         ============================================= */
 
-        await ensureSchoolLevels(
+        await syncSchoolLevels(
             client,
             schoolId,
             selectedLevelIds
@@ -254,6 +286,7 @@ export async function onRequestPost(context) {
         let result;
 
         if (password) {
+
             const passwordHash = await bcrypt.hash(password, 12);
 
             result = await client.query(
@@ -273,7 +306,9 @@ export async function onRequestPost(context) {
                     id
                 ]
             );
+
         } else {
+
             result = await client.query(
                 `UPDATE users
                  SET full_name = $1,
@@ -300,17 +335,29 @@ export async function onRequestPost(context) {
 
         return json({
             success: true,
-            message: "School administrator updated successfully.",
+            message: "School administrator and school education levels updated successfully.",
             admin: result.rows[0]
         });
 
     } catch (error) {
+
         if (client && transactionStarted) {
             await client.query("ROLLBACK").catch(() => {});
             transactionStarted = false;
         }
 
         console.error("Update school admin error:", error);
+
+        /*
+           PostgreSQL triggers commonly use P0001
+           for explicitly raised exceptions.
+        */
+        if (error.code === "P0001") {
+            return json({
+                success: false,
+                message: "One or more education levels cannot be removed because existing school records still depend on them."
+            }, 409);
+        }
 
         if (error.code === "23505") {
             return json({
@@ -321,10 +368,11 @@ export async function onRequestPost(context) {
 
         return json({
             success: false,
-            message: "Could not update the school administrator."
+            message: "Could not update the school administrator and education levels."
         }, 500);
 
     } finally {
+
         if (client) {
             await client.end().catch(() => {});
         }
