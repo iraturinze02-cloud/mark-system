@@ -39,22 +39,46 @@ function validClosingAt(value) {
     return date.toISOString();
 }
 
+/* =====================================================
+   VALIDATE SUBJECT MAXIMUM MARKS
+
+   DEFAULT:
+   If maximum marks are not supplied, use 100.
+
+   If an individual subject's maximum mark is blank,
+   use 100 for that subject.
+
+   Explicit positive values are preserved.
+===================================================== */
+
 function validateSubjectMarks(subjectIds, subjectMarks) {
+    const marksMap = new Map(
+        subjectIds.map(subjectId => [subjectId, 100])
+    );
+
+    // No maximum marks supplied: default all to 100.
+    if (
+        subjectMarks === null ||
+        subjectMarks === undefined ||
+        (Array.isArray(subjectMarks) && subjectMarks.length === 0)
+    ) {
+        return {
+            valid: true,
+            marks: subjectIds.map(subjectId => ({
+                subject_id: subjectId,
+                total_marks: 100
+            }))
+        };
+    }
+
     if (!Array.isArray(subjectMarks)) {
         return {
             valid: false,
-            message: "Maximum marks must be provided for every selected subject."
+            message: "Invalid subject maximum marks data."
         };
     }
 
-    if (subjectMarks.length !== subjectIds.length) {
-        return {
-            valid: false,
-            message: "Provide maximum marks for every selected subject."
-        };
-    }
-
-    const marksMap = new Map();
+    const suppliedSubjects = new Set();
 
     for (const item of subjectMarks) {
         if (!item || typeof item !== "object") {
@@ -67,10 +91,6 @@ function validateSubjectMarks(subjectIds, subjectMarks) {
         const subjectId = String(
             item.subject_id ?? item.subjectId ?? ""
         ).trim();
-
-        const totalMarks = Number(
-            item.total_marks ?? item.totalMarks
-        );
 
         if (!/^\d+$/.test(subjectId)) {
             return {
@@ -86,12 +106,28 @@ function validateSubjectMarks(subjectIds, subjectMarks) {
             };
         }
 
-        if (marksMap.has(subjectId)) {
+        if (suppliedSubjects.has(subjectId)) {
             return {
                 valid: false,
                 message: "Duplicate subject maximum marks were provided."
             };
         }
+
+        suppliedSubjects.add(subjectId);
+
+        const rawMarks = item.total_marks ?? item.totalMarks;
+
+        // Blank maximum mark: default to 100.
+        if (
+            rawMarks === null ||
+            rawMarks === undefined ||
+            String(rawMarks).trim() === ""
+        ) {
+            marksMap.set(subjectId, 100);
+            continue;
+        }
+
+        const totalMarks = Number(rawMarks);
 
         if (
             !Number.isFinite(totalMarks) ||
@@ -99,20 +135,11 @@ function validateSubjectMarks(subjectIds, subjectMarks) {
         ) {
             return {
                 valid: false,
-                message: "Every subject must have a positive maximum mark."
+                message: "Maximum marks must be a positive number."
             };
         }
 
         marksMap.set(subjectId, totalMarks);
-    }
-
-    for (const subjectId of subjectIds) {
-        if (!marksMap.has(subjectId)) {
-            return {
-                valid: false,
-                message: "Provide maximum marks for every selected subject."
-            };
-        }
     }
 
     return {
@@ -678,6 +705,8 @@ export async function onRequestPost(context) {
 
     /* ---------------------------------------------
        VALIDATE MAXIMUM MARKS FOR EACH SUBJECT
+
+       Missing or blank values default to 100.
     --------------------------------------------- */
 
     const subjectMarksValidation = validateSubjectMarks(
@@ -893,6 +922,9 @@ export async function onRequestPost(context) {
 
         /* ---------------------------------------------
            INSERT TEST SUBJECTS WITH MAXIMUM MARKS
+
+           Missing or blank maximum marks are saved
+           as 100 by validateSubjectMarks().
         --------------------------------------------- */
 
         for (const subject of subjectMarks) {
