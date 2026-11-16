@@ -1,0 +1,593 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sector Schools</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    margin: 0;
+    background: #f4f6fb;
+    color: #222;
+}
+
+header {
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    color: white;
+    padding: 22px 15px;
+    text-align: center;
+}
+
+header h1 {
+    margin: 0;
+    font-size: 24px;
+}
+
+header p {
+    margin: 7px 0 0;
+    font-size: 14px;
+}
+
+.container {
+    width: 95%;
+    max-width: 1200px;
+    margin: auto;
+    padding: 20px 0;
+}
+
+.page-summary {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.summary-count {
+    font-weight: 600;
+    color: #334155;
+}
+
+.school-card {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 25px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+}
+
+.school-title {
+    font-size: 20px;
+    font-weight: bold;
+    color: #1d4ed8;
+    margin-bottom: 15px;
+    border-left: 5px solid #2563eb;
+    padding-left: 10px;
+}
+
+.school-status {
+    display: inline-block;
+    font-size: 12px;
+    padding: 4px 9px;
+    border-radius: 20px;
+    margin-left: 8px;
+    background: #dcfce7;
+    color: #166534;
+    vertical-align: middle;
+}
+
+.admin-box {
+    background: #eef4ff;
+    padding: 15px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.admin-info {
+    line-height: 1.8;
+}
+
+.admin-info strong {
+    color: #334155;
+}
+
+.section-title {
+    font-size: 16px;
+    font-weight: 700;
+    margin: 22px 0 10px;
+    color: #334155;
+}
+
+.table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+    min-width: 650px;
+}
+
+th {
+    background: #1d4ed8;
+    color: white;
+    padding: 11px;
+    text-align: left;
+    white-space: nowrap;
+}
+
+td {
+    padding: 11px;
+    border-bottom: 1px solid #eee;
+    vertical-align: top;
+}
+
+tr:hover {
+    background: #f9fbff;
+}
+
+.assignment {
+    margin-bottom: 5px;
+    font-size: 13px;
+}
+
+.btn {
+    border: none;
+    padding: 9px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    background: #2563eb;
+    color: white;
+}
+
+.btn:hover {
+    background: #1d4ed8;
+}
+
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.teacher-link {
+    color: #2563eb;
+    cursor: pointer;
+    font-weight: 600;
+    border: none;
+    background: none;
+    padding: 5px;
+}
+
+.teacher-link:hover {
+    text-decoration: underline;
+}
+
+.empty-message {
+    color: #64748b;
+    font-size: 14px;
+    padding: 12px 0;
+}
+
+.loading {
+    text-align: center;
+    padding: 40px 15px;
+    color: #64748b;
+}
+
+.error-message {
+    background: #fee2e2;
+    color: #991b1b;
+    padding: 15px;
+    border-radius: 9px;
+    margin: 15px 0;
+}
+
+.retry-btn {
+    margin-top: 10px;
+}
+
+@media(max-width:600px) {
+    .school-card {
+        padding: 14px;
+    }
+
+    .school-title {
+        font-size: 18px;
+    }
+
+    .admin-box {
+        align-items: flex-start;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <h1>SECTOR SCHOOLS</h1>
+    <p>View schools, administrators and teachers</p>
+</header>
+
+<div class="container">
+
+    <div class="page-summary">
+        <div class="summary-count" id="schoolCount">
+            Loading schools...
+        </div>
+    </div>
+
+    <div id="schoolsContainer" class="loading">
+        Loading schools and staff...
+    </div>
+
+</div>
+
+<script>
+/* =====================================================
+   SECURITY GUARD
+===================================================== */
+
+const role = localStorage.getItem("role");
+
+if (role !== "sector_admin") {
+    alert("Access denied. Sector administrators only.");
+    window.location.href = "index.html";
+}
+
+/*
+   The browser role is only a navigation check.
+   Actual authorization is enforced by the API using
+   the authenticated HttpOnly session cookie.
+*/
+
+/* =====================================================
+   HELPERS
+===================================================== */
+
+const container = document.getElementById("schoolsContainer");
+const schoolCount = document.getElementById("schoolCount");
+
+function escapeHTML(value) {
+    return String(value ?? "").replace(/[&<>"']/g, char => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
+    })[char]);
+}
+
+function displayStatus(status) {
+    const value = String(status || "unknown");
+
+    return escapeHTML(
+        value.charAt(0).toUpperCase() + value.slice(1)
+    );
+}
+
+async function readResponse(response) {
+    let data;
+
+    try {
+        data = await response.json();
+    } catch {
+        throw new Error("The server returned an invalid response.");
+    }
+
+    if (!response.ok || data.success === false) {
+        throw new Error(
+            data.message || "Failed to load sector schools."
+        );
+    }
+
+    return data;
+}
+
+/* =====================================================
+   LOAD SECTOR SCHOOLS
+===================================================== */
+
+async function loadSchools() {
+
+    container.className = "loading";
+    container.innerHTML = "Loading schools and staff...";
+    schoolCount.textContent = "Loading schools...";
+
+    try {
+
+        const response = await fetch("/api/sector-schools", {
+            method: "GET",
+            credentials: "same-origin",
+            headers: {
+                "Accept": "application/json"
+            }
+        });
+
+        const data = await readResponse(response);
+
+        const schools = Array.isArray(data.schools)
+            ? data.schools
+            : [];
+
+        schoolCount.textContent =
+            `${schools.length} school${schools.length === 1 ? "" : "s"} found`;
+
+        if (schools.length === 0) {
+            container.className = "";
+            container.innerHTML = `
+                <div class="empty-message">
+                    No schools have been registered in this sector yet.
+                </div>
+            `;
+            return;
+        }
+
+        container.className = "";
+
+        container.innerHTML = schools.map((school, index) => {
+
+            const schoolId = String(school.id);
+            const schoolName = school.school_name || "Unnamed School";
+
+            const admins = Array.isArray(school.admins)
+                ? school.admins
+                : [];
+
+            const teachers = Array.isArray(school.teachers)
+                ? school.teachers
+                : [];
+
+            const adminHTML = admins.length
+                ? admins.map(admin => `
+                    <div class="admin-info">
+                        <div>
+                            <strong>School Admin:</strong>
+                            ${escapeHTML(admin.full_name || "-")}
+                        </div>
+
+                        <div>
+                            <strong>Phone:</strong>
+                            ${escapeHTML(admin.phone || "-")}
+                        </div>
+
+                        <div>
+                            <strong>Account Status:</strong>
+                            ${displayStatus(admin.status)}
+                        </div>
+                    </div>
+                `).join("")
+                : `
+                    <div class="empty-message">
+                        No school administrator registered.
+                    </div>
+                `;
+
+            const teacherRows = teachers.length
+                ? teachers.map((teacher, i) => {
+
+                    const assignments = Array.isArray(teacher.assignments)
+                        ? teacher.assignments
+                        : [];
+
+                    const assignmentHTML = assignments.length
+                        ? assignments.map(assignment => `
+                            <div class="assignment">
+                                ${escapeHTML(assignment.class_name || "-")}
+                                -
+                                ${escapeHTML(assignment.subject || "-")}
+                            </div>
+                        `).join("")
+                        : `<span class="empty-message">No assignments</span>`;
+
+                    return `
+                        <tr>
+                            <td>${i + 1}</td>
+
+                            <td>
+                                ${escapeHTML(teacher.full_name || "-")}
+                            </td>
+
+                            <td>
+                                ${escapeHTML(teacher.phone || "-")}
+                            </td>
+
+                            <td>
+                                ${assignmentHTML}
+                            </td>
+
+                            <td>
+                                <button
+                                    type="button"
+                                    class="teacher-link"
+                                    data-action="teacher-results"
+                                    data-teacher-id="${escapeHTML(teacher.id)}"
+                                    data-school-id="${escapeHTML(schoolId)}"
+                                    data-school-name="${escapeHTML(schoolName)}">
+                                    View Results
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+
+                }).join("")
+                : `
+                    <tr>
+                        <td colspan="5" class="empty-message">
+                            No teachers registered in this school.
+                        </td>
+                    </tr>
+                `;
+
+            return `
+                <div class="school-card">
+
+                    <div class="school-title">
+                        ${index + 1}. ${escapeHTML(schoolName)}
+
+                        <span class="school-status">
+                            ${displayStatus(school.status)}
+                        </span>
+                    </div>
+
+                    <div class="admin-box">
+
+                        <div>
+                            <div class="admin-info">
+                                <strong>School:</strong>
+                                ${escapeHTML(schoolName)}
+                            </div>
+
+                            ${adminHTML}
+                        </div>
+
+                        <button
+                            type="button"
+                            class="btn"
+                            data-action="school-marks"
+                            data-school-id="${escapeHTML(schoolId)}"
+                            data-school-name="${escapeHTML(schoolName)}">
+                            View Marks
+                        </button>
+
+                    </div>
+
+                    <div class="section-title">
+                        Teachers (${teachers.length})
+                    </div>
+
+                    <div class="table-wrapper">
+                        <table>
+
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Teacher Name</th>
+                                    <th>Phone</th>
+                                    <th>Assignments</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                ${teacherRows}
+                            </tbody>
+
+                        </table>
+                    </div>
+
+                </div>
+            `;
+
+        }).join("");
+
+    } catch (error) {
+
+        console.error("Load sector schools error:", error);
+
+        schoolCount.textContent = "Unable to load schools";
+
+        container.className = "";
+
+        container.innerHTML = `
+            <div class="error-message">
+                ${escapeHTML(error.message)}
+
+                <br>
+
+                <button
+                    type="button"
+                    class="btn retry-btn"
+                    data-action="retry">
+                    Try Again
+                </button>
+            </div>
+        `;
+    }
+}
+
+/* =====================================================
+   NAVIGATION
+===================================================== */
+
+function viewSchoolMarks(schoolId, schoolName) {
+
+    localStorage.setItem("targetSchoolId", schoolId);
+    localStorage.setItem("targetSchool", schoolName);
+
+    window.location.href = "view-school-marks.html";
+}
+
+function viewTeacherResults(teacherId, schoolId, schoolName) {
+
+    localStorage.setItem("targetTeacher", teacherId);
+    localStorage.setItem("targetSchoolId", schoolId);
+    localStorage.setItem("targetSchool", schoolName);
+
+    window.location.href = "teacher-results.html";
+}
+
+/* =====================================================
+   BUTTON EVENTS
+===================================================== */
+
+container.addEventListener("click", function(event) {
+
+    const button = event.target.closest("[data-action]");
+
+    if (!button) return;
+
+    const action = button.dataset.action;
+
+    if (action === "retry") {
+        loadSchools();
+        return;
+    }
+
+    if (action === "school-marks") {
+
+        viewSchoolMarks(
+            button.dataset.schoolId,
+            button.dataset.schoolName
+        );
+
+        return;
+    }
+
+    if (action === "teacher-results") {
+
+        viewTeacherResults(
+            button.dataset.teacherId,
+            button.dataset.schoolId,
+            button.dataset.schoolName
+        );
+
+    }
+});
+
+/* =====================================================
+   INITIALIZE
+===================================================== */
+
+loadSchools();
+
+</script>
+
+</body>
+</html>
