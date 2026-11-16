@@ -5,16 +5,27 @@ import {
     json
 } from "../_utils.js";
 
+/* =====================================================
+   HELPERS
+===================================================== */
+
 function validId(value) {
     const number = Number(value);
+
     return Number.isSafeInteger(number) && number > 0
         ? number
         : null;
 }
 
+/* =====================================================
+   GET: TEACHER RESULTS
+===================================================== */
+
 export async function onRequestGet(context) {
+
     const auth = await authenticateRole(context, [
         "teacher",
+        "school_admin",
         "sector_admin"
     ]);
 
@@ -22,18 +33,23 @@ export async function onRequestGet(context) {
 
     const url = new URL(context.request.url);
 
-    let schoolId;
-    let teacherId;
+    let schoolId = null;
+    let teacherId = null;
+    let teacherName = null;
+    let schoolName = null;
+
     let client;
 
     try {
         client = await connectDB(context);
 
         /* ---------------------------------------------
-           IDENTIFY THE TEACHER
+           1. TEACHER
+           Automatically identify the logged-in teacher.
         --------------------------------------------- */
 
         if (auth.role === "teacher") {
+
             if (!auth.schoolId) {
                 return json({
                     success: false,
@@ -44,10 +60,19 @@ export async function onRequestGet(context) {
             schoolId = auth.schoolId;
 
             const teacherResult = await client.query(
-                `SELECT id
-                 FROM teachers
-                 WHERE user_id = $1
-                   AND school_id = $2
+                `SELECT
+                    t.id,
+                    u.full_name,
+                    s.school_name
+                 FROM teachers t
+                 INNER JOIN users u
+                    ON u.id = t.user_id
+                   AND u.school_id = t.school_id
+                   AND u.role = 'teacher'
+                 INNER JOIN schools s
+                    ON s.id = t.school_id
+                 WHERE t.user_id = $1
+                   AND t.school_id = $2
                  LIMIT 1`,
                 [auth.userId, schoolId]
             );
@@ -60,14 +85,81 @@ export async function onRequestGet(context) {
             }
 
             teacherId = String(teacherResult.rows[0].id);
+            teacherName = teacherResult.rows[0].full_name;
+            schoolName = teacherResult.rows[0].school_name;
+        }
 
-        } else {
-            /* -----------------------------------------
-               SECTOR ADMIN: VERIFY SELECTED TEACHER
-            ----------------------------------------- */
+        /* ---------------------------------------------
+           2. SCHOOL ADMIN
+           Only teachers belonging to their own school.
+        --------------------------------------------- */
 
-            schoolId = validId(url.searchParams.get("school_id"));
-            teacherId = validId(url.searchParams.get("teacher_id"));
+        else if (auth.role === "school_admin") {
+
+            schoolId = auth.schoolId;
+            teacherId = validId(
+                url.searchParams.get("teacher_id")
+            );
+
+            if (!schoolId) {
+                return json({
+                    success: false,
+                    message: "Your account is not linked to a school."
+                }, 403);
+            }
+
+            if (!teacherId) {
+                return json({
+                    success: false,
+                    message: "Please select a valid teacher."
+                }, 400);
+            }
+
+            const teacherResult = await client.query(
+                `SELECT
+                    t.id,
+                    u.full_name,
+                    s.school_name
+                 FROM teachers t
+                 INNER JOIN users u
+                    ON u.id = t.user_id
+                   AND u.school_id = t.school_id
+                   AND u.role = 'teacher'
+                 INNER JOIN schools s
+                    ON s.id = t.school_id
+                 WHERE t.id = $1
+                   AND t.school_id = $2
+                 LIMIT 1`,
+                [teacherId, schoolId]
+            );
+
+            if (teacherResult.rowCount === 0) {
+                return json({
+                    success: false,
+                    message: "This teacher does not belong to your school."
+                }, 403);
+            }
+
+            teacherName = teacherResult.rows[0].full_name;
+            schoolName = teacherResult.rows[0].school_name;
+
+            teacherId = String(teacherResult.rows[0].id);
+        }
+
+        /* ---------------------------------------------
+           3. SECTOR ADMIN
+           Only teachers in schools belonging to their sector.
+        --------------------------------------------- */
+
+        else if (auth.role === "sector_admin") {
+
+            schoolId = validId(
+                url.searchParams.get("school_id")
+            );
+
+            teacherId = validId(
+                url.searchParams.get("teacher_id")
+            );
 
             if (!schoolId || !teacherId) {
                 return json({
@@ -76,8 +168,11 @@ export async function onRequestGet(context) {
                 }, 400);
             }
 
-            const teacherCheck = await client.query(
-                `SELECT t.id
+            const teacherResult = await client.query(
+                `SELECT
+                    t.id,
+                    u.full_name,
+                    s.school_name
                  FROM teachers t
                  INNER JOIN users u
                     ON u.id = t.user_id
@@ -92,12 +187,17 @@ export async function onRequestGet(context) {
                 [teacherId, schoolId, auth.sectorId]
             );
 
-            if (teacherCheck.rowCount === 0) {
+            if (teacherResult.rowCount === 0) {
                 return json({
                     success: false,
                     message: "This teacher is not accessible within your sector."
                 }, 403);
             }
+
+            teacherName = teacherResult.rows[0].full_name;
+            schoolName = teacherResult.rows[0].school_name;
+
+            teacherId = String(teacherResult.rows[0].id);
         }
 
         /* ---------------------------------------------
@@ -203,15 +303,17 @@ export async function onRequestGet(context) {
         );
 
         /* ---------------------------------------------
-           ORGANIZE THE RESPONSE
+           ORGANIZE RESULTS
         --------------------------------------------- */
 
         const assignmentsMap = new Map();
 
         for (const row of result.rows) {
+
             const assignmentKey = String(row.assignment_id);
 
             if (!assignmentsMap.has(assignmentKey)) {
+
                 assignmentsMap.set(assignmentKey, {
                     assignment_id: assignmentKey,
                     school_id: String(row.school_id),
@@ -226,7 +328,8 @@ export async function onRequestGet(context) {
                 });
             }
 
-            const assignment = assignmentsMap.get(assignmentKey);
+            const assignment =
+                assignmentsMap.get(assignmentKey);
 
             if (row.test_id === null) continue;
 
@@ -237,6 +340,7 @@ export async function onRequestGet(context) {
             );
 
             if (!test) {
+
                 test = {
                     id: testId,
                     name: row.test_name,
@@ -261,16 +365,27 @@ export async function onRequestGet(context) {
             });
         }
 
+        /* ---------------------------------------------
+           SUCCESS RESPONSE
+        --------------------------------------------- */
+
         return json({
             success: true,
+
             teacher: {
                 id: String(teacherId),
-                school_id: String(schoolId)
+                full_name: teacherName,
+                school_id: String(schoolId),
+                school_name: schoolName
             },
-            assignments: Array.from(assignmentsMap.values())
+
+            assignments: Array.from(
+                assignmentsMap.values()
+            )
         });
 
     } catch (error) {
+
         console.error("Teacher Results API error:", {
             message: error?.message,
             code: error?.code,
@@ -284,6 +399,7 @@ export async function onRequestGet(context) {
         }, 500);
 
     } finally {
+
         if (client) {
             await client.end().catch(() => {});
         }
