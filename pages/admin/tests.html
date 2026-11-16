@@ -1105,12 +1105,36 @@ function renderSchools() {
 function renderClasses() {
     const grid = document.getElementById("classesGrid");
 
-    // Classes are universal. Do not filter them by selected schools.
-    // Remove duplicate class IDs because several schools may offer
-    // the same universal class.
+    // Sector administrators must select schools first.
+    if (role === "sector_admin" && !selectedSchools.length) {
+        grid.innerHTML = `
+            <p class="hint">
+                Select one or more schools first to see the classes they offer.
+            </p>
+        `;
+        return;
+    }
+
+    // Keep only classes offered by the selected schools.
+    // For school_admin, the API already returns classes
+    // belonging to that administrator's school.
+    const availableClasses = options.classes.filter(item => {
+        if (role === "school_admin") {
+            return true;
+        }
+
+        const offeredBy = (item.school_ids || [])
+            .map(id => String(id));
+
+        return selectedSchools.some(schoolId =>
+            offeredBy.includes(String(schoolId))
+        );
+    });
+
+    // Remove duplicate universal class IDs.
     const uniqueClasses = new Map();
 
-    options.classes.forEach(item => {
+    availableClasses.forEach(item => {
         const id = String(item.id);
 
         if (!uniqueClasses.has(id)) {
@@ -1124,26 +1148,39 @@ function renderClasses() {
         "Upper Secondary": 3
     };
 
-    const availableClasses = Array.from(uniqueClasses.values())
-        .sort((a, b) => {
-            const levelA = levelOrder[a.class_level] || 99;
-            const levelB = levelOrder[b.class_level] || 99;
+    const classes = Array.from(uniqueClasses.values()).sort((a, b) => {
+        const levelA = levelOrder[a.class_level] || 99;
+        const levelB = levelOrder[b.class_level] || 99;
 
-            if (levelA !== levelB) {
-                return levelA - levelB;
-            }
+        if (levelA !== levelB) {
+            return levelA - levelB;
+        }
 
-            return a.class_name.localeCompare(b.class_name);
-        });
+        return a.class_name.localeCompare(b.class_name);
+    });
 
-    if (!availableClasses.length) {
+    // Remove selected classes that are no longer offered
+    // by any currently selected school.
+    const availableIds = classes.map(item => String(item.id));
+
+    selectedClasses = selectedClasses.filter(id =>
+        availableIds.includes(String(id))
+    );
+
+    if (!classes.length) {
         grid.innerHTML = `
-            <p class="hint">No classes available.</p>
+            <p class="hint">
+                No classes are offered by the selected schools.
+            </p>
         `;
+
+        selectedSubjects = [];
+        subjectTotalMarks = {};
+        renderSubjects();
         return;
     }
 
-    grid.innerHTML = availableClasses.map(item => {
+    grid.innerHTML = classes.map(item => {
         const id = String(item.id);
         const selected = selectedClasses.includes(id);
 
@@ -1156,14 +1193,15 @@ function renderClasses() {
                 ${selected ? "✓ " : ""}
                 ${escapeHTML(item.class_name)}
 
-                ${item.class_level
-                    ? `<small>${escapeHTML(item.class_level)}</small>`
-                    : ""}
+                <small>
+                    ${escapeHTML(item.class_level || "")}
+                </small>
             </button>
         `;
     }).join("");
-}
 
+    renderSubjects();
+}
 /* =========================================
    RENDER SUBJECTS AND MAXIMUM MARK INPUTS
 ========================================= */
@@ -1171,18 +1209,62 @@ function renderClasses() {
 function renderSubjects() {
     const grid = document.getElementById("subjectsGrid");
 
-    if (!options.subjects.length) {
+    if (!selectedClasses.length) {
         grid.innerHTML = `
-            <p class="hint">No subjects found.</p>
+            <p class="hint">
+                Select at least one class first to see its applicable subjects.
+            </p>
         `;
         return;
     }
 
-    grid.innerHTML = options.subjects.map(subject => {
+    // Get the education levels of the selected classes.
+    const selectedLevels = new Set(
+        options.classes
+            .filter(item =>
+                selectedClasses.includes(String(item.id))
+            )
+            .map(item => item.class_level)
+    );
+
+    // Only show subjects applicable to at least one
+    // of the selected education levels.
+    const availableSubjects = options.subjects.filter(subject => {
+        const subjectLevels = subject.education_levels || [];
+
+        return subjectLevels.some(level =>
+            selectedLevels.has(level)
+        );
+    });
+
+    // Remove selected subjects that are no longer applicable.
+    const availableSubjectIds = availableSubjects.map(subject =>
+        String(subject.id)
+    );
+
+    selectedSubjects = selectedSubjects.filter(id =>
+        availableSubjectIds.includes(String(id))
+    );
+
+    // Remove marks belonging to subjects no longer available.
+    Object.keys(subjectTotalMarks).forEach(id => {
+        if (!availableSubjectIds.includes(String(id))) {
+            delete subjectTotalMarks[id];
+        }
+    });
+
+    if (!availableSubjects.length) {
+        grid.innerHTML = `
+            <p class="hint">
+                No subjects are configured for the selected classes.
+            </p>
+        `;
+        return;
+    }
+
+    grid.innerHTML = availableSubjects.map(subject => {
         const id = String(subject.id);
-
         const selected = selectedSubjects.includes(id);
-
         const currentMarks = subjectTotalMarks[id] ?? "";
 
         return `
@@ -1201,7 +1283,7 @@ function renderSubjects() {
                     <div class="subject-mark-group">
 
                         <label for="subject-mark-${id}">
-                            Maximum mark (Out of) *
+                            Maximum mark (Out of)
                         </label>
 
                         <input
@@ -1209,14 +1291,12 @@ function renderSubjects() {
                             id="subject-mark-${id}"
                             min="0.01"
                             step="0.01"
-                            placeholder="e.g. 100"
+                            placeholder="Leave blank for 100"
                             value="${escapeHTML(currentMarks)}"
-                            oninput="setSubjectTotalMarks('${id}', this.value)"
-                            required>
+                            oninput="setSubjectTotalMarks('${id}', this.value)">
 
                         <div class="subject-mark-hint">
-                            Enter the maximum mark for
-                            ${escapeHTML(subject.subject_name)}.
+                            Leave blank to use 100 as the maximum mark.
                         </div>
 
                     </div>
@@ -1230,8 +1310,6 @@ function renderSubjects() {
         `;
     }).join("");
 }
-
-
 /* =========================================
    UPDATE SUBJECT MAXIMUM MARK
 ========================================= */
