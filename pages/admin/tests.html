@@ -622,7 +622,7 @@ td strong {
 
                 <div class="hint" style="margin-bottom:12px">
                     Select each subject and enter its maximum mark.
-                    For example, English out of 100 and Mathematics out of 50.
+                    For example, English out of 100 and Mathematics out of 50. Leave blank if it is out of /100
                 </div>
 
                 <div
@@ -1282,21 +1282,25 @@ function toggleClass(id) {
    VALIDATE SUBJECT MAXIMUM MARKS
 ========================================= */
 
+
 function collectSubjectMarks() {
     const result = [];
 
     for (const subjectId of selectedSubjects) {
         const value = subjectTotalMarks[subjectId];
 
+        // Blank maximum mark defaults to 100.
         if (
             value === undefined ||
             value === null ||
             String(value).trim() === ""
         ) {
-            return {
-                valid: false,
-                message: "Enter the maximum mark for every selected subject."
-            };
+            result.push({
+                subject_id: subjectId,
+                total_marks: 100
+            });
+
+            continue;
         }
 
         const totalMarks = Number(value);
@@ -1307,7 +1311,7 @@ function collectSubjectMarks() {
         ) {
             return {
                 valid: false,
-                message: "Every subject must have a maximum mark greater than zero."
+                message: "Maximum marks must be greater than zero."
             };
         }
 
@@ -1322,7 +1326,6 @@ function collectSubjectMarks() {
         subjectMarks: result
     };
 }
-
 
 /* =========================================
    SAVE NEW OR EDITED TEST
