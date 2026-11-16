@@ -115,12 +115,26 @@ export async function onRequestPost(context) {
         });
 
     } catch (error) {
-        console.error("Save teacher assignment error:", error);
+    console.error("SAVE TEACHER ASSIGNMENT ERROR:", {
+        message: error?.message,
+        code: error?.code,
+        detail: error?.detail,
+        constraint: error?.constraint,
+        table: error?.table,
+        column: error?.column,
+        stack: error?.stack
+    });
 
-        return json({
-            success: false,
-            message: "Could not save the teaching assignment."
-        }, 500);
+    return json({
+        success: false,
+        message: "Could not save the teaching assignment.",
+        debug: {
+            error: error?.message,
+            code: error?.code,
+            detail: error?.detail,
+            constraint: error?.constraint
+        }
+    }, 500);
 
     } finally {
         if (client) await client.end().catch(() => {});
