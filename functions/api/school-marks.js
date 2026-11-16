@@ -52,14 +52,14 @@ export async function onRequestGet(context) {
             `;
 
             parameters = [auth.sectorId];
-        }
 
-        /* ---------------------------------------------
-           SCHOOL ADMIN
-           Only their own school's classes and tests.
-        --------------------------------------------- */
+        } else {
 
-        else {
+            /* -----------------------------------------
+               SCHOOL ADMIN
+               Only their own school's classes and tests.
+            ----------------------------------------- */
+
             scopeCondition = `
                 tc.school_id = $1
                 AND (
@@ -79,10 +79,16 @@ export async function onRequestGet(context) {
         /* ---------------------------------------------
            LOAD TESTS, CLASSES, STUDENTS AND MARKS
 
-           IMPORTANT:
-           - No test status restriction.
-           - No UPDATE statements.
-           - Students without marks are included.
+           Universal classes structure:
+           - classes.id
+           - classes.class_name
+           - classes.level_id
+
+           School availability:
+           - school_levels.school_id
+           - school_levels.level_id
+
+           No classes.school_id or classes.class_level.
         --------------------------------------------- */
 
         const result = await client.query(
@@ -99,7 +105,13 @@ export async function onRequestGet(context) {
 
                 c.id AS class_id,
                 c.class_name,
-                c.class_level,
+
+                CASE c.level_id
+                    WHEN 1 THEN 'Primary'
+                    WHEN 2 THEN 'Lower Secondary'
+                    WHEN 3 THEN 'Upper Secondary'
+                    ELSE 'Unknown'
+                END AS class_level,
 
                 st.id AS student_id,
                 st.full_name AS student_name,
@@ -120,7 +132,10 @@ export async function onRequestGet(context) {
 
             INNER JOIN classes c
                 ON c.id = tc.class_id
-               AND c.school_id = tc.school_id
+
+            INNER JOIN school_levels sl
+                ON sl.school_id = tc.school_id
+               AND sl.level_id = c.level_id
 
             INNER JOIN schools sch
                 ON sch.id = tc.school_id
@@ -160,9 +175,11 @@ export async function onRequestGet(context) {
         const testsMap = new Map();
 
         for (const row of result.rows) {
+
             const testKey = String(row.test_id);
 
             if (!testsMap.has(testKey)) {
+
                 testsMap.set(testKey, {
                     id: testKey,
                     name: row.test_name,
@@ -170,6 +187,7 @@ export async function onRequestGet(context) {
                     created_at: row.test_created_at,
                     classes: []
                 });
+
             }
 
             const test = testsMap.get(testKey);
@@ -181,6 +199,7 @@ export async function onRequestGet(context) {
             );
 
             if (!classItem) {
+
                 classItem = {
                     class_id: String(row.class_id),
                     class_name: row.class_name,
@@ -192,9 +211,12 @@ export async function onRequestGet(context) {
                 };
 
                 test.classes.push(classItem);
+
             }
 
-            /* SUBJECTS */
+            /* -----------------------------------------
+               SUBJECTS
+            ----------------------------------------- */
 
             const subjectId = String(row.subject_id);
 
@@ -203,15 +225,19 @@ export async function onRequestGet(context) {
                     subject => subject.id === subjectId
                 )
             ) {
+
                 classItem.subjects.push({
                     id: subjectId,
                     name: row.subject_name,
                     code: row.subject_code,
                     maximum_mark: Number(row.maximum_mark)
                 });
+
             }
 
-            /* STUDENTS */
+            /* -----------------------------------------
+               STUDENTS
+            ----------------------------------------- */
 
             if (row.student_id === null) continue;
 
@@ -222,6 +248,7 @@ export async function onRequestGet(context) {
             );
 
             if (!student) {
+
                 student = {
                     id: studentId,
                     name: row.student_name,
@@ -230,12 +257,14 @@ export async function onRequestGet(context) {
                 };
 
                 classItem.students.push(student);
+
             }
 
             student.marks[subjectId] =
                 row.score === null
                     ? null
                     : Number(row.score);
+
         }
 
         return json({
@@ -249,6 +278,7 @@ export async function onRequestGet(context) {
         });
 
     } catch (error) {
+
         console.error("School Marks loading error:", error);
 
         return json({
@@ -257,8 +287,10 @@ export async function onRequestGet(context) {
         }, 500);
 
     } finally {
+
         if (client) {
             await client.end().catch(() => {});
         }
+
     }
 }
