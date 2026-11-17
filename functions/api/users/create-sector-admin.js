@@ -1,3 +1,4 @@
+
 import bcrypt from "bcryptjs";
 
 import {
@@ -186,10 +187,14 @@ export async function onRequestPost(context) {
         await saveOtp(client, admin.id, otp);
 
         /* =============================================
-           SEND VERIFICATION EMAIL
+           PREPARE AND SEND VERIFICATION EMAIL
         ============================================= */
 
-        const emailContent = verificationEmail(fullName, otp);
+        const emailContent = verificationEmail(
+            fullName,
+            otp,
+            email
+        );
 
         await sendEmail(context, {
             to: email,
@@ -207,7 +212,7 @@ export async function onRequestPost(context) {
 
         return json({
             success: true,
-            message: "Sector and administrator registered successfully. A verification code has been sent to the administrator's email.",
+            message: "Sector and administrator created successfully. A verification email has been sent to the administrator.",
             sector: sectorResult.rows[0],
             admin
         }, 201);
