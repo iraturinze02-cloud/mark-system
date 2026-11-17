@@ -1,3 +1,4 @@
+
 import bcrypt from "bcryptjs";
 
 import {
@@ -24,40 +25,28 @@ export async function onRequestPost(context) {
     try {
         const data = await context.request.json();
 
-        const sectorId = data.sectorId;
-        const adminId = data.adminId;
+        const adminId = data.id;
 
-        const sectorName = String(data.sectorName || "").trim();
-        const sectorCode = String(data.sectorCode || "")
-            .trim()
-            .toUpperCase();
-
-        const location = String(data.location || "").trim() || null;
-
-        const fullName = String(
-            data.fullName || data.adminName || ""
-        ).trim();
-
+        const fullName = String(data.full_name || "").trim();
         const email = normalizeEmail(data.email);
         const phone = String(data.phone || "").trim();
         const password = String(data.password || "");
 
-        /* =============================================
-           VALIDATION
-        ============================================= */
+        // Validate required fields
+        if (!adminId || !fullName || !email || !phone) {
+            return json({
+                success: false,
+                message: "Please complete all required fields."
+            }, 400);
+        }
 
         if (
-            !sectorId ||
-            !adminId ||
-            !sectorName ||
-            !sectorCode ||
-            !fullName ||
-            !email ||
-            !phone
+            fullName.length > 200 ||
+            phone.length > 30
         ) {
             return json({
                 success: false,
-                message: "Please complete all required fields, including a valid email address."
+                message: "One or more fields exceed the allowed length."
             }, 400);
         }
 
@@ -68,43 +57,23 @@ export async function onRequestPost(context) {
             }, 400);
         }
 
-        if (
-            sectorName.length > 200 ||
-            sectorCode.length > 30 ||
-            fullName.length > 200 ||
-            phone.length > 30
-        ) {
-            return json({
-                success: false,
-                message: "One or more fields exceed the allowed length."
-            }, 400);
-        }
-
         const passwordHash = password
             ? await bcrypt.hash(password, 12)
             : null;
-
-        /* =============================================
-           CONNECT AND START TRANSACTION
-        ============================================= */
 
         client = await connectDB(context);
 
         await client.query("BEGIN");
         transactionStarted = true;
 
-        /* =============================================
-           FIND EXISTING ADMINISTRATOR
-        ============================================= */
-
+        // Find the existing Sector Admin
         const existingResult = await client.query(`
             SELECT id, email, email_verified
             FROM users
             WHERE id = $1
-              AND sector_id = $2
               AND role = 'sector_admin'
             LIMIT 1
-        `, [adminId, sectorId]);
+        `, [adminId]);
 
         if (existingResult.rowCount === 0) {
             await client.query("ROLLBACK");
@@ -121,10 +90,7 @@ export async function onRequestPost(context) {
         const emailChanged =
             String(existingAdmin.email || "").toLowerCase() !== email;
 
-        /* =============================================
-           CHECK EMAIL AVAILABILITY IF CHANGED
-        ============================================= */
-
+        // Check whether another account uses this email
         if (emailChanged) {
             const emailCheck = await client.query(`
                 SELECT id
@@ -145,34 +111,7 @@ export async function onRequestPost(context) {
             }
         }
 
-        /* =============================================
-           UPDATE SECTOR
-        ============================================= */
-
-        const sectorResult = await client.query(`
-            UPDATE sectors
-            SET
-                sector_name = $1,
-                sector_code = $2,
-                location = $3
-            WHERE id = $4
-            RETURNING id
-        `, [sectorName, sectorCode, location, sectorId]);
-
-        if (sectorResult.rowCount === 0) {
-            await client.query("ROLLBACK");
-            transactionStarted = false;
-
-            return json({
-                success: false,
-                message: "Sector not found."
-            }, 404);
-        }
-
-        /* =============================================
-           UPDATE ADMINISTRATOR
-        ============================================= */
-
+        // Update administrator
         await client.query(`
             UPDATE users
             SET
@@ -186,7 +125,6 @@ export async function onRequestPost(context) {
                 password_hash = COALESCE($5, password_hash),
                 updated_at = CURRENT_TIMESTAMP
             WHERE id = $6
-              AND sector_id = $7
               AND role = 'sector_admin'
         `, [
             fullName,
@@ -194,20 +132,20 @@ export async function onRequestPost(context) {
             emailChanged,
             phone,
             passwordHash,
-            adminId,
-            sectorId
+            adminId
         ]);
 
-        /* =============================================
-           SEND NEW VERIFICATION CODE IF EMAIL CHANGED
-        ============================================= */
-
+        // Send verification code when email changes
         if (emailChanged) {
             const otp = generateOtp();
 
             await saveOtp(client, adminId, otp);
 
-            const emailContent = verificationEmail(fullName, otp);
+            const emailContent = verificationEmail(
+                fullName,
+                otp,
+                email
+            );
 
             await sendEmail(context, {
                 to: email,
@@ -217,18 +155,14 @@ export async function onRequestPost(context) {
             });
         }
 
-        /* =============================================
-           COMMIT
-        ============================================= */
-
         await client.query("COMMIT");
         transactionStarted = false;
 
         return json({
             success: true,
             message: emailChanged
-                ? "Administrator updated. A new verification code has been sent to the new email address."
-                : "Sector and administrator updated successfully.",
+                ? "Administrator updated. A verification email has been sent to the new address."
+                : "Sector administrator updated successfully.",
             emailChanged
         });
 
@@ -243,7 +177,7 @@ export async function onRequestPost(context) {
         if (error.code === "23505") {
             return json({
                 success: false,
-                message: "That sector code, phone number, or email address is already in use."
+                message: "This email address or phone number is already in use."
             }, 409);
         }
 
