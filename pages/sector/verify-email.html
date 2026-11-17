@@ -4,10 +4,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>Verify Email | Fila Grades System</title>
 
 <style>
-* { box-sizing: border-box; }
+* {
+    box-sizing: border-box;
+}
 
 body {
     margin: 0;
@@ -112,7 +115,9 @@ button {
     cursor: pointer;
 }
 
-button:hover { opacity: .93; }
+button:hover {
+    opacity: .93;
+}
 
 button:disabled {
     opacity: .55;
@@ -146,8 +151,24 @@ button:disabled {
     background: #fee2e2;
 }
 
+#verificationArea {
+    display: none;
+}
+
+#invalidArea {
+    display: none;
+}
+
+.invalid-icon {
+    font-size: 42px;
+    margin-bottom: 12px;
+    color: #dc2626;
+}
+
 @media(max-width: 420px) {
-    .container { padding: 28px 20px; }
+    .container {
+        padding: 28px 20px;
+    }
 }
 </style>
 </head>
@@ -158,47 +179,67 @@ button:disabled {
 
     <div class="logo">✉</div>
 
-    <h1>Verify Your Email</h1>
+    <h1 id="pageTitle">Checking Verification Link</h1>
 
-    <p class="description">
-        We sent a six-digit verification code to the email address below.
-        Enter the code to activate your account.
+    <p class="description" id="pageDescription">
+        Please wait while we validate your verification link.
     </p>
 
-    <div class="email-display" id="emailDisplay">
-        Loading email address...
-    </div>
+    <div id="verificationArea">
 
-    <form id="verificationForm">
+        <div class="email-display" id="emailDisplay"></div>
 
-        <label for="code">Verification Code</label>
+        <form id="verificationForm">
 
-        <input
-            type="text"
-            id="code"
-            placeholder="000000"
-            inputmode="numeric"
-            maxlength="6"
-            pattern="[0-9]{6}"
-            autocomplete="one-time-code"
-            required
+            <label for="code">Verification Code</label>
+
+            <input
+                type="text"
+                id="code"
+                placeholder="000000"
+                inputmode="numeric"
+                maxlength="6"
+                pattern="[0-9]{6}"
+                autocomplete="one-time-code"
+                required
+            >
+
+            <button type="submit" id="verifyBtn">
+                Verify Email
+            </button>
+
+        </form>
+
+        <div id="message"></div>
+
+        <button
+            type="button"
+            class="resend-btn"
+            id="resendBtn"
         >
-
-        <button type="submit" id="verifyBtn">
-            Verify Email
+            Resend Verification Code
         </button>
 
-    </form>
+    </div>
 
-    <div id="message"></div>
+    <div id="invalidArea">
 
-    <button
-        type="button"
-        class="resend-btn"
-        id="resendBtn"
-    >
-        Resend Verification Code
-    </button>
+        <div class="invalid-icon">!</div>
+
+        <h2>Verification Link Unavailable</h2>
+
+        <p class="description" id="invalidMessage">
+            This verification link is invalid or has expired.
+        </p>
+
+        <button
+            type="button"
+            onclick="window.location.href='/index.html'"
+        >
+            Return to Login
+        </button>
+
+    </div>
 
 </div>
 
@@ -206,30 +247,145 @@ button:disabled {
 const codeInput = document.getElementById("code");
 const emailDisplay = document.getElementById("emailDisplay");
 const message = document.getElementById("message");
+
 const verifyBtn = document.getElementById("verifyBtn");
 const resendBtn = document.getElementById("resendBtn");
 
+const verificationArea =
+    document.getElementById("verificationArea");
+
+const invalidArea =
+    document.getElementById("invalidArea");
+
+const pageTitle =
+    document.getElementById("pageTitle");
+
+const pageDescription =
+    document.getElementById("pageDescription");
+
+const invalidMessage =
+    document.getElementById("invalidMessage");
+
+let email = "";
 let resendTimer = null;
+let linkValid = false;
+let verificationCompleted = false;
 
-/* GET EMAIL FROM URL */
+/* =====================================================
+   API RESPONSE
+===================================================== */
 
-const params = new URLSearchParams(window.location.search);
-const email = (params.get("email") || "").trim().toLowerCase();
+async function readResponse(response) {
 
-if (email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    emailDisplay.textContent = email;
-} else {
-    emailDisplay.textContent = "Email address not provided";
-    codeInput.disabled = true;
-    verifyBtn.disabled = true;
-    resendBtn.disabled = true;
-    showMessage(
-        "Invalid verification link. Please contact your administrator.",
-        "error"
-    );
+    const contentType =
+        response.headers.get("content-type") || "";
+
+    if (!contentType.includes("application/json")) {
+        throw new Error(
+            "Unexpected server response. Please try again."
+        );
+    }
+
+    return await response.json();
 }
 
-/* MESSAGES */
+/* =====================================================
+   DISPLAY INVALID LINK
+===================================================== */
+
+function showInvalidLink(text) {
+
+    linkValid = false;
+
+    verificationArea.style.display = "none";
+    invalidArea.style.display = "block";
+
+    pageTitle.textContent = "Verification Unavailable";
+
+    pageDescription.textContent =
+        "We could not validate your verification link.";
+
+    invalidMessage.textContent = text;
+
+    if (resendTimer) {
+        clearInterval(resendTimer);
+    }
+}
+
+/* =====================================================
+   VALIDATE LINK WITH SERVER
+===================================================== */
+
+async function validateVerificationLink() {
+
+    const params = new URLSearchParams(
+        window.location.search
+    );
+
+    email = (params.get("email") || "")
+        .trim()
+        .toLowerCase();
+
+    if (
+        !email ||
+        !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+    ) {
+        showInvalidLink(
+            "The verification link is missing a valid email address. Please contact your administrator."
+        );
+        return;
+    }
+
+    try {
+
+        const response = await fetch(
+            "/api/users/check-verification",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ email })
+            }
+        );
+
+        const result = await readResponse(response);
+
+        if (
+            !response.ok ||
+            !result.success ||
+            result.valid !== true
+        ) {
+            showInvalidLink(
+                result.message ||
+                "This verification link is invalid or expired. Please request a new verification email."
+            );
+            return;
+        }
+
+        linkValid = true;
+
+        emailDisplay.textContent = email;
+
+        pageTitle.textContent = "Verify Your Email";
+
+        pageDescription.textContent =
+            "Enter the six-digit verification code sent to the email address below.";
+
+        verificationArea.style.display = "block";
+
+    } catch (error) {
+
+        showInvalidLink(
+            "We could not validate your link because of a server error. Please try again later."
+        );
+
+    }
+}
+
+/* =====================================================
+   MESSAGES
+===================================================== */
 
 function showMessage(text, type) {
     message.textContent = text;
@@ -241,35 +397,31 @@ function clearMessage() {
     message.className = "";
 }
 
-/* READ API RESPONSE */
-
-async function readResponse(response) {
-    const contentType = response.headers.get("content-type") || "";
-
-    if (!contentType.includes("application/json")) {
-        throw new Error("Unexpected server response. Please try again.");
-    }
-
-    return await response.json();
-}
-
-/* VERIFY EMAIL */
+/* =====================================================
+   VERIFY EMAIL
+===================================================== */
 
 document.getElementById("verificationForm")
 .addEventListener("submit", async function(event) {
 
     event.preventDefault();
+
     clearMessage();
 
-    const code = codeInput.value.trim();
-
-    if (!email) {
-        showMessage("Invalid verification link.", "error");
+    if (!linkValid || verificationCompleted) {
+        showInvalidLink(
+            "This verification link is no longer available."
+        );
         return;
     }
 
+    const code = codeInput.value.trim();
+
     if (!/^\d{6}$/.test(code)) {
-        showMessage("Please enter the six-digit verification code.", "error");
+        showMessage(
+            "Please enter the six-digit verification code.",
+            "error"
+        );
         return;
     }
 
@@ -277,19 +429,41 @@ document.getElementById("verificationForm")
     verifyBtn.textContent = "Verifying...";
 
     try {
-        const response = await fetch("/api/users/verify-email", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({ email, code })
-        });
+
+        const response = await fetch(
+            "/api/users/verify-email",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    email,
+                    code
+                })
+            }
+        );
 
         const result = await readResponse(response);
 
         if (!response.ok || !result.success) {
-            throw new Error(result.message || "Email verification failed.");
+            throw new Error(
+                result.message ||
+                "Email verification failed."
+            );
         }
+
+        if (
+            !result.setupToken ||
+            !/^[a-f0-9]{64}$/i.test(result.setupToken)
+        ) {
+            throw new Error(
+                "Verification succeeded, but the password setup token was not received. Please contact your administrator."
+            );
+        }
+
+        verificationCompleted = true;
+        linkValid = false;
 
         showMessage(
             "Email verified successfully. Redirecting you to set your new password...",
@@ -301,26 +475,37 @@ document.getElementById("verificationForm")
         verifyBtn.textContent = "Email Verified";
 
         setTimeout(() => {
-    window.location.href =
-        "/pages/sector/set-password.html?token=" +
-        encodeURIComponent(result.setupToken);
-}, 1500);
+
+            window.location.replace(
+                "/pages/sector/set-password.html?token=" +
+                encodeURIComponent(result.setupToken)
+            );
+
+        }, 1500);
 
     } catch (error) {
+
         showMessage(error.message, "error");
+
         verifyBtn.disabled = false;
         verifyBtn.textContent = "Verify Email";
+
     }
+
 });
 
-/* RESEND VERIFICATION CODE */
+/* =====================================================
+   RESEND VERIFICATION CODE
+===================================================== */
 
 resendBtn.addEventListener("click", async function() {
 
     clearMessage();
 
-    if (!email) {
-        showMessage("Invalid verification link.", "error");
+    if (!linkValid || verificationCompleted) {
+        showInvalidLink(
+            "This verification link is no longer available."
+        );
         return;
     }
 
@@ -328,33 +513,52 @@ resendBtn.addEventListener("click", async function() {
     resendBtn.textContent = "Sending...";
 
     try {
-        const response = await fetch("/api/users/resend-verification", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({ email })
-        });
+
+        const response = await fetch(
+            "/api/users/resend-verification",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ email })
+            }
+        );
 
         const result = await readResponse(response);
 
         if (!response.ok || !result.success) {
-            throw new Error(result.message || "Could not resend the code.");
+            throw new Error(
+                result.message ||
+                "Could not resend the verification code."
+            );
         }
 
-        showMessage(result.message, "success");
+        showMessage(
+            result.message ||
+            "A new verification code has been sent.",
+            "success"
+        );
+
         codeInput.value = "";
 
         startResendTimer(60);
 
     } catch (error) {
+
         showMessage(error.message, "error");
+
         resendBtn.disabled = false;
-        resendBtn.textContent = "Resend Verification Code";
+        resendBtn.textContent =
+            "Resend Verification Code";
+
     }
+
 });
 
-/* RESEND COUNTDOWN */
+/* =====================================================
+   RESEND COUNTDOWN
+===================================================== */
 
 function startResendTimer(seconds) {
 
@@ -363,29 +567,50 @@ function startResendTimer(seconds) {
     let remaining = seconds;
 
     resendBtn.disabled = true;
-    resendBtn.textContent = `Resend available in ${remaining}s`;
+
+    resendBtn.textContent =
+        `Resend available in ${remaining}s`;
 
     resendTimer = setInterval(() => {
 
         remaining--;
 
         if (remaining <= 0) {
+
             clearInterval(resendTimer);
+
             resendBtn.disabled = false;
-            resendBtn.textContent = "Resend Verification Code";
+
+            resendBtn.textContent =
+                "Resend Verification Code";
+
             return;
         }
 
-        resendBtn.textContent = `Resend available in ${remaining}s`;
+        resendBtn.textContent =
+            `Resend available in ${remaining}s`;
 
     }, 1000);
+
 }
 
-/* OTP INPUT */
+/* =====================================================
+   OTP INPUT
+===================================================== */
 
 codeInput.addEventListener("input", function() {
-    this.value = this.value.replace(/\D/g, "").slice(0, 6);
+
+    this.value = this.value
+        .replace(/\D/g, "")
+        .slice(0, 6);
+
 });
+
+/* =====================================================
+   INITIALIZE
+===================================================== */
+
+validateVerificationLink();
 </script>
 
 </body>
