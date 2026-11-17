@@ -186,18 +186,19 @@ export async function authenticateRole(
            previous access.
         --------------------------------------------- */
 
-        if (
-            user.email &&
-            user.email_verified !== true
-        ) {
-            return {
-                error: json({
-                    success: false,
-                    code: "EMAIL_NOT_VERIFIED",
-                    message: "Please verify your email address before accessing the system."
-                }, 403)
-            };
-        }
+       if (
+    user.email &&
+    user.email_verified !== true
+) {
+    return {
+        error: json({
+            success: false,
+            code: "EMAIL_NOT_VERIFIED",
+            email: user.email,
+            message: "Please verify your email address before accessing the system."
+        }, 403)
+    };
+}
 
         /* ---------------------------------------------
            REQUIRE A NEW PASSWORD
