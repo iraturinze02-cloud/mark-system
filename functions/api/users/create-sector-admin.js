@@ -20,6 +20,7 @@ import {
 ===================================================== */
 
 export async function onRequestPost(context) {
+
     const auth = await requireOwner(context);
 
     if (auth.error) return auth.error;
@@ -28,6 +29,7 @@ export async function onRequestPost(context) {
     let transactionStarted = false;
 
     try {
+
         let data;
 
         try {
@@ -39,15 +41,22 @@ export async function onRequestPost(context) {
             }, 400);
         }
 
-        const sectorName = String(data.sector_name || "").trim();
-        const sectorCode = String(data.sector_code || "")
-            .trim()
-            .toUpperCase();
+        const sectorName =
+            String(data.sector_name || "").trim();
 
-        const fullName = String(data.full_name || "").trim();
-        const email = normalizeEmail(data.email);
-        const phone = String(data.phone || "").trim();
-        const password = String(data.password || "");
+        const sectorCode =
+            String(data.sector_code || "")
+                .trim()
+                .toUpperCase();
+
+        const fullName =
+            String(data.full_name || "").trim();
+
+        const email =
+            normalizeEmail(data.email);
+
+        const phone =
+            String(data.phone || "").trim();
 
         /* =============================================
            VALIDATION
@@ -58,8 +67,7 @@ export async function onRequestPost(context) {
             !sectorCode ||
             !fullName ||
             !email ||
-            !phone ||
-            !password
+            !phone
         ) {
             return json({
                 success: false,
@@ -71,6 +79,7 @@ export async function onRequestPost(context) {
             sectorName.length > 200 ||
             sectorCode.length > 30 ||
             fullName.length > 200 ||
+            email.length > 254 ||
             phone.length > 30
         ) {
             return json({
@@ -79,18 +88,35 @@ export async function onRequestPost(context) {
             }, 400);
         }
 
-        if (password.length < 8) {
+        const emailPattern =
+            /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+        if (!emailPattern.test(email)) {
             return json({
                 success: false,
-                message: "Password must contain at least 8 characters."
+                message: "Please enter a valid email address."
             }, 400);
         }
 
         /* =============================================
-           HASH PASSWORD
+           GENERATE INTERNAL RANDOM CREDENTIAL
+
+           The owner does not choose a password.
+           The administrator sets their own password
+           after email verification.
         ============================================= */
 
-        const passwordHash = await bcrypt.hash(password, 12);
+        const randomBytes = new Uint8Array(32);
+
+        crypto.getRandomValues(randomBytes);
+
+        const temporaryCredential =
+            Array.from(randomBytes)
+                .map(byte => byte.toString(16).padStart(2, "0"))
+                .join("");
+
+        const passwordHash =
+            await bcrypt.hash(temporaryCredential, 12);
 
         /* =============================================
            CONNECT TO DATABASE
@@ -99,6 +125,7 @@ export async function onRequestPost(context) {
         client = await connectDB(context);
 
         await client.query("BEGIN");
+
         transactionStarted = true;
 
         /* =============================================
@@ -114,12 +141,38 @@ export async function onRequestPost(context) {
         );
 
         if (emailCheck.rows.length > 0) {
+
             await client.query("ROLLBACK");
+
             transactionStarted = false;
 
             return json({
                 success: false,
                 message: "This email address is already registered."
+            }, 409);
+        }
+
+        /* =============================================
+           CHECK SECTOR CODE AVAILABILITY
+        ============================================= */
+
+        const sectorCheck = await client.query(
+            `SELECT id
+             FROM sectors
+             WHERE UPPER(sector_code) = UPPER($1)
+             LIMIT 1`,
+            [sectorCode]
+        );
+
+        if (sectorCheck.rows.length > 0) {
+
+            await client.query("ROLLBACK");
+
+            transactionStarted = false;
+
+            return json({
+                success: false,
+                message: "This sector code is already registered."
             }, 409);
         }
 
@@ -135,13 +188,21 @@ export async function onRequestPost(context) {
             )
             VALUES ($1, $2, 'active')
             RETURNING id, sector_name, sector_code`,
-            [sectorName, sectorCode]
+            [
+                sectorName,
+                sectorCode
+            ]
         );
 
-        const sectorId = sectorResult.rows[0].id;
+        const sectorId =
+            sectorResult.rows[0].id;
 
         /* =============================================
            CREATE SECTOR ADMINISTRATOR
+
+           email_verified = FALSE
+           must_change_password = TRUE
+
         ============================================= */
 
         const adminResult = await client.query(
@@ -151,14 +212,23 @@ export async function onRequestPost(context) {
                 email_verified,
                 phone,
                 password_hash,
+                must_change_password,
                 role,
                 sector_id,
                 school_id,
                 status
             )
             VALUES (
-                $1, $2, FALSE, $3, $4,
-                'sector_admin', $5, NULL, 'active'
+                $1,
+                $2,
+                FALSE,
+                $3,
+                $4,
+                TRUE,
+                'sector_admin',
+                $5,
+                NULL,
+                'active'
             )
             RETURNING
                 id,
@@ -184,10 +254,14 @@ export async function onRequestPost(context) {
 
         const otp = generateOtp();
 
-        await saveOtp(client, admin.id, otp);
+        await saveOtp(
+            client,
+            admin.id,
+            otp
+        );
 
         /* =============================================
-           PREPARE AND SEND VERIFICATION EMAIL
+           PREPARE VERIFICATION EMAIL
         ============================================= */
 
         const emailContent = verificationEmail(
@@ -208,6 +282,7 @@ export async function onRequestPost(context) {
         ============================================= */
 
         await client.query("COMMIT");
+
         transactionStarted = false;
 
         return json({
@@ -218,15 +293,21 @@ export async function onRequestPost(context) {
         }, 201);
 
     } catch (error) {
+
         if (client && transactionStarted) {
+
             await client.query("ROLLBACK").catch(() => {});
+
             transactionStarted = false;
         }
 
         console.error("Create sector error:", error);
 
         if (error.code === "23505") {
-            if (error.constraint === "users_email_unique_idx") {
+
+            if (
+                error.constraint === "users_email_unique_idx"
+            ) {
                 return json({
                     success: false,
                     message: "This email address is already registered."
@@ -241,10 +322,11 @@ export async function onRequestPost(context) {
 
         return json({
             success: false,
-            message: "Could not register sector and administrator. Please check the server configuration and try again."
+            message: "Could not register sector and administrator. Please try again."
         }, 500);
 
     } finally {
+
         if (client) {
             await client.end().catch(() => {});
         }
