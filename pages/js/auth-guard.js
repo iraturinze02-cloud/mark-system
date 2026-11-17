@@ -92,17 +92,45 @@
 
             if (!response.ok || !result.success) {
 
-                if (
-                    result.code === "EMAIL_NOT_VERIFIED"
-                ) {
-                    redirectTo(VERIFY_PAGE);
+                if (result.code === "EMAIL_NOT_VERIFIED") {
+
+                    if (!result.email) {
+                        redirectTo(LOGIN_PAGE);
+                        return;
+                    }
+
+                    redirectTo(
+                        VERIFY_PAGE +
+                        "?email=" +
+                        encodeURIComponent(result.email)
+                    );
+
                     return;
                 }
 
-                if (
-                    result.code === "PASSWORD_CHANGE_REQUIRED"
-                ) {
-                    redirectTo(PASSWORD_PAGE);
+                if (result.code === "PASSWORD_CHANGE_REQUIRED") {
+
+                    const token = sessionStorage.getItem(
+                        "fila_password_setup_token"
+                    );
+
+                    if (token) {
+
+                        redirectTo(
+                            PASSWORD_PAGE +
+                            "?token=" +
+                            encodeURIComponent(token)
+                        );
+
+                    } else {
+
+                        showAccessMessage(
+                            "Your email is verified, but you must complete password setup. Your temporary setup link is no longer available in this browser session. Please contact your administrator for assistance."
+                        );
+
+                        document.documentElement.style.visibility = "visible";
+                    }
+
                     return;
                 }
 
@@ -116,6 +144,7 @@
                 !user ||
                 !allowedRoles.includes(user.role)
             ) {
+
                 showAccessMessage(
                     "You are not authorized to access this page."
                 );
@@ -136,7 +165,10 @@
 
         } catch (error) {
 
-            console.error("Page authentication error:", error);
+            console.error(
+                "Page authentication error:",
+                error
+            );
 
             showAccessMessage(
                 "Unable to verify your session. Please check your internet connection and try again."
