@@ -548,6 +548,21 @@ tbody tr:hover {
             <input type="tel" id="teacherPhone"
                    maxlength="30" placeholder="e.g. 0786728623">
         </div>
+        <div class="form-group">
+    <label for="teacherEmail">Email Address</label>
+    <input
+        type="email"
+        id="teacherEmail"
+        maxlength="254"
+        placeholder="Enter teacher's email address"
+        autocomplete="email"
+        required
+    >
+    <small class="form-hint">
+        A verification code will be sent to this email address.
+        The teacher must verify it before logging in.
+    </small>
+</div>
 
         <div class="form-group">
             <label for="teacherPassword">Password</label>
@@ -645,6 +660,7 @@ if (
 
 const teacherTable = document.getElementById("teacherTable");
 const teacherModal = document.getElementById("teacherModal");
+const teacherEmailInput = document.getElementById("teacherEmail");
 const assignmentModal = document.getElementById("assignmentModal");
 
 let teachers = [];
@@ -1017,6 +1033,7 @@ function openAddTeacher() {
     document.getElementById("teacherId").value = "";
     document.getElementById("teacherName").value = "";
     document.getElementById("teacherPhone").value = "";
+    teacherEmailInput.value = "";
     document.getElementById("teacherPassword").value = "";
     document.getElementById("staffNumber").value = "";
 
@@ -1037,6 +1054,7 @@ function openEditTeacher(teacher) {
 
     document.getElementById("teacherPhone").value =
         teacher.phone || "";
+    teacherEmailInput.value = teacher.email || "";
 
     document.getElementById("teacherPassword").value = "";
 
@@ -1080,6 +1098,7 @@ async function saveTeacher() {
 
     const phone =
         document.getElementById("teacherPhone").value.trim();
+    const email = teacherEmailInput.value.trim().toLowerCase();
 
     const password =
         document.getElementById("teacherPassword").value;
@@ -1087,11 +1106,17 @@ async function saveTeacher() {
     const staff_number =
         document.getElementById("staffNumber").value.trim();
 
-    if (!full_name || !phone || (!editMode && !password)) {
-        showToast("Complete all required fields.", "error");
-        return;
-    }
+   if (!full_name || !phone || !email || (!editMode && !password)) {
+    showToast("Complete all required fields.", "error");
+    return;
+}
 
+if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    showToast("Enter a valid email address.", "error");
+    return;
+}
+
+    
     if (password && password.length < 8) {
         showToast(
             "Password must contain at least 8 characters.",
@@ -1101,11 +1126,11 @@ async function saveTeacher() {
     }
 
     const payload = {
-        full_name,
-        phone,
-        staff_number
-    };
-
+    full_name,
+    phone,
+    email,
+    staff_number
+};
     if (password) payload.password = password;
 
     if (editMode) {
