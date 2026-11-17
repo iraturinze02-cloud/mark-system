@@ -301,10 +301,10 @@ document.getElementById("verificationForm")
         verifyBtn.textContent = "Email Verified";
 
         setTimeout(() => {
-            window.location.href =
-                "/pages/sector/set-password.html?email=" +
-                encodeURIComponent(email);
-        }, 1500);
+    window.location.href =
+        "/pages/sector/set-password.html?token=" +
+        encodeURIComponent(result.setupToken);
+}, 1500);
 
     } catch (error) {
         showMessage(error.message, "error");
