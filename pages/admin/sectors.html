@@ -774,9 +774,14 @@ function openAdd(sectorId = "") {
 
 function openEdit(id) {
 
-    const admin = admins.find(item => String(item.id) === String(id));
+    const admin = admins.find(
+        item => String(item.id) === String(id)
+    );
 
-    if (!admin) return;
+    if (!admin) {
+        showMessage("Administrator not found.", "error");
+        return;
+    }
 
     editMode = true;
 
@@ -784,18 +789,30 @@ function openEdit(id) {
         "Edit Sector Admin";
 
     document.getElementById("editId").value = admin.id;
-    document.getElementById("adminSector").value = admin.sector_id;
-    document.getElementById("adminName").value = admin.full_name || "";
-    document.getElementById("adminEmail").value = admin.email || "";
-    document.getElementById("adminPhone").value = admin.phone || "";
+
+    document.getElementById("adminSector").value =
+        admin.sector_name || "";
+
+    document.getElementById("sectorCode").value =
+        admin.sector_code || "";
+
+    document.getElementById("adminName").value =
+        admin.full_name || "";
+
+    document.getElementById("adminEmail").value =
+        admin.email || "";
+
+    document.getElementById("adminPhone").value =
+        admin.phone || "";
+
     document.getElementById("adminPassword").value = "";
 
     document.getElementById("adminSector").disabled = true;
+    document.getElementById("sectorCode").disabled = true;
 
     saveBtn.textContent = "Update";
     modal.style.display = "flex";
 }
-
 // ===================================
 // CLOSE MODAL
 // ===================================
