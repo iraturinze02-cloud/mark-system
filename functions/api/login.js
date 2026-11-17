@@ -16,7 +16,10 @@ export async function onRequest(context) {
 
     try {
 
-        // 1. READ LOGIN DATA
+        /* =============================================
+           1. READ LOGIN DATA
+        ============================================= */
+
         let data;
 
         try {
@@ -38,29 +41,37 @@ export async function onRequest(context) {
             }, { status: 400 });
         }
 
-        // 2. CONNECT TO NEON
+        /* =============================================
+           2. CONNECT TO NEON
+        ============================================= */
+
         client = new Client({
             connectionString: context.env.HYPERDRIVE.connectionString
         });
 
         await client.connect();
 
-        // 3. FIND USER
-        const result = await client.query(
-            `SELECT
+        /* =============================================
+           3. FIND USER
+        ============================================= */
+
+        const result = await client.query(`
+            SELECT
                 id,
                 full_name,
                 phone,
+                email,
+                email_verified,
+                must_change_password,
                 password_hash,
                 role,
                 sector_id,
                 school_id,
                 status
-             FROM users
-             WHERE phone = $1
-             LIMIT 1`,
-            [phone]
-        );
+            FROM users
+            WHERE phone = $1
+            LIMIT 1
+        `, [phone]);
 
         if (result.rows.length === 0) {
             return Response.json({
@@ -71,7 +82,10 @@ export async function onRequest(context) {
 
         const user = result.rows[0];
 
-        // 4. CHECK ACCOUNT STATUS
+        /* =============================================
+           4. CHECK ACCOUNT STATUS
+        ============================================= */
+
         if (user.status !== "active") {
             return Response.json({
                 success: false,
@@ -79,7 +93,10 @@ export async function onRequest(context) {
             }, { status: 403 });
         }
 
-        // 5. VERIFY PASSWORD
+        /* =============================================
+           5. VERIFY PASSWORD
+        ============================================= */
+
         const passwordMatches = await bcrypt.compare(
             password,
             user.password_hash
@@ -92,7 +109,34 @@ export async function onRequest(context) {
             }, { status: 401 });
         }
 
-        // 6. VALIDATE ROLE
+        /* =============================================
+           6. CHECK EMAIL VERIFICATION
+        ============================================= */
+
+        if (user.email && !user.email_verified) {
+            return Response.json({
+                success: false,
+                code: "EMAIL_NOT_VERIFIED",
+                message: "Your email address has not been verified. Please verify your email before logging in."
+            }, { status: 403 });
+        }
+
+        /* =============================================
+           7. REQUIRE NEW PASSWORD
+        ============================================= */
+
+        if (user.must_change_password) {
+            return Response.json({
+                success: false,
+                code: "PASSWORD_CHANGE_REQUIRED",
+                message: "You must verify your email and set a new password before accessing your account."
+            }, { status: 403 });
+        }
+
+        /* =============================================
+           8. VALIDATE ROLE
+        ============================================= */
+
         const allowedRoles = [
             "owner",
             "sector_admin",
@@ -107,7 +151,10 @@ export async function onRequest(context) {
             }, { status: 403 });
         }
 
-        // 7. VERIFY JWT SECRET
+        /* =============================================
+           9. VERIFY JWT SECRET
+        ============================================= */
+
         const jwtSecret = context.env.JWT_SECRET;
 
         if (
@@ -117,7 +164,10 @@ export async function onRequest(context) {
             throw new Error("JWT_SECRET is missing or too short.");
         }
 
-        // 8. CREATE JWT SESSION
+        /* =============================================
+           10. CREATE JWT SESSION
+        ============================================= */
+
         const secret = new TextEncoder().encode(jwtSecret);
 
         const token = await new SignJWT({
@@ -131,11 +181,16 @@ export async function onRequest(context) {
         .setExpirationTime("8h")
         .sign(secret);
 
-        // 9. RETURN SAFE USER DATA
+        /* =============================================
+           11. RETURN SAFE USER DATA
+        ============================================= */
+
         const safeUser = {
             id: String(user.id),
             full_name: user.full_name,
             phone: user.phone,
+            email: user.email,
+            email_verified: user.email_verified,
             role: user.role,
             sector_id: user.sector_id,
             school_id: user.school_id
