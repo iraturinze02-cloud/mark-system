@@ -1,3 +1,4 @@
+
 import { Client } from "pg";
 import { jwtVerify } from "jose";
 
@@ -141,6 +142,9 @@ export async function authenticateRole(
                 id,
                 full_name,
                 phone,
+                email,
+                email_verified,
+                must_change_password,
                 role,
                 sector_id,
                 school_id,
@@ -162,6 +166,10 @@ export async function authenticateRole(
 
         const user = result.rows[0];
 
+        /* ---------------------------------------------
+           ACCOUNT STATUS
+        --------------------------------------------- */
+
         if (user.status !== "active") {
             return {
                 error: json({
@@ -171,6 +179,44 @@ export async function authenticateRole(
             };
         }
 
+        /* ---------------------------------------------
+           EMAIL VERIFICATION
+           
+           Accounts without an email retain their
+           previous access.
+        --------------------------------------------- */
+
+        if (
+            user.email &&
+            user.email_verified !== true
+        ) {
+            return {
+                error: json({
+                    success: false,
+                    code: "EMAIL_NOT_VERIFIED",
+                    message: "Please verify your email address before accessing the system."
+                }, 403)
+            };
+        }
+
+        /* ---------------------------------------------
+           REQUIRE A NEW PASSWORD
+        --------------------------------------------- */
+
+        if (user.must_change_password === true) {
+            return {
+                error: json({
+                    success: false,
+                    code: "PASSWORD_CHANGE_REQUIRED",
+                    message: "Please set your new password before accessing the system."
+                }, 403)
+            };
+        }
+
+        /* ---------------------------------------------
+           SESSION ROLE VALIDATION
+        --------------------------------------------- */
+
         if (payload.role !== user.role) {
             return {
                 error: json({
@@ -179,6 +225,10 @@ export async function authenticateRole(
                 }, 401)
             };
         }
+
+        /* ---------------------------------------------
+           EXPECTED ROLE VALIDATION
+        --------------------------------------------- */
 
         const allowedRoles = Array.isArray(expectedRole)
             ? expectedRole
@@ -193,10 +243,16 @@ export async function authenticateRole(
             };
         }
 
+        /* ---------------------------------------------
+           AUTHENTICATED USER
+        --------------------------------------------- */
+
         return {
             userId: String(user.id),
             fullName: user.full_name,
             phone: user.phone,
+            email: user.email,
+            emailVerified: user.email_verified,
             role: user.role,
             sectorId: user.sector_id
                 ? String(user.sector_id)
