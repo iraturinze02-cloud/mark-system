@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>School Management | Sector Education Examination Platform</title>
+   <title>School Management | Fila Grades System</title>
 
     <link rel="stylesheet" href="style.css">
 
@@ -458,7 +458,7 @@
         </section>
 
         <div class="footer">
-            Sector Education Examination Platform
+            Fila Grades System
         </div>
 
     </main>
@@ -525,6 +525,23 @@
                         This phone number will be used to log in.
                     </small>
                 </div>
+                <div class="form-group">
+    <label for="adminEmail">Email Address</label>
+
+    <input
+        type="email"
+        id="adminEmail"
+        placeholder="Enter administrator's email address"
+        maxlength="254"
+        autocomplete="email"
+        required
+    >
+
+    <small class="form-hint">
+        A verification code will be sent to this email address.
+        The administrator must verify it before logging in.
+    </small>
+</div>
 
                 <div class="form-group">
                     <label for="adminPassword">Password</label>
@@ -662,8 +679,8 @@
         const schoolNameInput = document.getElementById("schoolName");
         const adminNameInput = document.getElementById("adminName");
         const adminPhoneInput = document.getElementById("adminPhone");
-        const adminPasswordInput = document.getElementById("adminPassword");
-
+const adminEmailInput = document.getElementById("adminEmail");
+const adminPasswordInput = document.getElementById("adminPassword");
         let editMode = false;
         let toastTimeout = null;
 
@@ -862,8 +879,9 @@
     document.getElementById("editId").value = admin.id;
 
     schoolNameInput.value = admin.school_name || "";
-    adminNameInput.value = admin.full_name || "";
-    adminPhoneInput.value = admin.phone || "";
+   adminNameInput.value = admin.full_name || "";
+adminPhoneInput.value = admin.phone || "";
+adminEmailInput.value = admin.email || "";
 
     adminPasswordInput.value = "";
 
@@ -989,10 +1007,11 @@ function clearSelectedLevels() {
 
             const full_name = adminNameInput.value.trim();
             const phone = adminPhoneInput.value.trim();
+            const email = adminEmailInput.value.trim().toLowerCase();
             const password = adminPasswordInput.value;
             const school_name = schoolNameInput.value.trim();
 
-            if (!school_name || !full_name || !phone) {
+            if (!school_name || !full_name || !phone || !email) {
 
                 showFormMessage(
                     "Please complete all required fields.",
@@ -1037,6 +1056,7 @@ if (selectedLevels.length === 0) {
 const payload = {
     full_name,
     phone,
+    email,
     school_name,
     level_ids: selectedLevels
 };
