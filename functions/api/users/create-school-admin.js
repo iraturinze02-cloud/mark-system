@@ -69,6 +69,23 @@ function validateLevelIds(value) {
 }
 
 /* =====================================================
+   GENERATE INTERNAL TEMPORARY PASSWORD
+
+   This password is never returned or emailed.
+   The administrator creates their own password later.
+===================================================== */
+
+function generateTemporaryPassword() {
+    const randomBytes = crypto.getRandomValues(
+        new Uint8Array(32)
+    );
+
+    return Array.from(randomBytes)
+        .map(byte => byte.toString(16).padStart(2, "0"))
+        .join("");
+}
+
+/* =====================================================
    SCHOOL EDUCATION LEVELS
 ===================================================== */
 
@@ -109,7 +126,6 @@ export async function onRequestPost(context) {
     const fullName = String(data.full_name || "").trim();
     const phone = String(data.phone || "").trim();
     const email = normalizeEmail(data.email);
-    const password = String(data.password || "");
     const schoolName = String(data.school_name || "").trim();
 
     /* =============================================
@@ -129,6 +145,8 @@ export async function onRequestPost(context) {
 
     /* =============================================
        VALIDATE REQUIRED FIELDS
+
+       Password is no longer required.
     ============================================= */
 
     const missing = [];
@@ -136,7 +154,6 @@ export async function onRequestPost(context) {
     if (!fullName) missing.push("full_name");
     if (!phone) missing.push("phone");
     if (!email) missing.push("email");
-    if (!password) missing.push("password");
     if (!schoolName) missing.push("school_name");
 
     if (missing.length > 0) {
@@ -163,13 +180,6 @@ export async function onRequestPost(context) {
         return json({
             success: false,
             message: "Please enter a valid email address."
-        }, 400);
-    }
-
-    if (password.length < 8) {
-        return json({
-            success: false,
-            message: "Password must contain at least 8 characters."
         }, 400);
     }
 
@@ -295,15 +305,25 @@ export async function onRequestPost(context) {
         }
 
         /* =============================================
-           HASH PASSWORD
+           GENERATE INTERNAL TEMPORARY PASSWORD
+
+           The sector admin does not choose a password.
+           The school admin will set their own password.
         ============================================= */
 
-        const passwordHash = await bcrypt.hash(password, 12);
+        const temporaryPassword =
+            generateTemporaryPassword();
+
+        const passwordHash = await bcrypt.hash(
+            temporaryPassword,
+            12
+        );
 
         /* =============================================
            CREATE SCHOOL ADMINISTRATOR
 
-           New account starts unverified.
+           email_verified = FALSE
+           must_change_password = TRUE
         ============================================= */
 
         const result = await client.query(
@@ -313,17 +333,29 @@ export async function onRequestPost(context) {
                 email,
                 email_verified,
                 password_hash,
+                must_change_password,
                 role,
                 school_id,
                 status
             )
-            VALUES ($1, $2, $3, FALSE, $4, 'school_admin', $5, 'active')
+            VALUES (
+                $1,
+                $2,
+                $3,
+                FALSE,
+                $4,
+                TRUE,
+                'school_admin',
+                $5,
+                'active'
+            )
             RETURNING
                 id,
                 full_name,
                 phone,
                 email,
                 email_verified,
+                must_change_password,
                 school_id,
                 role`,
             [
