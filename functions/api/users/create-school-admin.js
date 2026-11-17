@@ -7,6 +7,14 @@ import {
     json
 } from "../../_utils.js";
 
+import {
+    normalizeEmail,
+    generateOtp,
+    saveOtp,
+    sendEmail,
+    verificationEmail
+} from "../../_email.js";
+
 /* =====================================================
    EDUCATION LEVEL HELPERS
 ===================================================== */
@@ -100,6 +108,7 @@ export async function onRequestPost(context) {
 
     const fullName = String(data.full_name || "").trim();
     const phone = String(data.phone || "").trim();
+    const email = normalizeEmail(data.email);
     const password = String(data.password || "");
     const schoolName = String(data.school_name || "").trim();
 
@@ -126,6 +135,7 @@ export async function onRequestPost(context) {
 
     if (!fullName) missing.push("full_name");
     if (!phone) missing.push("phone");
+    if (!email) missing.push("email");
     if (!password) missing.push("password");
     if (!schoolName) missing.push("school_name");
 
@@ -140,11 +150,19 @@ export async function onRequestPost(context) {
     if (
         fullName.length > 200 ||
         phone.length > 30 ||
+        email.length > 254 ||
         schoolName.length > 200
     ) {
         return json({
             success: false,
             message: "One or more fields exceed the allowed length."
+        }, 400);
+    }
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        return json({
+            success: false,
+            message: "Please enter a valid email address."
         }, 400);
     }
 
@@ -224,9 +242,6 @@ export async function onRequestPost(context) {
 
         /* =============================================
            SAVE SCHOOL EDUCATION LEVELS
-
-           Existing levels are preserved.
-           Missing selected levels are added.
         ============================================= */
 
         await ensureSchoolLevels(
@@ -239,7 +254,7 @@ export async function onRequestPost(context) {
            CHECK DUPLICATE PHONE NUMBER
         ============================================= */
 
-        const duplicate = await client.query(
+        const duplicatePhone = await client.query(
             `SELECT id
              FROM users
              WHERE phone = $1
@@ -247,13 +262,35 @@ export async function onRequestPost(context) {
             [phone]
         );
 
-        if (duplicate.rows.length > 0) {
+        if (duplicatePhone.rows.length > 0) {
             await client.query("ROLLBACK");
             transactionStarted = false;
 
             return json({
                 success: false,
                 message: "This phone number is already registered."
+            }, 409);
+        }
+
+        /* =============================================
+           CHECK DUPLICATE EMAIL ADDRESS
+        ============================================= */
+
+        const duplicateEmail = await client.query(
+            `SELECT id
+             FROM users
+             WHERE LOWER(email) = LOWER($1)
+             LIMIT 1`,
+            [email]
+        );
+
+        if (duplicateEmail.rows.length > 0) {
+            await client.query("ROLLBACK");
+            transactionStarted = false;
+
+            return json({
+                success: false,
+                message: "This email address is already registered."
             }, 409);
         }
 
@@ -265,26 +302,69 @@ export async function onRequestPost(context) {
 
         /* =============================================
            CREATE SCHOOL ADMINISTRATOR
+
+           New account starts unverified.
         ============================================= */
 
         const result = await client.query(
             `INSERT INTO users (
                 full_name,
                 phone,
+                email,
+                email_verified,
                 password_hash,
                 role,
                 school_id,
                 status
             )
-            VALUES ($1, $2, $3, 'school_admin', $4, 'active')
-            RETURNING id, full_name, phone, school_id, role`,
+            VALUES ($1, $2, $3, FALSE, $4, 'school_admin', $5, 'active')
+            RETURNING
+                id,
+                full_name,
+                phone,
+                email,
+                email_verified,
+                school_id,
+                role`,
             [
                 fullName,
                 phone,
+                email,
                 passwordHash,
                 schoolId
             ]
         );
+
+        const admin = result.rows[0];
+
+        /* =============================================
+           GENERATE AND SAVE EMAIL VERIFICATION OTP
+        ============================================= */
+
+        const otp = generateOtp();
+
+        await saveOtp(
+            client,
+            admin.id,
+            otp
+        );
+
+        /* =============================================
+           SEND VERIFICATION EMAIL
+        ============================================= */
+
+        const emailContent = verificationEmail(
+            fullName,
+            otp,
+            email
+        );
+
+        await sendEmail(context, {
+            to: email,
+            subject: emailContent.subject,
+            html: emailContent.html,
+            text: emailContent.text
+        });
 
         /* =============================================
            COMMIT TRANSACTION
@@ -295,9 +375,9 @@ export async function onRequestPost(context) {
 
         return json({
             success: true,
-            message: "School administrator created successfully.",
+            message: "School administrator created successfully. A verification code has been sent to the administrator's email address.",
             admin: {
-                ...result.rows[0],
+                ...admin,
                 school_name: schoolName
             }
         }, 201);
@@ -316,13 +396,13 @@ export async function onRequestPost(context) {
         if (error.code === "23505") {
             return json({
                 success: false,
-                message: "This phone number or school code is already registered."
+                message: "This phone number or email address is already registered."
             }, 409);
         }
 
         return json({
             success: false,
-            message: "Failed to create school administrator."
+            message: "Failed to create school administrator or send the verification email."
         }, 500);
 
     } finally {
