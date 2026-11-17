@@ -4,15 +4,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-   <title>School Management | Fila Grades System</title>
+    <title>School Management | Fila Grades System</title>
 
     <link rel="stylesheet" href="style.css">
 
     <style>
-        * {
-            box-sizing: border-box;
-        }
+        * { box-sizing: border-box; }
 
         body {
             margin: 0;
@@ -28,16 +25,8 @@
             text-align: center;
         }
 
-        header h1 {
-            margin: 0;
-            font-size: 25px;
-        }
-
-        header p {
-            margin: 8px 0 0;
-            font-size: 14px;
-            opacity: 0.9;
-        }
+        header h1 { margin: 0; font-size: 25px; }
+        header p { margin: 8px 0 0; font-size: 14px; opacity: 0.9; }
 
         .logout-btn {
             margin-top: 15px;
@@ -50,9 +39,7 @@
             cursor: pointer;
         }
 
-        .logout-btn:hover {
-            background: #b91c1c;
-        }
+        .logout-btn:hover { background: #b91c1c; }
 
         .dashboard-container {
             max-width: 1100px;
@@ -88,79 +75,68 @@
             color: #64748b;
             font-size: 13px;
         }
-/* CLASS SELECTION */
 
-.class-selection {
-    border: 1px solid #cbd5e1;
-    border-radius: 9px;
-    padding: 14px;
-    background: #f8fafc;
-}
+        .class-selection {
+            border: 1px solid #cbd5e1;
+            border-radius: 9px;
+            padding: 14px;
+            background: #f8fafc;
+        }
 
-.class-selection h3 {
-    margin: 0 0 12px;
-    color: #1e40af;
-    font-size: 14px;
-}
+        .class-selection h3 {
+            margin: 0 0 12px;
+            color: #1e40af;
+            font-size: 14px;
+        }
 
-.class-group {
-    margin-bottom: 15px;
-}
+        .class-group { margin-bottom: 15px; }
+        .class-group:last-child { margin-bottom: 0; }
 
-.class-group:last-child {
-    margin-bottom: 0;
-}
+        .class-group-title {
+            font-size: 12px;
+            font-weight: bold;
+            color: #475569;
+            margin-bottom: 9px;
+        }
 
-.class-group-title {
-    font-size: 12px;
-    font-weight: bold;
-    color: #475569;
-    margin-bottom: 9px;
-}
+        .class-options {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 8px;
+        }
 
-.class-options {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 8px;
-}
+        .class-option {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            padding: 9px;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 7px;
+            cursor: pointer;
+            font-size: 13px;
+        }
 
-.class-option {
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    padding: 9px;
-    background: white;
-    border: 1px solid #e2e8f0;
-    border-radius: 7px;
-    cursor: pointer;
-    font-size: 13px;
-}
+        .class-option input {
+            width: 16px;
+            height: 16px;
+            margin: 0;
+            accent-color: #2563eb;
+        }
 
-.class-option input {
-    width: 16px;
-    height: 16px;
-    margin: 0;
-    accent-color: #2563eb;
-}
+        .class-option:has(input:checked) {
+            background: #eff6ff;
+            border-color: #2563eb;
+        }
 
-.class-option:has(input:checked) {
-    background: #eff6ff;
-    border-color: #2563eb;
-}
+        .class-selection-hint {
+            display: block;
+            margin-top: 10px;
+            color: #64748b;
+            font-size: 11px;
+            line-height: 1.5;
+        }
 
-.class-selection-hint {
-    display: block;
-    margin-top: 10px;
-    color: #64748b;
-    font-size: 11px;
-    line-height: 1.5;
-}
-
-@media (max-width: 400px) {
-    .class-options {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-}
         .btn {
             display: inline-flex;
             align-items: center;
@@ -177,33 +153,12 @@
             transition: 0.2s;
         }
 
-        .btn:hover {
-            transform: translateY(-2px);
-            filter: brightness(0.95);
-        }
-
-        .btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .btn-warning {
-            background: linear-gradient(135deg, #f59e0b, #d97706);
-        }
-
-        .btn-danger {
-            background: linear-gradient(135deg, #ef4444, #dc2626);
-        }
-
-        .btn-success {
-            background: linear-gradient(135deg, #22c55e, #16a34a);
-        }
-
-        .btn-sm {
-            padding: 8px 11px;
-            font-size: 12px;
-        }
+        .btn:hover { transform: translateY(-2px); filter: brightness(0.95); }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        .btn-warning { background: linear-gradient(135deg, #f59e0b, #d97706); }
+        .btn-danger { background: linear-gradient(135deg, #ef4444, #dc2626); }
+        .btn-success { background: linear-gradient(135deg, #22c55e, #16a34a); }
+        .btn-sm { padding: 8px 11px; font-size: 12px; }
 
         .table-wrapper {
             width: 100%;
@@ -224,29 +179,11 @@
             font-size: 13px;
         }
 
-        th {
-            background: #eff6ff;
-            color: #1e40af;
-            font-weight: bold;
-        }
+        th { background: #eff6ff; color: #1e40af; font-weight: bold; }
+        tbody tr:hover { background: #f8fafc; }
 
-        tbody tr:hover {
-            background: #f8fafc;
-        }
-
-        .action-buttons {
-            display: flex;
-            gap: 7px;
-            flex-wrap: wrap;
-        }
-
-        .table-message {
-            text-align: center;
-            padding: 25px;
-            color: #64748b;
-        }
-
-        /* MODAL */
+        .action-buttons { display: flex; gap: 7px; flex-wrap: wrap; }
+        .table-message { text-align: center; padding: 25px; color: #64748b; }
 
         .modal {
             display: none;
@@ -259,9 +196,7 @@
             padding: 15px;
         }
 
-        .modal.show {
-            display: flex;
-        }
+        .modal.show { display: flex; }
 
         .modal-content {
             background: white;
@@ -280,9 +215,7 @@
             font-size: 21px;
         }
 
-        .form-group {
-            margin-bottom: 15px;
-        }
+        .form-group { margin-bottom: 15px; }
 
         .form-group label {
             display: block;
@@ -315,15 +248,8 @@
             line-height: 1.5;
         }
 
-        .modal-actions {
-            display: flex;
-            gap: 10px;
-            margin-top: 20px;
-        }
-
-        .modal-actions button {
-            flex: 1;
-        }
+        .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+        .modal-actions button { flex: 1; }
 
         .message {
             display: none;
@@ -334,11 +260,7 @@
             line-height: 1.5;
         }
 
-        .message.error {
-            display: block;
-            color: #991b1b;
-            background: #fee2e2;
-        }
+        .message.error { display: block; color: #991b1b; background: #fee2e2; }
 
         .footer {
             text-align: center;
@@ -346,8 +268,6 @@
             font-size: 12px;
             margin: 25px 0;
         }
-
-        /* NOTIFICATION */
 
         .toast {
             position: fixed;
@@ -364,818 +284,662 @@
             display: none;
         }
 
-        .toast.show {
-            display: block;
-        }
-
-        .toast.success {
-            background: #15803d;
-        }
-
-        .toast.error {
-            background: #dc2626;
-        }
+        .toast.show { display: block; }
+        .toast.success { background: #15803d; }
+        .toast.error { background: #dc2626; }
 
         @media (max-width: 600px) {
-            header h1 {
-                font-size: 21px;
-            }
+            header h1 { font-size: 21px; }
+            .management-card { padding: 17px; }
+            .page-heading { align-items: stretch; }
+            .page-heading .btn { width: 100%; }
+            .modal-content { padding: 20px; }
+            .toast { left: 15px; right: 15px; top: 15px; max-width: none; }
+        }
 
-            .management-card {
-                padding: 17px;
-            }
-
-            .page-heading {
-                align-items: stretch;
-            }
-
-            .page-heading .btn {
-                width: 100%;
-            }
-
-            .modal-content {
-                padding: 20px;
-            }
-
-            .toast {
-                left: 15px;
-                right: 15px;
-                top: 15px;
-                max-width: none;
-            }
+        @media (max-width: 400px) {
+            .class-options { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         }
     </style>
 </head>
 
 <body>
 
-    <header>
-        <h1>SCHOOL MANAGEMENT</h1>
-        <p>Manage schools and school administrators in your sector</p>
+<header>
+    <h1>SCHOOL MANAGEMENT</h1>
+    <p>Manage schools and school administrators in your sector</p>
+    <button class="logout-btn" id="logoutBtn" type="button">Logout</button>
+</header>
 
-        <button class="logout-btn" id="logoutBtn" type="button">
-            Logout
-        </button>
-    </header>
+<main class="dashboard-container">
+    <section class="management-card">
 
-    <main class="dashboard-container">
-
-        <section class="management-card">
-
-            <div class="page-heading">
-                <div>
-                    <h2>School & Admin Overview</h2>
-                    <p>Register and manage school administrators.</p>
-                </div>
-
-                <button class="btn" id="addAdminBtn" type="button">
-                    + Add School Admin
-                </button>
+        <div class="page-heading">
+            <div>
+                <h2>School & Admin Overview</h2>
+                <p>Register and manage school administrators.</p>
             </div>
 
-            <div class="table-wrapper">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>School</th>
-                            <th>Admin Name</th>
-                            <th>Phone Number</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-
-                    <tbody id="schoolTable">
-                        <tr>
-                            <td colspan="5" class="table-message">
-                                Loading school administrators...
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
-        </section>
-
-        <div class="footer">
-            Fila Grades System
+            <button class="btn" id="addAdminBtn" type="button">
+                + Add School Admin
+            </button>
         </div>
 
-    </main>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>School</th>
+                        <th>Admin Name</th>
+                        <th>Phone Number</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
 
-    <!-- ADD / EDIT MODAL -->
+                <tbody id="schoolTable">
+                    <tr>
+                        <td colspan="5" class="table-message">
+                            Loading school administrators...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
 
-    <div class="modal" id="adminModal">
+    </section>
 
-        <div class="modal-content">
+    <div class="footer">Fila Grades System</div>
+</main>
 
-            <h2 id="modalTitle">Add School Admin</h2>
+<!-- ADD / EDIT MODAL -->
 
-            <div id="formMessage" class="message"></div>
+<div class="modal" id="adminModal">
+    <div class="modal-content">
 
-            <form id="adminForm">
+        <h2 id="modalTitle">Add School Admin</h2>
 
-                <input type="hidden" id="editId">
+        <div id="formMessage" class="message"></div>
 
-                <div class="form-group">
-                    <label for="schoolName">School Name</label>
+        <form id="adminForm">
+            <input type="hidden" id="editId">
 
-                    <input
-                        type="text"
-                        id="schoolName"
-                        name="school_name"
-                        placeholder="Enter school name"
-                        maxlength="200"
-                        autocomplete="organization"
-                        required
-                    >
+            <div class="form-group">
+                <label for="schoolName">School Name</label>
+                <input
+                    type="text"
+                    id="schoolName"
+                    name="school_name"
+                    placeholder="Enter school name"
+                    maxlength="200"
+                    autocomplete="organization"
+                    required
+                >
+                <small class="form-hint">
+                    Enter the official name of the school. If it has
+                    already been registered in your sector, the existing
+                    school record will be used.
+                </small>
+            </div>
 
-                    <small class="form-hint">
-                        Enter the official name of the school. If it has
-                        already been registered in your sector, the existing
-                        school record will be used.
-                    </small>
-                </div>
+            <div class="form-group">
+                <label for="adminName">Full Name</label>
+                <input
+                    type="text"
+                    id="adminName"
+                    placeholder="Enter administrator's full name"
+                    maxlength="200"
+                    required
+                >
+            </div>
 
-                <div class="form-group">
-                    <label for="adminName">Full Name</label>
+            <div class="form-group">
+                <label for="adminPhone">Phone Number</label>
+                <input
+                    type="tel"
+                    id="adminPhone"
+                    placeholder="Enter phone number"
+                    maxlength="30"
+                    autocomplete="tel"
+                    required
+                >
+                <small class="form-hint">
+                    This phone number will be used to log in.
+                </small>
+            </div>
 
-                    <input
-                        type="text"
-                        id="adminName"
-                        placeholder="Enter administrator's full name"
-                        maxlength="200"
-                        required
-                    >
-                </div>
+            <div class="form-group">
+                <label for="adminEmail">Email Address</label>
+                <input
+                    type="email"
+                    id="adminEmail"
+                    placeholder="Enter administrator's email address"
+                    maxlength="254"
+                    autocomplete="email"
+                    required
+                >
+                <small class="form-hint">
+                    A verification code will be sent to this email address.
+                    The administrator must verify it before logging in and
+                    will set their own password.
+                </small>
+            </div>
 
-                <div class="form-group">
-                    <label for="adminPhone">Phone Number</label>
+            <!-- SCHOOL EDUCATION LEVELS -->
 
-                    <input
-                        type="tel"
-                        id="adminPhone"
-                        placeholder="Enter phone number"
-                        maxlength="30"
-                        autocomplete="tel"
-                        required
-                    >
+            <div class="form-group">
+                <label>Education Levels Offered by This School</label>
 
-                    <small class="form-hint">
-                        This phone number will be used to log in.
-                    </small>
-                </div>
-                <div class="form-group">
-    <label for="adminEmail">Email Address</label>
+                <div class="class-selection">
+                    <h3>Select Education Levels</h3>
 
-    <input
-        type="email"
-        id="adminEmail"
-        placeholder="Enter administrator's email address"
-        maxlength="254"
-        autocomplete="email"
-        required
-    >
-
-    <small class="form-hint">
-        A verification code will be sent to this email address.
-        The administrator must verify it before logging in.
-    </small>
-</div>
-
-                <div class="form-group">
-                    <label for="adminPassword">Password</label>
-
-                    <input
-                        type="password"
-                        id="adminPassword"
-                        placeholder="Enter password"
-                        minlength="8"
-                        autocomplete="new-password"
-                    >
-
-                    <small class="form-hint" id="passwordHint">
-                        A password is required when creating an account.
-                    </small>
-                </div>
-
-                <!-- SCHOOL EDUCATION LEVELS -->
-
-                <div class="form-group">
-
-                    <label>Education Levels Offered by This School</label>
-
-                    <div class="class-selection">
-
-                        <h3>Select Education Levels</h3>
-
-                        <div class="class-group">
-                            <div class="class-group-title">PRIMARY</div>
-                            <div class="class-options">
-                                <label class="class-option">
-                                    <input type="checkbox" name="level_ids" value="1">
-                                    Primary (P1–P6)
-                                </label>
-                            </div>
+                    <div class="class-group">
+                        <div class="class-group-title">PRIMARY</div>
+                        <div class="class-options">
+                            <label class="class-option">
+                                <input type="checkbox" name="level_ids" value="1">
+                                Primary (P1–P6)
+                            </label>
                         </div>
-
-                        <div class="class-group">
-                            <div class="class-group-title">ORDINARY LEVEL</div>
-                            <div class="class-options">
-                                <label class="class-option">
-                                    <input type="checkbox" name="level_ids" value="2">
-                                    Ordinary Level (S1–S3)
-                                </label>
-                            </div>
-                        </div>
-
-                        <div class="class-group">
-                            <div class="class-group-title">ADVANCED LEVEL</div>
-                            <div class="class-options">
-                                <label class="class-option">
-                                    <input type="checkbox" name="level_ids" value="3">
-                                    Advanced Level (S4–S6)
-                                </label>
-                            </div>
-                        </div>
-
-                        <small class="class-selection-hint">
-                            Select every education level offered by this school.
-                            Classes will be provided automatically from the selected levels.
-                        </small>
-
                     </div>
 
+                    <div class="class-group">
+                        <div class="class-group-title">ORDINARY LEVEL</div>
+                        <div class="class-options">
+                            <label class="class-option">
+                                <input type="checkbox" name="level_ids" value="2">
+                                Ordinary Level (S1–S3)
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="class-group">
+                        <div class="class-group-title">ADVANCED LEVEL</div>
+                        <div class="class-options">
+                            <label class="class-option">
+                                <input type="checkbox" name="level_ids" value="3">
+                                Advanced Level (S4–S6)
+                            </label>
+                        </div>
+                    </div>
+
+                    <small class="class-selection-hint">
+                        Select every education level offered by this school.
+                        Classes will be provided automatically from the selected levels.
+                    </small>
                 </div>
+            </div>
 
-                <div class="modal-actions">
+            <div class="modal-actions">
+                <button class="btn btn-success" id="saveBtn" type="submit">
+                    Save
+                </button>
 
-                    <button
-                        class="btn btn-success"
-                        id="saveBtn"
-                        type="submit"
-                    >
-                        Save
-                    </button>
-
-                    <button
-                        class="btn btn-danger"
-                        id="cancelBtn"
-                        type="button"
-                    >
-                        Cancel
-                    </button>
-
-                </div>
-
-            </form>
-
-        </div>
+                <button class="btn btn-danger" id="cancelBtn" type="button">
+                    Cancel
+                </button>
+            </div>
+        </form>
     </div>
+</div>
 
-    <div id="toast" class="toast"></div>
+<div id="toast" class="toast"></div>
 
-    <script>
+<script>
+// ==================================================
+// AUTHENTICATION
+// ==================================================
+
+let currentUser = null;
+
+try {
+    currentUser = JSON.parse(
+        localStorage.getItem("currentUser") || "null"
+    );
+} catch (error) {
+    currentUser = null;
+}
+
+const storedRole = localStorage.getItem("role");
+
+const authorized =
+    currentUser &&
+    currentUser.id &&
+    storedRole === "sector_admin" &&
+    currentUser.role === "sector_admin";
+
+if (!authorized) {
+    window.location.replace("../../index.html");
+} else {
+
     // ==================================================
-    // AUTHENTICATION
+    // ELEMENTS
     // ==================================================
 
-    let currentUser = null;
+    const schoolTable = document.getElementById("schoolTable");
+    const modal = document.getElementById("adminModal");
+    const adminForm = document.getElementById("adminForm");
 
-    try {
-        currentUser = JSON.parse(
-            localStorage.getItem("currentUser") || "null"
-        );
-    } catch (error) {
-        currentUser = null;
+    const saveBtn = document.getElementById("saveBtn");
+    const formMessage = document.getElementById("formMessage");
+    const toast = document.getElementById("toast");
+
+    const schoolNameInput = document.getElementById("schoolName");
+    const adminNameInput = document.getElementById("adminName");
+    const adminPhoneInput = document.getElementById("adminPhone");
+    const adminEmailInput = document.getElementById("adminEmail");
+
+    let editMode = false;
+    let toastTimeout = null;
+
+    // ==================================================
+    // NOTIFICATIONS
+    // ==================================================
+
+    function showToast(message, type = "success") {
+        toast.textContent = message;
+        toast.className = "toast show " + type;
+
+        if (toastTimeout) {
+            clearTimeout(toastTimeout);
+        }
+
+        toastTimeout = setTimeout(() => {
+            toast.className = "toast";
+        }, 3500);
     }
 
-    const storedRole = localStorage.getItem("role");
+    // ==================================================
+    // API RESPONSE HANDLER
+    // ==================================================
 
-    const authorized =
-        currentUser &&
-        currentUser.id &&
-        storedRole === "sector_admin" &&
-        currentUser.role === "sector_admin";
+    async function readJsonResponse(response) {
+        const contentType =
+            response.headers.get("content-type") || "";
 
-    if (!authorized) {
+        if (!contentType.includes("application/json")) {
+            await response.text();
 
-        window.location.replace("../../index.html");
-
-    } else {
-
-        // ==================================================
-        // ELEMENTS
-        // ==================================================
-
-        const schoolTable = document.getElementById("schoolTable");
-        const modal = document.getElementById("adminModal");
-        const adminForm = document.getElementById("adminForm");
-
-        const saveBtn = document.getElementById("saveBtn");
-        const formMessage = document.getElementById("formMessage");
-        const toast = document.getElementById("toast");
-
-        const schoolNameInput = document.getElementById("schoolName");
-        const adminNameInput = document.getElementById("adminName");
-        const adminPhoneInput = document.getElementById("adminPhone");
-const adminEmailInput = document.getElementById("adminEmail");
-const adminPasswordInput = document.getElementById("adminPassword");
-        let editMode = false;
-        let toastTimeout = null;
-
-        // ==================================================
-        // NOTIFICATIONS
-        // ==================================================
-
-        function showToast(message, type = "success") {
-
-            toast.textContent = message;
-            toast.className = "toast show " + type;
-
-            if (toastTimeout) {
-                clearTimeout(toastTimeout);
-            }
-
-            toastTimeout = setTimeout(() => {
-                toast.className = "toast";
-            }, 3500);
+            throw new Error(
+                "The server returned HTML instead of JSON. " +
+                "Check that the Cloudflare API endpoint exists."
+            );
         }
 
-        // ==================================================
-        // API RESPONSE HANDLER
-        // ==================================================
+        const data = await response.json();
 
-        async function readJsonResponse(response) {
-
-            const contentType =
-                response.headers.get("content-type") || "";
-
-            if (!contentType.includes("application/json")) {
-
-                await response.text();
-
-                throw new Error(
-                    "The server returned HTML instead of JSON. " +
-                    "Check that the Cloudflare API endpoint exists."
-                );
-            }
-
-            const data = await response.json();
-
-            if (!response.ok || data.success === false) {
-
-                throw new Error(
-                    data.message || "The request could not be completed."
-                );
-            }
-
-            return data;
+        if (!response.ok || data.success === false) {
+            throw new Error(
+                data.message || "The request could not be completed."
+            );
         }
 
-        // ==================================================
-        // LOAD SCHOOL ADMINISTRATORS
-        // ==================================================
+        return data;
+    }
 
-        async function loadSchoolAdmins() {
+    // ==================================================
+    // LOAD SCHOOL ADMINISTRATORS
+    // ==================================================
 
-            schoolTable.innerHTML = `
-                <tr>
-                    <td colspan="5" class="table-message">
-                        Loading school administrators...
-                    </td>
-                </tr>
-            `;
+    async function loadSchoolAdmins() {
+        schoolTable.innerHTML = `
+            <tr>
+                <td colspan="5" class="table-message">
+                    Loading school administrators...
+                </td>
+            </tr>
+        `;
 
-            try {
+        try {
+            const response = await fetch("/api/school-admins", {
+                method: "GET",
+                credentials: "same-origin",
+                cache: "no-store"
+            });
 
-                const response = await fetch("/api/school-admins", {
-                    method: "GET",
-                    credentials: "same-origin",
-                    cache: "no-store"
-                });
+            const data = await readJsonResponse(response);
+            const admins = data.admins || [];
 
-                const data = await readJsonResponse(response);
+            schoolTable.innerHTML = "";
 
-                const admins = data.admins || [];
-
-                schoolTable.innerHTML = "";
-
-                if (admins.length === 0) {
-
-                    const row = document.createElement("tr");
-                    const cell = document.createElement("td");
-
-                    cell.colSpan = 5;
-                    cell.className = "table-message";
-                    cell.textContent =
-                        "No school administrators registered yet.";
-
-                    row.appendChild(cell);
-                    schoolTable.appendChild(row);
-
-                    return;
-                }
-
-                admins.forEach((admin, index) => {
-
-                    const row = document.createElement("tr");
-
-                    const numberCell = document.createElement("td");
-                    numberCell.textContent = index + 1;
-
-                    const schoolCell = document.createElement("td");
-                    schoolCell.textContent = admin.school_name || "-";
-
-                    const nameCell = document.createElement("td");
-                    nameCell.textContent = admin.full_name || "-";
-
-                    const phoneCell = document.createElement("td");
-                    phoneCell.textContent = admin.phone || "-";
-
-                    const actionCell = document.createElement("td");
-                    const actions = document.createElement("div");
-
-                    actions.className = "action-buttons";
-
-                    const editButton = document.createElement("button");
-
-                    editButton.type = "button";
-                    editButton.className = "btn btn-warning btn-sm";
-                    editButton.textContent = "Edit";
-
-                    editButton.addEventListener("click", () => {
-                        openEdit(admin);
-                    });
-
-                    actions.appendChild(editButton);
-                    actionCell.appendChild(actions);
-
-                    row.append(
-                        numberCell,
-                        schoolCell,
-                        nameCell,
-                        phoneCell,
-                        actionCell
-                    );
-
-                    schoolTable.appendChild(row);
-                });
-
-            } catch (error) {
-
-                schoolTable.innerHTML = "";
-
+            if (admins.length === 0) {
                 const row = document.createElement("tr");
                 const cell = document.createElement("td");
 
                 cell.colSpan = 5;
                 cell.className = "table-message";
-                cell.textContent = error.message;
+                cell.textContent =
+                    "No school administrators registered yet.";
 
                 row.appendChild(cell);
                 schoolTable.appendChild(row);
-            }
-        }
-
-        // ==================================================
-        // OPEN ADD MODAL
-        // ==================================================
-
-        function openAdd() {
-
-    editMode = false;
-
-    adminForm.reset();
-
-    document.getElementById("editId").value = "";
-
-    clearSelectedLevels();
-
-    document.getElementById("modalTitle").textContent =
-        "Add School Admin";
-
-    document.getElementById("passwordHint").textContent =
-        "A password is required when creating an account.";
-
-    adminPasswordInput.required = true;
-
-    clearFormMessage();
-
-    modal.classList.add("show");
-
-    schoolNameInput.focus();
-}
-        // ==================================================
-        // OPEN EDIT MODAL
-        // ==================================================
-
-        function openEdit(admin) {
-
-    editMode = true;
-
-    adminForm.reset();
-
-    document.getElementById("editId").value = admin.id;
-
-    schoolNameInput.value = admin.school_name || "";
-   adminNameInput.value = admin.full_name || "";
-adminPhoneInput.value = admin.phone || "";
-adminEmailInput.value = admin.email || "";
-
-    adminPasswordInput.value = "";
-
-    // Preselect education levels already assigned to this school
-    setSelectedLevels(admin.levels || []);
-
-    document.getElementById("modalTitle").textContent =
-        "Edit School Admin";
-
-    document.getElementById("passwordHint").textContent =
-        "Leave password blank to keep the current password.";
-
-    adminPasswordInput.required = false;
-
-    clearFormMessage();
-
-    modal.classList.add("show");
-
-    schoolNameInput.focus();
-}
-        // ==================================================
-        // CLOSE MODAL
-        // ==================================================
-
-        function closeModal() {
-
-            modal.classList.remove("show");
-
-            adminForm.reset();
-
-            clearFormMessage();
-        }
-
-        document.getElementById("cancelBtn").addEventListener(
-            "click",
-            closeModal
-        );
-
-        modal.addEventListener("click", function(event) {
-
-            if (event.target === modal) {
-                closeModal();
-            }
-        });
-
-        document.addEventListener("keydown", function(event) {
-
-            if (
-                event.key === "Escape" &&
-                modal.classList.contains("show")
-            ) {
-                closeModal();
-            }
-        });
-
-        // ==================================================
-        // FORM MESSAGES
-        // ==================================================
-
-        function showFormMessage(message, type) {
-
-            formMessage.textContent = message;
-            formMessage.className = "message " + type;
-        }
-
-        function clearFormMessage() {
-
-            formMessage.textContent = "";
-            formMessage.className = "message";
-        }
-// ==================================================
-// SCHOOL CLASS SELECTION
-// ==================================================
-
-function getSelectedLevels() {
-
-    return Array.from(
-        document.querySelectorAll(
-            'input[name="level_ids"]:checked'
-        )
-    ).map(input => input.value);
-}
-
-
-function setSelectedLevels(levels = []) {
-
-    const selected = new Set(
-        (Array.isArray(levels) ? levels : [])
-            .map(item => {
-                return typeof item === "string"
-                    ? item
-                    : item.id;
-            })
-    );
-
-    document.querySelectorAll(
-        'input[name="level_ids"]'
-    ).forEach(input => {
-
-        input.checked = selected.has(input.value);
-
-    });
-}
-
-
-function clearSelectedLevels() {
-
-    document.querySelectorAll(
-        'input[name="level_ids"]'
-    ).forEach(input => {
-
-        input.checked = false;
-
-    });
-}
-        // ==================================================
-        // SAVE SCHOOL ADMIN
-        // ==================================================
-
-        adminForm.addEventListener("submit", async function(event) {
-
-            event.preventDefault();
-
-            const full_name = adminNameInput.value.trim();
-            const phone = adminPhoneInput.value.trim();
-            const email = adminEmailInput.value.trim().toLowerCase();
-            const password = adminPasswordInput.value;
-            const school_name = schoolNameInput.value.trim();
-
-            if (!school_name || !full_name || !phone || !email) {
-
-                showFormMessage(
-                    "Please complete all required fields.",
-                    "error"
-                );
-
                 return;
             }
 
-            if (!editMode && !password) {
+            admins.forEach((admin, index) => {
+                const row = document.createElement("tr");
 
-                showFormMessage(
-                    "Please enter a password.",
-                    "error"
-                );
+                const numberCell = document.createElement("td");
+                numberCell.textContent = index + 1;
 
-                return;
-            }
+                const schoolCell = document.createElement("td");
+                schoolCell.textContent = admin.school_name || "-";
 
-            if (password && password.length < 8) {
+                const nameCell = document.createElement("td");
+                nameCell.textContent = admin.full_name || "-";
 
-                showFormMessage(
-                    "Password must contain at least 8 characters.",
-                    "error"
-                );
+                const phoneCell = document.createElement("td");
+                phoneCell.textContent = admin.phone || "-";
 
-                return;
-            }
+                const actionCell = document.createElement("td");
+                const actions = document.createElement("div");
 
-            const selectedLevels = getSelectedLevels();
+                actions.className = "action-buttons";
 
-if (selectedLevels.length === 0) {
+                const editButton = document.createElement("button");
+                editButton.type = "button";
+                editButton.className = "btn btn-warning btn-sm";
+                editButton.textContent = "Edit";
 
-    showFormMessage(
-        "Please select at least one education level for this school.",
-        "error"
-    );
-
-    return;
-}
-
-const payload = {
-    full_name,
-    phone,
-    email,
-    school_name,
-    level_ids: selectedLevels
-};
-
-            if (password) {
-                payload.password = password;
-            }
-
-            let url;
-
-            if (editMode) {
-
-                payload.id =
-                    document.getElementById("editId").value;
-
-                url = "/api/users/update-school-admin";
-
-            } else {
-
-                url = "/api/users/create-school-admin";
-            }
-
-            saveBtn.disabled = true;
-            saveBtn.textContent = "Saving...";
-
-            try {
-
-                const response = await fetch(url, {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    credentials: "same-origin",
-                    body: JSON.stringify(payload)
+                editButton.addEventListener("click", () => {
+                    openEdit(admin);
                 });
 
-                const result = await readJsonResponse(response);
+                actions.appendChild(editButton);
+                actionCell.appendChild(actions);
 
-                closeModal();
-
-                await loadSchoolAdmins();
-
-                showToast(
-                    result.message ||
-                    (
-                        editMode
-                            ? "School administrator updated successfully."
-                            : "School administrator created successfully."
-                    ),
-                    "success"
+                row.append(
+                    numberCell,
+                    schoolCell,
+                    nameCell,
+                    phoneCell,
+                    actionCell
                 );
 
-            } catch (error) {
+                schoolTable.appendChild(row);
+            });
 
-                showFormMessage(error.message, "error");
+        } catch (error) {
+            schoolTable.innerHTML = "";
+
+            const row = document.createElement("tr");
+            const cell = document.createElement("td");
+
+            cell.colSpan = 5;
+            cell.className = "table-message";
+            cell.textContent = error.message;
+
+            row.appendChild(cell);
+            schoolTable.appendChild(row);
+        }
+    }
+
+    // ==================================================
+    // OPEN ADD MODAL
+    // ==================================================
+
+    function openAdd() {
+        editMode = false;
+
+        adminForm.reset();
+
+        document.getElementById("editId").value = "";
+
+        clearSelectedLevels();
+
+        document.getElementById("modalTitle").textContent =
+            "Add School Admin";
+
+        clearFormMessage();
+
+        modal.classList.add("show");
+        schoolNameInput.focus();
+    }
+
+    // ==================================================
+    // OPEN EDIT MODAL
+    // ==================================================
+
+    function openEdit(admin) {
+        editMode = true;
+
+        adminForm.reset();
+
+        document.getElementById("editId").value = admin.id;
+
+        schoolNameInput.value = admin.school_name || "";
+        adminNameInput.value = admin.full_name || "";
+        adminPhoneInput.value = admin.phone || "";
+        adminEmailInput.value = admin.email || "";
+
+        setSelectedLevels(admin.levels || []);
+
+        document.getElementById("modalTitle").textContent =
+            "Edit School Admin";
+
+        clearFormMessage();
+
+        modal.classList.add("show");
+        schoolNameInput.focus();
+    }
+
+    // ==================================================
+    // CLOSE MODAL
+    // ==================================================
+
+    function closeModal() {
+        modal.classList.remove("show");
+        adminForm.reset();
+        clearFormMessage();
+    }
+
+    document.getElementById("cancelBtn").addEventListener(
+        "click",
+        closeModal
+    );
+
+    modal.addEventListener("click", function(event) {
+        if (event.target === modal) {
+            closeModal();
+        }
+    });
+
+    document.addEventListener("keydown", function(event) {
+        if (
+            event.key === "Escape" &&
+            modal.classList.contains("show")
+        ) {
+            closeModal();
+        }
+    });
+
+    // ==================================================
+    // FORM MESSAGES
+    // ==================================================
+
+    function showFormMessage(message, type) {
+        formMessage.textContent = message;
+        formMessage.className = "message " + type;
+    }
+
+    function clearFormMessage() {
+        formMessage.textContent = "";
+        formMessage.className = "message";
+    }
+
+    // ==================================================
+    // SCHOOL CLASS SELECTION
+    // ==================================================
+
+    function getSelectedLevels() {
+        return Array.from(
+            document.querySelectorAll(
+                'input[name="level_ids"]:checked'
+            )
+        ).map(input => input.value);
+    }
+
+    function setSelectedLevels(levels = []) {
+        const selected = new Set(
+            (Array.isArray(levels) ? levels : [])
+                .map(item => {
+                    return typeof item === "string"
+                        ? item
+                        : String(item.id);
+                })
+        );
+
+        document.querySelectorAll(
+            'input[name="level_ids"]'
+        ).forEach(input => {
+            input.checked = selected.has(input.value);
+        });
+    }
+
+    function clearSelectedLevels() {
+        document.querySelectorAll(
+            'input[name="level_ids"]'
+        ).forEach(input => {
+            input.checked = false;
+        });
+    }
+
+    // ==================================================
+    // SAVE SCHOOL ADMIN
+    // ==================================================
+
+    adminForm.addEventListener("submit", async function(event) {
+        event.preventDefault();
+
+        const full_name = adminNameInput.value.trim();
+        const phone = adminPhoneInput.value.trim();
+        const email = adminEmailInput.value.trim().toLowerCase();
+        const school_name = schoolNameInput.value.trim();
+
+        if (!school_name || !full_name || !phone || !email) {
+            showFormMessage(
+                "Please complete all required fields.",
+                "error"
+            );
+            return;
+        }
+
+        const selectedLevels = getSelectedLevels();
+
+        if (selectedLevels.length === 0) {
+            showFormMessage(
+                "Please select at least one education level for this school.",
+                "error"
+            );
+            return;
+        }
+
+        const payload = {
+            full_name,
+            phone,
+            email,
+            school_name,
+            level_ids: selectedLevels
+        };
+
+        let url;
+
+        if (editMode) {
+            payload.id = document.getElementById("editId").value;
+            url = "/api/users/update-school-admin";
+        } else {
+            url = "/api/users/create-school-admin";
+        }
+
+        saveBtn.disabled = true;
+        saveBtn.textContent = "Saving...";
+
+        try {
+            const response = await fetch(url, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                credentials: "same-origin",
+                body: JSON.stringify(payload)
+            });
+
+            const result = await readJsonResponse(response);
+
+            closeModal();
+
+            await loadSchoolAdmins();
+
+            showToast(
+                result.message ||
+                (
+                    editMode
+                        ? "School administrator updated successfully."
+                        : "School administrator created successfully."
+                ),
+                "success"
+            );
+
+        } catch (error) {
+            showFormMessage(error.message, "error");
+
+        } finally {
+            saveBtn.disabled = false;
+            saveBtn.textContent = "Save";
+        }
+    });
+
+    // ==================================================
+    // ADD BUTTON
+    // ==================================================
+
+    document.getElementById("addAdminBtn").addEventListener(
+        "click",
+        openAdd
+    );
+
+    // ==================================================
+    // LOGOUT
+    // ==================================================
+
+    document.getElementById("logoutBtn").addEventListener(
+        "click",
+        async function() {
+            const button = this;
+
+            button.disabled = true;
+            button.textContent = "Logging out...";
+
+            try {
+                const response = await fetch("/api/logout", {
+                    method: "POST",
+                    credentials: "same-origin"
+                });
+
+                if (!response.ok) {
+                    console.error("Logout endpoint returned an error.");
+                }
+
+            } catch (error) {
+                console.error("Logout request failed:", error);
 
             } finally {
+                localStorage.removeItem("currentUser");
+                localStorage.removeItem("role");
+                localStorage.removeItem("selectedTest");
 
-                saveBtn.disabled = false;
-                saveBtn.textContent = "Save";
+                window.location.replace("../../index.html");
             }
-        });
+        }
+    );
 
-        // ==================================================
-        // ADD BUTTON
-        // ==================================================
+    // ==================================================
+    // INITIALIZE PAGE
+    // ==================================================
 
-        document.getElementById("addAdminBtn").addEventListener(
-            "click",
-            openAdd
-        );
-
-        // ==================================================
-        // LOGOUT
-        // ==================================================
-
-        document.getElementById("logoutBtn").addEventListener(
-            "click",
-            async function() {
-
-                const button = this;
-
-                button.disabled = true;
-                button.textContent = "Logging out...";
-
-                try {
-
-                    const response = await fetch("/api/logout", {
-                        method: "POST",
-                        credentials: "same-origin"
-                    });
-
-                    if (!response.ok) {
-                        console.error("Logout endpoint returned an error.");
-                    }
-
-                } catch (error) {
-
-                    console.error("Logout request failed:", error);
-
-                } finally {
-
-                    localStorage.removeItem("currentUser");
-                    localStorage.removeItem("role");
-                    localStorage.removeItem("selectedTest");
-
-                    window.location.replace("../../index.html");
-                }
-            }
-        );
-
-        // ==================================================
-        // INITIALIZE PAGE
-        // ==================================================
-
-        loadSchoolAdmins();
-
-    }
-    </script>
+    loadSchoolAdmins();
+}
+</script>
 
 </body>
 </html>
