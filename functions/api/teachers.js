@@ -1,10 +1,24 @@
 
 import bcrypt from "bcryptjs";
+
 import {
     connectDB,
     requireSchoolAdmin,
     json
 } from "../_utils.js";
+
+import {
+    normalizeEmail,
+    generateOtp,
+    saveOtp,
+    sendEmail,
+    verificationEmail
+} from "../_email.js";
+
+
+/* =====================================================
+   GET TEACHERS
+===================================================== */
 
 export async function onRequestGet(context) {
     const auth = await requireSchoolAdmin(context);
@@ -22,7 +36,10 @@ export async function onRequestGet(context) {
                 t.staff_number,
                 u.full_name,
                 u.phone,
+                u.email,
+                u.email_verified,
                 u.status,
+
                 COALESCE(
                     (
                         SELECT json_agg(
@@ -48,12 +65,16 @@ export async function onRequestGet(context) {
                     ),
                     '[]'::json
                 ) AS assignments
+
              FROM teachers t
+
              JOIN users u
                ON u.id = t.user_id
+
              WHERE t.school_id = $1
                AND u.school_id = $1
                AND u.role = 'teacher'
+
              ORDER BY u.full_name ASC`,
             [auth.schoolId]
         );
@@ -76,6 +97,11 @@ export async function onRequestGet(context) {
     }
 }
 
+
+/* =====================================================
+   CREATE TEACHER
+===================================================== */
+
 export async function onRequestPost(context) {
     const auth = await requireSchoolAdmin(context);
     if (auth.error) return auth.error;
@@ -93,20 +119,29 @@ export async function onRequestPost(context) {
 
     const fullName = String(data.full_name || "").trim();
     const phone = String(data.phone || "").trim();
+    const email = normalizeEmail(data.email);
     const password = String(data.password || "");
+
     const staffNumber =
         String(data.staff_number || "").trim() || null;
 
-    if (!fullName || !phone || !password) {
+
+    // Validate required fields.
+
+    if (!fullName || !phone || !email || !password) {
         return json({
             success: false,
-            message: "Full name, phone number and password are required."
+            message: "Full name, phone number, email and password are required."
         }, 400);
     }
+
+
+    // Validate field lengths.
 
     if (
         fullName.length > 200 ||
         phone.length > 30 ||
+        email.length > 254 ||
         (staffNumber && staffNumber.length > 50)
     ) {
         return json({
@@ -115,12 +150,26 @@ export async function onRequestPost(context) {
         }, 400);
     }
 
+
+    // Validate email format.
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        return json({
+            success: false,
+            message: "Enter a valid email address."
+        }, 400);
+    }
+
+
+    // Validate password.
+
     if (password.length < 8) {
         return json({
             success: false,
             message: "Password must contain at least 8 characters."
         }, 400);
     }
+
 
     let client;
     let transactionStarted = false;
@@ -131,7 +180,10 @@ export async function onRequestPost(context) {
         await client.query("BEGIN");
         transactionStarted = true;
 
-        const duplicate = await client.query(
+
+        // Check duplicate phone number.
+
+        const duplicatePhone = await client.query(
             `SELECT id
              FROM users
              WHERE phone = $1
@@ -139,7 +191,7 @@ export async function onRequestPost(context) {
             [phone]
         );
 
-        if (duplicate.rowCount > 0) {
+        if (duplicatePhone.rowCount > 0) {
             await client.query("ROLLBACK");
             transactionStarted = false;
 
@@ -149,28 +201,70 @@ export async function onRequestPost(context) {
             }, 409);
         }
 
+
+        // Check duplicate email address.
+
+        const duplicateEmail = await client.query(
+            `SELECT id
+             FROM users
+             WHERE LOWER(email) = LOWER($1)
+             LIMIT 1`,
+            [email]
+        );
+
+        if (duplicateEmail.rowCount > 0) {
+            await client.query("ROLLBACK");
+            transactionStarted = false;
+
+            return json({
+                success: false,
+                message: "This email address is already registered."
+            }, 409);
+        }
+
+
+        // Hash password.
+
         const passwordHash = await bcrypt.hash(password, 12);
+
+
+        // Create teacher user account.
+        // New teacher must verify email before login.
 
         const userResult = await client.query(
             `INSERT INTO users (
                 full_name,
                 phone,
+                email,
+                email_verified,
                 password_hash,
                 role,
                 school_id,
                 status
             )
-            VALUES ($1, $2, $3, 'teacher', $4, 'active')
-            RETURNING id, full_name, phone`,
+            VALUES (
+                $1, $2, $3, FALSE, $4,
+                'teacher', $5, 'active'
+            )
+            RETURNING
+                id,
+                full_name,
+                phone,
+                email,
+                email_verified`,
             [
                 fullName,
                 phone,
+                email,
                 passwordHash,
                 auth.schoolId
             ]
         );
 
         const user = userResult.rows[0];
+
+
+        // Create teacher profile.
 
         const teacherResult = await client.query(
             `INSERT INTO teachers (
@@ -187,38 +281,72 @@ export async function onRequestPost(context) {
             ]
         );
 
+
+        // Generate and save email verification OTP.
+
+        const otp = generateOtp();
+
+        await saveOtp(client, user.id, otp);
+
+
+        // Send verification email.
+
+        const emailContent = verificationEmail(
+            fullName,
+            otp,
+            email
+        );
+
+        await sendEmail(context, {
+            to: email,
+            subject: emailContent.subject,
+            html: emailContent.html,
+            text: emailContent.text
+        });
+
+
+        // Commit transaction.
+
         await client.query("COMMIT");
         transactionStarted = false;
 
+
         return json({
             success: true,
-            message: "Teacher created successfully.",
+            message: "Teacher created successfully. A verification code has been sent to the teacher's email address.",
             teacher: {
                 ...teacherResult.rows[0],
                 full_name: user.full_name,
                 phone: user.phone,
+                email: user.email,
+                email_verified: user.email_verified,
                 assignments: []
             }
         }, 201);
 
+
     } catch (error) {
+
         if (client && transactionStarted) {
             await client.query("ROLLBACK").catch(() => {});
         }
 
         console.error("Create teacher error:", error);
 
+
         if (error.code === "23505") {
             return json({
                 success: false,
-                message: "The phone number or staff number is already registered."
+                message: "The phone number, email address or staff number is already registered."
             }, 409);
         }
 
+
         return json({
             success: false,
-            message: "Failed to create teacher."
+            message: "Failed to create teacher. Please try again."
         }, 500);
+
 
     } finally {
         if (client) await client.end().catch(() => {});
