@@ -4,418 +4,350 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sector Administrators</title>
+    <title>Sector Administrators | Fila Grades System</title>
 
     <link rel="stylesheet" href="../../stye.css">
 
     <style>
-
-/* =========================================
-   SECTOR EDUCATION PLATFORM
-   PROFESSIONAL ADMIN MANAGEMENT DESIGN
-========================================= */
-
-:root {
-    --primary: #1d4ed8;
-    --primary-dark: #123b67;
-    --primary-light: #eff6ff;
-    --success: #16a34a;
-    --danger: #dc2626;
-    --warning: #d97706;
-    --text: #1e293b;
-    --muted: #64748b;
-    --border: #e2e8f0;
-    --surface: #ffffff;
-    --background: #f1f5f9;
-    --radius: 14px;
-}
-
-* {
-    box-sizing: border-box;
-}
-
-body {
-    margin: 0;
-    background: var(--background);
-    color: var(--text);
-    font-family: "Segoe UI", Arial, sans-serif;
-}
-
-/* =========================================
-   HEADER
-========================================= */
-
-header {
-    position: relative;
-    background: linear-gradient(120deg, #123b67, #1d4ed8);
-    color: white;
-    padding: 32px 6%;
-    min-height: 150px;
-    box-shadow: 0 5px 18px rgba(18,59,103,.18);
-}
-
-header h1 {
-    font-size: 25px;
-    font-weight: 800;
-    letter-spacing: 1px;
-    margin: 0 0 9px;
-}
-
-header p {
-    color: #dbeafe;
-    font-size: 14px;
-    margin: 0;
-}
-
-.logout-btn {
-    position: absolute;
-    right: 6%;
-    top: 32px;
-    background: rgba(255,255,255,.14);
-    color: white;
-    border: 1px solid rgba(255,255,255,.35);
-    padding: 11px 19px;
-    border-radius: 9px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: .25s;
-}
-
-.logout-btn:hover {
-    background: white;
-    color: var(--primary-dark);
-    transform: translateY(-2px);
-}
-
-/* =========================================
-   MAIN CONTAINER
-========================================= */
-
-.dashboard-container {
-    width: 100%;
-    max-width: 1250px;
-    margin: 35px auto;
-    padding: 0 22px;
-}
-
-.card {
-    background: var(--surface);
-    border-radius: var(--radius);
-    padding: 28px;
-    box-shadow: 0 5px 25px rgba(15,23,42,.06);
-    border: 1px solid #e9eef5;
-    width: 100%;
-}
-
-.card h2 {
-    font-size: 21px;
-    font-weight: 750;
-    color: #123b67;
-    margin: 0;
-}
-
-/* =========================================
-   BUTTONS
-========================================= */
-
-.btn {
-    display: inline-flex;
-    justify-content: center;
-    align-items: center;
-    gap: 7px;
-    padding: 11px 17px;
-    border: none;
-    border-radius: 9px;
-    font-size: 13px;
-    font-weight: 700;
-    cursor: pointer;
-    color: white;
-    background: linear-gradient(135deg,#2563eb,#1d4ed8);
-    box-shadow: 0 3px 8px rgba(37,99,235,.18);
-    transition: all .25s ease;
-}
-
-.btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 14px rgba(37,99,235,.25);
-}
-
-.btn:active {
-    transform: scale(.97);
-}
-
-.btn:disabled {
-    opacity: .6;
-    cursor: not-allowed;
-    transform: none;
-}
-
-.btn-success {
-    background: linear-gradient(135deg,#22c55e,#15803d);
-}
-
-.btn-danger {
-    background: linear-gradient(135deg,#ef4444,#b91c1c);
-}
-
-.btn-warning {
-    background: linear-gradient(135deg,#f59e0b,#d97706);
-}
-
-.btn-sm {
-    padding: 8px 12px;
-    font-size: 12px;
-    border-radius: 7px;
-}
-
-.btn-block {
-    width: 100%;
-    margin-top: 12px;
-}
-
-/* =========================================
-   TABLE
-========================================= */
-
-.table-wrapper {
-    width: 100%;
-    overflow-x: auto;
-    margin-top: 22px;
-    border: 1px solid var(--border);
-    border-radius: 11px;
-}
-
-table {
-    width: 100%;
-    border-collapse: collapse;
-    min-width: 680px;
-    background: white;
-}
-
-thead {
-    background: #f1f5f9;
-}
-
-th {
-    color: #475569;
-    font-size: 12px;
-    font-weight: 750;
-    text-transform: uppercase;
-    letter-spacing: .5px;
-    padding: 16px 15px;
-    text-align: left;
-    white-space: nowrap;
-}
-
-td {
-    padding: 15px;
-    border-top: 1px solid #edf0f4;
-    color: #334155;
-    font-size: 13px;
-}
-
-tbody tr {
-    transition: background .2s;
-}
-
-tbody tr:hover {
-    background: #f8fbff;
-}
-
-tbody tr td:first-child {
-    color: #64748b;
-    font-weight: 700;
-}
-
-.actions {
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    flex-wrap: wrap;
-}
-
-/* =========================================
-   MODAL BACKDROP
-========================================= */
-
-.modal {
-    display: none;
-    position: fixed;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    padding: 18px;
-    background: rgba(15,23,42,.58);
-    backdrop-filter: blur(5px);
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-}
-
-/* =========================================
-   MODAL BOX
-========================================= */
-
-.modal-content {
-    width: 100%;
-    max-width: 460px;
-    max-height: 90vh;
-    overflow-y: auto;
-    background: white;
-    padding: 30px;
-    border-radius: 16px;
-    box-shadow: 0 20px 60px rgba(0,0,0,.2);
-    animation: modalOpen .25s ease;
-}
-
-@keyframes modalOpen {
-    from {
-        opacity: 0;
-        transform: translateY(20px) scale(.98);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-    }
-}
-
-.modal-content h2 {
-    font-size: 21px;
-    color: #123b67;
-    margin: 0 0 7px;
-    font-weight: 800;
-}
-
-.modal-content label {
-    display: block;
-    font-size: 13px;
-    font-weight: 700;
-    color: #334155;
-    margin-top: 17px;
-    margin-bottom: 7px;
-}
-
-/* =========================================
-   FORM INPUTS
-========================================= */
-
-.modal-content input,
-.modal-content select {
-    width: 100%;
-    padding: 13px 14px;
-    border: 1px solid #dbe2ea;
-    background: #f8fafc;
-    border-radius: 9px;
-    font-size: 14px;
-    color: #1e293b;
-    outline: none;
-    transition: .2s;
-}
-
-.modal-content input:focus,
-.modal-content select:focus {
-    background: white;
-    border-color: #2563eb;
-    box-shadow: 0 0 0 3px rgba(37,99,235,.12);
-}
-
-.modal-content input::placeholder {
-    color: #94a3b8;
-}
-
-.modal-content button {
-    min-height: 43px;
-}
-
-/* =========================================
-   NOTIFICATIONS
-========================================= */
-
-#message {
-    display: none;
-    padding: 14px 17px;
-    border-radius: 9px;
-    margin: 15px 0;
-    font-size: 13px;
-    font-weight: 600;
-}
-
-#message.success {
-    display: block;
-    color: #166534;
-    background: #dcfce7;
-    border: 1px solid #bbf7d0;
-}
-
-#message.error {
-    display: block;
-    color: #991b1b;
-    background: #fee2e2;
-    border: 1px solid #fecaca;
-}
-
-/* =========================================
-   RESPONSIVE DESIGN
-========================================= */
-
-@media(max-width: 768px) {
-
-    header {
-        padding: 25px 20px;
-        padding-bottom: 75px;
-    }
-
-    header h1 {
-        font-size: 21px;
-        max-width: 75%;
-    }
-
-    header p {
-        font-size: 12px;
-    }
-
-    .logout-btn {
-        left: 20px;
-        right: auto;
-        top: auto;
-        bottom: 18px;
-        padding: 9px 16px;
-    }
-
-    .dashboard-container {
-        margin: 20px auto;
-        padding: 0 12px;
-    }
-
-    .card {
-        padding: 18px 13px;
-    }
-
-    .card h2 {
-        font-size: 17px;
-    }
-
-    .modal-content {
-        padding: 23px 19px;
-    }
-}
-
-@media(max-width: 420px) {
-
-    header h1 {
-        font-size: 18px;
-    }
-
-    .btn {
-        padding: 10px 12px;
-        font-size: 12px;
-    }
-
-    .card {
-        border-radius: 11px;
-    }
-}
-
+        :root {
+            --primary: #1d4ed8;
+            --primary-dark: #123b67;
+            --success: #16a34a;
+            --danger: #dc2626;
+            --warning: #d97706;
+            --text: #1e293b;
+            --muted: #64748b;
+            --border: #e2e8f0;
+            --surface: #ffffff;
+            --background: #f1f5f9;
+            --radius: 14px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            background: var(--background);
+            color: var(--text);
+            font-family: "Segoe UI", Arial, sans-serif;
+        }
+
+        header {
+            position: relative;
+            background: linear-gradient(120deg, #123b67, #1d4ed8);
+            color: white;
+            padding: 32px 6%;
+            min-height: 150px;
+            box-shadow: 0 5px 18px rgba(18,59,103,.18);
+        }
+
+        header h1 {
+            font-size: 25px;
+            font-weight: 800;
+            letter-spacing: 1px;
+            margin: 0 0 9px;
+        }
+
+        header p {
+            color: #dbeafe;
+            font-size: 14px;
+            margin: 0;
+        }
+
+        .logout-btn {
+            position: absolute;
+            right: 6%;
+            top: 32px;
+            background: rgba(255,255,255,.14);
+            color: white;
+            border: 1px solid rgba(255,255,255,.35);
+            padding: 11px 19px;
+            border-radius: 9px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .logout-btn:hover {
+            background: white;
+            color: var(--primary-dark);
+        }
+
+        .dashboard-container {
+            width: 100%;
+            max-width: 1250px;
+            margin: 35px auto;
+            padding: 0 22px;
+        }
+
+        .card {
+            background: var(--surface);
+            border-radius: var(--radius);
+            padding: 28px;
+            box-shadow: 0 5px 25px rgba(15,23,42,.06);
+            border: 1px solid #e9eef5;
+            width: 100%;
+        }
+
+        .card h2 {
+            font-size: 21px;
+            font-weight: 750;
+            color: #123b67;
+            margin: 0;
+        }
+
+        .btn {
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            gap: 7px;
+            padding: 11px 17px;
+            border: none;
+            border-radius: 9px;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            color: white;
+            background: linear-gradient(135deg,#2563eb,#1d4ed8);
+            box-shadow: 0 3px 8px rgba(37,99,235,.18);
+            transition: all .25s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn:disabled {
+            opacity: .6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg,#22c55e,#15803d);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg,#ef4444,#b91c1c);
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg,#f59e0b,#d97706);
+        }
+
+        .btn-sm {
+            padding: 8px 12px;
+            font-size: 12px;
+            border-radius: 7px;
+        }
+
+        .btn-block {
+            width: 100%;
+            margin-top: 12px;
+        }
+
+        .table-wrapper {
+            width: 100%;
+            overflow-x: auto;
+            margin-top: 22px;
+            border: 1px solid var(--border);
+            border-radius: 11px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 680px;
+            background: white;
+        }
+
+        thead {
+            background: #f1f5f9;
+        }
+
+        th {
+            color: #475569;
+            font-size: 12px;
+            font-weight: 750;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+            padding: 16px 15px;
+            text-align: left;
+            white-space: nowrap;
+        }
+
+        td {
+            padding: 15px;
+            border-top: 1px solid #edf0f4;
+            color: #334155;
+            font-size: 13px;
+        }
+
+        tbody tr:hover {
+            background: #f8fbff;
+        }
+
+        .actions {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            flex-wrap: wrap;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            padding: 18px;
+            background: rgba(15,23,42,.58);
+            backdrop-filter: blur(5px);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            width: 100%;
+            max-width: 460px;
+            max-height: 90vh;
+            overflow-y: auto;
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,.2);
+        }
+
+        .modal-content h2 {
+            font-size: 21px;
+            color: #123b67;
+            margin: 0 0 7px;
+            font-weight: 800;
+        }
+
+        .modal-content label {
+            display: block;
+            font-size: 13px;
+            font-weight: 700;
+            color: #334155;
+            margin-top: 17px;
+            margin-bottom: 7px;
+        }
+
+        .modal-content input,
+        .modal-content select {
+            width: 100%;
+            padding: 13px 14px;
+            border: 1px solid #dbe2ea;
+            background: #f8fafc;
+            border-radius: 9px;
+            font-size: 14px;
+            color: #1e293b;
+            outline: none;
+        }
+
+        .modal-content input:focus,
+        .modal-content select:focus {
+            background: white;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37,99,235,.12);
+        }
+
+        .modal-content input:read-only {
+            background: #e2e8f0;
+            color: #475569;
+            cursor: not-allowed;
+        }
+
+        .modal-content button {
+            min-height: 43px;
+        }
+
+        #message {
+            display: none;
+            padding: 14px 17px;
+            border-radius: 9px;
+            margin: 15px 0;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        #message.success {
+            display: block;
+            color: #166534;
+            background: #dcfce7;
+            border: 1px solid #bbf7d0;
+        }
+
+        #message.error {
+            display: block;
+            color: #991b1b;
+            background: #fee2e2;
+            border: 1px solid #fecaca;
+        }
+
+        .helper-text {
+            font-size: 12px;
+            color: #64748b;
+            margin-top: 6px;
+        }
+
+        @media(max-width: 768px) {
+            header {
+                padding: 25px 20px 75px;
+            }
+
+            header h1 {
+                font-size: 21px;
+                max-width: 75%;
+            }
+
+            header p {
+                font-size: 12px;
+            }
+
+            .logout-btn {
+                left: 20px;
+                right: auto;
+                top: auto;
+                bottom: 18px;
+                padding: 9px 16px;
+            }
+
+            .dashboard-container {
+                margin: 20px auto;
+                padding: 0 12px;
+            }
+
+            .card {
+                padding: 18px 13px;
+            }
+
+            .card h2 {
+                font-size: 17px;
+            }
+
+            .modal-content {
+                padding: 23px 19px;
+            }
+        }
+
+        @media(max-width: 420px) {
+            header h1 {
+                font-size: 18px;
+            }
+
+            .btn {
+                padding: 10px 12px;
+                font-size: 12px;
+            }
+
+            .card {
+                border-radius: 11px;
+            }
+        }
     </style>
 </head>
 
@@ -432,17 +364,20 @@ tbody tr td:first-child {
     <div class="card" style="max-width:1000px; width:95%;">
 
         <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:15px;">
+
             <h2>Sector & Admin Overview</h2>
 
             <button class="btn" onclick="openAdd()">
                 + Add Sector Admin
             </button>
+
         </div>
 
         <div id="message"></div>
 
         <div class="table-wrapper">
-            <table style="width:100%; margin-top:20px;">
+
+            <table>
                 <thead>
                     <tr>
                         <th>#</th>
@@ -460,6 +395,7 @@ tbody tr td:first-child {
                     </tr>
                 </tbody>
             </table>
+
         </div>
 
     </div>
@@ -467,6 +403,7 @@ tbody tr td:first-child {
 </main>
 
 <!-- ADD / EDIT MODAL -->
+
 <div id="modal" class="modal">
 
     <div class="modal-content">
@@ -476,61 +413,57 @@ tbody tr td:first-child {
         <input type="hidden" id="editId">
 
         <label for="adminSector">Sector Name</label>
-<input
-    type="text"
-    id="adminSector"
-    placeholder="Enter sector name"
-    maxlength="150"
-    required
->
+
+        <select id="adminSector" required onchange="updateSectorCode()">
+            <option value="">Loading sectors...</option>
+        </select>
+
         <label for="sectorCode">Sector Code</label>
-<input
-    type="text"
-    id="sectorCode"
-    placeholder="Enter sector code"
-    maxlength="50"
-    required
->
+
+        <input
+            type="text"
+            id="sectorCode"
+            placeholder="Sector code"
+            maxlength="50"
+            readonly
+        >
 
         <label for="adminName">Full Name</label>
-<input
-    type="text"
-    id="adminName"
-    placeholder="Enter full name"
-    maxlength="200"
-    required
->
 
-<label for="adminEmail">Email Address</label>
-<input
-    type="email"
-    id="adminEmail"
-    placeholder="Enter email address"
-    maxlength="254"
-    autocomplete="email"
-    required
->
+        <input
+            type="text"
+            id="adminName"
+            placeholder="Enter full name"
+            maxlength="200"
+            autocomplete="name"
+            required
+        >
 
-<label for="adminPhone">Phone Number</label>
+        <label for="adminEmail">Email Address</label>
+
+        <input
+            type="email"
+            id="adminEmail"
+            placeholder="Enter email address"
+            maxlength="254"
+            autocomplete="email"
+            required
+        >
+
+        <p class="helper-text" id="emailHelp">
+            A verification code will be sent to this email address.
+        </p>
+
+        <label for="adminPhone">Phone Number</label>
+
         <input
             type="tel"
             id="adminPhone"
             placeholder="e.g. 0780000000"
             maxlength="30"
+            autocomplete="tel"
+            required
         >
-
-        <label for="adminPassword">Password</label>
-        <input
-            type="password"
-            id="adminPassword"
-            placeholder="Enter password"
-            minlength="8"
-            autocomplete="new-password"
-        >
-
-        <p style="font-size:12px;color:#64748b;margin-top:3px;">
-            At least 8 characters. When editing, leave blank to keep the current password.
-        </p>
 
         <button class="btn btn-success btn-block" id="saveBtn" onclick="saveAdmin()">
             Save
@@ -545,6 +478,7 @@ tbody tr td:first-child {
 </div>
 
 <script>
+
 // ===================================
 // OWNER SECURITY GUARD
 // ===================================
@@ -572,39 +506,76 @@ let sectors = [];
 let admins = [];
 let editMode = false;
 
-    // Read API responses safely
+const table = document.getElementById("sectorTable");
+const modal = document.getElementById("modal");
+const message = document.getElementById("message");
+const saveBtn = document.getElementById("saveBtn");
+
+const sectorInput = document.getElementById("adminSector");
+const sectorCodeInput = document.getElementById("sectorCode");
+const nameInput = document.getElementById("adminName");
+const emailInput = document.getElementById("adminEmail");
+const phoneInput = document.getElementById("adminPhone");
+
+// ===================================
+// SAFE API RESPONSE HANDLING
+// ===================================
+
 async function readJsonResponse(response) {
-    const contentType = response.headers.get("content-type") || "";
+
+    const contentType =
+        response.headers.get("content-type") || "";
 
     if (!contentType.includes("application/json")) {
+
         await response.text();
 
         throw new Error(
-            `Server returned HTML instead of JSON. HTTP status: ${response.status}. Check your API endpoint.`
+            `Server returned an unexpected response. HTTP status: ${response.status}.`
         );
     }
 
     return await response.json();
 }
-    
-const table = document.getElementById("sectorTable");
-const modal = document.getElementById("modal");
-const message = document.getElementById("message");
-const saveBtn = document.getElementById("saveBtn");
 
 // ===================================
 // MESSAGES
 // ===================================
 
 function showMessage(text, type) {
+
     message.textContent = text;
     message.className = type;
+    message.style.display = "block";
 }
 
 function clearMessage() {
+
     message.textContent = "";
     message.className = "";
     message.style.display = "none";
+}
+
+// ===================================
+// SAFE HTML OUTPUT
+// ===================================
+
+function escapeHTML(value) {
+
+    return String(value ?? "").replace(/[&<>"']/g, char => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
+    })[char]);
+}
+
+function escapeJS(value) {
+
+    return String(value ?? "")
+        .replace(/\\/g, "\\\\")
+        .replace(/'/g, "\\'");
 }
 
 // ===================================
@@ -613,36 +584,62 @@ function clearMessage() {
 
 async function loadSectors() {
 
-    const select = document.getElementById("adminSector");
-
     try {
+
         const res = await fetch("/api/sectors", {
             credentials: "same-origin"
         });
 
-        const data = await res.json();
+        const data = await readJsonResponse(res);
 
         if (!res.ok || !data.success) {
-            throw new Error(data.message || "Unable to load sectors.");
+            throw new Error(
+                data.message || "Unable to load sectors."
+            );
         }
 
         sectors = data.sectors || [];
 
-        select.innerHTML = '<option value="">-- Select Sector --</option>';
+        sectorInput.innerHTML =
+            '<option value="">-- Select Sector --</option>';
 
         sectors
             .filter(sector => sector.status === "active")
             .forEach(sector => {
+
                 const option = document.createElement("option");
-                option.value = sector.id;
+
+                option.value = String(sector.id);
                 option.textContent = sector.sector_name;
-                select.appendChild(option);
+
+                option.dataset.name = sector.sector_name || "";
+                option.dataset.code = sector.sector_code || "";
+
+                sectorInput.appendChild(option);
             });
 
     } catch (error) {
-        select.innerHTML = '<option value="">Unable to load sectors</option>';
+
+        sectorInput.innerHTML =
+            '<option value="">Unable to load sectors</option>';
+
         showMessage(error.message, "error");
+
+        throw error;
     }
+}
+
+// ===================================
+// UPDATE SECTOR CODE
+// ===================================
+
+function updateSectorCode() {
+
+    const selected =
+        sectorInput.options[sectorInput.selectedIndex];
+
+    sectorCodeInput.value =
+        selected?.dataset.code || "";
 }
 
 // ===================================
@@ -654,25 +651,21 @@ async function loadSectorAdmins() {
     table.innerHTML =
         '<tr><td colspan="6">Loading...</td></tr>';
 
-    try {
-        const res = await fetch("/api/sector-admins", {
-            credentials: "same-origin"
-        });
+    const res = await fetch("/api/sector-admins", {
+        credentials: "same-origin"
+    });
 
-        const data = await res.json();
+    const data = await readJsonResponse(res);
 
-        if (!res.ok || !data.success) {
-            throw new Error(data.message || "Unable to load administrators.");
-        }
-
-        admins = data.admins || [];
-
-        renderTable();
-
-    } catch (error) {
-        table.innerHTML =
-            `<tr><td colspan="6">${escapeHTML(error.message)}</td></tr>`;
+    if (!res.ok || !data.success) {
+        throw new Error(
+            data.message || "Unable to load administrators."
+        );
     }
+
+    admins = data.admins || [];
+
+    renderTable();
 }
 
 // ===================================
@@ -684,13 +677,18 @@ function renderTable() {
     table.innerHTML = "";
 
     if (sectors.length === 0) {
+
         table.innerHTML =
             '<tr><td colspan="6">No sectors registered.</td></tr>';
+
         return;
     }
 
     const adminBySector = new Map(
-        admins.map(admin => [String(admin.sector_id), admin])
+        admins.map(admin => [
+            String(admin.sector_id),
+            admin
+        ])
     );
 
     sectors.forEach((sector, index) => {
@@ -701,23 +699,32 @@ function renderTable() {
 
         row.innerHTML = `
             <td>${index + 1}</td>
+
             <td>${escapeHTML(sector.sector_name)}</td>
+
             <td>${escapeHTML(sector.sector_code)}</td>
+
             <td>${admin ? escapeHTML(admin.full_name) : "-"}</td>
+
             <td>${admin ? escapeHTML(admin.phone) : "-"}</td>
+
             <td>
                 <div class="actions">
+
                     ${
                         admin
-                        ? `<button class="btn btn-warning btn-sm"
+                        ? `<button
+                            class="btn btn-warning btn-sm"
                             onclick="openEdit('${escapeJS(admin.id)}')">
                             Edit
                            </button>`
-                        : `<button class="btn btn-sm"
+                        : `<button
+                            class="btn btn-sm"
                             onclick="openAdd('${escapeJS(sector.id)}')">
                             Add Admin
                            </button>`
                     }
+
                 </div>
             </td>
         `;
@@ -727,28 +734,12 @@ function renderTable() {
 }
 
 // ===================================
-// SAFE HTML OUTPUT
-// ===================================
-
-function escapeHTML(value) {
-    return String(value ?? "").replace(/[&<>"']/g, char => ({
-        "&": "&amp;",
-        "<": "&lt;",
-        ">": "&gt;",
-        '"': "&quot;",
-        "'": "&#39;"
-    })[char]);
-}
-
-function escapeJS(value) {
-    return String(value ?? "").replace(/\\/g, "\\\\").replace(/'/g, "\\'");
-}
-
-// ===================================
 // OPEN ADD MODAL
 // ===================================
 
 function openAdd(sectorId = "") {
+
+    clearMessage();
 
     editMode = false;
 
@@ -756,15 +747,25 @@ function openAdd(sectorId = "") {
         "Add Sector Admin";
 
     document.getElementById("editId").value = "";
-    document.getElementById("adminSector").value = sectorId;
-    document.getElementById("adminName").value = "";
-    document.getElementById("adminEmail").value = "";
-    document.getElementById("adminPhone").value = "";
-    document.getElementById("adminPassword").value = "";
 
-    document.getElementById("adminSector").disabled = false;
+    sectorInput.disabled = false;
+    sectorInput.value = sectorId ? String(sectorId) : "";
+
+    updateSectorCode();
+
+    nameInput.value = "";
+    emailInput.value = "";
+    phoneInput.value = "";
+
+    emailInput.readOnly = false;
+    emailInput.required = true;
+
+    document.getElementById("emailHelp").textContent =
+        "A verification code will be sent to this email address.";
 
     saveBtn.textContent = "Save";
+    saveBtn.disabled = false;
+
     modal.style.display = "flex";
 }
 
@@ -774,12 +775,19 @@ function openAdd(sectorId = "") {
 
 function openEdit(id) {
 
+    clearMessage();
+
     const admin = admins.find(
         item => String(item.id) === String(id)
     );
 
     if (!admin) {
-        showMessage("Administrator not found.", "error");
+
+        showMessage(
+            "Administrator not found.",
+            "error"
+        );
+
         return;
     }
 
@@ -790,132 +798,192 @@ function openEdit(id) {
 
     document.getElementById("editId").value = admin.id;
 
-    document.getElementById("adminSector").value =
-        admin.sector_name || "";
+    sectorInput.value = String(admin.sector_id || "");
+    sectorInput.disabled = true;
 
-    document.getElementById("sectorCode").value =
-        admin.sector_code || "";
+    updateSectorCode();
 
-    document.getElementById("adminName").value =
-        admin.full_name || "";
+    if (!sectorCodeInput.value) {
+        sectorCodeInput.value = admin.sector_code || "";
+    }
 
-    document.getElementById("adminEmail").value =
-        admin.email || "";
+    nameInput.value = admin.full_name || "";
+    emailInput.value = admin.email || "";
+    phoneInput.value = admin.phone || "";
 
-    document.getElementById("adminPhone").value =
-        admin.phone || "";
+    // Email cannot be changed through this form.
+    emailInput.readOnly = true;
+    emailInput.required = false;
 
-    document.getElementById("adminPassword").value = "";
-
-    document.getElementById("adminSector").disabled = true;
-    document.getElementById("sectorCode").disabled = true;
+    document.getElementById("emailHelp").textContent =
+        "The registered email address cannot be changed here.";
 
     saveBtn.textContent = "Update";
+    saveBtn.disabled = false;
+
     modal.style.display = "flex";
 }
+
 // ===================================
 // CLOSE MODAL
 // ===================================
 
 function closeModal() {
+
     modal.style.display = "none";
+
+    sectorInput.disabled = false;
+    emailInput.readOnly = false;
+    emailInput.required = true;
+
+    saveBtn.disabled = false;
 }
 
 // ===================================
-// SAVE ADMIN
+// SAVE ADMINISTRATOR
 // ===================================
-
 
 async function saveAdmin() {
 
+    const selectedOption =
+        sectorInput.options[sectorInput.selectedIndex];
+
+    const sector_id = sectorInput.value;
+
     const sector_name =
-        document.getElementById("adminSector").value.trim();
+        selectedOption?.dataset.name || "";
 
     const sector_code =
-        document.getElementById("sectorCode").value.trim();
+        selectedOption?.dataset.code || sectorCodeInput.value.trim();
 
-    const full_name =
-        document.getElementById("adminName").value.trim();
+    const full_name = nameInput.value.trim();
+
     const email =
-    document.getElementById("adminEmail").value.trim().toLowerCase();
+        emailInput.value.trim().toLowerCase();
 
-    const phone =
-        document.getElementById("adminPhone").value.trim();
+    const phone = phoneInput.value.trim();
 
-    const password =
-        document.getElementById("adminPassword").value;
+    if (!editMode && !sector_id) {
 
-    if (!sector_name || !sector_code || !full_name || !email || !phone) {
-    showMessage("Please complete all required fields.", "error");
-    return;
-}
+        showMessage(
+            "Please select a sector.",
+            "error"
+        );
 
-const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-if (!emailPattern.test(email)) {
-    showMessage("Please enter a valid email address.", "error");
-    return;
-}
-
-    if (!editMode && password.length < 8) {
-        showMessage("Password must contain at least 8 characters.", "error");
         return;
     }
 
-    if (editMode && password && password.length < 8) {
-        showMessage("New password must contain at least 8 characters.", "error");
+    if (!sector_name || !sector_code || !full_name || !phone) {
+
+        showMessage(
+            "Please complete all required fields.",
+            "error"
+        );
+
         return;
+    }
+
+    if (!editMode) {
+
+        if (!email) {
+
+            showMessage(
+                "Please enter the administrator's email address.",
+                "error"
+            );
+
+            return;
+        }
+
+        const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+        if (!emailPattern.test(email)) {
+
+            showMessage(
+                "Please enter a valid email address.",
+                "error"
+            );
+
+            return;
+        }
     }
 
     const payload = {
-    sector_name,
-    sector_code,
-    full_name,
-    email,
-    phone,
-    password
-};
+        sector_id,
+        sector_name,
+        sector_code,
+        full_name,
+        phone
+    };
 
     const url = editMode
         ? "/api/users/update-sector-admin"
         : "/api/users/create-sector-admin";
 
     if (editMode) {
-        payload.id = document.getElementById("editId").value;
+
+        payload.id =
+            document.getElementById("editId").value;
+
+    } else {
+
+        payload.email = email;
     }
 
+    const wasEdit = editMode;
+
     saveBtn.disabled = true;
-    saveBtn.textContent = editMode ? "Updating..." : "Saving...";
+    saveBtn.textContent = wasEdit
+        ? "Updating..."
+        : "Saving...";
 
     try {
+
         const res = await fetch(url, {
+
             method: "POST",
+
             credentials: "same-origin",
+
             headers: {
                 "Content-Type": "application/json"
             },
+
             body: JSON.stringify(payload)
         });
 
         const result = await readJsonResponse(res);
 
         if (!res.ok || !result.success) {
-            throw new Error(result.message || "Operation failed.");
+
+            throw new Error(
+                result.message || "Operation failed."
+            );
         }
 
         closeModal();
 
-        showMessage(result.message, "success");
+        showMessage(
+            result.message || (
+                wasEdit
+                    ? "Administrator updated successfully."
+                    : "Administrator created successfully. Verification email sent."
+            ),
+            "success"
+        );
 
-        await loadSectors();
         await loadSectorAdmins();
 
     } catch (error) {
+
         showMessage(error.message, "error");
 
     } finally {
+
         saveBtn.disabled = false;
-        saveBtn.textContent = editMode ? "Update" : "Save";
+
+        saveBtn.textContent =
+            wasEdit ? "Update" : "Save";
     }
 }
 
@@ -925,17 +993,23 @@ if (!emailPattern.test(email)) {
 
 async function logout() {
 
-    if (!confirm("Are you sure you want to log out?")) return;
+    if (!confirm("Are you sure you want to log out?")) {
+        return;
+    }
 
     try {
+
         await fetch("/api/logout", {
             method: "POST",
             credentials: "same-origin"
         });
+
     } finally {
+
         localStorage.removeItem("currentUser");
         localStorage.removeItem("role");
-        window.location.replace("index.html");
+
+        window.location.replace("../../index.html");
     }
 }
 
@@ -944,9 +1018,21 @@ async function logout() {
 // ===================================
 
 async function initializePage() {
-    await loadSectors();
-    await loadSectorAdmins();
-    renderTable();
+
+    try {
+
+        await loadSectors();
+        await loadSectorAdmins();
+
+    } catch (error) {
+
+        console.error("Page initialization failed:", error);
+
+        showMessage(
+            error.message || "Unable to initialize the page.",
+            "error"
+        );
+    }
 }
 
 initializePage();
