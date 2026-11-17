@@ -1,15 +1,13 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>Verify Email | Sector Education Platform</title>
+<title>Verify Email | Fila Grades System</title>
 
 <style>
-* {
-    box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
 body {
     margin: 0;
@@ -59,6 +57,17 @@ h1 {
     margin-bottom: 25px;
 }
 
+.email-display {
+    padding: 12px;
+    background: #eff6ff;
+    border-radius: 9px;
+    color: #1d4ed8;
+    font-size: 14px;
+    font-weight: 700;
+    overflow-wrap: anywhere;
+    margin-bottom: 20px;
+}
+
 label {
     display: block;
     text-align: left;
@@ -103,9 +112,7 @@ button {
     cursor: pointer;
 }
 
-button:hover {
-    opacity: .93;
-}
+button:hover { opacity: .93; }
 
 button:disabled {
     opacity: .55;
@@ -139,23 +146,8 @@ button:disabled {
     background: #fee2e2;
 }
 
-.login-link {
-    display: inline-block;
-    margin-top: 22px;
-    color: #1d4ed8;
-    font-size: 13px;
-    font-weight: 700;
-    text-decoration: none;
-}
-
-.login-link:hover {
-    text-decoration: underline;
-}
-
 @media(max-width: 420px) {
-    .container {
-        padding: 28px 20px;
-    }
+    .container { padding: 28px 20px; }
 }
 </style>
 </head>
@@ -169,22 +161,15 @@ button:disabled {
     <h1>Verify Your Email</h1>
 
     <p class="description">
-        We sent a six-digit verification code to your email address.
-        Enter the code below to activate your account.
+        We sent a six-digit verification code to the email address below.
+        Enter the code to activate your account.
     </p>
 
+    <div class="email-display" id="emailDisplay">
+        Loading email address...
+    </div>
+
     <form id="verificationForm">
-
-        <label for="email">Email Address</label>
-
-        <input
-            type="email"
-            id="email"
-            placeholder="Enter your email address"
-            maxlength="254"
-            autocomplete="email"
-            required
-        >
 
         <label for="code">Verification Code</label>
 
@@ -211,42 +196,40 @@ button:disabled {
         type="button"
         class="resend-btn"
         id="resendBtn"
-        onclick="resendCode()"
     >
         Resend Verification Code
     </button>
 
-    <a href="index.html" class="login-link">
-        Return to Login
-    </a>
-
 </div>
 
 <script>
-const emailInput = document.getElementById("email");
 const codeInput = document.getElementById("code");
+const emailDisplay = document.getElementById("emailDisplay");
 const message = document.getElementById("message");
-
 const verifyBtn = document.getElementById("verifyBtn");
 const resendBtn = document.getElementById("resendBtn");
 
 let resendTimer = null;
 
-/* =====================================
-   PREFILL EMAIL FROM URL
-===================================== */
+/* GET EMAIL FROM URL */
 
 const params = new URLSearchParams(window.location.search);
+const email = (params.get("email") || "").trim().toLowerCase();
 
-const suppliedEmail = params.get("email");
-
-if (suppliedEmail) {
-    emailInput.value = suppliedEmail.trim().toLowerCase();
+if (email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    emailDisplay.textContent = email;
+} else {
+    emailDisplay.textContent = "Email address not provided";
+    codeInput.disabled = true;
+    verifyBtn.disabled = true;
+    resendBtn.disabled = true;
+    showMessage(
+        "Invalid verification link. Please contact your administrator.",
+        "error"
+    );
 }
 
-/* =====================================
-   MESSAGE DISPLAY
-===================================== */
+/* MESSAGES */
 
 function showMessage(text, type) {
     message.textContent = text;
@@ -258,23 +241,19 @@ function clearMessage() {
     message.className = "";
 }
 
-/* =====================================
-   READ API RESPONSE
-===================================== */
+/* READ API RESPONSE */
 
 async function readResponse(response) {
     const contentType = response.headers.get("content-type") || "";
 
     if (!contentType.includes("application/json")) {
-        throw new Error("The server returned an unexpected response. Please try again.");
+        throw new Error("Unexpected server response. Please try again.");
     }
 
     return await response.json();
 }
 
-/* =====================================
-   VERIFY EMAIL
-===================================== */
+/* VERIFY EMAIL */
 
 document.getElementById("verificationForm")
 .addEventListener("submit", async function(event) {
@@ -282,11 +261,10 @@ document.getElementById("verificationForm")
     event.preventDefault();
     clearMessage();
 
-    const email = emailInput.value.trim().toLowerCase();
     const code = codeInput.value.trim();
 
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        showMessage("Please enter a valid email address.", "error");
+    if (!email) {
+        showMessage("Invalid verification link.", "error");
         return;
     }
 
@@ -304,10 +282,7 @@ document.getElementById("verificationForm")
             headers: {
                 "Content-Type": "application/json"
             },
-            body: JSON.stringify({
-                email,
-                code
-            })
+            body: JSON.stringify({ email, code })
         });
 
         const result = await readResponse(response);
@@ -317,40 +292,35 @@ document.getElementById("verificationForm")
         }
 
         showMessage(
-            result.message + " You can now return to the login page.",
+            "Email verified successfully. Redirecting you to set your new password...",
             "success"
         );
 
-        codeInput.value = "";
         codeInput.disabled = true;
-        emailInput.disabled = true;
-
+        resendBtn.disabled = true;
         verifyBtn.textContent = "Email Verified";
 
-        resendBtn.disabled = true;
-        resendBtn.textContent = "Email Verified";
+        setTimeout(() => {
+            window.location.href =
+                "/pages/sector/set-password.html?email=" +
+                encodeURIComponent(email);
+        }, 1500);
 
     } catch (error) {
         showMessage(error.message, "error");
-
         verifyBtn.disabled = false;
         verifyBtn.textContent = "Verify Email";
     }
-
 });
 
-/* =====================================
-   RESEND VERIFICATION CODE
-===================================== */
+/* RESEND VERIFICATION CODE */
 
-async function resendCode() {
+resendBtn.addEventListener("click", async function() {
 
     clearMessage();
 
-    const email = emailInput.value.trim().toLowerCase();
-
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        showMessage("Please enter a valid email address first.", "error");
+    if (!email) {
+        showMessage("Invalid verification link.", "error");
         return;
     }
 
@@ -373,22 +343,18 @@ async function resendCode() {
         }
 
         showMessage(result.message, "success");
-
         codeInput.value = "";
 
         startResendTimer(60);
 
     } catch (error) {
         showMessage(error.message, "error");
-
         resendBtn.disabled = false;
         resendBtn.textContent = "Resend Verification Code";
     }
-}
+});
 
-/* =====================================
-   RESEND COUNTDOWN
-===================================== */
+/* RESEND COUNTDOWN */
 
 function startResendTimer(seconds) {
 
@@ -397,7 +363,6 @@ function startResendTimer(seconds) {
     let remaining = seconds;
 
     resendBtn.disabled = true;
-
     resendBtn.textContent = `Resend available in ${remaining}s`;
 
     resendTimer = setInterval(() => {
@@ -406,10 +371,8 @@ function startResendTimer(seconds) {
 
         if (remaining <= 0) {
             clearInterval(resendTimer);
-
             resendBtn.disabled = false;
             resendBtn.textContent = "Resend Verification Code";
-
             return;
         }
 
@@ -418,9 +381,7 @@ function startResendTimer(seconds) {
     }, 1000);
 }
 
-/* =====================================
-   OTP INPUT
-===================================== */
+/* OTP INPUT */
 
 codeInput.addEventListener("input", function() {
     this.value = this.value.replace(/\D/g, "").slice(0, 6);
