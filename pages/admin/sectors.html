@@ -493,14 +493,25 @@ tbody tr td:first-child {
 >
 
         <label for="adminName">Full Name</label>
-        <input
-            type="text"
-            id="adminName"
-            placeholder="Enter full name"
-            maxlength="200"
-        >
+<input
+    type="text"
+    id="adminName"
+    placeholder="Enter full name"
+    maxlength="200"
+    required
+>
 
-        <label for="adminPhone">Phone Number</label>
+<label for="adminEmail">Email Address</label>
+<input
+    type="email"
+    id="adminEmail"
+    placeholder="Enter email address"
+    maxlength="254"
+    autocomplete="email"
+    required
+>
+
+<label for="adminPhone">Phone Number</label>
         <input
             type="tel"
             id="adminPhone"
@@ -747,6 +758,7 @@ function openAdd(sectorId = "") {
     document.getElementById("editId").value = "";
     document.getElementById("adminSector").value = sectorId;
     document.getElementById("adminName").value = "";
+    document.getElementById("adminEmail").value = "";
     document.getElementById("adminPhone").value = "";
     document.getElementById("adminPassword").value = "";
 
@@ -774,6 +786,7 @@ function openEdit(id) {
     document.getElementById("editId").value = admin.id;
     document.getElementById("adminSector").value = admin.sector_id;
     document.getElementById("adminName").value = admin.full_name || "";
+    document.getElementById("adminEmail").value = admin.email || "";
     document.getElementById("adminPhone").value = admin.phone || "";
     document.getElementById("adminPassword").value = "";
 
@@ -806,6 +819,8 @@ async function saveAdmin() {
 
     const full_name =
         document.getElementById("adminName").value.trim();
+    const email =
+    document.getElementById("adminEmail").value.trim().toLowerCase();
 
     const phone =
         document.getElementById("adminPhone").value.trim();
@@ -813,10 +828,17 @@ async function saveAdmin() {
     const password =
         document.getElementById("adminPassword").value;
 
-    if (!sector_name || !sector_code || !full_name || !phone) {
-        showMessage("Please complete all required fields.", "error");
-        return;
-    }
+    if (!sector_name || !sector_code || !full_name || !email || !phone) {
+    showMessage("Please complete all required fields.", "error");
+    return;
+}
+
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+if (!emailPattern.test(email)) {
+    showMessage("Please enter a valid email address.", "error");
+    return;
+}
 
     if (!editMode && password.length < 8) {
         showMessage("Password must contain at least 8 characters.", "error");
@@ -829,12 +851,13 @@ async function saveAdmin() {
     }
 
     const payload = {
-        sector_name,
-        sector_code,
-        full_name,
-        phone,
-        password
-    };
+    sector_name,
+    sector_code,
+    full_name,
+    email,
+    phone,
+    password
+};
 
     const url = editMode
         ? "/api/users/update-sector-admin"
