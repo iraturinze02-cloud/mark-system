@@ -1,4 +1,8 @@
-import { connectDB, requireSectorAdmin, json } from "../_utils.js";
+import {
+    connectDB,
+    requireSectorAdmin,
+    json
+} from "../_utils.js";
 
 export async function onRequestGet(context) {
     const auth = await requireSectorAdmin(context);
@@ -17,6 +21,8 @@ export async function onRequestGet(context) {
                 u.id,
                 u.full_name,
                 u.phone,
+                u.email,
+                u.email_verified,
                 u.school_id,
                 u.status,
                 s.school_name,
