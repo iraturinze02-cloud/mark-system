@@ -1,13 +1,34 @@
+
 import {
     connectDB,
     json
 } from "../../_utils.js";
 
-import {
-    hashOtp,
-    sendEmail,
-    welcomeEmail
-} from "../../_email.js";
+/* =====================================================
+   GENERATE SECURE PASSWORD SETUP TOKEN
+===================================================== */
+
+function generateSetupToken() {
+    const bytes = new Uint8Array(32);
+    crypto.getRandomValues(bytes);
+
+    return Array.from(bytes)
+        .map(byte => byte.toString(16).padStart(2, "0"))
+        .join("");
+}
+
+/* =====================================================
+   HASH PASSWORD SETUP TOKEN
+===================================================== */
+
+async function hashSetupToken(token) {
+    const encoded = new TextEncoder().encode(token);
+    const digest = await crypto.subtle.digest("SHA-256", encoded);
+
+    return Array.from(new Uint8Array(digest))
+        .map(byte => byte.toString(16).padStart(2, "0"))
+        .join("");
+}
 
 /* =====================================================
    VERIFY EMAIL ADDRESS
@@ -15,6 +36,7 @@ import {
 
 export async function onRequestPost(context) {
     let client;
+    let transactionStarted = false;
 
     try {
         let data;
@@ -37,7 +59,7 @@ export async function onRequestPost(context) {
         if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
             return json({
                 success: false,
-                message: "Please enter a valid email address."
+                message: "Invalid email address."
             }, 400);
         }
 
@@ -51,13 +73,18 @@ export async function onRequestPost(context) {
         client = await connectDB(context);
 
         await client.query("BEGIN");
+        transactionStarted = true;
 
         /* =============================================
-           FIND UNVERIFIED ACCOUNT
+           FIND ACCOUNT
         ============================================= */
 
         const userResult = await client.query(`
-            SELECT id, full_name, email, email_verified
+            SELECT
+                id,
+                full_name,
+                email,
+                email_verified
             FROM users
             WHERE LOWER(email) = LOWER($1)
             LIMIT 1
@@ -66,6 +93,7 @@ export async function onRequestPost(context) {
 
         if (userResult.rowCount === 0) {
             await client.query("ROLLBACK");
+            transactionStarted = false;
 
             return json({
                 success: false,
@@ -77,19 +105,25 @@ export async function onRequestPost(context) {
 
         if (user.email_verified) {
             await client.query("ROLLBACK");
+            transactionStarted = false;
 
             return json({
-                success: true,
-                message: "This email address has already been verified."
-            });
+                success: false,
+                alreadyVerified: true,
+                message: "This email is already verified. Please continue through the login page."
+            }, 409);
         }
 
         /* =============================================
-           FIND LATEST VERIFICATION CODE
+           FIND LATEST OTP
         ============================================= */
 
         const verificationResult = await client.query(`
-            SELECT id, otp_hash, expires_at, attempts
+            SELECT
+                id,
+                otp_hash,
+                expires_at,
+                attempts
             FROM email_verifications
             WHERE user_id = $1
               AND verified_at IS NULL
@@ -100,6 +134,7 @@ export async function onRequestPost(context) {
 
         if (verificationResult.rowCount === 0) {
             await client.query("ROLLBACK");
+            transactionStarted = false;
 
             return json({
                 success: false,
@@ -113,8 +148,12 @@ export async function onRequestPost(context) {
            CHECK EXPIRY
         ============================================= */
 
-        if (new Date(verification.expires_at).getTime() <= Date.now()) {
+        if (
+            new Date(verification.expires_at).getTime()
+            <= Date.now()
+        ) {
             await client.query("ROLLBACK");
+            transactionStarted = false;
 
             return json({
                 success: false,
@@ -128,6 +167,7 @@ export async function onRequestPost(context) {
 
         if (verification.attempts >= 5) {
             await client.query("ROLLBACK");
+            transactionStarted = false;
 
             return json({
                 success: false,
@@ -139,9 +179,12 @@ export async function onRequestPost(context) {
            CHECK OTP
         ============================================= */
 
+        const { hashOtp } = await import("../../_email.js");
+
         const submittedHash = await hashOtp(user.id, code);
 
         if (submittedHash !== verification.otp_hash) {
+
             await client.query(`
                 UPDATE email_verifications
                 SET attempts = attempts + 1
@@ -149,6 +192,7 @@ export async function onRequestPost(context) {
             `, [verification.id]);
 
             await client.query("COMMIT");
+            transactionStarted = false;
 
             return json({
                 success: false,
@@ -157,13 +201,21 @@ export async function onRequestPost(context) {
         }
 
         /* =============================================
-           MARK EMAIL AS VERIFIED
+           GENERATE PASSWORD SETUP TOKEN
+        ============================================= */
+
+        const setupToken = generateSetupToken();
+        const tokenHash = await hashSetupToken(setupToken);
+
+        /* =============================================
+           VERIFY EMAIL AND REQUIRE NEW PASSWORD
         ============================================= */
 
         await client.query(`
             UPDATE users
             SET
                 email_verified = TRUE,
+                must_change_password = TRUE,
                 updated_at = CURRENT_TIMESTAMP
             WHERE id = $1
         `, [user.id]);
@@ -174,32 +226,45 @@ export async function onRequestPost(context) {
             WHERE id = $1
         `, [verification.id]);
 
-        await client.query("COMMIT");
-
         /* =============================================
-           SEND WELCOME EMAIL
+           REMOVE OLD UNUSED PASSWORD SETUP TOKENS
         ============================================= */
 
-        try {
-            const welcome = welcomeEmail(user.full_name);
+        await client.query(`
+            DELETE FROM password_setup_tokens
+            WHERE user_id = $1
+              AND used_at IS NULL
+        `, [user.id]);
 
-            await sendEmail(context, {
-                to: user.email,
-                subject: welcome.subject,
-                html: welcome.html,
-                text: welcome.text
-            });
-        } catch (emailError) {
-            console.error("Welcome email error:", emailError);
-        }
+        /* =============================================
+           SAVE NEW PASSWORD SETUP TOKEN
+        ============================================= */
+
+        await client.query(`
+            INSERT INTO password_setup_tokens (
+                user_id,
+                token_hash,
+                expires_at
+            )
+            VALUES (
+                $1,
+                $2,
+                CURRENT_TIMESTAMP + INTERVAL '15 minutes'
+            )
+        `, [user.id, tokenHash]);
+
+        await client.query("COMMIT");
+        transactionStarted = false;
 
         return json({
             success: true,
-            message: "Your email address has been successfully verified."
+            message: "Your email has been verified. Please set your new password.",
+            setupToken
         });
 
     } catch (error) {
-        if (client) {
+
+        if (client && transactionStarted) {
             await client.query("ROLLBACK").catch(() => {});
         }
 
@@ -211,6 +276,7 @@ export async function onRequestPost(context) {
         }, 500);
 
     } finally {
+
         if (client) {
             await client.end().catch(() => {});
         }
