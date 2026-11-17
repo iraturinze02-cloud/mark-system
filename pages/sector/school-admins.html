@@ -153,12 +153,33 @@
             transition: 0.2s;
         }
 
-        .btn:hover { transform: translateY(-2px); filter: brightness(0.95); }
-        .btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
-        .btn-warning { background: linear-gradient(135deg, #f59e0b, #d97706); }
-        .btn-danger { background: linear-gradient(135deg, #ef4444, #dc2626); }
-        .btn-success { background: linear-gradient(135deg, #22c55e, #16a34a); }
-        .btn-sm { padding: 8px 11px; font-size: 12px; }
+        .btn:hover {
+            transform: translateY(-2px);
+            filter: brightness(0.95);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+        }
+
+        .btn-sm {
+            padding: 8px 11px;
+            font-size: 12px;
+        }
 
         .table-wrapper {
             width: 100%;
@@ -179,11 +200,25 @@
             font-size: 13px;
         }
 
-        th { background: #eff6ff; color: #1e40af; font-weight: bold; }
+        th {
+            background: #eff6ff;
+            color: #1e40af;
+            font-weight: bold;
+        }
+
         tbody tr:hover { background: #f8fafc; }
 
-        .action-buttons { display: flex; gap: 7px; flex-wrap: wrap; }
-        .table-message { text-align: center; padding: 25px; color: #64748b; }
+        .action-buttons {
+            display: flex;
+            gap: 7px;
+            flex-wrap: wrap;
+        }
+
+        .table-message {
+            text-align: center;
+            padding: 25px;
+            color: #64748b;
+        }
 
         .modal {
             display: none;
@@ -240,6 +275,12 @@
             box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
         }
 
+        .form-group input:read-only {
+            background: #f1f5f9;
+            color: #64748b;
+            cursor: not-allowed;
+        }
+
         .form-hint {
             display: block;
             margin-top: 5px;
@@ -248,7 +289,12 @@
             line-height: 1.5;
         }
 
-        .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
         .modal-actions button { flex: 1; }
 
         .message {
@@ -260,7 +306,11 @@
             line-height: 1.5;
         }
 
-        .message.error { display: block; color: #991b1b; background: #fee2e2; }
+        .message.error {
+            display: block;
+            color: #991b1b;
+            background: #fee2e2;
+        }
 
         .footer {
             text-align: center;
@@ -294,11 +344,19 @@
             .page-heading { align-items: stretch; }
             .page-heading .btn { width: 100%; }
             .modal-content { padding: 20px; }
-            .toast { left: 15px; right: 15px; top: 15px; max-width: none; }
+
+            .toast {
+                left: 15px;
+                right: 15px;
+                top: 15px;
+                max-width: none;
+            }
         }
 
         @media (max-width: 400px) {
-            .class-options { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .class-options {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
         }
     </style>
 </head>
@@ -418,7 +476,7 @@
                     autocomplete="email"
                     required
                 >
-                <small class="form-hint">
+                <small class="form-hint" id="emailHint">
                     A verification code will be sent to this email address.
                     The administrator must verify it before logging in and
                     will set their own password.
@@ -528,6 +586,7 @@ if (!authorized) {
     const adminNameInput = document.getElementById("adminName");
     const adminPhoneInput = document.getElementById("adminPhone");
     const adminEmailInput = document.getElementById("adminEmail");
+    const emailHint = document.getElementById("emailHint");
 
     let editMode = false;
     let toastTimeout = null;
@@ -687,6 +746,16 @@ if (!authorized) {
 
         clearSelectedLevels();
 
+        adminEmailInput.readOnly = false;
+        adminEmailInput.required = true;
+        adminEmailInput.placeholder =
+            "Enter administrator's email address";
+
+        emailHint.textContent =
+            "A verification code will be sent to this email address. " +
+            "The administrator must verify it before logging in and " +
+            "will set their own password.";
+
         document.getElementById("modalTitle").textContent =
             "Add School Admin";
 
@@ -712,6 +781,18 @@ if (!authorized) {
         adminPhoneInput.value = admin.phone || "";
         adminEmailInput.value = admin.email || "";
 
+        // Email cannot be changed through this form.
+        adminEmailInput.readOnly = true;
+        adminEmailInput.required = false;
+
+        adminEmailInput.placeholder = admin.email
+            ? "Email address cannot be changed here"
+            : "No email address registered";
+
+        emailHint.textContent = admin.email
+            ? "This email address cannot be changed from this page."
+            : "This administrator has no registered email address. You can still update the other details.";
+
         setSelectedLevels(admin.levels || []);
 
         document.getElementById("modalTitle").textContent =
@@ -730,6 +811,8 @@ if (!authorized) {
     function closeModal() {
         modal.classList.remove("show");
         adminForm.reset();
+        adminEmailInput.readOnly = false;
+        adminEmailInput.required = true;
         clearFormMessage();
     }
 
@@ -783,9 +866,11 @@ if (!authorized) {
         const selected = new Set(
             (Array.isArray(levels) ? levels : [])
                 .map(item => {
-                    return typeof item === "string"
-                        ? item
-                        : String(item.id);
+                    if (typeof item === "string" || typeof item === "number") {
+                        return String(item);
+                    }
+
+                    return String(item.id);
                 })
         );
 
@@ -816,7 +901,12 @@ if (!authorized) {
         const email = adminEmailInput.value.trim().toLowerCase();
         const school_name = schoolNameInput.value.trim();
 
-        if (!school_name || !full_name || !phone || !email) {
+        if (
+            !school_name ||
+            !full_name ||
+            !phone ||
+            (!editMode && !email)
+        ) {
             showFormMessage(
                 "Please complete all required fields.",
                 "error"
@@ -834,10 +924,10 @@ if (!authorized) {
             return;
         }
 
+        // Email is sent only when creating a new administrator.
         const payload = {
             full_name,
             phone,
-            email,
             school_name,
             level_ids: selectedLevels
         };
@@ -848,6 +938,7 @@ if (!authorized) {
             payload.id = document.getElementById("editId").value;
             url = "/api/users/update-school-admin";
         } else {
+            payload.email = email;
             url = "/api/users/create-school-admin";
         }
 
