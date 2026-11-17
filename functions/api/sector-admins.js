@@ -12,8 +12,10 @@ export async function onRequestGet(context) {
 
         const result = await client.query(`
             SELECT
-                u.id AS admin_id,
+                u.id AS id,
                 u.full_name,
+                u.email,
+                u.email_verified,
                 u.phone,
                 u.status AS admin_status,
                 u.sector_id,
@@ -31,6 +33,8 @@ export async function onRequestGet(context) {
         });
 
     } catch (error) {
+        console.error("Load sector administrators error:", error);
+
         return json({
             success: false,
             message: "Failed to retrieve sector administrators."
