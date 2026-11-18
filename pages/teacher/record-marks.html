@@ -277,12 +277,7 @@ td {
 </header>
 
 <main class="record-container">
-
-    <div id="message" class="status-message">
-        Loading your assignments...
-    </div>
-
-    <!-- TEACHER INFORMATION -->
+<!-- TEACHER INFORMATION -->
 
     <section class="record-card">
         <h2>Teacher Information</h2>
@@ -368,14 +363,7 @@ td {
 
                 <tbody id="studentsBody"></tbody>
             </table>
-
-            <p id="marksTotal"></p>
-
-            <p class="status-message">
-                Marks are saved automatically when you leave a mark field.
-                Press Enter to move to the next student.
-            </p>
-        </div>
+</div>
     </section>
 
 </main>
@@ -420,7 +408,6 @@ const subjectCards = document.getElementById("subjectCards");
 const testSection = document.getElementById("testSection");
 const testSelect = document.getElementById("testSelect");
 
-const message = document.getElementById("message");
 const testInformation = document.getElementById("testInformation");
 
 const studentsBody = document.getElementById("studentsBody");
@@ -442,14 +429,11 @@ function logout() {
    MESSAGES
 ===================================================== */
 
-function showMessage(text, type = "") {
-    message.textContent = text;
-    message.className = "status-message " + type;
-}
 
 function showTestMessage(text, type = "") {
     testInformation.textContent = text;
     testInformation.className = "status-message " + type;
+    testInformation.classList.remove("selection-hidden");
 }
 
 /* =====================================================
@@ -480,7 +464,6 @@ async function readResponse(response) {
 
 async function loadOptions() {
     try {
-        showMessage("Loading your assignments...");
 
         const response = await fetch(API_OPTIONS, {
             credentials: "same-origin",
@@ -495,10 +478,6 @@ async function loadOptions() {
         tests = data.tests || [];
 
         if (assignments.length === 0) {
-            showMessage(
-                "No class and subject assignments were found.",
-                "warning"
-            );
 
             showTestMessage("No assignments available.");
             return;
@@ -516,13 +495,12 @@ async function loadOptions() {
         document.getElementById("teacherSchool").textContent =
             assignments[0].school_name || "Not available";
 
-        showMessage("Assignments loaded successfully.", "success");
 
         renderClasses();
 
     } catch (error) {
         console.error("Load options error:", error);
-        showMessage(error.message, "error");
+        showTestMessage(error.message, "error");
     }
 }
 
@@ -850,11 +828,8 @@ function selectTest(testId) {
         showTestMessage("Select an open Test to continue.");
         return;
     }
-
-    showTestMessage(
-    "Test selected. Loading students...",
-    "success"
-);
+    testInformation.textContent = "";
+    testInformation.className = "status-message selection-hidden";
 
     loadStudents();
 }
@@ -1019,9 +994,9 @@ function renderStudents() {
 
     studentsPlaceholder.style.display = "none";
     studentsTableContainer.classList.remove("selection-hidden");
+    testInformation.textContent = "";
+    testInformation.classList.add("selection-hidden");
 
-    document.getElementById("marksTotal").textContent =
-        `${students.length} active students | Maximum mark: ${maximumMark}`;
 }
 
 /* =====================================================
@@ -1039,7 +1014,6 @@ function clearStudents() {
     studentsTableContainer.classList.add("selection-hidden");
 
     maximumInformation.textContent = "";
-    document.getElementById("marksTotal").textContent = "";
 }
 
 /* =====================================================
@@ -1133,7 +1107,6 @@ async function saveIndividualMark(input) {
 
     if (!validation.valid) {
         setSaveStatus(studentId, validation.message, "error");
-        showMessage(validation.message, "error");
         return;
     }
 
@@ -1170,7 +1143,6 @@ async function saveIndividualMark(input) {
 
             if (!check.valid) {
                 setSaveStatus(studentId, check.message, "error");
-                showMessage(check.message, "error");
                 break;
             }
 
@@ -1206,11 +1178,6 @@ async function saveIndividualMark(input) {
             input.dataset.savedValue = valueToSave;
 
             setSaveStatus(studentId, "Saved", "saved");
-
-            showMessage(
-                `${result.message} ${result.saved_count} mark saved.`,
-                "success"
-            );
         }
 
     } catch (error) {
@@ -1220,7 +1187,6 @@ async function saveIndividualMark(input) {
 
         setSaveStatus(studentId, error.message, "error");
 
-        showMessage(error.message, "error");
 
     } finally {
         if (input.isConnected) {
@@ -1272,11 +1238,6 @@ studentsBody.addEventListener("keydown", event => {
         nextInput.select();
     } else {
         input.blur();
-
-        showMessage(
-            "You have reached the last student. The entered mark is being saved.",
-            "success"
-        );
     }
 });
 
