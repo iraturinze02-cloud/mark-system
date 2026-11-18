@@ -1,20 +1,9 @@
-
 import { connectDB, json, requireOwner } from "../../../_utils.js";
 
 /* =====================================================
    OWNER SCHOOL STATUS
 
    POST /api/owner/schools/status
-
-   Body:
-   {
-       "id": 1,
-       "status": "active"
-   }
-
-   Allowed:
-   active
-   inactive
 ===================================================== */
 
 export async function onRequestPost(context) {
@@ -28,61 +17,60 @@ export async function onRequestPost(context) {
         const body = await context.request.json();
 
         const id = Number(body.id);
-
         const status = String(body.status || "").trim().toLowerCase();
 
-        /* VALIDATE ID */
-
+        // VALIDATE ID
         if (!Number.isInteger(id) || id <= 0) {
-
             return json({
                 success: false,
                 message: "Invalid school ID."
             }, 400);
         }
 
-        /* VALIDATE STATUS */
-
+        // VALIDATE STATUS
         if (!["active", "inactive"].includes(status)) {
-
             return json({
                 success: false,
-                message: "Status must be active or inactive."
+                message: "Invalid status."
             }, 400);
         }
 
         const db = await connectDB(context);
 
-        /* CHECK SCHOOL EXISTS */
-
-        const existing = await db.query(`
-            SELECT id, school_name, status
-            FROM schools
-            WHERE id = $1
-            LIMIT 1
-        `, [id]);
-
-        if (existing.rows.length === 0) {
-
-            return json({
-                success: false,
-                message: "School not found."
-            }, 404);
-        }
-
-        /* UPDATE STATUS */
-
+        // UPDATE AND RETURN THE ACTUAL DATABASE RECORD
         const result = await db.query(`
             UPDATE schools
             SET status = $1
             WHERE id = $2
-            RETURNING id, school_name, status
+            RETURNING id, school_name, school_code, status
         `, [status, id]);
+
+        // VERIFY UPDATE
+        if (result.rows.length === 0) {
+
+            return json({
+                success: false,
+                message: "School not found or status was not updated.",
+                schoolId: id
+            }, 404);
+        }
+
+        const updatedSchool = result.rows[0];
+
+        // CONFIRM DATABASE STATUS
+        if (updatedSchool.status !== status) {
+
+            return json({
+                success: false,
+                message: "Database status verification failed.",
+                school: updatedSchool
+            }, 500);
+        }
 
         return json({
             success: true,
             message: `School ${status === "active" ? "activated" : "deactivated"} successfully.`,
-            school: result.rows[0]
+            school: updatedSchool
         });
 
     } catch (error) {
@@ -91,7 +79,7 @@ export async function onRequestPost(context) {
 
         return json({
             success: false,
-            message: "Failed to change school status."
+            message: error.message || "Failed to change school status."
         }, 500);
     }
 }
