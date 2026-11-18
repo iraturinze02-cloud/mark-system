@@ -2,210 +2,270 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Record Test Marks</title>
-    <link rel="stylesheet" href="../../style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Record Test Marks</title>
+<link rel="stylesheet" href="../../style.css">
 
-    <style>
-        .record-container {
-            max-width: 1100px;
-            margin: 25px auto;
-            padding: 15px;
-        }
+<style>
+.record-container {
+    max-width: 1100px;
+    margin: 20px auto;
+    padding: 12px;
+}
 
-        .record-card {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 8px rgba(0,0,0,.08);
-        }
+.record-card {
+    background: white;
+    padding: 18px;
+    border-radius: 12px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,.08);
+}
 
-        .record-card h2 {
-            margin-top: 0;
-        }
+.record-card h2 {
+    margin: 0 0 14px;
+    font-size: 19px;
+}
 
-        .form-group {
-            margin: 15px 0;
-        }
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 10px;
+}
 
-        .form-group label {
-            display: block;
-            font-weight: 600;
-            margin-bottom: 7px;
-        }
+.info-item {
+    background: #f8fafc;
+    padding: 11px;
+    border-radius: 8px;
+}
 
-        .form-group select {
-            width: 100%;
-            padding: 11px;
-            border: 1px solid #ccc;
-            border-radius: 6px;
-            background: white;
-        }
+.info-item small {
+    display: block;
+    color: #64748b;
+    margin-bottom: 5px;
+}
 
-        .info-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 12px;
-        }
+.info-item strong {
+    color: #1e293b;
+}
 
-        .info-item {
-            background: #f8fafc;
-            padding: 12px;
-            border-radius: 7px;
-        }
+.selection-section {
+    margin-bottom: 16px;
+}
 
-        .info-item small {
-            display: block;
-            color: #64748b;
-            margin-bottom: 5px;
-        }
+.selection-label {
+    display: block;
+    font-weight: 700;
+    font-size: 14px;
+    margin-bottom: 9px;
+}
 
-        .info-item strong {
-            color: #1e293b;
-        }
+.selection-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 9px;
+}
 
-        .table-container {
-            overflow-x: auto;
-            background: white;
-            padding: 15px;
-            border-radius: 10px;
-        }
+.selection-card {
+    background: #f8fafc;
+    border: 1px solid #dbe2ea;
+    color: #1e293b;
+    padding: 12px;
+    border-radius: 9px;
+    text-align: left;
+    cursor: pointer;
+    transition: .15s ease;
+    min-height: 58px;
+}
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 14px;
-        }
+.selection-card:hover {
+    border-color: #2563eb;
+    background: #eff6ff;
+}
 
-        th {
-            background: #1d4ed8;
-            color: white;
-            padding: 10px;
-            text-align: left;
-        }
+.selection-card.selected {
+    border: 2px solid #2563eb;
+    background: #eff6ff;
+    color: #1d4ed8;
+}
 
-        td {
-            padding: 9px 7px;
-            border-bottom: 1px solid #eee;
-        }
+.selection-card strong {
+    display: block;
+    font-size: 14px;
+}
 
-        .mark-input {
-            width: 110px;
-            max-width: 100%;
-            padding: 9px;
-            border: 1px solid #cbd5e1;
-            border-radius: 5px;
-            font-size: 15px;
-        }
+.selection-card small {
+    display: block;
+    margin-top: 4px;
+    color: #64748b;
+    font-size: 12px;
+}
 
-        .mark-input:focus {
-            outline: 2px solid #93c5fd;
-            border-color: #2563eb;
-        }
+.selection-card.selected small {
+    color: #1d4ed8;
+}
 
-        .mark-input.invalid {
-            border-color: #dc2626;
-            background: #fef2f2;
-        }
+.selection-single {
+    padding: 10px 12px;
+    background: #f8fafc;
+    border-radius: 8px;
+    border-left: 3px solid #2563eb;
+    font-weight: 600;
+}
 
-        .save-status {
-            display: block;
-            margin-top: 5px;
-            font-size: 12px;
-            min-height: 16px;
-        }
+.form-group {
+    margin: 12px 0;
+}
 
-        .save-status.saving {
-            color: #2563eb;
-        }
+.form-group label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 7px;
+}
 
-        .save-status.saved {
-            color: #15803d;
-        }
+.form-group select {
+    width: 100%;
+    padding: 11px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    background: white;
+    font-size: 15px;
+}
 
-        .save-status.error {
-            color: #dc2626;
-        }
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+}
 
-        .save-status.warning {
-            color: #b45309;
-        }
+.table-container {
+    overflow-x: auto;
+    background: white;
+    padding: 12px;
+    border-radius: 10px;
+}
 
-        .maximum-info {
-            margin: 12px 0;
-            padding: 12px;
-            border-radius: 6px;
-            background: #eff6ff;
-            color: #1e40af;
-            font-weight: 600;
-        }
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
 
-        .status-message {
-            padding: 12px;
-            border-radius: 6px;
-            margin: 12px 0;
-            background: #eff6ff;
-            color: #1e40af;
-        }
+th {
+    background: #1d4ed8;
+    color: white;
+    padding: 10px;
+    text-align: left;
+}
 
-        .status-message.error {
-            background: #fef2f2;
-            color: #991b1b;
-        }
+td {
+    padding: 9px 7px;
+    border-bottom: 1px solid #eee;
+}
 
-        .status-message.success {
-            background: #f0fdf4;
-            color: #166534;
-        }
+.mark-input {
+    width: 100px;
+    max-width: 100%;
+    padding: 9px;
+    border: 1px solid #cbd5e1;
+    border-radius: 5px;
+    font-size: 15px;
+}
 
-        .status-message.warning {
-            background: #fffbeb;
-            color: #92400e;
-        }
+.mark-input:focus {
+    outline: 2px solid #93c5fd;
+    border-color: #2563eb;
+}
 
-        .test-status {
-            display: inline-block;
-            padding: 4px 9px;
-            border-radius: 5px;
-            font-size: 12px;
-            font-weight: 600;
-            background: #e2e8f0;
-            color: #334155;
-        }
+.mark-input.invalid {
+    border-color: #dc2626;
+    background: #fef2f2;
+}
 
-        .test-status.open {
-            background: #dcfce7;
-            color: #166534;
-        }
+.save-status {
+    display: block;
+    margin-top: 5px;
+    font-size: 12px;
+    min-height: 16px;
+}
 
-        .test-status.closed,
-        .test-status.draft {
-            background: #fee2e2;
-            color: #991b1b;
-        }
+.save-status.saving { color: #2563eb; }
+.save-status.saved { color: #15803d; }
+.save-status.error { color: #dc2626; }
+.save-status.warning { color: #b45309; }
 
-        .empty-state {
-            text-align: center;
-            padding: 25px;
-            color: #64748b;
-        }
+.maximum-info {
+    margin: 12px 0;
+    padding: 12px;
+    border-radius: 6px;
+    background: #eff6ff;
+    color: #1e40af;
+    font-weight: 600;
+}
 
-        @media(max-width:600px) {
-            .record-container {
-                padding: 8px;
-            }
+.status-message {
+    padding: 12px;
+    border-radius: 8px;
+    margin: 12px 0;
+    background: #eff6ff;
+    color: #1e40af;
+}
 
-            .record-card {
-                padding: 14px;
-            }
+.status-message.error {
+    background: #fef2f2;
+    color: #991b1b;
+}
 
-            .table-container {
-                padding: 8px;
-            }
-        }
-    </style>
+.status-message.success {
+    background: #f0fdf4;
+    color: #166534;
+}
+
+.status-message.warning {
+    background: #fffbeb;
+    color: #92400e;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 25px;
+    color: #64748b;
+}
+
+.selection-hidden {
+    display: none !important;
+}
+
+@media(max-width:600px) {
+    .record-container {
+        padding: 7px;
+    }
+
+    .record-card {
+        padding: 13px;
+    }
+
+    .selection-cards {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .table-container {
+        padding: 6px;
+    }
+
+    table {
+        font-size: 12px;
+    }
+
+    th, td {
+        padding: 7px 5px;
+    }
+
+    .mark-input {
+        width: 75px;
+    }
+}
+</style>
 </head>
 
 <body>
@@ -221,6 +281,8 @@
     <div id="message" class="status-message">
         Loading your assignments...
     </div>
+
+    <!-- TEACHER INFORMATION -->
 
     <section class="record-card">
         <h2>Teacher Information</h2>
@@ -248,60 +310,65 @@
         </div>
     </section>
 
+    <!-- SELECTION -->
+
     <section class="record-card">
         <h2>Test Selection</h2>
 
-        <div class="form-group">
-            <label for="classSelect">Select Class</label>
-            <select id="classSelect" disabled>
-                <option value="">Loading classes...</option>
+        <!-- CLASS CARDS -->
+        <div id="classSection" class="selection-section selection-hidden">
+            <label class="selection-label">Choose Class</label>
+            <div id="classCards" class="selection-cards"></div>
+        </div>
+
+        <!-- SUBJECT CARDS -->
+        <div id="subjectSection" class="selection-section selection-hidden">
+            <label class="selection-label">Choose Subject</label>
+            <div id="subjectCards" class="selection-cards"></div>
+        </div>
+
+        <!-- TEST DROPDOWN: ONLY WHEN MORE THAN ONE TEST -->
+        <div id="testSection" class="form-group selection-hidden">
+            <label for="testSelect">Choose Open Test</label>
+            <select id="testSelect">
+                <option value="">Choose a Test</option>
             </select>
         </div>
 
-        <div class="form-group">
-            <label for="subjectSelect">Select Subject</label>
-            <select id="subjectSelect" disabled>
-                <option value="">Select a subject</option>
-            </select>
-        </div>
-
-        <div class="form-group">
-            <label for="testSelect">Select Test</label>
-            <select id="testSelect" disabled>
-                <option value="">Select a Test</option>
-            </select>
+        <!-- AUTOMATIC SINGLE TEST DISPLAY -->
+        <div id="singleTestDisplay" class="selection-section selection-hidden">
+            <label class="selection-label">Open Test</label>
+            <div id="singleTestName" class="selection-single"></div>
         </div>
 
         <div id="testInformation" class="status-message">
-            Select your class and subject to view available Tests.
+            Loading available Tests...
         </div>
     </section>
+
+    <!-- STUDENTS -->
 
     <section class="record-card">
         <h2>Student Marks Entry</h2>
 
         <div class="empty-state" id="studentsPlaceholder">
-            Select a class, subject and open Test to continue.
+            Select your class, subject and open Test to continue.
         </div>
 
-        <div
-            class="table-container"
-            id="studentsTableContainer"
-            style="display:none"
-        >
+        <div id="studentsTableContainer" class="table-container selection-hidden">
 
             <div id="maximumInformation" class="maximum-info"></div>
 
             <table>
                 <thead>
-    <tr>
-        <th>#</th>
-        <th>Student FilaCode</th>
-        <th>Student Name</th>
-        <th>Mark</th>
-        <th>Save Status</th>
-    </tr>
-</thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Student FilaCode</th>
+                        <th>Student Name</th>
+                        <th>Mark</th>
+                        <th>Save Status</th>
+                    </tr>
+                </thead>
 
                 <tbody id="studentsBody"></tbody>
             </table>
@@ -312,7 +379,6 @@
                 Marks are saved automatically when you leave a mark field.
                 Press Enter to move to the next student.
             </p>
-
         </div>
     </section>
 
@@ -338,21 +404,28 @@ let tests = [];
 let students = [];
 
 let selectedClassId = null;
+let selectedSubjectId = null;
 let selectedAssignment = null;
 let selectedTest = null;
 
 let maximumMark = null;
-
-let loadingStudents = false;
 let pageSession = 0;
 
 /* =====================================================
    ELEMENTS
 ===================================================== */
 
-const classSelect = document.getElementById("classSelect");
-const subjectSelect = document.getElementById("subjectSelect");
+const classSection = document.getElementById("classSection");
+const classCards = document.getElementById("classCards");
+
+const subjectSection = document.getElementById("subjectSection");
+const subjectCards = document.getElementById("subjectCards");
+
+const testSection = document.getElementById("testSection");
 const testSelect = document.getElementById("testSelect");
+
+const singleTestDisplay = document.getElementById("singleTestDisplay");
+const singleTestName = document.getElementById("singleTestName");
 
 const message = document.getElementById("message");
 const testInformation = document.getElementById("testInformation");
@@ -429,14 +502,12 @@ async function loadOptions() {
         tests = data.tests || [];
 
         if (assignments.length === 0) {
-            classSelect.innerHTML =
-                '<option value="">No assigned classes found</option>';
-
             showMessage(
-                data.message || "No class and subject assignments were found.",
+                "No class and subject assignments were found.",
                 "warning"
             );
 
+            showTestMessage("No assignments available.");
             return;
         }
 
@@ -452,11 +523,9 @@ async function loadOptions() {
         document.getElementById("teacherSchool").textContent =
             assignments[0].school_name || "Not available";
 
-        renderClasses();
-
-        classSelect.disabled = false;
-
         showMessage("Assignments loaded successfully.", "success");
+
+        renderClasses();
 
     } catch (error) {
         console.error("Load options error:", error);
@@ -465,133 +534,199 @@ async function loadOptions() {
 }
 
 /* =====================================================
-   CLASS SELECTION
+   CLASS LIST
 ===================================================== */
 
-function renderClasses() {
-    const classes = [];
+function getClasses() {
+    const result = [];
 
-    assignments.forEach(assignment => {
-        const exists = classes.some(
-            item => String(item.class_id) === String(assignment.class_id)
-        );
-
-        if (!exists) {
-            classes.push({
-                class_id: assignment.class_id,
-                class_name: assignment.class_name
+    assignments.forEach(item => {
+        if (!result.some(
+            c => String(c.class_id) === String(item.class_id)
+        )) {
+            result.push({
+                class_id: item.class_id,
+                class_name: item.class_name
             });
         }
     });
 
-    classSelect.innerHTML =
-        '<option value="">Select a class</option>';
-
-    classes.forEach(item => {
-        const option = document.createElement("option");
-
-        option.value = String(item.class_id);
-        option.textContent = item.class_name;
-
-        classSelect.appendChild(option);
-    });
-
-    if (classes.length === 1) {
-        classSelect.value = String(classes[0].class_id);
-        changeClass();
-    }
+    return result;
 }
 
-function changeClass() {
+/* =====================================================
+   RENDER CLASSES
+===================================================== */
+
+function renderClasses() {
+    const classes = getClasses();
+
+    classCards.innerHTML = "";
+
+    if (classes.length <= 1) {
+        classSection.classList.add("selection-hidden");
+
+        if (classes.length === 1) {
+            selectClass(classes[0].class_id);
+        }
+
+        return;
+    }
+
+    classSection.classList.remove("selection-hidden");
+
+    classes.forEach(item => {
+        const button = document.createElement("button");
+
+        button.type = "button";
+        button.className = "selection-card";
+
+        button.innerHTML = `
+            <strong>${escapeHTML(item.class_name)}</strong>
+            <small>Tap to select</small>
+        `;
+
+        button.addEventListener("click", () => {
+            selectClass(item.class_id);
+        });
+
+        classCards.appendChild(button);
+    });
+}
+
+/* =====================================================
+   SELECT CLASS
+===================================================== */
+
+function selectClass(classId) {
     pageSession++;
 
-    selectedClassId = classSelect.value || null;
+    selectedClassId = String(classId);
 
+    selectedSubjectId = null;
     selectedAssignment = null;
     selectedTest = null;
     maximumMark = null;
 
     document.getElementById("teacherClass").textContent =
-        "Not selected";
+        getClasses().find(
+            item => String(item.class_id) === selectedClassId
+        )?.class_name || "Selected class";
 
     document.getElementById("teacherSubject").textContent =
         "Not selected";
 
-    subjectSelect.innerHTML =
-        '<option value="">Select a subject</option>';
-
-    testSelect.innerHTML =
-        '<option value="">Select a Test</option>';
-
-    subjectSelect.disabled = !selectedClassId;
-    testSelect.disabled = true;
+    updateClassCardSelection();
 
     clearStudents();
 
-    if (!selectedClassId) {
-        showTestMessage("Select your class first.");
-        return;
-    }
+    subjectCards.innerHTML = "";
+    subjectSection.classList.add("selection-hidden");
 
-    document.getElementById("teacherClass").textContent =
-        assignments.find(
-            item => String(item.class_id) === String(selectedClassId)
-        )?.class_name || "Selected class";
+    resetTestUI();
 
     renderSubjects();
 }
 
-/* =====================================================
-   SUBJECT SELECTION
-===================================================== */
+function updateClassCardSelection() {
+    const buttons = classCards.querySelectorAll(".selection-card");
 
-function renderSubjects() {
-    const matching = assignments.filter(
-        item => String(item.class_id) === String(selectedClassId)
+    buttons.forEach(button => {
+        button.classList.remove("selected");
+    });
+
+    const classes = getClasses();
+
+    const index = classes.findIndex(
+        item => String(item.class_id) === selectedClassId
     );
 
-    const subjects = [];
+    if (index >= 0 && buttons[index]) {
+        buttons[index].classList.add("selected");
+    }
+}
 
-    matching.forEach(assignment => {
-        const exists = subjects.some(
-            item => String(item.subject_id) ===
-                String(assignment.subject_id)
-        );
+/* =====================================================
+   SUBJECTS FOR SELECTED CLASS
+===================================================== */
 
-        if (!exists) {
-            subjects.push({
-                subject_id: assignment.subject_id,
-                subject_name: assignment.subject_name
+function getSubjects() {
+    const matching = assignments.filter(
+        item => String(item.class_id) === selectedClassId
+    );
+
+    const result = [];
+
+    matching.forEach(item => {
+        if (!result.some(
+            s => String(s.subject_id) === String(item.subject_id)
+        )) {
+            result.push({
+                subject_id: item.subject_id,
+                subject_name: item.subject_name
             });
         }
     });
 
-    subjectSelect.innerHTML =
-        '<option value="">Select a subject</option>';
-
-    subjects.forEach(subject => {
-        const option = document.createElement("option");
-
-        option.value = String(subject.subject_id);
-        option.textContent = subject.subject_name;
-
-        subjectSelect.appendChild(option);
-    });
-
-    if (subjects.length === 1) {
-        subjectSelect.value = String(subjects[0].subject_id);
-        changeSubject();
-    }
+    return result;
 }
 
-function changeSubject() {
+/* =====================================================
+   RENDER SUBJECTS
+===================================================== */
+
+function renderSubjects() {
+    const subjects = getSubjects();
+
+    subjectCards.innerHTML = "";
+
+    if (subjects.length <= 1) {
+        subjectSection.classList.add("selection-hidden");
+
+        if (subjects.length === 1) {
+            selectSubject(subjects[0].subject_id);
+        } else {
+            showTestMessage("No subjects assigned to this class.", "warning");
+        }
+
+        return;
+    }
+
+    subjectSection.classList.remove("selection-hidden");
+
+    subjects.forEach(subject => {
+        const button = document.createElement("button");
+
+        button.type = "button";
+        button.className = "selection-card";
+
+        button.innerHTML = `
+            <strong>${escapeHTML(subject.subject_name)}</strong>
+            <small>Tap to select</small>
+        `;
+
+        button.addEventListener("click", () => {
+            selectSubject(subject.subject_id);
+        });
+
+        subjectCards.appendChild(button);
+    });
+
+    showTestMessage("Tap a subject to continue.");
+}
+
+/* =====================================================
+   SELECT SUBJECT
+===================================================== */
+
+function selectSubject(subjectId) {
     pageSession++;
 
-    const subjectId = subjectSelect.value;
+    selectedSubjectId = String(subjectId);
 
     selectedAssignment = assignments.find(item =>
-        String(item.class_id) === String(selectedClassId) &&
-        String(item.subject_id) === String(subjectId)
+        String(item.class_id) === selectedClassId &&
+        String(item.subject_id) === selectedSubjectId
     ) || null;
 
     selectedTest = null;
@@ -600,23 +735,37 @@ function changeSubject() {
     document.getElementById("teacherSubject").textContent =
         selectedAssignment?.subject_name || "Not selected";
 
-    testSelect.innerHTML =
-        '<option value="">Select a Test</option>';
-
-    testSelect.disabled = !selectedAssignment;
+    updateSubjectCardSelection();
 
     clearStudents();
+    resetTestUI();
 
     if (!selectedAssignment) {
-        showTestMessage("Select your subject.");
+        showTestMessage("Subject assignment not found.", "error");
         return;
     }
 
     renderTests();
 }
 
+function updateSubjectCardSelection() {
+    const buttons = subjectCards.querySelectorAll(".selection-card");
+
+    buttons.forEach(button => button.classList.remove("selected"));
+
+    const subjects = getSubjects();
+
+    const index = subjects.findIndex(
+        item => String(item.subject_id) === selectedSubjectId
+    );
+
+    if (index >= 0 && buttons[index]) {
+        buttons[index].classList.add("selected");
+    }
+}
+
 /* =====================================================
-   TEST SELECTION
+   TESTS
 ===================================================== */
 
 function getMatchingTests() {
@@ -628,74 +777,94 @@ function getMatchingTests() {
     );
 }
 
+function getOpenTests() {
+    return getMatchingTests().filter(test =>
+        test.status === "open" &&
+        test.available_for_marks === true &&
+        (!test.closing_at || new Date(test.closing_at).getTime() > Date.now())
+    );
+}
+
+function resetTestUI() {
+    testSection.classList.add("selection-hidden");
+    singleTestDisplay.classList.add("selection-hidden");
+
+    testSelect.innerHTML = "";
+    singleTestName.textContent = "";
+}
+
+/* =====================================================
+   RENDER TEST SELECTION
+===================================================== */
+
 function renderTests() {
-    const matching = getMatchingTests();
+    resetTestUI();
 
-    testSelect.innerHTML =
-        '<option value="">Select a Test</option>';
+    const openTests = getOpenTests();
 
-    if (matching.length === 0) {
-        testSelect.disabled = true;
-
+    if (openTests.length === 0) {
         showTestMessage(
-            "No Tests were found for this class and subject.",
+            "There are no open Tests available for this class and subject.",
             "warning"
         );
+
+        clearStudents();
+        return;
+    }
+
+    /* ---------------------------------------------
+       ONLY ONE OPEN TEST
+       Automatically select it.
+    --------------------------------------------- */
+
+    if (openTests.length === 1) {
+        const test = openTests[0];
+
+        singleTestDisplay.classList.remove("selection-hidden");
+
+        singleTestName.textContent =
+            `${test.test_name} — ${test.total_marks ?? "Marks not specified"} marks`;
+
+        selectTest(test.test_id);
 
         return;
     }
 
-    matching.forEach(test => {
+    /* ---------------------------------------------
+       MULTIPLE OPEN TESTS
+       Show dropdown only.
+    --------------------------------------------- */
+
+    testSection.classList.remove("selection-hidden");
+
+    testSelect.innerHTML =
+        '<option value="">Choose an open Test</option>';
+
+    openTests.forEach(test => {
         const option = document.createElement("option");
 
         option.value = String(test.test_id);
 
         option.textContent =
-            `${test.test_name} (${String(test.status).toUpperCase()})`;
-
-        const available =
-            test.available_for_marks === true &&
-            test.status === "open";
-
-        option.disabled = !available;
+            `${test.test_name} — ${test.total_marks ?? "Marks not specified"} marks`;
 
         testSelect.appendChild(option);
     });
 
-    testSelect.disabled = false;
-
-    const availableTests = matching.filter(test =>
-        test.available_for_marks === true &&
-        test.status === "open"
+    showTestMessage(
+        `${openTests.length} open Tests are available. Choose one.`,
+        "success"
     );
-
-    if (availableTests.length === 0) {
-        showTestMessage(
-            "There are no open Tests for this class and subject. " +
-            "Only open Tests accept marks.",
-            "warning"
-        );
-
-        return;
-    }
-
-    if (availableTests.length === 1) {
-        testSelect.value = String(availableTests[0].test_id);
-        changeTest();
-    } else {
-        showTestMessage(
-            `${availableTests.length} open Tests are available. Please select one.`,
-            "success"
-        );
-    }
 }
 
-function changeTest() {
+/* =====================================================
+   SELECT TEST
+===================================================== */
+
+function selectTest(testId) {
     pageSession++;
 
-    const testId = testSelect.value;
-
-    selectedTest = getMatchingTests().find(
+    selectedTest = getOpenTests().find(
         item => String(item.test_id) === String(testId)
     ) || null;
 
@@ -704,36 +873,23 @@ function changeTest() {
     clearStudents();
 
     if (!selectedTest) {
-        showTestMessage("Select a Test to continue.");
-        return;
-    }
-
-    if (
-        selectedTest.status !== "open" ||
-        selectedTest.available_for_marks !== true
-    ) {
-        showTestMessage(
-            "This Test is not open. Marks cannot be recorded.",
-            "warning"
-        );
-
-        selectedTest = null;
+        showTestMessage("Select an open Test to continue.");
         return;
     }
 
     const information = [
         `Test: ${selectedTest.test_name}`,
-        `Status: ${selectedTest.status.toUpperCase()}`,
+        `Status: OPEN`,
         `Created by: ${selectedTest.creator_name || "Not available"}`,
         `Opened by: ${selectedTest.initiated_by_name || "Not available"}`
     ];
 
     if (selectedTest.closing_at) {
         information.push(
-            `Closing time: ${new Date(selectedTest.closing_at).toLocaleString()}`
+            `Closing: ${new Date(selectedTest.closing_at).toLocaleString()}`
         );
     } else {
-        information.push("Closing time: Manual closure");
+        information.push("Closing: Manual closure");
     }
 
     showTestMessage(information.join(" | "), "success");
@@ -752,10 +908,8 @@ async function loadStudents() {
 
     clearStudents();
 
-    loadingStudents = true;
-
     studentsPlaceholder.style.display = "block";
-    studentsPlaceholder.textContent = "Loading students...";
+    studentsPlaceholder.textContent = "Loading active students...";
 
     try {
         const params = new URLSearchParams({
@@ -785,24 +939,20 @@ async function loadStudents() {
 
         maximumMark = Number(data.test.total_marks);
 
-        if (
-            !Number.isFinite(maximumMark) ||
-            maximumMark <= 0
-        ) {
+        if (!Number.isFinite(maximumMark) || maximumMark <= 0) {
             maximumMark = null;
 
             studentsPlaceholder.textContent =
                 "The maximum mark for this Test subject has not been configured.";
 
             showTestMessage(
-                "The maximum mark for this Test subject has not been configured. Contact the Test administrator.",
+                "The maximum mark has not been configured.",
                 "error"
             );
 
             return;
         }
 
-        // Keep the verified Test information from the server.
         selectedTest = {
             ...selectedTest,
             ...data.test
@@ -810,7 +960,7 @@ async function loadStudents() {
 
         if (students.length === 0) {
             studentsPlaceholder.textContent =
-                "No students were found in this class.";
+                "No active students were found in this class.";
 
             return;
         }
@@ -827,7 +977,7 @@ async function loadStudents() {
 
     } finally {
         if (requestSession === pageSession) {
-            loadingStudents = false;
+            // No additional loading state needed.
         }
     }
 }
@@ -835,7 +985,6 @@ async function loadStudents() {
 /* =====================================================
    RENDER STUDENTS
 ===================================================== */
-
 
 function renderStudents() {
     studentsBody.innerHTML = "";
@@ -846,19 +995,15 @@ function renderStudents() {
     students.forEach((student, index) => {
         const row = document.createElement("tr");
 
-        // Student number
         const numberCell = document.createElement("td");
         numberCell.textContent = index + 1;
 
-        // Student FilaCode
         const codeCell = document.createElement("td");
         codeCell.textContent = student.student_code || "—";
 
-        // Student name
         const nameCell = document.createElement("td");
         nameCell.textContent = student.full_name || "";
 
-        // Mark input
         const markCell = document.createElement("td");
 
         const markInput = document.createElement("input");
@@ -885,7 +1030,6 @@ function renderStudents() {
 
         markCell.appendChild(markInput);
 
-        // Save status
         const statusCell = document.createElement("td");
 
         const saveStatus = document.createElement("span");
@@ -902,7 +1046,6 @@ function renderStudents() {
 
         statusCell.appendChild(saveStatus);
 
-        // Add cells in the correct order
         row.appendChild(numberCell);
         row.appendChild(codeCell);
         row.appendChild(nameCell);
@@ -913,10 +1056,10 @@ function renderStudents() {
     });
 
     studentsPlaceholder.style.display = "none";
-    studentsTableContainer.style.display = "block";
+    studentsTableContainer.classList.remove("selection-hidden");
 
     document.getElementById("marksTotal").textContent =
-        `${students.length} students | Maximum mark: ${maximumMark}`;
+        `${students.length} active students | Maximum mark: ${maximumMark}`;
 }
 
 /* =====================================================
@@ -931,13 +1074,28 @@ function clearStudents() {
     studentsPlaceholder.textContent =
         "Select a class, subject and open Test to continue.";
 
-    studentsTableContainer.style.display = "none";
+    studentsTableContainer.classList.add("selection-hidden");
+
     maximumInformation.textContent = "";
     document.getElementById("marksTotal").textContent = "";
 }
 
 /* =====================================================
-   INDIVIDUAL STUDENT SAVE
+   HTML ESCAPE
+===================================================== */
+
+function escapeHTML(value) {
+    return String(value ?? "").replace(/[&<>"']/g, char => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
+    })[char]);
+}
+
+/* =====================================================
+   SAVE STATUS
 ===================================================== */
 
 function setSaveStatus(studentId, text, type = "") {
@@ -950,6 +1108,10 @@ function setSaveStatus(studentId, text, type = "") {
     status.textContent = text;
     status.className = "save-status " + type;
 }
+
+/* =====================================================
+   VALIDATE MARK
+===================================================== */
 
 function validateMarkInput(input) {
     const value = input.value.trim();
@@ -990,6 +1152,10 @@ function validateMarkInput(input) {
     };
 }
 
+/* =====================================================
+   SAVE INDIVIDUAL MARK
+===================================================== */
+
 async function saveIndividualMark(input) {
     if (!input || !input.isConnected) return;
 
@@ -999,7 +1165,6 @@ async function saveIndividualMark(input) {
 
     const studentId = input.dataset.studentId;
 
-    // Prevent overlapping saves for the same input.
     if (input.dataset.saving === "true") return;
 
     const validation = validateMarkInput(input);
@@ -1013,10 +1178,8 @@ async function saveIndividualMark(input) {
     const currentValue = input.value.trim();
     const savedValue = input.dataset.savedValue || "";
 
-    // Do not create unnecessary database requests.
     if (currentValue === savedValue) return;
 
-    // Empty inputs do not delete previously saved marks.
     if (validation.empty) {
         if (savedValue !== "") {
             input.value = savedValue;
@@ -1038,8 +1201,6 @@ async function saveIndividualMark(input) {
     input.dataset.saving = "true";
 
     try {
-        // Continue saving if the teacher changes the value
-        // while an earlier request is still being processed.
         while (input.isConnected && session === pageSession) {
             const valueToSave = input.value.trim();
 
@@ -1051,9 +1212,7 @@ async function saveIndividualMark(input) {
                 break;
             }
 
-            if (check.empty) {
-                break;
-            }
+            if (check.empty) break;
 
             if (valueToSave === (input.dataset.savedValue || "")) {
                 break;
@@ -1090,8 +1249,6 @@ async function saveIndividualMark(input) {
                 `${result.message} ${result.saved_count} mark saved.`,
                 "success"
             );
-
-            // If the input changed while saving, save the newer value too.
         }
 
     } catch (error) {
@@ -1111,7 +1268,7 @@ async function saveIndividualMark(input) {
 }
 
 /* =====================================================
-   AUTOMATIC SAVE WHEN LEAVING MARK INPUT
+   AUTO-SAVE WHEN LEAVING MARK INPUT
 ===================================================== */
 
 studentsBody.addEventListener("focusout", event => {
@@ -1123,7 +1280,7 @@ studentsBody.addEventListener("focusout", event => {
 });
 
 /* =====================================================
-   ENTER KEY: MOVE TO NEXT STUDENT
+   ENTER: MOVE TO NEXT STUDENT
 ===================================================== */
 
 studentsBody.addEventListener("keydown", event => {
@@ -1152,7 +1309,6 @@ studentsBody.addEventListener("keydown", event => {
         nextInput.focus();
         nextInput.select();
     } else {
-        // The last field loses focus, triggering automatic saving.
         input.blur();
 
         showMessage(
@@ -1163,12 +1319,14 @@ studentsBody.addEventListener("keydown", event => {
 });
 
 /* =====================================================
-   EVENT LISTENERS
+   TEST DROPDOWN EVENT
 ===================================================== */
 
-classSelect.addEventListener("change", changeClass);
-subjectSelect.addEventListener("change", changeSubject);
-testSelect.addEventListener("change", changeTest);
+testSelect.addEventListener("change", () => {
+    if (testSelect.value) {
+        selectTest(testSelect.value);
+    }
+});
 
 /* =====================================================
    START
