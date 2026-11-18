@@ -148,7 +148,6 @@ tbody tr:hover{background:#fbfdff}
 <body>
 
 <aside class="sidebar" id="sidebar">
-
     <div class="brand">
         <div class="brand-icon">F</div>
         <div class="brand-text">
@@ -184,7 +183,6 @@ tbody tr:hover{background:#fbfdff}
 <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
 
 <main class="main">
-
 <header class="topbar">
     <div class="topbar-left">
         <button class="menu-btn" onclick="toggleSidebar()">☰</button>
@@ -207,7 +205,6 @@ tbody tr:hover{background:#fbfdff}
             <h1>User Accounts</h1>
             <p>Manage all accounts registered in Fila Grades System.</p>
         </div>
-
         <button class="primary-btn" onclick="openCreateModal()">+ Add User</button>
     </div>
 
@@ -258,6 +255,7 @@ tbody tr:hover{background:#fbfdff}
                 <option value="">All Sectors</option>
             </select>
 
+            <!-- School filter in the table remains a dropdown -->
             <select id="schoolFilter" class="filter-select" onchange="applyFilters()">
                 <option value="">All Schools</option>
             </select>
@@ -280,7 +278,6 @@ tbody tr:hover{background:#fbfdff}
     </section>
 
     <section class="table-card">
-
         <div class="table-header">
             <h3>All Registered Users</h3>
             <span id="resultsCount">Loading accounts...</span>
@@ -319,13 +316,11 @@ tbody tr:hover{background:#fbfdff}
                 <button class="page-btn" id="nextPage" onclick="changePage(1)">Next</button>
             </div>
         </div>
-
     </section>
 </div>
 </main>
 
 <!-- ADD / EDIT USER MODAL -->
-
 <div class="overlay" id="userModal">
     <div class="modal">
 
@@ -366,7 +361,7 @@ tbody tr:hover{background:#fbfdff}
                         </select>
                     </div>
 
-                    <!-- SECTOR CODE: NOT A SECTOR DROPDOWN -->
+                    <!-- SECTOR CODE -->
                     <div class="form-group full" id="sectorCodeGroup" style="display:none">
                         <label for="sectorCode">Sector Code *</label>
                         <input
@@ -378,19 +373,24 @@ tbody tr:hover{background:#fbfdff}
                             autocomplete="off"
                         >
                         <span class="form-help">
-                            Enter the code of the sector. The system will verify
+                            Enter the existing sector code. The system will verify
                             the code and assign the user to that sector.
                         </span>
                     </div>
 
-                    <!-- SCHOOL ASSIGNMENT -->
+                    <!-- SCHOOL NAME: TYPE IT, DO NOT SELECT -->
                     <div class="form-group full" id="schoolGroup" style="display:none">
-                        <label for="userSchool">School *</label>
-                        <select id="userSchool" name="school_id">
-                            <option value="">Select school</option>
-                        </select>
+                        <label for="userSchoolName">School Name *</label>
+                        <input
+                            id="userSchoolName"
+                            name="school_name"
+                            type="text"
+                            maxlength="200"
+                            placeholder="Type the school name"
+                            autocomplete="off"
+                        >
                         <span class="form-help">
-                            Select the school where this user will work.
+                            Type the name of the school where this user will work.
                         </span>
                     </div>
 
@@ -414,7 +414,6 @@ tbody tr:hover{background:#fbfdff}
 </div>
 
 <!-- USER DETAILS MODAL -->
-
 <div class="overlay" id="detailsModal">
     <div class="modal large">
 
@@ -430,7 +429,6 @@ tbody tr:hover{background:#fbfdff}
         <div class="modal-footer">
             <button class="secondary-btn" onclick="closeDetailsModal()">Close</button>
         </div>
-
     </div>
 </div>
 
@@ -619,8 +617,8 @@ async function loadUsers() {
 /* =====================================================
    LOAD SCHOOLS
 
-   No sector selection.
-   Schools will be assigned according to school ID.
+   School list is ONLY used for the table filter.
+   The Add/Edit User form does not use a school dropdown.
 ===================================================== */
 
 async function loadSchools() {
@@ -631,28 +629,11 @@ async function loadSchools() {
 
         schools = result.schools || result.data || [];
 
-        populateSchoolDropdown();
         populateSchoolFilter();
 
     } catch (error) {
         console.warn("Schools loading error:", error);
     }
-}
-
-function populateSchoolDropdown() {
-    const select = document.getElementById("userSchool");
-
-    select.innerHTML = `<option value="">Select school</option>`;
-
-    schools.forEach(school => {
-        const name = school.school_name || school.name || "Unnamed School";
-
-        select.innerHTML += `
-            <option value="${escapeHTML(school.id)}">
-                ${escapeHTML(name)}
-            </option>
-        `;
-    });
 }
 
 /* =====================================================
@@ -710,16 +691,16 @@ function updateAssignmentFields() {
     const schoolGroup = document.getElementById("schoolGroup");
 
     const sectorCode = document.getElementById("sectorCode");
-    const school = document.getElementById("userSchool");
+    const schoolName = document.getElementById("userSchoolName");
 
     sectorGroup.style.display = "none";
     schoolGroup.style.display = "none";
 
     sectorCode.required = false;
-    school.required = false;
+    schoolName.required = false;
 
     sectorCode.value = "";
-    school.value = "";
+    schoolName.value = "";
 
     if (role === "sector_admin") {
         sectorGroup.style.display = "flex";
@@ -728,7 +709,7 @@ function updateAssignmentFields() {
 
     if (role === "school_admin" || role === "teacher") {
         schoolGroup.style.display = "flex";
-        school.required = true;
+        schoolName.required = true;
     }
 }
 
@@ -1020,7 +1001,8 @@ function editUser(id) {
     }
 
     if (user.role === "school_admin" || user.role === "teacher") {
-        document.getElementById("userSchool").value = user.school_id || "";
+        document.getElementById("userSchoolName").value =
+            user.school_name || "";
     }
 
     document.getElementById("userModal").classList.add("show");
@@ -1050,8 +1032,10 @@ document.getElementById("userForm").addEventListener("submit", async function(ev
         payload.sector_code = document.getElementById("sectorCode").value.trim();
     }
 
+    // Send typed school name instead of school_id
     if (role === "school_admin" || role === "teacher") {
-        payload.school_id = document.getElementById("userSchool").value;
+        payload.school_name =
+            document.getElementById("userSchoolName").value.trim();
     }
 
     try {
