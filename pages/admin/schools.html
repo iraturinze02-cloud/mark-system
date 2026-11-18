@@ -919,12 +919,19 @@ async function apiFetch(url, options = {}) {
     });
 
     let data;
+const rawResponse = await response.text();
 
-    try {
-        data = await response.json();
-    } catch {
-        throw new Error("Invalid server response.");
-    }
+try {
+    data = JSON.parse(rawResponse);
+} catch {
+    console.error("SERVER RESPONSE:", rawResponse);
+    console.error("HTTP STATUS:", response.status);
+    console.error("REQUEST URL:", url);
+
+    throw new Error(
+        `Server returned invalid response (HTTP ${response.status}). Check console.`
+    );
+}
 
     if (!response.ok || data.success === false) {
         throw new Error(data.message || data.error || "Request failed.");
@@ -944,7 +951,7 @@ async function checkOwnerSession() {
         const data = await apiFetch(API.SESSION);
 
         if (!data.user || data.user.role !== "owner") {
-            window.location.href = "../login.html";
+            window.location.href = "../../index.html";
             return false;
         }
 
