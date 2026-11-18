@@ -831,51 +831,6 @@ function renderTests() {
     );
 }
 
-    /* ---------------------------------------------
-       ONLY ONE OPEN TEST
-       Automatically select it.
-    --------------------------------------------- */
-
-    if (openTests.length === 1) {
-        const test = openTests[0];
-
-        singleTestDisplay.classList.remove("selection-hidden");
-
-        singleTestName.textContent =
-            `${test.test_name} — ${test.total_marks ?? "Marks not specified"} marks`;
-
-        selectTest(test.test_id);
-
-        return;
-    }
-
-    /* ---------------------------------------------
-       MULTIPLE OPEN TESTS
-       Show dropdown only.
-    --------------------------------------------- */
-
-    testSection.classList.remove("selection-hidden");
-
-    testSelect.innerHTML =
-        '<option value="">Choose an open Test</option>';
-
-    openTests.forEach(test => {
-        const option = document.createElement("option");
-
-        option.value = String(test.test_id);
-
-        option.textContent =
-            `${test.test_name} — ${test.total_marks ?? "Marks not specified"} marks`;
-
-        testSelect.appendChild(option);
-    });
-
-    showTestMessage(
-        `${openTests.length} open Tests are available. Choose one.`,
-        "success"
-    );
-}
-
 /* =====================================================
    SELECT TEST
 ===================================================== */
