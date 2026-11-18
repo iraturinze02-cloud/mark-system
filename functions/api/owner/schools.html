@@ -1,0 +1,1550 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Schools | Fila Grades System</title>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<style>
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+:root {
+    --primary: #1d4ed8;
+    --primary-dark: #1e40af;
+    --bg: #f1f5f9;
+    --white: #ffffff;
+    --text: #1e293b;
+    --muted: #64748b;
+    --border: #e2e8f0;
+    --success: #15803d;
+    --danger: #dc2626;
+}
+
+body {
+    font-family: Arial, Helvetica, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+}
+
+.sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 250px;
+    background: #0f172a;
+    color: white;
+    padding: 22px 15px;
+    overflow-y: auto;
+}
+
+.logo {
+    font-size: 21px;
+    font-weight: bold;
+    padding: 10px;
+    margin-bottom: 25px;
+}
+
+.logo span {
+    color: #60a5fa;
+}
+
+.nav-title {
+    font-size: 11px;
+    color: #94a3b8;
+    margin: 20px 10px 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.nav-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    color: #cbd5e1;
+    text-decoration: none;
+    border-radius: 8px;
+    margin-bottom: 5px;
+    font-size: 14px;
+}
+
+.nav-link:hover,
+.nav-link.active {
+    background: #1e293b;
+    color: white;
+}
+
+.nav-link.active {
+    background: var(--primary);
+}
+
+.main {
+    margin-left: 250px;
+    padding: 25px;
+}
+
+.topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 25px;
+    flex-wrap: wrap;
+}
+
+.topbar h1 {
+    font-size: 25px;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: white;
+    padding: 10px 15px;
+    border-radius: 10px;
+}
+
+.user-avatar {
+    width: 38px;
+    height: 38px;
+    background: #dbeafe;
+    color: var(--primary);
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
+    margin-bottom: 22px;
+}
+
+.stat-card {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+}
+
+.stat-card .icon {
+    width: 42px;
+    height: 42px;
+    background: #eff6ff;
+    color: var(--primary);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 15px;
+}
+
+.stat-card h3 {
+    font-size: 26px;
+    margin-bottom: 5px;
+}
+
+.stat-card p {
+    font-size: 13px;
+    color: var(--muted);
+}
+
+.panel {
+    background: white;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    overflow: hidden;
+}
+
+.panel-header {
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    flex-wrap: wrap;
+    border-bottom: 1px solid var(--border);
+}
+
+.panel-header h2 {
+    font-size: 18px;
+}
+
+.actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.btn {
+    border: none;
+    border-radius: 8px;
+    padding: 10px 15px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    display: inline-flex;
+    gap: 8px;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-primary {
+    background: var(--primary);
+    color: white;
+}
+
+.btn-primary:hover {
+    background: var(--primary-dark);
+}
+
+.btn-secondary {
+    background: #f1f5f9;
+    color: var(--text);
+}
+
+.btn-danger {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.btn-success {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.btn-small {
+    padding: 7px 10px;
+    font-size: 12px;
+}
+
+.filters {
+    padding: 18px 20px;
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    border-bottom: 1px solid var(--border);
+}
+
+.input,
+select {
+    padding: 11px 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    outline: none;
+    background: white;
+    width: 100%;
+    font-size: 14px;
+}
+
+.input:focus,
+select:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px #dbeafe;
+}
+
+.search-box {
+    flex: 1;
+    min-width: 200px;
+    position: relative;
+}
+
+.search-box i {
+    position: absolute;
+    top: 13px;
+    left: 12px;
+    color: var(--muted);
+}
+
+.search-box input {
+    padding-left: 36px;
+}
+
+.filter-select {
+    width: 180px;
+}
+
+.table-wrapper {
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 900px;
+}
+
+th, td {
+    padding: 14px 15px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+}
+
+th {
+    background: #f8fafc;
+    color: #475569;
+    font-size: 12px;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+td {
+    vertical-align: middle;
+}
+
+.school-name {
+    font-weight: 600;
+}
+
+.school-code {
+    color: var(--muted);
+    font-size: 12px;
+    margin-top: 4px;
+}
+
+.sector-label {
+    display: inline-block;
+    background: #eff6ff;
+    color: #1d4ed8;
+    padding: 6px 9px;
+    border-radius: 6px;
+    font-size: 12px;
+}
+
+.independent-label {
+    display: inline-block;
+    background: #f1f5f9;
+    color: #475569;
+    padding: 6px 9px;
+    border-radius: 6px;
+    font-size: 12px;
+}
+
+.status {
+    padding: 5px 9px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.status-active {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.status-inactive {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.row-actions {
+    display: flex;
+    gap: 5px;
+    white-space: nowrap;
+}
+
+.empty {
+    text-align: center;
+    padding: 40px;
+    color: var(--muted);
+}
+
+.pagination {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    padding: 16px 20px;
+    flex-wrap: wrap;
+}
+
+.pagination-buttons {
+    display: flex;
+    gap: 5px;
+}
+
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.55);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 15px;
+}
+
+.modal-overlay.show {
+    display: flex;
+}
+
+.modal {
+    background: white;
+    width: 100%;
+    max-width: 600px;
+    border-radius: 14px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.modal-header {
+    padding: 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h2 {
+    font-size: 19px;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    font-size: 22px;
+    cursor: pointer;
+    color: var(--muted);
+}
+
+.modal-body {
+    padding: 20px;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group.full {
+    grid-column: 1 / -1;
+}
+
+.form-group label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 7px;
+}
+
+.form-group label .required {
+    color: red;
+}
+
+.modal-footer {
+    padding: 18px 20px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.info-box {
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #1e40af;
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    margin-bottom: 18px;
+    line-height: 1.5;
+}
+
+.details-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+
+.detail-item {
+    padding: 12px;
+    background: #f8fafc;
+    border-radius: 8px;
+}
+
+.detail-item small {
+    display: block;
+    color: var(--muted);
+    margin-bottom: 6px;
+}
+
+.detail-item strong {
+    font-size: 14px;
+    word-break: break-word;
+}
+
+.toast {
+    position: fixed;
+    right: 20px;
+    bottom: 20px;
+    padding: 14px 18px;
+    color: white;
+    border-radius: 9px;
+    background: #166534;
+    z-index: 2000;
+    display: none;
+    max-width: 350px;
+}
+
+.toast.error {
+    background: #b91c1c;
+}
+
+.toast.show {
+    display: block;
+}
+
+.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+@media(max-width:1100px) {
+    .stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media(max-width:800px) {
+    .sidebar {
+        width: 70px;
+        padding: 15px 8px;
+    }
+
+    .logo {
+        font-size: 0;
+        text-align: center;
+        padding: 10px 0;
+    }
+
+    .logo span {
+        font-size: 20px;
+    }
+
+    .nav-title {
+        display: none;
+    }
+
+    .nav-link {
+        justify-content: center;
+        padding: 13px 5px;
+    }
+
+    .nav-link span {
+        display: none;
+    }
+
+    .nav-link i {
+        font-size: 18px;
+    }
+
+    .main {
+        margin-left: 70px;
+        padding: 15px;
+    }
+}
+
+@media(max-width:550px) {
+    .stats {
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+    }
+
+    .stat-card {
+        padding: 15px;
+    }
+
+    .topbar h1 {
+        font-size: 21px;
+    }
+
+    .form-grid,
+    .details-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .form-group.full {
+        grid-column: auto;
+    }
+
+    .filter-select {
+        width: 100%;
+    }
+
+    .panel-header {
+        align-items: flex-start;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<aside class="sidebar">
+    <div class="logo">FILA <span>GRADES</span></div>
+
+    <div class="nav-title">Main Menu</div>
+
+    <a href="dashboard.html" class="nav-link">
+        <i class="fas fa-home"></i><span>Dashboard</span>
+    </a>
+
+    <a href="sectors.html" class="nav-link">
+        <i class="fas fa-map-marked-alt"></i><span>Sectors</span>
+    </a>
+
+    <a href="schools.html" class="nav-link active">
+        <i class="fas fa-school"></i><span>Schools</span>
+    </a>
+
+    <a href="users.html" class="nav-link">
+        <i class="fas fa-users"></i><span>Users</span>
+    </a>
+
+    <div class="nav-title">Academic</div>
+
+    <a href="subjects.html" class="nav-link">
+        <i class="fas fa-book"></i><span>Subjects</span>
+    </a>
+
+    <a href="examinations.html" class="nav-link">
+        <i class="fas fa-file-alt"></i><span>Examinations</span>
+    </a>
+
+    <a href="reports.html" class="nav-link">
+        <i class="fas fa-chart-bar"></i><span>Reports</span>
+    </a>
+</aside>
+
+<main class="main">
+
+    <header class="topbar">
+        <div>
+            <h1>Schools Management</h1>
+            <p style="color:var(--muted);margin-top:5px;">
+                Manage all schools in Fila Grades System
+            </p>
+        </div>
+
+        <div class="user-info">
+            <div class="user-avatar"><i class="fas fa-user-shield"></i></div>
+            <div>
+                <strong id="ownerName">Owner</strong>
+                <small style="display:block;color:var(--muted);">System Owner</small>
+            </div>
+        </div>
+    </header>
+
+    <section class="stats">
+        <div class="stat-card">
+            <div class="icon"><i class="fas fa-school"></i></div>
+            <h3 id="totalSchools">0</h3>
+            <p>Total Schools</p>
+        </div>
+
+        <div class="stat-card">
+            <div class="icon"><i class="fas fa-check-circle"></i></div>
+            <h3 id="activeSchools">0</h3>
+            <p>Active Schools</p>
+        </div>
+
+        <div class="stat-card">
+            <div class="icon"><i class="fas fa-ban"></i></div>
+            <h3 id="inactiveSchools">0</h3>
+            <p>Inactive Schools</p>
+        </div>
+
+        <div class="stat-card">
+            <div class="icon"><i class="fas fa-building"></i></div>
+            <h3 id="independentSchools">0</h3>
+            <p>Independent Schools</p>
+        </div>
+    </section>
+
+    <section class="panel">
+
+        <div class="panel-header">
+            <h2>All Schools</h2>
+
+            <div class="actions">
+                <button class="btn btn-secondary" onclick="loadSchools()">
+                    <i class="fas fa-sync"></i> Refresh
+                </button>
+
+                <button class="btn btn-primary" onclick="openAddModal()">
+                    <i class="fas fa-plus"></i> Add School
+                </button>
+            </div>
+        </div>
+
+        <div class="filters">
+
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input
+                    type="text"
+                    class="input"
+                    id="searchInput"
+                    placeholder="Search school name, code, phone..."
+                    oninput="applyFilters()"
+                >
+            </div>
+
+            <select class="filter-select" id="sectorFilter" onchange="applyFilters()">
+                <option value="">All School Groups</option>
+                <option value="independent">Independent Schools</option>
+                <option value="sector">Sector Schools</option>
+            </select>
+
+            <select class="filter-select" id="statusFilter" onchange="applyFilters()">
+                <option value="">All Statuses</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+            </select>
+
+        </div>
+
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>School</th>
+                        <th>Type</th>
+                        <th>Sector / Ownership</th>
+                        <th>Location</th>
+                        <th>Contact</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+
+                <tbody id="schoolsTable">
+                    <tr>
+                        <td colspan="8" class="empty">Loading schools...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="pagination">
+            <div id="pageInfo">Showing 0 schools</div>
+
+            <div class="pagination-buttons">
+                <button class="btn btn-secondary btn-small" onclick="previousPage()">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+
+                <button class="btn btn-secondary btn-small" onclick="nextPage()">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+        </div>
+
+    </section>
+
+</main>
+
+<!-- ADD / EDIT SCHOOL MODAL -->
+<div class="modal-overlay" id="schoolModal">
+    <div class="modal">
+
+        <div class="modal-header">
+            <h2 id="modalTitle">Add School</h2>
+            <button class="close-btn" onclick="closeModal()">&times;</button>
+        </div>
+
+        <form id="schoolForm">
+
+            <div class="modal-body">
+
+                <div class="info-box">
+                    <i class="fas fa-info-circle"></i>
+                    Schools created by the Owner are independent and are not assigned to any sector.
+                </div>
+
+                <div class="form-grid">
+
+                    <div class="form-group full">
+                        <label>School Name <span class="required">*</span></label>
+                        <input
+                            type="text"
+                            class="input"
+                            id="schoolName"
+                            required
+                            maxlength="200"
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label>School Code</label>
+                        <input
+                            type="text"
+                            class="input"
+                            id="schoolCode"
+                            maxlength="50"
+                            placeholder="Optional"
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label>School Type</label>
+                        <select id="schoolType">
+                            <option value="">Select type</option>
+                            <option value="Nursery">Nursery</option>
+                            <option value="Primary">Primary</option>
+                            <option value="Secondary">Secondary</option>
+                            <option value="Combined">Combined</option>
+                            <option value="TVET">TVET</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group full">
+                        <label>Location</label>
+                        <input
+                            type="text"
+                            class="input"
+                            id="schoolLocation"
+                            placeholder="District, Sector, Cell or Village"
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label>Phone Number</label>
+                        <input
+                            type="tel"
+                            class="input"
+                            id="schoolPhone"
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input
+                            type="email"
+                            class="input"
+                            id="schoolEmail"
+                        >
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal()">
+                    Cancel
+                </button>
+
+                <button type="submit" class="btn btn-primary" id="saveBtn">
+                    <i class="fas fa-save"></i> Save School
+                </button>
+            </div>
+
+        </form>
+    </div>
+</div>
+
+<!-- VIEW SCHOOL MODAL -->
+<div class="modal-overlay" id="detailsModal">
+    <div class="modal">
+
+        <div class="modal-header">
+            <h2>School Details</h2>
+            <button class="close-btn" onclick="closeDetailsModal()">&times;</button>
+        </div>
+
+        <div class="modal-body">
+            <div class="details-grid" id="schoolDetails"></div>
+        </div>
+
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeDetailsModal()">Close</button>
+        </div>
+
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* =====================================================
+   CONFIGURATION
+===================================================== */
+
+const API = {
+    SESSION: "/api/auth/session",
+    SCHOOLS: "/api/owner/schools",
+    UPDATE_SCHOOL: "/api/owner/schools/update",
+    SCHOOL_STATUS: "/api/owner/schools/status"
+};
+
+const PAGE_SIZE = 10;
+
+let allSchools = [];
+let filteredSchools = [];
+let currentPage = 1;
+let editingSchoolId = null;
+
+/* =====================================================
+   API HELPER
+===================================================== */
+
+async function apiFetch(url, options = {}) {
+
+    const response = await fetch(url, {
+        credentials: "include",
+        ...options,
+        headers: {
+            "Content-Type": "application/json",
+            ...(options.headers || {})
+        }
+    });
+
+    let data;
+
+    try {
+        data = await response.json();
+    } catch {
+        throw new Error("Invalid server response.");
+    }
+
+    if (!response.ok || data.success === false) {
+        throw new Error(data.message || data.error || "Request failed.");
+    }
+
+    return data;
+}
+
+/* =====================================================
+   AUTHENTICATION
+===================================================== */
+
+async function checkOwnerSession() {
+
+    try {
+
+        const data = await apiFetch(API.SESSION);
+
+        if (!data.user || data.user.role !== "owner") {
+            window.location.href = "../login.html";
+            return false;
+        }
+
+        document.getElementById("ownerName").textContent =
+            data.user.fullName || "Owner";
+
+        return true;
+
+    } catch (error) {
+
+        window.location.href = "../../index.html";
+        return false;
+    }
+}
+
+/* =====================================================
+   LOAD SCHOOLS
+===================================================== */
+
+async function loadSchools() {
+
+    const tbody = document.getElementById("schoolsTable");
+
+    tbody.innerHTML = `
+        <tr>
+            <td colspan="8" class="empty">
+                <i class="fas fa-spinner fa-spin"></i>
+                Loading schools...
+            </td>
+        </tr>
+    `;
+
+    try {
+
+        const data = await apiFetch(API.SCHOOLS);
+
+        allSchools = Array.isArray(data.schools)
+            ? data.schools
+            : Array.isArray(data.data)
+                ? data.data
+                : [];
+
+        updateStatistics();
+        applyFilters();
+
+    } catch (error) {
+
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="8" class="empty">
+                    ${escapeHTML(error.message)}
+                </td>
+            </tr>
+        `;
+
+        showToast(error.message, true);
+    }
+}
+
+/* =====================================================
+   STATISTICS
+===================================================== */
+
+function updateStatistics() {
+
+    const active = allSchools.filter(s => isActive(s.status)).length;
+
+    const inactive = allSchools.length - active;
+
+    const independent = allSchools.filter(s =>
+        s.sector_id == null && !s.sector_name
+    ).length;
+
+    document.getElementById("totalSchools").textContent =
+        allSchools.length;
+
+    document.getElementById("activeSchools").textContent =
+        active;
+
+    document.getElementById("inactiveSchools").textContent =
+        inactive;
+
+    document.getElementById("independentSchools").textContent =
+        independent;
+}
+
+/* =====================================================
+   FILTERING
+===================================================== */
+
+function applyFilters() {
+
+    const search = document.getElementById("searchInput")
+        .value.trim().toLowerCase();
+
+    const sectorFilter = document.getElementById("sectorFilter").value;
+
+    const statusFilter = document.getElementById("statusFilter").value;
+
+    filteredSchools = allSchools.filter(school => {
+
+        const searchable = [
+            school.school_name,
+            school.school_code,
+            school.school_type,
+            school.location,
+            school.phone,
+            school.email,
+            school.sector_name,
+            school.sector_code
+        ].join(" ").toLowerCase();
+
+        const matchesSearch = searchable.includes(search);
+
+        const isIndependent =
+            school.sector_id == null && !school.sector_name;
+
+        const matchesSector =
+            sectorFilter === "" ||
+            (sectorFilter === "independent" && isIndependent) ||
+            (sectorFilter === "sector" && !isIndependent);
+
+        const matchesStatus =
+            statusFilter === "" ||
+            String(school.status).toLowerCase() === statusFilter;
+
+        return matchesSearch && matchesSector && matchesStatus;
+    });
+
+    currentPage = 1;
+
+    renderSchools();
+}
+
+/* =====================================================
+   RENDER TABLE
+===================================================== */
+
+function renderSchools() {
+
+    const tbody = document.getElementById("schoolsTable");
+
+    const start = (currentPage - 1) * PAGE_SIZE;
+
+    const pageSchools = filteredSchools.slice(start, start + PAGE_SIZE);
+
+    if (!pageSchools.length) {
+
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="8" class="empty">
+                    No schools found.
+                </td>
+            </tr>
+        `;
+
+        document.getElementById("pageInfo").textContent =
+            "Showing 0 schools";
+
+        return;
+    }
+
+    tbody.innerHTML = pageSchools.map((school, index) => {
+
+        const sector = getSectorDisplay(school);
+
+        const active = isActive(school.status);
+
+        return `
+            <tr>
+
+                <td>${start + index + 1}</td>
+
+                <td>
+                    <div class="school-name">
+                        ${escapeHTML(school.school_name || "Unnamed School")}
+                    </div>
+
+                    <div class="school-code">
+                        Code: ${escapeHTML(school.school_code || "N/A")}
+                    </div>
+                </td>
+
+                <td>${escapeHTML(school.school_type || "N/A")}</td>
+
+                <td>${sector}</td>
+
+                <td>${escapeHTML(school.location || "N/A")}</td>
+
+                <td>
+                    ${escapeHTML(school.phone || "N/A")}
+                    <br>
+                    <small style="color:var(--muted)">
+                        ${escapeHTML(school.email || "")}
+                    </small>
+                </td>
+
+                <td>
+                    <span class="status ${active ? "status-active" : "status-inactive"}">
+                        ${active ? "Active" : "Inactive"}
+                    </span>
+                </td>
+
+                <td>
+                    <div class="row-actions">
+
+                        <button
+                            class="btn btn-secondary btn-small"
+                            title="View"
+                            onclick="viewSchool(${Number(school.id)})"
+                        >
+                            <i class="fas fa-eye"></i>
+                        </button>
+
+                        <button
+                            class="btn btn-secondary btn-small"
+                            title="Edit"
+                            onclick="editSchool(${Number(school.id)})"
+                        >
+                            <i class="fas fa-edit"></i>
+                        </button>
+
+                        <button
+                            class="btn ${active ? "btn-danger" : "btn-success"} btn-small"
+                            title="${active ? "Deactivate" : "Activate"}"
+                            onclick="toggleSchoolStatus(${Number(school.id)})"
+                        >
+                            <i class="fas ${active ? "fa-ban" : "fa-check"}"></i>
+                        </button>
+
+                    </div>
+                </td>
+
+            </tr>
+        `;
+
+    }).join("");
+
+    const totalPages = Math.max(
+        1,
+        Math.ceil(filteredSchools.length / PAGE_SIZE)
+    );
+
+    document.getElementById("pageInfo").textContent =
+        `Showing ${start + 1}-${Math.min(start + PAGE_SIZE, filteredSchools.length)} of ${filteredSchools.length} schools | Page ${currentPage} of ${totalPages}`;
+}
+
+/* =====================================================
+   SECTOR DISPLAY
+===================================================== */
+
+function getSectorDisplay(school) {
+
+    if (school.sector_id == null && !school.sector_name) {
+
+        return `
+            <span class="independent-label">
+                <i class="fas fa-building"></i>
+                Independent School
+            </span>
+        `;
+    }
+
+    return `
+        <span class="sector-label">
+            ${escapeHTML(school.sector_name || "Sector")}
+            ${school.sector_code
+                ? ` (${escapeHTML(school.sector_code)})`
+                : ""}
+        </span>
+    `;
+}
+
+/* =====================================================
+   PAGINATION
+===================================================== */
+
+function previousPage() {
+
+    if (currentPage > 1) {
+        currentPage--;
+        renderSchools();
+    }
+}
+
+function nextPage() {
+
+    const totalPages = Math.max(
+        1,
+        Math.ceil(filteredSchools.length / PAGE_SIZE)
+    );
+
+    if (currentPage < totalPages) {
+        currentPage++;
+        renderSchools();
+    }
+}
+
+/* =====================================================
+   ADD SCHOOL
+===================================================== */
+
+function openAddModal() {
+
+    editingSchoolId = null;
+
+    document.getElementById("modalTitle").textContent = "Add School";
+
+    document.getElementById("saveBtn").innerHTML =
+        '<i class="fas fa-save"></i> Save School';
+
+    document.getElementById("schoolForm").reset();
+
+    document.getElementById("schoolModal").classList.add("show");
+}
+
+/* =====================================================
+   EDIT SCHOOL
+===================================================== */
+
+function editSchool(id) {
+
+    const school = allSchools.find(s => Number(s.id) === Number(id));
+
+    if (!school) return;
+
+    editingSchoolId = id;
+
+    document.getElementById("modalTitle").textContent = "Edit School";
+
+    document.getElementById("saveBtn").innerHTML =
+        '<i class="fas fa-save"></i> Update School';
+
+    document.getElementById("schoolName").value =
+        school.school_name || "";
+
+    document.getElementById("schoolCode").value =
+        school.school_code || "";
+
+    document.getElementById("schoolType").value =
+        school.school_type || "";
+
+    document.getElementById("schoolLocation").value =
+        school.location || "";
+
+    document.getElementById("schoolPhone").value =
+        school.phone || "";
+
+    document.getElementById("schoolEmail").value =
+        school.email || "";
+
+    document.getElementById("schoolModal").classList.add("show");
+}
+
+/* =====================================================
+   SAVE SCHOOL
+===================================================== */
+
+document.getElementById("schoolForm").addEventListener("submit", async function(e) {
+
+    e.preventDefault();
+
+    const saveBtn = document.getElementById("saveBtn");
+
+    saveBtn.disabled = true;
+
+    saveBtn.innerHTML =
+        '<i class="fas fa-spinner fa-spin"></i> Saving...';
+
+    const payload = {
+
+        school_name: document.getElementById("schoolName").value.trim(),
+
+        school_code: document.getElementById("schoolCode").value.trim() || null,
+
+        school_type: document.getElementById("schoolType").value || null,
+
+        location: document.getElementById("schoolLocation").value.trim() || null,
+
+        phone: document.getElementById("schoolPhone").value.trim() || null,
+
+        email: document.getElementById("schoolEmail").value.trim() || null
+
+    };
+
+    try {
+
+        if (editingSchoolId) {
+
+            payload.id = editingSchoolId;
+
+            await apiFetch(API.UPDATE_SCHOOL, {
+                method: "POST",
+                body: JSON.stringify(payload)
+            });
+
+            showToast("School updated successfully.");
+
+        } else {
+
+            // IMPORTANT:
+            // Owner-created schools are independent.
+            // sector_id is intentionally NOT sent.
+
+            await apiFetch(API.SCHOOLS, {
+                method: "POST",
+                body: JSON.stringify(payload)
+            });
+
+            showToast("School created successfully.");
+        }
+
+        closeModal();
+
+        await loadSchools();
+
+    } catch (error) {
+
+        showToast(error.message, true);
+
+    } finally {
+
+        saveBtn.disabled = false;
+
+        saveBtn.innerHTML = editingSchoolId
+            ? '<i class="fas fa-save"></i> Update School'
+            : '<i class="fas fa-save"></i> Save School';
+    }
+});
+
+/* =====================================================
+   VIEW SCHOOL
+===================================================== */
+
+function viewSchool(id) {
+
+    const school = allSchools.find(s => Number(s.id) === Number(id));
+
+    if (!school) return;
+
+    const sectorText =
+        school.sector_id == null && !school.sector_name
+            ? "Independent School (No Sector)"
+            : `${school.sector_name || "Sector"} ${school.sector_code ? "(" + school.sector_code + ")" : ""}`;
+
+    const details = [
+
+        ["School Name", school.school_name],
+
+        ["School Code", school.school_code || "N/A"],
+
+        ["School Type", school.school_type || "N/A"],
+
+        ["Sector / Ownership", sectorText],
+
+        ["Location", school.location || "N/A"],
+
+        ["Phone", school.phone || "N/A"],
+
+        ["Email", school.email || "N/A"],
+
+        ["Status", isActive(school.status) ? "Active" : "Inactive"],
+
+        ["Created", formatDate(school.created_at)]
+
+    ];
+
+    document.getElementById("schoolDetails").innerHTML =
+        details.map(([label, value]) => `
+            <div class="detail-item">
+                <small>${escapeHTML(label)}</small>
+                <strong>${escapeHTML(String(value ?? "N/A"))}</strong>
+            </div>
+        `).join("");
+
+    document.getElementById("detailsModal").classList.add("show");
+}
+
+/* =====================================================
+   ACTIVATE / DEACTIVATE
+===================================================== */
+
+async function toggleSchoolStatus(id) {
+
+    const school = allSchools.find(s => Number(s.id) === Number(id));
+
+    if (!school) return;
+
+    const currentlyActive = isActive(school.status);
+
+    const action = currentlyActive ? "deactivate" : "activate";
+
+    if (!confirm(`Are you sure you want to ${action} "${school.school_name}"?`)) {
+        return;
+    }
+
+    try {
+
+        await apiFetch(API.SCHOOL_STATUS, {
+            method: "POST",
+            body: JSON.stringify({
+                id,
+                status: currentlyActive ? "inactive" : "active"
+            })
+        });
+
+        showToast(`School ${action}d successfully.`);
+
+        await loadSchools();
+
+    } catch (error) {
+
+        showToast(error.message, true);
+    }
+}
+
+/* =====================================================
+   MODALS
+===================================================== */
+
+function closeModal() {
+    document.getElementById("schoolModal").classList.remove("show");
+}
+
+function closeDetailsModal() {
+    document.getElementById("detailsModal").classList.remove("show");
+}
+
+document.querySelectorAll(".modal-overlay").forEach(modal => {
+
+    modal.addEventListener("click", function(e) {
+
+        if (e.target === modal) {
+            modal.classList.remove("show");
+        }
+    });
+
+});
+
+/* =====================================================
+   UTILITIES
+===================================================== */
+
+function isActive(status) {
+
+    return String(status || "").toLowerCase() === "active";
+}
+
+function formatDate(value) {
+
+    if (!value) return "N/A";
+
+    try {
+
+        return new Date(value).toLocaleDateString();
+
+    } catch {
+
+        return "N/A";
+    }
+}
+
+function escapeHTML(value) {
+
+    return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+function showToast(message, error = false) {
+
+    const toast = document.getElementById("toast");
+
+    toast.textContent = message;
+
+    toast.className = "toast" + (error ? " error" : "") + " show";
+
+    setTimeout(() => {
+        toast.classList.remove("show");
+    }, 3500);
+}
+
+/* =====================================================
+   INITIALIZATION
+===================================================== */
+
+async function init() {
+
+    const authenticated = await checkOwnerSession();
+
+    if (!authenticated) return;
+
+    await loadSchools();
+}
+
+init();
+</script>
+
+</body>
+</html>
