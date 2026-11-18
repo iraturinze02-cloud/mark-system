@@ -1,5 +1,4 @@
 import {
-    connectDB,
     json,
     authenticateRole
 } from "../../_utils.js";
@@ -19,13 +18,14 @@ export async function onRequestGet(context) {
     return json({
         success: true,
         user: {
-            id: auth.user.id,
-            fullName: auth.user.full_name,
-            phone: auth.user.phone,
-            email: auth.user.email,
-            role: auth.user.role,
-            sectorId: auth.user.sector_id,
-            schoolId: auth.user.school_id
+            id: auth.userId,
+            fullName: auth.fullName,
+            phone: auth.phone,
+            email: auth.email,
+            emailVerified: auth.emailVerified,
+            role: auth.role,
+            sectorId: auth.sectorId,
+            schoolId: auth.schoolId
         }
     });
 }
