@@ -26,7 +26,10 @@ export async function onRequestGet(context) {
     try {
         client = await connectDB(context);
 
-        // Automatically close expired Tests assigned to this teacher.
+        /* ---------------------------------------------
+           1. AUTOMATICALLY CLOSE EXPIRED TESTS
+        --------------------------------------------- */
+
         await client.query(
             `
             UPDATE tests t
@@ -40,15 +43,19 @@ export async function onRequestGet(context) {
               AND EXISTS (
                   SELECT 1
                   FROM test_classes tc
+
                   INNER JOIN test_subjects ts
                       ON ts.test_id = tc.test_id
+
                   INNER JOIN teachers tr
                       ON tr.school_id = tc.school_id
+
                   INNER JOIN teacher_assignments ta
                       ON ta.teacher_id = tr.id
                      AND ta.school_id = tr.school_id
                      AND ta.class_id = tc.class_id
                      AND ta.subject_id = ts.subject_id
+
                   WHERE tc.test_id = t.id
                     AND tr.user_id = $1
                     AND tr.school_id = $2
@@ -58,7 +65,7 @@ export async function onRequestGet(context) {
         );
 
         /* ---------------------------------------------
-           1. TEACHER ASSIGNMENTS
+           2. LOAD TEACHER ASSIGNMENTS
         --------------------------------------------- */
 
         const assignmentsResult = await client.query(
@@ -67,32 +74,42 @@ export async function onRequestGet(context) {
                 ta.id AS assignment_id,
                 ta.school_id,
                 sch.school_name,
+
                 ta.class_id,
                 c.class_name,
-                c.class_level,
+                c.level_id,
+
                 ta.subject_id,
                 sub.subject_name,
                 sub.subject_code
+
             FROM teachers tr
+
             INNER JOIN teacher_assignments ta
                 ON ta.teacher_id = tr.id
                AND ta.school_id = tr.school_id
+
             INNER JOIN schools sch
                 ON sch.id = ta.school_id
+
             INNER JOIN classes c
                 ON c.id = ta.class_id
-               AND c.school_id = ta.school_id
+
             INNER JOIN subjects sub
                 ON sub.id = ta.subject_id
+
             WHERE tr.user_id = $1
               AND tr.school_id = $2
-            ORDER BY c.class_name, sub.subject_name
+
+            ORDER BY
+                c.class_name,
+                sub.subject_name
             `,
             [auth.userId, auth.schoolId]
         );
 
         /* ---------------------------------------------
-           2. TESTS MATCHING TEACHER ASSIGNMENTS
+           3. LOAD TESTS MATCHING TEACHER ASSIGNMENTS
         --------------------------------------------- */
 
         const testsResult = await client.query(
@@ -126,7 +143,6 @@ export async function onRequestGet(context) {
                 ts.subject_id,
                 sub.subject_name,
 
-                -- Maximum mark assigned to this Test subject
                 ts.total_marks,
 
                 CASE
@@ -161,7 +177,6 @@ export async function onRequestGet(context) {
 
             INNER JOIN classes c
                 ON c.id = tc.class_id
-               AND c.school_id = tc.school_id
 
             INNER JOIN subjects sub
                 ON sub.id = ts.subject_id
@@ -186,18 +201,27 @@ export async function onRequestGet(context) {
             [auth.userId, auth.schoolId]
         );
 
+        /* ---------------------------------------------
+           4. RETURN OPTIONS
+        --------------------------------------------- */
+
         return json({
             success: true,
+
             teacher: {
                 id: auth.userId,
                 schoolId: auth.schoolId
             },
+
             assignments: assignmentsResult.rows,
             tests: testsResult.rows
         });
 
     } catch (error) {
-        console.error("Record Marks options error:", error);
+        console.error(
+            "Record Marks options error:",
+            error
+        );
 
         return json({
             success: false,
