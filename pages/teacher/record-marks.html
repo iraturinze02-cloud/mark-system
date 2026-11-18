@@ -313,7 +313,7 @@ td {
     <!-- SELECTION -->
 
     <section class="record-card">
-        <h2>Test Selection</h2>
+        
 
         <!-- CLASS CARDS -->
         <div id="classSection" class="selection-section selection-hidden">
@@ -335,11 +335,7 @@ td {
             </select>
         </div>
 
-        <!-- AUTOMATIC SINGLE TEST DISPLAY -->
-        <div id="singleTestDisplay" class="selection-section selection-hidden">
-            <label class="selection-label">Open Test</label>
-            <div id="singleTestName" class="selection-single"></div>
-        </div>
+        
 
         <div id="testInformation" class="status-message">
             Loading available Tests...
@@ -424,9 +420,6 @@ const subjectCards = document.getElementById("subjectCards");
 const testSection = document.getElementById("testSection");
 const testSelect = document.getElementById("testSelect");
 
-const singleTestDisplay = document.getElementById("singleTestDisplay");
-const singleTestName = document.getElementById("singleTestName");
-
 const message = document.getElementById("message");
 const testInformation = document.getElementById("testInformation");
 
@@ -442,7 +435,7 @@ const maximumInformation = document.getElementById("maximumInformation");
 
 function logout() {
     localStorage.clear();
-    window.location.href = "index.html";
+    window.location.href = "../../index.html";
 }
 
 /* =====================================================
@@ -787,10 +780,7 @@ function getOpenTests() {
 
 function resetTestUI() {
     testSection.classList.add("selection-hidden");
-    singleTestDisplay.classList.add("selection-hidden");
-
     testSelect.innerHTML = "";
-    singleTestName.textContent = "";
 }
 
 /* =====================================================
@@ -811,6 +801,35 @@ function renderTests() {
         clearStudents();
         return;
     }
+
+    // ONLY ONE OPEN TEST: AUTOMATICALLY SELECT
+    if (openTests.length === 1) {
+        selectTest(openTests[0].test_id);
+        return;
+    }
+
+    // MULTIPLE OPEN TESTS: SHOW DROPDOWN
+    testSection.classList.remove("selection-hidden");
+
+    testSelect.innerHTML =
+        '<option value="">Choose an open Test</option>';
+
+    openTests.forEach(test => {
+        const option = document.createElement("option");
+
+        option.value = String(test.test_id);
+
+        option.textContent =
+            `${test.test_name} — ${test.total_marks ?? "Marks not specified"} marks`;
+
+        testSelect.appendChild(option);
+    });
+
+    showTestMessage(
+        "Choose the Test you want to record marks for.",
+        "success"
+    );
+}
 
     /* ---------------------------------------------
        ONLY ONE OPEN TEST
@@ -877,22 +896,10 @@ function selectTest(testId) {
         return;
     }
 
-    const information = [
-        `Test: ${selectedTest.test_name}`,
-        `Status: OPEN`,
-        `Created by: ${selectedTest.creator_name || "Not available"}`,
-        `Opened by: ${selectedTest.initiated_by_name || "Not available"}`
-    ];
-
-    if (selectedTest.closing_at) {
-        information.push(
-            `Closing: ${new Date(selectedTest.closing_at).toLocaleString()}`
-        );
-    } else {
-        information.push("Closing: Manual closure");
-    }
-
-    showTestMessage(information.join(" | "), "success");
+    showTestMessage(
+    "Test selected. Loading students...",
+    "success"
+);
 
     loadStudents();
 }
