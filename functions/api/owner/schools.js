@@ -8,9 +8,37 @@ import { connectDB, json, requireOwner } from "../../_utils.js";
    GET  /api/owner/schools
    POST /api/owner/schools
 
-   Owner-created schools are independent:
-   sector_id = NULL
+   Owner-created schools:
+   - sector_id = NULL
+   - Education levels stored in school_levels
 ===================================================== */
+
+
+/* =====================================================
+   HELPER: VALIDATE EDUCATION LEVEL IDS
+===================================================== */
+
+function parseLevelIds(value) {
+
+    if (!Array.isArray(value)) {
+        return null;
+    }
+
+    const ids = [...new Set(
+        value.map(Number)
+    )];
+
+    if (
+        ids.length === 0 ||
+        ids.some(id =>
+            !Number.isInteger(id) || id <= 0
+        )
+    ) {
+        return null;
+    }
+
+    return ids;
+}
 
 
 /* =====================================================
@@ -23,9 +51,11 @@ export async function onRequestGet(context) {
 
     if (auth.error) return auth.error;
 
+    let db;
+
     try {
 
-        const db = await connectDB(context);
+        db = await connectDB(context);
 
         const result = await db.query(`
             SELECT
@@ -41,7 +71,36 @@ export async function onRequestGet(context) {
                 s.created_at,
 
                 sec.sector_name,
-                sec.sector_code
+                sec.sector_code,
+
+                COALESCE(
+                    (
+                        SELECT JSON_AGG(
+                            sl.level_id
+                            ORDER BY sl.level_id
+                        )
+                        FROM school_levels sl
+                        WHERE sl.school_id = s.id
+                    ),
+                    '[]'::json
+                ) AS level_ids,
+
+                COALESCE(
+                    (
+                        SELECT JSON_AGG(
+                            JSON_BUILD_OBJECT(
+                                'id', el.id,
+                                'level_name', el.level_name
+                            )
+                            ORDER BY el.id
+                        )
+                        FROM school_levels sl
+                        JOIN education_levels el
+                            ON el.id = sl.level_id
+                        WHERE sl.school_id = s.id
+                    ),
+                    '[]'::json
+                ) AS levels
 
             FROM schools s
 
@@ -64,16 +123,18 @@ export async function onRequestGet(context) {
             success: false,
             message: "Failed to retrieve schools."
         }, 500);
+
+    } finally {
+
+        if (db) {
+            await db.end().catch(() => {});
+        }
     }
 }
 
 
 /* =====================================================
    POST: CREATE SCHOOL
-
-   Owner-created schools NEVER belong to a sector.
-
-   sector_id is always NULL regardless of request data.
 ===================================================== */
 
 export async function onRequestPost(context) {
@@ -82,11 +143,15 @@ export async function onRequestPost(context) {
 
     if (auth.error) return auth.error;
 
+    let db;
+    let transactionStarted = false;
+
     try {
 
         const body = await context.request.json();
 
-        const school_name = String(body.school_name || "").trim();
+        const school_name =
+            String(body.school_name || "").trim();
 
         const school_code = body.school_code
             ? String(body.school_code).trim()
@@ -108,7 +173,11 @@ export async function onRequestPost(context) {
             ? String(body.email).trim().toLowerCase()
             : null;
 
-        /* REQUIRED FIELD */
+        const level_ids = parseLevelIds(body.level_ids);
+
+        /* ---------------------------------------------
+           VALIDATION
+        --------------------------------------------- */
 
         if (!school_name) {
 
@@ -118,9 +187,26 @@ export async function onRequestPost(context) {
             }, 400);
         }
 
-        /* CHECK DUPLICATE SCHOOL CODE */
+        if (!level_ids) {
 
-        const db = await connectDB(context);
+            return json({
+                success: false,
+                message: "Please select at least one education level."
+            }, 400);
+        }
+
+        /* ---------------------------------------------
+           CONNECT DATABASE
+        --------------------------------------------- */
+
+        db = await connectDB(context);
+
+        await db.query("BEGIN");
+        transactionStarted = true;
+
+        /* ---------------------------------------------
+           CHECK DUPLICATE SCHOOL CODE
+        --------------------------------------------- */
 
         if (school_code) {
 
@@ -133,6 +219,9 @@ export async function onRequestPost(context) {
 
             if (duplicate.rows.length > 0) {
 
+                await db.query("ROLLBACK");
+                transactionStarted = false;
+
                 return json({
                     success: false,
                     message: "This school code already exists."
@@ -140,9 +229,34 @@ export async function onRequestPost(context) {
             }
         }
 
-        /* CREATE INDEPENDENT SCHOOL */
+        /* ---------------------------------------------
+           VALIDATE EDUCATION LEVELS
+        --------------------------------------------- */
 
-        const result = await db.query(`
+        const levelsResult = await db.query(`
+            SELECT id
+            FROM education_levels
+            WHERE id = ANY($1::bigint[])
+        `, [level_ids]);
+
+        if (levelsResult.rows.length !== level_ids.length) {
+
+            await db.query("ROLLBACK");
+            transactionStarted = false;
+
+            return json({
+                success: false,
+                message: "One or more selected education levels are invalid."
+            }, 400);
+        }
+
+        /* ---------------------------------------------
+           CREATE INDEPENDENT SCHOOL
+
+           sector_id is ALWAYS NULL.
+        --------------------------------------------- */
+
+        const schoolResult = await db.query(`
             INSERT INTO schools (
                 school_name,
                 school_code,
@@ -170,13 +284,53 @@ export async function onRequestPost(context) {
             email
         ]);
 
+        const school = schoolResult.rows[0];
+
+        /* ---------------------------------------------
+           SAVE EDUCATION LEVELS
+        --------------------------------------------- */
+
+        for (const level_id of level_ids) {
+
+            await db.query(`
+                INSERT INTO school_levels (
+                    school_id,
+                    level_id
+                )
+                VALUES ($1, $2)
+            `, [
+                school.id,
+                level_id
+            ]);
+        }
+
+        /* ---------------------------------------------
+           COMMIT
+        --------------------------------------------- */
+
+        await db.query("COMMIT");
+        transactionStarted = false;
+
+        /* ---------------------------------------------
+           SUCCESS
+        --------------------------------------------- */
+
         return json({
             success: true,
             message: "School created successfully.",
-            school: result.rows[0]
+            school: {
+                ...school,
+                level_ids,
+                levels: levelsResult.rows
+            }
         }, 201);
 
     } catch (error) {
+
+        if (db && transactionStarted) {
+            await db.query("ROLLBACK").catch(() => {});
+            transactionStarted = false;
+        }
 
         console.error("OWNER CREATE SCHOOL ERROR:", error);
 
@@ -192,5 +346,11 @@ export async function onRequestPost(context) {
             success: false,
             message: "Failed to create school."
         }, 500);
+
+    } finally {
+
+        if (db) {
+            await db.end().catch(() => {});
+        }
     }
 }
