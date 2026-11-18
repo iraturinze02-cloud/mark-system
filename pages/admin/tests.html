@@ -3,7 +3,15 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="description" content="Record and manage student marks for assigned classes and subjects in Fila Grades System.">
+
+    <meta name="theme-color" content="#173f70">
+
+    <link rel="icon" type="image/x-icon" href="../../images/favicon/favicon.ico">
+    <link rel="icon" type="image/png" sizes="512x512" href="../../images/favicon/favicon.png">
+
 <title>Test Management</title>
 
 <link rel="stylesheet" href="../../style.css">
@@ -686,7 +694,7 @@ if (!currentUser || ![
     "school_admin",
     "teacher"
 ].includes(role)) {
-    window.location.href = "index.html";
+    window.location.href = "../../index.html";
 }
 
 const isAdmin = [
@@ -1714,13 +1722,13 @@ async function manageTest(id, action) {
 
 function goBack() {
     if (role === "sector_admin") {
-        window.location.href = "sector-admin.html";
+        window.location.href = "../sector/sector-admin.html";
 
-    } else if (role === "school_admin") {
+    } else if (role === "../school/school_admin") {
         window.location.href = "school-admin.html";
 
     } else {
-        window.location.href = "teacher-dashboard.html";
+        window.location.href = "../teacher/teacher-dashboard.html";
     }
 }
 
