@@ -7,11 +7,11 @@
 
     "use strict";
 
-    const LOGIN_PAGE = "/index.html";
+    const LOGIN_PAGE = "../../index.html";
 
-    const VERIFY_PAGE = "/pages/sector/verify-email.html";
+    const VERIFY_PAGE = "../sector/verify-email.html";
 
-    const PASSWORD_PAGE = "/pages/sector/set-password.html";
+    const PASSWORD_PAGE = "../sector/set-password.html";
 
     let checking = false;
 
