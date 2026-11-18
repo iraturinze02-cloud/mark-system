@@ -6,7 +6,7 @@ import {
 } from "../../_utils.js";
 
 /* =====================================================
-   GET: STUDENTS FOR A SELECTED TEST
+   GET: ACTIVE STUDENTS FOR A SELECTED TEST
 ===================================================== */
 
 export async function onRequestGet(context) {
@@ -221,6 +221,10 @@ export async function onRequestGet(context) {
             }, 403);
         }
 
+        /* ---------------------------------------------
+           5. VERIFY TEST IS OPEN
+        --------------------------------------------- */
+
         if (test.status !== "open") {
             return json({
                 success: false,
@@ -230,7 +234,7 @@ export async function onRequestGet(context) {
         }
 
         /* ---------------------------------------------
-           5. LOAD STUDENTS AND EXISTING TEST MARKS
+           6. LOAD ACTIVE STUDENTS AND EXISTING MARKS
         --------------------------------------------- */
 
         const studentsResult = await client.query(
@@ -255,6 +259,7 @@ export async function onRequestGet(context) {
 
             WHERE s.school_id = $2
               AND s.class_id = $3
+              AND s.status = 'active'
 
             ORDER BY s.full_name
             `,
@@ -267,7 +272,7 @@ export async function onRequestGet(context) {
         );
 
         /* ---------------------------------------------
-           6. RETURN DATA
+           7. RETURN DATA
         --------------------------------------------- */
 
         return json({
@@ -284,7 +289,10 @@ export async function onRequestGet(context) {
         });
 
     } catch (error) {
-        console.error("Record Marks students error:", error);
+        console.error(
+            "Record Marks students error:",
+            error
+        );
 
         return json({
             success: false,
