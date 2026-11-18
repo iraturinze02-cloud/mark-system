@@ -1,5 +1,5 @@
 
-import { connectDB, json, requireOwner } from "../../_utils.js";
+import { connectDB, json, requireOwner } from "../../../_utils.js";
 
 /* =====================================================
    OWNER SCHOOL STATUS
