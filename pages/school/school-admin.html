@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>School Admin Dashboard | Sector Education Examination Platform</title>
+    <title>School Admin Dashboard | Fila Grades System Platform</title>
 
     <link rel="stylesheet" href="style.css">
 
@@ -201,7 +201,7 @@
 
     <!-- HEADER -->
     <header class="admin-header">
-        <h1>SCHOOL ADMIN DASHBOARD</h1>
+        <h1>SCHOOL ADMIN OR HEAD TEACHER DASHBOARD</h1>
         <p>Manage teachers, students and school marks</p>
     </header>
 
@@ -278,15 +278,30 @@
                         and review student academic performance.
                     </p>
 
-                    <span class="card-link">View Marks →</span>
+                    <span class="card-link">View  Marks →</span>
                 </button>
 
             </div>
+             <div class="dashboard-card"
+            onclick="navigateTo('../admin/tests.html')">
+
+            <div class="card-icon">📝</div>
+
+            <h3>Manage Tests</h3>
+
+            <p>
+                Create  tests and select the active
+                test for your school.
+            </p>
+
+            <span class="card-link">Manage tests for your School →</span>
+        </div>
+
 
         </section>
 
         <div class="dashboard-footer">
-            Sector Education Examination Platform
+            Fila Grades System Platform
         </div>
 
     </main>
