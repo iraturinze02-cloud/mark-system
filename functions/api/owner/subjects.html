@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Subjects & Education Levels | Fila Grades System</title>
+
+<style>
+*{
+    box-sizing:border-box;
+    margin:0;
+    padding:0;
+    font-family:Arial,Helvetica,sans-serif;
+}
+
+body{
+    background:#f3f6fb;
+    color:#172033;
+    padding:20px;
+}
+
+.container{
+    max-width:1150px;
+    margin:auto;
+}
+
+.header{
+    background:#173f70;
+    color:white;
+    padding:24px;
+    border-radius:14px;
+    margin-bottom:22px;
+}
+
+.header h1{
+    font-size:25px;
+    margin-bottom:8px;
+}
+
+.header p{
+    font-size:14px;
+    opacity:.9;
+}
+
+.section{
+    background:white;
+    padding:22px;
+    border-radius:14px;
+    margin-bottom:22px;
+    box-shadow:0 3px 12px rgba(0,0,0,.05);
+}
+
+.section h2{
+    margin-bottom:16px;
+    font-size:20px;
+    color:#173f70;
+}
+
+.form-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+    gap:15px;
+}
+
+.field label{
+    display:block;
+    font-weight:bold;
+    font-size:13px;
+    margin-bottom:7px;
+}
+
+.field input{
+    width:100%;
+    padding:12px;
+    border:1px solid #ccd5e2;
+    border-radius:8px;
+    outline:none;
+    font-size:15px;
+}
+
+.field input:focus{
+    border-color:#173f70;
+}
+
+button{
+    border:none;
+    border-radius:8px;
+    padding:11px 16px;
+    cursor:pointer;
+    font-weight:bold;
+    font-size:14px;
+}
+
+.primary{
+    background:#173f70;
+    color:white;
+}
+
+.success{
+    background:#16834b;
+    color:white;
+}
+
+.danger{
+    background:#c93636;
+    color:white;
+}
+
+.secondary{
+    background:#e9eef5;
+    color:#173f70;
+}
+
+button:disabled{
+    opacity:.6;
+    cursor:not-allowed;
+}
+
+.form-actions{
+    margin-top:15px;
+}
+
+.level-list{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    margin-top:15px;
+}
+
+.level-card{
+    border:1px solid #dce3ed;
+    background:#f8fafc;
+    padding:12px;
+    border-radius:9px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+}
+
+.level-card strong{
+    font-size:14px;
+}
+
+.subject-list{
+    display:grid;
+    gap:15px;
+}
+
+.subject-card{
+    border:1px solid #dce3ed;
+    border-radius:12px;
+    padding:18px;
+    background:white;
+}
+
+.subject-top{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:12px;
+    margin-bottom:14px;
+}
+
+.subject-title{
+    font-size:18px;
+    font-weight:bold;
+}
+
+.subject-code{
+    display:inline-block;
+    background:#edf3fa;
+    color:#173f70;
+    padding:5px 10px;
+    border-radius:6px;
+    font-size:12px;
+    margin-top:5px;
+}
+
+.level-options{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    margin:12px 0;
+}
+
+.level-option{
+    display:flex;
+    align-items:center;
+    gap:7px;
+    border:1px solid #dce3ed;
+    padding:9px 12px;
+    border-radius:8px;
+    background:#f8fafc;
+    font-size:13px;
+}
+
+.level-option input{
+    width:17px;
+    height:17px;
+    cursor:pointer;
+}
+
+.subject-actions{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-top:12px;
+}
+
+.message{
+    padding:13px;
+    border-radius:9px;
+    margin-bottom:15px;
+    display:none;
+}
+
+.message.success-message{
+    background:#e6f6ed;
+    color:#17683c;
+}
+
+.message.error-message{
+    background:#fdeaea;
+    color:#a12222;
+}
+
+.loading{
+    text-align:center;
+    padding:30px;
+    color:#667085;
+}
+
+.empty{
+    text-align:center;
+    padding:30px;
+    background:#f8fafc;
+    border-radius:10px;
+    color:#667085;
+}
+
+.small{
+    color:#667085;
+    font-size:13px;
+    margin-top:8px;
+    line-height:1.5;
+}
+
+.divider{
+    border:none;
+    border-top:1px solid #e6eaf0;
+    margin:20px 0;
+}
+
+@media(max-width:600px){
+    body{
+        padding:12px;
+    }
+
+    .section{
+        padding:16px;
+    }
+
+    .header{
+        padding:20px;
+    }
+
+    .header h1{
+        font-size:21px;
+    }
+
+    .subject-top{
+        align-items:flex-start;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <header class="header">
+        <h1>Subjects & Education Levels</h1>
+        <p>
+            Manage subjects and educational levels
+            available throughout the Fila Grades System.
+        </p>
+    </header>
+
+    <div id="message" class="message"></div>
+
+    <!-- ADD SUBJECT -->
+
+    <section class="section">
+
+        <h2>Add New Subject</h2>
+
+        <form id="subjectForm">
+
+            <div class="form-grid">
+
+                <div class="field">
+                    <label for="subjectName">
+                        Subject Name
+                    </label>
+
+                    <input
+                        type="text"
+                        id="subjectName"
+                        placeholder="e.g. Computer Science"
+                        maxlength="150"
+                        required
+                    >
+                </div>
+
+                <div class="field">
+                    <label for="subjectCode">
+                        Subject Code
+                    </label>
+
+                    <input
+                        type="text"
+                        id="subjectCode"
+                        placeholder="e.g. CSC"
+                        maxlength="50"
+                        required
+                    >
+                </div>
+
+            </div>
+
+            <div class="form-actions">
+                <button
+                    class="primary"
+                    type="submit"
+                    id="addSubjectBtn"
+                >
+                    + Add Subject
+                </button>
+            </div>
+
+        </form>
+
+    </section>
+
+    <!-- EDUCATION LEVELS -->
+
+    <section class="section">
+
+        <h2>Education Levels</h2>
+
+        <form id="levelForm">
+
+            <div class="form-grid">
+
+                <div class="field">
+                    <label for="levelName">
+                        New Education Level
+                    </label>
+
+                    <input
+                        type="text"
+                        id="levelName"
+                        placeholder="Enter education level"
+                        required
+                    >
+                </div>
+
+            </div>
+
+            <div class="form-actions">
+
+                <button
+                    class="success"
+                    type="submit"
+                    id="addLevelBtn"
+                >
+                    + Add Education Level
+                </button>
+
+            </div>
+
+        </form>
+
+        <hr class="divider">
+
+        <div id="levelsList" class="level-list">
+            <div class="loading">Loading education levels...</div>
+        </div>
+
+        <p class="small">
+            Education levels in use cannot be deleted.
+        </p>
+
+    </section>
+
+    <!-- SUBJECTS -->
+
+    <section class="section">
+
+        <h2>Available Subjects</h2>
+
+        <p class="small" style="margin-bottom:15px">
+            Select the education levels for each subject
+            and click Save Assignments.
+        </p>
+
+        <div id="subjectsList" class="subject-list">
+            <div class="loading">Loading subjects...</div>
+        </div>
+
+    </section>
+
+</div>
+
+<script>
+
+const API = "/api/owner/subjects";
+
+let subjects = [];
+let levels = [];
+
+const messageBox = document.getElementById("message");
+
+function showMessage(message, type="success") {
+
+    messageBox.textContent = message;
+
+    messageBox.className =
+        "message " +
+        (type === "success"
+            ? "success-message"
+            : "error-message");
+
+    messageBox.style.display = "block";
+
+    window.scrollTo({
+        top:0,
+        behavior:"smooth"
+    });
+
+    setTimeout(() => {
+        messageBox.style.display = "none";
+    }, 5000);
+}
+
+async function api(action, data={}) {
+
+    const response = await fetch(API, {
+        method:"POST",
+        credentials:"same-origin",
+        headers:{
+            "Content-Type":"application/json"
+        },
+        body:JSON.stringify({
+            action,
+            ...data
+        })
+    });
+
+    const result = await response.json();
+
+    if (!response.ok || !result.success) {
+        throw new Error(
+            result.message || "The request failed."
+        );
+    }
+
+    return result;
+}
+
+/* =====================================================
+   LOAD DATA
+===================================================== */
+
+async function loadData() {
+
+    const subjectsContainer =
+        document.getElementById("subjectsList");
+
+    const levelsContainer =
+        document.getElementById("levelsList");
+
+    try {
+
+        const response = await fetch(API, {
+            method:"GET",
+            credentials:"same-origin",
+            cache:"no-store"
+        });
+
+        const result = await response.json();
+
+        if (!response.ok || !result.success) {
+            throw new Error(
+                result.message || "Unable to load data."
+            );
+        }
+
+        subjects = result.subjects || [];
+        levels = result.education_levels || [];
+
+        renderLevels();
+        renderSubjects();
+
+    } catch (error) {
+
+        subjectsContainer.innerHTML = `
+            <div class="empty">
+                ${escapeHTML(error.message)}
+            </div>
+        `;
+
+        levelsContainer.innerHTML = `
+            <div class="empty">
+                ${escapeHTML(error.message)}
+            </div>
+        `;
+    }
+}
+
+/* =====================================================
+   DISPLAY EDUCATION LEVELS
+===================================================== */
+
+function renderLevels() {
+
+    const container =
+        document.getElementById("levelsList");
+
+    if (!levels.length) {
+
+        container.innerHTML = `
+            <div class="empty">
+                No education levels have been added.
+            </div>
+        `;
+
+        return;
+    }
+
+    container.innerHTML = levels.map(level => `
+        <div class="level-card">
+
+            <strong>
+                ${escapeHTML(level.level_name)}
+            </strong>
+
+            <button
+                class="danger"
+                onclick="deleteLevel(${Number(level.id)})"
+            >
+                Delete
+            </button>
+
+        </div>
+    `).join("");
+}
+
+/* =====================================================
+   DISPLAY SUBJECTS
+===================================================== */
+
+function renderSubjects() {
+
+    const container =
+        document.getElementById("subjectsList");
+
+    if (!subjects.length) {
+
+        container.innerHTML = `
+            <div class="empty">
+                No subjects available.
+            </div>
+        `;
+
+        return;
+    }
+
+    container.innerHTML = subjects.map(subject => {
+
+        const selectedIds =
+            subject.education_level_ids || [];
+
+        return `
+            <div class="subject-card">
+
+                <div class="subject-top">
+
+                    <div>
+                        <div class="subject-title">
+                            ${escapeHTML(subject.subject_name)}
+                        </div>
+
+                        <span class="subject-code">
+                            Code: ${escapeHTML(subject.subject_code)}
+                        </span>
+                    </div>
+
+                </div>
+
+                <strong>
+                    Education Levels
+                </strong>
+
+                <div class="level-options">
+
+                    ${levels.map(level => {
+
+                        const checked =
+                            selectedIds.includes(
+                                String(level.id)
+                            );
+
+                        return `
+                            <label class="level-option">
+
+                                <input
+                                    type="checkbox"
+                                    class="level-checkbox"
+                                    data-subject="${subject.id}"
+                                    value="${level.id}"
+                                    ${checked ? "checked" : ""}
+                                >
+
+                                ${escapeHTML(level.level_name)}
+
+                            </label>
+                        `;
+
+                    }).join("")}
+
+                </div>
+
+                <div class="subject-actions">
+
+                    <button
+                        class="primary"
+                        onclick="saveAssignments(${Number(subject.id)})"
+                    >
+                        Save Assignments
+                    </button>
+
+                    <button
+                        class="danger"
+                        onclick="deleteSubject(${Number(subject.id)})"
+                    >
+                        Delete Subject
+                    </button>
+
+                </div>
+
+            </div>
+        `;
+
+    }).join("");
+}
+
+/* =====================================================
+   ADD SUBJECT
+===================================================== */
+
+document.getElementById("subjectForm")
+.addEventListener("submit", async function(event) {
+
+    event.preventDefault();
+
+    const name =
+        document.getElementById("subjectName")
+        .value.trim();
+
+    const code =
+        document.getElementById("subjectCode")
+        .value.trim().toUpperCase();
+
+    const button =
+        document.getElementById("addSubjectBtn");
+
+    button.disabled = true;
+    button.textContent = "Adding...";
+
+    try {
+
+        await api("add_subject", {
+            subject_name:name,
+            subject_code:code
+        });
+
+        this.reset();
+
+        showMessage("Subject added successfully.");
+
+        await loadData();
+
+    } catch (error) {
+
+        showMessage(error.message, "error");
+
+    } finally {
+
+        button.disabled = false;
+        button.textContent = "+ Add Subject";
+    }
+});
+
+/* =====================================================
+   ADD EDUCATION LEVEL
+===================================================== */
+
+document.getElementById("levelForm")
+.addEventListener("submit", async function(event) {
+
+    event.preventDefault();
+
+    const name =
+        document.getElementById("levelName")
+        .value.trim();
+
+    const button =
+        document.getElementById("addLevelBtn");
+
+    button.disabled = true;
+    button.textContent = "Adding...";
+
+    try {
+
+        await api("add_level", {
+            level_name:name
+        });
+
+        this.reset();
+
+        showMessage("Education level added successfully.");
+
+        await loadData();
+
+    } catch (error) {
+
+        showMessage(error.message, "error");
+
+    } finally {
+
+        button.disabled = false;
+        button.textContent = "+ Add Education Level";
+    }
+});
+
+/* =====================================================
+   SAVE SUBJECT LEVEL ASSIGNMENTS
+===================================================== */
+
+async function saveAssignments(subjectId) {
+
+    const checkboxes = document.querySelectorAll(
+        `.level-checkbox[data-subject="${subjectId}"]`
+    );
+
+    const selectedIds = [];
+
+    checkboxes.forEach(checkbox => {
+
+        if (checkbox.checked) {
+            selectedIds.push(checkbox.value);
+        }
+
+    });
+
+    try {
+
+        await api("assign_levels", {
+            subject_id:subjectId,
+            education_level_ids:selectedIds
+        });
+
+        showMessage(
+            "Subject education levels saved successfully."
+        );
+
+        await loadData();
+
+    } catch (error) {
+
+        showMessage(error.message, "error");
+    }
+}
+
+/* =====================================================
+   DELETE SUBJECT
+===================================================== */
+
+async function deleteSubject(subjectId) {
+
+    const subject = subjects.find(
+        item => Number(item.id) === Number(subjectId)
+    );
+
+    if (!subject) return;
+
+    const confirmed = confirm(
+        `Are you sure you want to delete "${subject.subject_name}"?\n\n` +
+        "Deletion will only be allowed if the subject is not being used by existing records."
+    );
+
+    if (!confirmed) return;
+
+    try {
+
+        await api("delete_subject", {
+            subject_id:subjectId
+        });
+
+        showMessage("Subject deleted successfully.");
+
+        await loadData();
+
+    } catch (error) {
+
+        showMessage(error.message, "error");
+    }
+}
+
+/* =====================================================
+   DELETE EDUCATION LEVEL
+===================================================== */
+
+async function deleteLevel(levelId) {
+
+    const level = levels.find(
+        item => Number(item.id) === Number(levelId)
+    );
+
+    if (!level) return;
+
+    const confirmed = confirm(
+        `Delete education level "${level.level_name}"?\n\n` +
+        "This is allowed only if the level is not assigned to subjects, schools, or classes."
+    );
+
+    if (!confirmed) return;
+
+    try {
+
+        await api("delete_level", {
+            level_id:levelId
+        });
+
+        showMessage("Education level deleted successfully.");
+
+        await loadData();
+
+    } catch (error) {
+
+        showMessage(error.message, "error");
+    }
+}
+
+/* =====================================================
+   HTML ESCAPING
+===================================================== */
+
+function escapeHTML(value) {
+
+    return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
+
+/* =====================================================
+   INITIAL LOAD
+===================================================== */
+
+loadData();
+
+</script>
+
+</body>
+</html>
