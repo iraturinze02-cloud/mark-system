@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -489,6 +490,115 @@ td {
     word-break: break-word;
 }
 
+/* =====================================================
+   EDUCATION LEVEL SELECTION
+===================================================== */
+
+.education-level-box {
+    border: 1px solid #cbd5e1;
+    border-radius: 9px;
+    padding: 14px;
+    background: #f8fafc;
+}
+
+.education-level-heading {
+    color: var(--primary-dark);
+    font-size: 14px;
+    margin-bottom: 12px;
+}
+
+.education-level-group {
+    margin-bottom: 12px;
+}
+
+.education-level-group:last-child {
+    margin-bottom: 0;
+}
+
+.education-level-title {
+    font-size: 12px;
+    font-weight: bold;
+    color: #475569;
+    margin-bottom: 8px;
+}
+
+.education-level-options {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+}
+
+.education-level-option {
+    display: flex !important;
+    align-items: center;
+    gap: 9px;
+    padding: 11px;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px !important;
+    font-weight: normal !important;
+    margin: 0 !important;
+    transition: 0.15s;
+}
+
+.education-level-option:hover {
+    border-color: #93c5fd;
+}
+
+.education-level-option:has(input:checked) {
+    background: #eff6ff;
+    border-color: #2563eb;
+    color: #1e40af;
+}
+
+.education-level-option input {
+    width: 17px;
+    height: 17px;
+    margin: 0;
+    accent-color: #2563eb;
+    flex-shrink: 0;
+}
+
+.education-level-hint {
+    display: block;
+    color: var(--muted);
+    font-size: 11px;
+    line-height: 1.5;
+    margin-top: 10px;
+}
+
+.education-level-error {
+    display: none;
+    color: #b91c1c;
+    background: #fee2e2;
+    padding: 10px;
+    border-radius: 7px;
+    font-size: 12px;
+    margin-top: 10px;
+}
+
+.education-level-error.show {
+    display: block;
+}
+
+.level-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.level-badge {
+    display: inline-block;
+    padding: 5px 8px;
+    border-radius: 6px;
+    background: #dbeafe;
+    color: #1e40af;
+    font-size: 11px;
+    font-weight: 600;
+}
+
 .toast {
     position: fixed;
     right: 20px;
@@ -816,6 +926,85 @@ td {
                         </select>
                     </div>
 
+                    <!-- EDUCATION LEVELS -->
+
+                    <div class="form-group full">
+                        <label>
+                            Education Levels Offered
+                            <span class="required">*</span>
+                        </label>
+
+                        <div class="education-level-box">
+
+                            <h3 class="education-level-heading">
+                                <i class="fas fa-graduation-cap"></i>
+                                Select Education Levels
+                            </h3>
+
+                            <div class="education-level-group">
+                                <div class="education-level-title">
+                                    PRIMARY
+                                </div>
+
+                                <div class="education-level-options">
+                                    <label class="education-level-option">
+                                        <input
+                                            type="checkbox"
+                                            name="level_ids"
+                                            value="1"
+                                        >
+                                        <span>Primary (P1–P6)</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="education-level-group">
+                                <div class="education-level-title">
+                                    ORDINARY LEVEL
+                                </div>
+
+                                <div class="education-level-options">
+                                    <label class="education-level-option">
+                                        <input
+                                            type="checkbox"
+                                            name="level_ids"
+                                            value="2"
+                                        >
+                                        <span>Ordinary Level (S1–S3)</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="education-level-group">
+                                <div class="education-level-title">
+                                    ADVANCED LEVEL
+                                </div>
+
+                                <div class="education-level-options">
+                                    <label class="education-level-option">
+                                        <input
+                                            type="checkbox"
+                                            name="level_ids"
+                                            value="3"
+                                        >
+                                        <span>Advanced Level (S4–S6)</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <small class="education-level-hint">
+                                Select every education level offered by this school.
+                                Classes will be provided automatically from the selected levels.
+                            </small>
+
+                            <div
+                                class="education-level-error"
+                                id="educationLevelError"
+                            ></div>
+
+                        </div>
+                    </div>
+
                     <div class="form-group full">
                         <label>Location</label>
                         <input
@@ -897,6 +1086,12 @@ const API = {
 
 const PAGE_SIZE = 10;
 
+const EDUCATION_LEVELS = {
+    "1": "Primary (P1–P6)",
+    "2": "Ordinary Level (S1–S3)",
+    "3": "Advanced Level (S4–S6)"
+};
+
 let allSchools = [];
 let filteredSchools = [];
 let currentPage = 1;
@@ -917,20 +1112,21 @@ async function apiFetch(url, options = {}) {
         }
     });
 
+    const rawResponse = await response.text();
+
     let data;
-const rawResponse = await response.text();
 
-try {
-    data = JSON.parse(rawResponse);
-} catch {
-    console.error("SERVER RESPONSE:", rawResponse);
-    console.error("HTTP STATUS:", response.status);
-    console.error("REQUEST URL:", url);
+    try {
+        data = JSON.parse(rawResponse);
+    } catch {
+        console.error("SERVER RESPONSE:", rawResponse);
+        console.error("HTTP STATUS:", response.status);
+        console.error("REQUEST URL:", url);
 
-    throw new Error(
-        `Server returned invalid response (HTTP ${response.status}). Check console.`
-    );
-}
+        throw new Error(
+            `Server returned invalid response (HTTP ${response.status}). Check console.`
+        );
+    }
 
     if (!response.ok || data.success === false) {
         throw new Error(data.message || data.error || "Request failed.");
@@ -1250,6 +1446,132 @@ function nextPage() {
 }
 
 /* =====================================================
+   EDUCATION LEVEL HELPERS
+===================================================== */
+
+function getSelectedLevelIds() {
+
+    return Array.from(
+        document.querySelectorAll('input[name="level_ids"]:checked')
+    ).map(input => input.value);
+}
+
+/*
+    Accepts several formats from the API:
+    - level_ids: [1, 2, 3]
+    - levels: [1, 2, 3]
+    - levels: [{id: 1}, {id: 2}]
+    - levels: [{level_id: 1}, {level_id: 2}]
+    - education_levels: [...]
+*/
+
+function normalizeLevelIds(school) {
+
+    let levels =
+        school.level_ids ??
+        school.levels ??
+        school.education_levels ??
+        [];
+
+    if (typeof levels === "string") {
+
+        try {
+            levels = JSON.parse(levels);
+        } catch {
+            levels = levels.split(",");
+        }
+    }
+
+    if (!Array.isArray(levels)) {
+        levels = [];
+    }
+
+    return levels.map(item => {
+
+        if (typeof item === "object" && item !== null) {
+
+            return String(
+                item.level_id ??
+                item.education_level_id ??
+                item.id ??
+                ""
+            );
+        }
+
+        return String(item);
+
+    }).filter(id => Object.prototype.hasOwnProperty.call(
+        EDUCATION_LEVELS,
+        id
+    ));
+}
+
+function setSelectedLevels(levels) {
+
+    let ids = [];
+
+    if (Array.isArray(levels)) {
+
+        ids = levels.map(item => {
+
+            if (typeof item === "object" && item !== null) {
+
+                return String(
+                    item.level_id ??
+                    item.education_level_id ??
+                    item.id ??
+                    ""
+                );
+            }
+
+            return String(item);
+        });
+    }
+
+    document.querySelectorAll('input[name="level_ids"]').forEach(input => {
+        input.checked = ids.includes(input.value);
+    });
+
+    hideLevelError();
+}
+
+function clearSelectedLevels() {
+
+    document.querySelectorAll('input[name="level_ids"]').forEach(input => {
+        input.checked = false;
+    });
+
+    hideLevelError();
+}
+
+function getEducationLevelNames(school) {
+
+    const ids = normalizeLevelIds(school);
+
+    if (!ids.length) {
+        return ["Not specified"];
+    }
+
+    return ids.map(id => EDUCATION_LEVELS[id]);
+}
+
+function showLevelError(message) {
+
+    const error = document.getElementById("educationLevelError");
+
+    error.textContent = message;
+    error.classList.add("show");
+}
+
+function hideLevelError() {
+
+    const error = document.getElementById("educationLevelError");
+
+    error.textContent = "";
+    error.classList.remove("show");
+}
+
+/* =====================================================
    ADD SCHOOL
 ===================================================== */
 
@@ -1263,6 +1585,8 @@ function openAddModal() {
         '<i class="fas fa-save"></i> Save School';
 
     document.getElementById("schoolForm").reset();
+
+    clearSelectedLevels();
 
     document.getElementById("schoolModal").classList.add("show");
 }
@@ -1302,6 +1626,9 @@ function editSchool(id) {
     document.getElementById("schoolEmail").value =
         school.email || "";
 
+    // Restore previously saved education levels.
+    setSelectedLevels(normalizeLevelIds(school));
+
     document.getElementById("schoolModal").classList.add("show");
 }
 
@@ -1314,6 +1641,19 @@ document.getElementById("schoolForm").addEventListener("submit", async function(
     e.preventDefault();
 
     const saveBtn = document.getElementById("saveBtn");
+
+    const selectedLevelIds = getSelectedLevelIds();
+
+    hideLevelError();
+
+    if (selectedLevelIds.length === 0) {
+
+        showLevelError(
+            "Please select at least one education level offered by this school."
+        );
+
+        return;
+    }
 
     saveBtn.disabled = true;
 
@@ -1332,7 +1672,10 @@ document.getElementById("schoolForm").addEventListener("submit", async function(
 
         phone: document.getElementById("schoolPhone").value.trim() || null,
 
-        email: document.getElementById("schoolEmail").value.trim() || null
+        email: document.getElementById("schoolEmail").value.trim() || null,
+
+        // Selected education levels.
+        level_ids: selectedLevelIds
 
     };
 
@@ -1351,7 +1694,6 @@ document.getElementById("schoolForm").addEventListener("submit", async function(
 
         } else {
 
-            // IMPORTANT:
             // Owner-created schools are independent.
             // sector_id is intentionally NOT sent.
 
@@ -1396,6 +1738,8 @@ function viewSchool(id) {
             ? "Independent School (No Sector)"
             : `${school.sector_name || "Sector"} ${school.sector_code ? "(" + school.sector_code + ")" : ""}`;
 
+    const educationLevels = getEducationLevelNames(school);
+
     const details = [
 
         ["School Name", school.school_name],
@@ -1403,6 +1747,8 @@ function viewSchool(id) {
         ["School Code", school.school_code || "N/A"],
 
         ["School Type", school.school_type || "N/A"],
+
+        ["Education Levels", educationLevels.join(", ")],
 
         ["Sector / Ownership", sectorText],
 
@@ -1472,7 +1818,14 @@ async function toggleSchoolStatus(id) {
 ===================================================== */
 
 function closeModal() {
+
     document.getElementById("schoolModal").classList.remove("show");
+
+    document.getElementById("schoolForm").reset();
+
+    clearSelectedLevels();
+
+    editingSchoolId = null;
 }
 
 function closeDetailsModal() {
