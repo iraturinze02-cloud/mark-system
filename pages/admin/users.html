@@ -150,10 +150,7 @@ tbody tr:hover{background:#fbfdff}
 <aside class="sidebar" id="sidebar">
     <div class="brand">
         <div class="brand-icon">F</div>
-        <div class="brand-text">
-            FILA GRADES
-            <small>System Administration</small>
-        </div>
+        <div class="brand-text">FILA GRADES<small>System Administration</small></div>
     </div>
 
     <div class="role-label">Main Navigation</div>
@@ -171,10 +168,7 @@ tbody tr:hover{background:#fbfdff}
     <div class="sidebar-bottom">
         <div class="owner-card">
             <div class="avatar" id="sidebarAvatar">O</div>
-            <div>
-                <strong id="sidebarOwnerName">Owner</strong>
-                <small>Platform Owner</small>
-            </div>
+            <div><strong id="sidebarOwnerName">Owner</strong><small>Platform Owner</small></div>
         </div>
         <button class="logout" onclick="logout()">↪ &nbsp; Logout</button>
     </div>
@@ -209,38 +203,16 @@ tbody tr:hover{background:#fbfdff}
     </div>
 
     <section class="summary-grid">
-        <div class="summary-card">
-            <p>Total Users</p>
-            <h2 id="summaryTotal">—</h2>
-            <div class="summary-note">All accounts</div>
-        </div>
-
-        <div class="summary-card">
-            <p>Active Users</p>
-            <h2 id="summaryActive">—</h2>
-            <div class="summary-note">Currently active accounts</div>
-        </div>
-
-        <div class="summary-card">
-            <p>Inactive Users</p>
-            <h2 id="summaryInactive">—</h2>
-            <div class="summary-note">Deactivated accounts</div>
-        </div>
-
-        <div class="summary-card">
-            <p>Unverified Emails</p>
-            <h2 id="summaryUnverified">—</h2>
-            <div class="summary-note">Accounts requiring verification</div>
-        </div>
+        <div class="summary-card"><p>Total Users</p><h2 id="summaryTotal">—</h2><div class="summary-note">All accounts</div></div>
+        <div class="summary-card"><p>Active Users</p><h2 id="summaryActive">—</h2><div class="summary-note">Currently active accounts</div></div>
+        <div class="summary-card"><p>Inactive Users</p><h2 id="summaryInactive">—</h2><div class="summary-note">Deactivated accounts</div></div>
+        <div class="summary-card"><p>Unverified Emails</p><h2 id="summaryUnverified">—</h2><div class="summary-note">Accounts requiring verification</div></div>
     </section>
 
     <section class="toolbar">
         <div class="toolbar-row">
-
             <div class="search-box">
-                <input type="search" id="searchInput"
-                    placeholder="Search name, phone, email, ID..."
-                    oninput="applyFilters()">
+                <input type="search" id="searchInput" placeholder="Search name, phone, email, ID..." oninput="applyFilters()">
             </div>
 
             <select id="roleFilter" class="filter-select" onchange="applyFilters()">
@@ -251,14 +223,8 @@ tbody tr:hover{background:#fbfdff}
                 <option value="teacher">Teacher</option>
             </select>
 
-            <select id="sectorFilter" class="filter-select" onchange="applyFilters()">
-                <option value="">All Sectors</option>
-            </select>
-
-            <!-- School filter in the table remains a dropdown -->
-            <select id="schoolFilter" class="filter-select" onchange="applyFilters()">
-                <option value="">All Schools</option>
-            </select>
+            <select id="sectorFilter" class="filter-select" onchange="applyFilters()"><option value="">All Sectors</option></select>
+            <select id="schoolFilter" class="filter-select" onchange="applyFilters()"><option value="">All Schools</option></select>
 
             <select id="statusFilter" class="filter-select" onchange="applyFilters()">
                 <option value="">All Statuses</option>
@@ -287,24 +253,13 @@ tbody tr:hover{background:#fbfdff}
             <table>
                 <thead>
                     <tr>
-                        <th>ID</th>
-                        <th>User</th>
-                        <th>Phone</th>
-                        <th>Email</th>
-                        <th>Role</th>
-                        <th>Sector</th>
-                        <th>School</th>
-                        <th>Status</th>
-                        <th>Email Verification</th>
-                        <th>Created</th>
-                        <th>Actions</th>
+                        <th>ID</th><th>User</th><th>Phone</th><th>Email</th><th>Role</th>
+                        <th>Sector</th><th>School</th><th>Status</th><th>Email Verification</th>
+                        <th>Created</th><th>Actions</th>
                     </tr>
                 </thead>
-
                 <tbody id="usersTableBody">
-                    <tr>
-                        <td colspan="11" class="loading-row">Loading users...</td>
-                    </tr>
+                    <tr><td colspan="11" class="loading-row">Loading users...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -323,7 +278,6 @@ tbody tr:hover{background:#fbfdff}
 <!-- ADD / EDIT USER MODAL -->
 <div class="overlay" id="userModal">
     <div class="modal">
-
         <div class="modal-header">
             <h3 id="modalTitle">Add User</h3>
             <button class="close-btn" onclick="closeUserModal()">×</button>
@@ -346,9 +300,7 @@ tbody tr:hover{background:#fbfdff}
                     <div class="form-group">
                         <label for="email">Email Address *</label>
                         <input id="email" name="email" type="email" required maxlength="254">
-                        <span class="form-help" id="emailHelp">
-                            A verification email will be sent to the new user.
-                        </span>
+                        <span class="form-help" id="emailHelp">A verification email will be sent to the new user.</span>
                     </div>
 
                     <div class="form-group full">
@@ -364,41 +316,40 @@ tbody tr:hover{background:#fbfdff}
                     <!-- SECTOR CODE -->
                     <div class="form-group full" id="sectorCodeGroup" style="display:none">
                         <label for="sectorCode">Sector Code *</label>
-                        <input
-                            id="sectorCode"
-                            name="sector_code"
-                            type="text"
-                            maxlength="50"
-                            placeholder="Enter the existing sector code"
-                            autocomplete="off"
-                        >
-                        <span class="form-help">
-                            Enter the existing sector code. The system will verify
-                            the code and assign the user to that sector.
-                        </span>
+                        <input id="sectorCode" name="sector_code" type="text" maxlength="50"
+                            placeholder="Enter the existing sector code" autocomplete="off">
+                        <span class="form-help">Enter the existing sector code. The system will verify it.</span>
                     </div>
 
-                    <!-- SCHOOL NAME: TYPE IT, DO NOT SELECT -->
-                    <div class="form-group full" id="schoolGroup" style="display:none">
+                    <!-- SCHOOL ADMIN: TYPE SCHOOL NAME -->
+                    <div class="form-group full" id="schoolNameGroup" style="display:none">
                         <label for="userSchoolName">School Name *</label>
                         <input
                             id="userSchoolName"
                             name="school_name"
                             type="text"
                             maxlength="200"
-                            placeholder="Type the school name"
+                            placeholder="Type the full school name"
                             autocomplete="off"
                         >
                         <span class="form-help">
-                            Type the name of the school where this user will work.
+                            Type the school name. If the school already exists, the account will be assigned to it.
+                            If it does not exist, the system will create the school automatically.
                         </span>
+                    </div>
+
+                    <!-- TEACHER: SELECT EXISTING SCHOOL -->
+                    <div class="form-group full" id="teacherSchoolGroup" style="display:none">
+                        <label for="userSchool">School *</label>
+                        <select id="userSchool" name="school_id">
+                            <option value="">Select school</option>
+                        </select>
+                        <span class="form-help">Select the existing school where this teacher will work.</span>
                     </div>
 
                     <div class="form-group full">
                         <span class="form-help">
-                            Administrators will not set passwords for users.
-                            New accounts will receive email verification and
-                            password setup instructions.
+                            Administrators will not set passwords for users. New accounts will receive email verification and password setup instructions.
                         </span>
                     </div>
 
@@ -416,19 +367,12 @@ tbody tr:hover{background:#fbfdff}
 <!-- USER DETAILS MODAL -->
 <div class="overlay" id="detailsModal">
     <div class="modal large">
-
         <div class="modal-header">
             <h3>User Account Details</h3>
             <button class="close-btn" onclick="closeDetailsModal()">×</button>
         </div>
-
-        <div class="modal-body">
-            <div class="detail-grid" id="userDetails"></div>
-        </div>
-
-        <div class="modal-footer">
-            <button class="secondary-btn" onclick="closeDetailsModal()">Close</button>
-        </div>
+        <div class="modal-body"><div class="detail-grid" id="userDetails"></div></div>
+        <div class="modal-footer"><button class="secondary-btn" onclick="closeDetailsModal()">Close</button></div>
     </div>
 </div>
 
@@ -480,9 +424,7 @@ function roleClass(role) {
 
 function formatDate(value) {
     if (!value) return "—";
-
     const date = new Date(value);
-
     if (Number.isNaN(date.getTime())) return "—";
 
     return date.toLocaleDateString(undefined, {
@@ -507,7 +449,6 @@ function initials(name) {
 
 function showToast(message, type = "success") {
     const toast = document.getElementById("toast");
-
     toast.textContent = message;
     toast.className = "toast show " + type;
 
@@ -547,10 +488,7 @@ async function apiRequest(url, options = {}) {
 
 async function verifyOwner() {
     try {
-        const result = await apiRequest(API_SESSION, {
-            method: "GET"
-        });
-
+        const result = await apiRequest(API_SESSION, {method: "GET"});
         const user = result.user;
 
         if (!user || user.role !== "owner") {
@@ -583,16 +521,11 @@ async function loadUsers() {
     const tbody = document.getElementById("usersTableBody");
 
     tbody.innerHTML = `
-        <tr><td colspan="11" class="loading-row">
-            Loading user accounts...
-        </td></tr>
+        <tr><td colspan="11" class="loading-row">Loading user accounts...</td></tr>
     `;
 
     try {
-        const result = await apiRequest(API_USERS, {
-            method: "GET"
-        });
-
+        const result = await apiRequest(API_USERS, {method: "GET"});
         allUsers = result.users || [];
 
         populateFilters();
@@ -604,36 +537,48 @@ async function loadUsers() {
 
         tbody.innerHTML = `
             <tr><td colspan="11" class="empty-state">
-                Unable to load accounts.<br><br>
-                ${escapeHTML(error.message)}
+                Unable to load accounts.<br><br>${escapeHTML(error.message)}
             </td></tr>
         `;
 
-        document.getElementById("resultsCount").textContent =
-            "Unable to load users";
+        document.getElementById("resultsCount").textContent = "Unable to load users";
     }
 }
 
 /* =====================================================
    LOAD SCHOOLS
 
-   School list is ONLY used for the table filter.
-   The Add/Edit User form does not use a school dropdown.
+   This dropdown is ONLY used for Teachers.
+   School Admins type the school name instead.
 ===================================================== */
 
 async function loadSchools() {
     try {
-        const result = await apiRequest(API_SCHOOLS, {
-            method: "GET"
-        });
-
+        const result = await apiRequest(API_SCHOOLS, {method: "GET"});
         schools = result.schools || result.data || [];
 
+        populateTeacherSchoolDropdown();
         populateSchoolFilter();
 
     } catch (error) {
         console.warn("Schools loading error:", error);
     }
+}
+
+function populateTeacherSchoolDropdown() {
+    const select = document.getElementById("userSchool");
+
+    select.innerHTML = `<option value="">Select school</option>`;
+
+    schools.forEach(school => {
+        const name = school.school_name || school.name || "Unnamed School";
+
+        select.innerHTML += `
+            <option value="${escapeHTML(school.id)}">
+                ${escapeHTML(name)}
+            </option>
+        `;
+    });
 }
 
 /* =====================================================
@@ -644,9 +589,7 @@ function populateFilters() {
     const sectorFilter = document.getElementById("sectorFilter");
 
     const sectorValues = [
-        ...new Set(
-            allUsers.map(u => String(u.sector_id ?? "")).filter(Boolean)
-        )
+        ...new Set(allUsers.map(u => String(u.sector_id ?? "")).filter(Boolean))
     ];
 
     sectorFilter.innerHTML = `<option value="">All Sectors</option>`;
@@ -688,28 +631,38 @@ function updateAssignmentFields() {
     const role = document.getElementById("userRole").value;
 
     const sectorGroup = document.getElementById("sectorCodeGroup");
-    const schoolGroup = document.getElementById("schoolGroup");
+    const schoolNameGroup = document.getElementById("schoolNameGroup");
+    const teacherSchoolGroup = document.getElementById("teacherSchoolGroup");
 
     const sectorCode = document.getElementById("sectorCode");
     const schoolName = document.getElementById("userSchoolName");
+    const teacherSchool = document.getElementById("userSchool");
 
     sectorGroup.style.display = "none";
-    schoolGroup.style.display = "none";
+    schoolNameGroup.style.display = "none";
+    teacherSchoolGroup.style.display = "none";
 
     sectorCode.required = false;
     schoolName.required = false;
+    teacherSchool.required = false;
 
-    sectorCode.value = "";
-    schoolName.value = "";
+    if (role !== "sector_admin") sectorCode.value = "";
+    if (role !== "school_admin") schoolName.value = "";
+    if (role !== "teacher") teacherSchool.value = "";
 
     if (role === "sector_admin") {
         sectorGroup.style.display = "flex";
         sectorCode.required = true;
     }
 
-    if (role === "school_admin" || role === "teacher") {
-        schoolGroup.style.display = "flex";
+    if (role === "school_admin") {
+        schoolNameGroup.style.display = "flex";
         schoolName.required = true;
+    }
+
+    if (role === "teacher") {
+        teacherSchoolGroup.style.display = "flex";
+        teacherSchool.required = true;
     }
 }
 
@@ -743,14 +696,8 @@ function applyFilters() {
 
     filteredUsers = allUsers.filter(user => {
         const searchable = [
-            user.id,
-            user.full_name,
-            user.phone,
-            user.email,
-            user.role,
-            user.sector_name,
-            user.sector_code,
-            user.school_name
+            user.id, user.full_name, user.phone, user.email, user.role,
+            user.sector_name, user.sector_code, user.school_name
         ].join(" ").toLowerCase();
 
         if (search && !searchable.includes(search)) return false;
@@ -777,7 +724,6 @@ function resetFilters() {
     document.getElementById("schoolFilter").value = "";
     document.getElementById("statusFilter").value = "";
     document.getElementById("verificationFilter").value = "";
-
     applyFilters();
 }
 
@@ -807,9 +753,7 @@ function renderTable() {
 
     if (!pageUsers.length) {
         tbody.innerHTML = `
-            <tr><td colspan="11" class="empty-state">
-                No user accounts match your search.
-            </td></tr>
+            <tr><td colspan="11" class="empty-state">No user accounts match your search.</td></tr>
         `;
         return;
     }
@@ -823,15 +767,12 @@ function renderTable() {
             ? user.sector_name + (user.sector_code ? " (" + user.sector_code + ")" : "")
             : (user.sector_code || (user.sector_id ? "Sector #" + user.sector_id : "—"));
 
-        const school = user.school_name ||
-            (user.school_id ? "School #" + user.school_id : "—");
-
+        const school = user.school_name || (user.school_id ? "School #" + user.school_id : "—");
         const isOwner = user.role === "owner";
 
         return `
             <tr>
                 <td>${escapeHTML(user.id)}</td>
-
                 <td>
                     <div class="user-cell">
                         <div class="user-avatar">${escapeHTML(initials(name))}</div>
@@ -841,25 +782,16 @@ function renderTable() {
                         </div>
                     </div>
                 </td>
-
                 <td>${escapeHTML(user.phone || "—")}</td>
                 <td>${escapeHTML(user.email || "—")}</td>
-
-                <td>
-                    <span class="role-badge ${roleClass(user.role)}">
-                        ${escapeHTML(roleLabel(user.role))}
-                    </span>
-                </td>
-
+                <td><span class="role-badge ${roleClass(user.role)}">${escapeHTML(roleLabel(user.role))}</span></td>
                 <td>${escapeHTML(sector)}</td>
                 <td>${escapeHTML(school)}</td>
-
                 <td>
                     <span class="status-badge ${status === "active" ? "status-active" : "status-inactive"}">
                         ${escapeHTML(status)}
                     </span>
                 </td>
-
                 <td>
                     ${
                         !user.email
@@ -869,13 +801,10 @@ function renderTable() {
                             : `<span class="verify-badge verify-no">Unverified</span>`
                     }
                 </td>
-
                 <td>${escapeHTML(formatDate(user.created_at))}</td>
-
                 <td>
                     <div class="actions">
                         <button class="action-btn" onclick="viewUser(${Number(user.id)})">View</button>
-
                         ${
                             isOwner
                             ? `<button class="action-btn" disabled>Protected</button>`
@@ -897,10 +826,8 @@ function renderTable() {
 
 function changePage(direction) {
     const pages = Math.max(1, Math.ceil(filteredUsers.length / PAGE_SIZE));
-
     currentPage += direction;
     currentPage = Math.max(1, Math.min(currentPage, pages));
-
     renderTable();
 }
 
@@ -975,7 +902,6 @@ function closeUserModal() {
 
 function editUser(id) {
     const user = allUsers.find(u => Number(u.id) === Number(id));
-
     if (!user || user.role === "owner") return;
 
     editingUserId = Number(id);
@@ -1000,9 +926,12 @@ function editUser(id) {
         document.getElementById("sectorCode").value = user.sector_code || "";
     }
 
-    if (user.role === "school_admin" || user.role === "teacher") {
-        document.getElementById("userSchoolName").value =
-            user.school_name || "";
+    if (user.role === "school_admin") {
+        document.getElementById("userSchoolName").value = user.school_name || "";
+    }
+
+    if (user.role === "teacher") {
+        document.getElementById("userSchool").value = user.school_id || "";
     }
 
     document.getElementById("userModal").classList.add("show");
@@ -1032,10 +961,14 @@ document.getElementById("userForm").addEventListener("submit", async function(ev
         payload.sector_code = document.getElementById("sectorCode").value.trim();
     }
 
-    // Send typed school name instead of school_id
-    if (role === "school_admin" || role === "teacher") {
-        payload.school_name =
-            document.getElementById("userSchoolName").value.trim();
+    /* SCHOOL ADMIN: send school_name, NOT school_id */
+    if (role === "school_admin") {
+        payload.school_name = document.getElementById("userSchoolName").value.trim();
+    }
+
+    /* TEACHER: still sends selected school_id */
+    if (role === "teacher") {
+        payload.school_id = document.getElementById("userSchool").value;
     }
 
     try {
@@ -1053,12 +986,16 @@ document.getElementById("userForm").addEventListener("submit", async function(ev
             payload.email = document.getElementById("email").value.trim();
             payload.role = role;
 
-            await apiRequest(API_USERS, {
+            const result = await apiRequest(API_USERS, {
                 method: "POST",
                 body: JSON.stringify(payload)
             });
 
-            showToast("Account created. Verification email initiated.");
+            if (result.email_sent === false) {
+                showToast(result.message || "Account created, but email was not sent.", "error");
+            } else {
+                showToast(result.message || "Account created successfully.");
+            }
         }
 
         closeUserModal();
@@ -1080,7 +1017,6 @@ document.getElementById("userForm").addEventListener("submit", async function(ev
 
 async function changeStatus(id, newStatus) {
     const user = allUsers.find(u => Number(u.id) === Number(id));
-
     if (!user) return;
 
     if (user.role === "owner") {
@@ -1097,10 +1033,7 @@ async function changeStatus(id, newStatus) {
     try {
         await apiRequest(API_USERS + "/status", {
             method: "PATCH",
-            body: JSON.stringify({
-                id: id,
-                status: newStatus
-            })
+            body: JSON.stringify({id: id, status: newStatus})
         });
 
         showToast(`Account ${action}d successfully.`);
@@ -1154,7 +1087,6 @@ function closeSidebar() {
 
 async function initialize() {
     const valid = await verifyOwner();
-
     if (!valid) return;
 
     await Promise.all([
