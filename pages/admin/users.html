@@ -1,0 +1,1186 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>User Accounts | Fila Grades System</title>
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:Arial,Helvetica,sans-serif}
+body{background:#f5f7fb;color:#172033}
+:root{--primary:#173f70;--dark:#102e52;--muted:#718096;--border:#e5eaf1}
+.sidebar{position:fixed;inset:0 auto 0 0;width:255px;background:var(--dark);color:white;padding:22px 15px;z-index:1000;display:flex;flex-direction:column;overflow-y:auto}
+.brand{display:flex;align-items:center;gap:12px;padding:8px 10px 24px;border-bottom:1px solid #ffffff20}
+.brand-icon{width:42px;height:42px;border-radius:12px;background:#ffffff15;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:bold}
+.brand-text{font-size:15px;font-weight:bold;line-height:1.4}
+.brand-text small{display:block;font-size:11px;font-weight:normal;color:#b9cce3;margin-top:3px}
+.role-label{margin:25px 10px 12px;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#a9bfd8}
+.nav-link{display:flex;align-items:center;gap:12px;text-decoration:none;color:#dce7f4;padding:12px;border-radius:9px;margin-bottom:4px;font-size:13px}
+.nav-link:hover,.nav-link.active{background:#2c5b8d;color:white}
+.nav-icon{width:22px;text-align:center;font-size:16px}
+.sidebar-bottom{margin-top:auto;padding-top:25px}
+.owner-card{display:flex;align-items:center;gap:10px;padding:12px;border-radius:10px;background:#ffffff10;margin-bottom:12px}
+.avatar{width:36px;height:36px;border-radius:50%;background:#dbeafe;color:var(--primary);display:flex;align-items:center;justify-content:center;font-weight:bold;flex-shrink:0}
+.owner-card strong{display:block;font-size:12px;margin-bottom:4px}
+.owner-card small{color:#bdcfe3;font-size:11px}
+.logout{width:100%;padding:11px;background:transparent;border:1px solid #ffffff30;color:white;border-radius:8px;cursor:pointer;font-size:13px}
+.main{margin-left:255px;min-height:100vh}
+.topbar{height:72px;background:white;border-bottom:1px solid var(--border);padding:0 30px;display:flex;align-items:center;justify-content:space-between}
+.topbar-left{display:flex;align-items:center;gap:15px}
+.topbar h2{font-size:18px;font-weight:600}
+.menu-btn{display:none;border:none;background:#eaf2fc;color:var(--primary);padding:9px 12px;border-radius:8px;cursor:pointer;font-size:18px}
+.top-profile{display:flex;align-items:center;gap:10px}
+.top-profile strong{display:block;font-size:13px}
+.top-profile small{display:block;color:var(--muted);font-size:11px;margin-top:3px}
+.content{max-width:1600px;margin:auto;padding:28px}
+.page-heading{display:flex;justify-content:space-between;align-items:center;gap:15px;flex-wrap:wrap;margin-bottom:24px}
+.page-heading h1{font-size:24px;margin-bottom:7px}
+.page-heading p{font-size:13px;color:var(--muted)}
+.primary-btn{border:0;background:var(--primary);color:white;padding:11px 16px;border-radius:8px;font-size:13px;cursor:pointer;font-weight:600}
+.primary-btn:hover{background:#24588b}
+.secondary-btn{border:1px solid var(--border);background:white;color:#334155;padding:10px 14px;border-radius:8px;cursor:pointer;font-size:13px}
+.summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:15px;margin-bottom:22px}
+.summary-card{background:white;border:1px solid var(--border);border-radius:11px;padding:18px}
+.summary-card p{font-size:12px;color:var(--muted);margin-bottom:9px}
+.summary-card h2{font-size:25px;color:#23364f}
+.summary-card .summary-note{font-size:11px;color:#94a3b8;margin-top:7px}
+.toolbar{background:white;border:1px solid var(--border);border-radius:11px;padding:17px;margin-bottom:17px}
+.toolbar-row{display:flex;gap:10px;flex-wrap:wrap}
+.search-box{flex:1;min-width:220px}
+.search-box input{width:100%;padding:11px 13px;border:1px solid var(--border);border-radius:8px;outline:none;font-size:13px}
+.search-box input:focus,.filter-select:focus{border-color:#7199c5}
+.filter-select{padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:white;color:#334155;min-width:145px;font-size:12px;outline:none}
+.table-card{background:white;border:1px solid var(--border);border-radius:11px;overflow:hidden}
+.table-header{display:flex;justify-content:space-between;align-items:center;padding:17px 20px;border-bottom:1px solid var(--border);gap:12px;flex-wrap:wrap}
+.table-header h3{font-size:15px}
+.table-header span{font-size:12px;color:var(--muted)}
+.table-scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:1250px}
+thead{background:#f8fafc}
+th{padding:13px 14px;text-align:left;font-size:11px;color:#64748b;font-weight:600;white-space:nowrap;border-bottom:1px solid var(--border)}
+td{padding:13px 14px;border-bottom:1px solid #edf1f5;font-size:12px;vertical-align:middle}
+tbody tr:hover{background:#fbfdff}
+.user-cell{display:flex;align-items:center;gap:10px;min-width:180px}
+.user-avatar{width:35px;height:35px;background:#eaf2fc;color:#244f7b;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:bold;flex-shrink:0}
+.user-name{font-weight:600;color:#24364e;margin-bottom:4px}
+.user-id{font-size:10px;color:#94a3b8}
+.muted{color:#8491a2}
+.role-badge,.status-badge,.verify-badge{display:inline-block;padding:5px 8px;border-radius:20px;font-size:10px;font-weight:600;white-space:nowrap}
+.role-owner{background:#f1eaff;color:#7750bd}
+.role-sector_admin{background:#e8f1ff;color:#326bb4}
+.role-school_admin{background:#e5f8ef;color:#218657}
+.role-teacher{background:#fff3df;color:#bd781f}
+.status-active{background:#e8f8ee;color:#218657}
+.status-inactive{background:#feecee;color:#c24150}
+.verify-yes{background:#e8f8ee;color:#218657}
+.verify-no{background:#fff4df;color:#b7791f}
+.actions{display:flex;gap:6px;align-items:center}
+.action-btn{border:1px solid var(--border);background:white;padding:7px 9px;border-radius:6px;cursor:pointer;font-size:11px;color:#475569;white-space:nowrap}
+.action-btn:hover{background:#f1f5f9}
+.action-btn.danger{color:#c24150;border-color:#f2d5d9}
+.action-btn.activate{color:#218657;border-color:#d5eadc}
+.empty-state{text-align:center;padding:45px 20px;color:var(--muted);font-size:13px}
+.pagination{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:15px 18px;flex-wrap:wrap}
+.page-info{font-size:12px;color:var(--muted)}
+.page-controls{display:flex;gap:6px}
+.page-btn{padding:8px 11px;border:1px solid var(--border);background:white;border-radius:6px;cursor:pointer;font-size:12px}
+.page-btn:disabled{opacity:.4;cursor:not-allowed}
+.overlay{display:none;position:fixed;inset:0;background:#0007;z-index:2000;align-items:center;justify-content:center;padding:15px}
+.overlay.show{display:flex}
+.modal{background:white;border-radius:13px;width:100%;max-width:600px;max-height:92vh;overflow:auto;box-shadow:0 20px 60px #0003}
+.modal.large{max-width:750px}
+.modal-header{display:flex;justify-content:space-between;align-items:center;padding:19px 22px;border-bottom:1px solid var(--border)}
+.modal-header h3{font-size:16px}
+.close-btn{border:0;background:#f1f5f9;width:32px;height:32px;border-radius:7px;cursor:pointer;font-size:18px;color:#475569}
+.modal-body{padding:22px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:15px}
+.form-group{display:flex;flex-direction:column;gap:7px}
+.form-group.full{grid-column:1/-1}
+.form-group label{font-size:12px;font-weight:600;color:#475569}
+.form-group input,.form-group select{width:100%;padding:11px;border:1px solid var(--border);border-radius:8px;font-size:13px;outline:none;background:white}
+.form-group input:focus,.form-group select:focus{border-color:#7199c5}
+.form-help{font-size:11px;color:var(--muted);line-height:1.5}
+.modal-footer{display:flex;justify-content:flex-end;gap:9px;padding:16px 22px;border-top:1px solid var(--border)}
+.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:15px}
+.detail-item{padding:13px;background:#f8fafc;border-radius:8px}
+.detail-item label{display:block;color:var(--muted);font-size:11px;margin-bottom:6px}
+.detail-item strong{font-size:13px;overflow-wrap:anywhere}
+.toast{position:fixed;bottom:22px;right:22px;background:#1e293b;color:white;padding:13px 18px;border-radius:9px;font-size:13px;z-index:3000;display:none;max-width:calc(100% - 40px);box-shadow:0 5px 20px #0002}
+.toast.show{display:block}
+.toast.error{background:#b42336}
+.toast.success{background:#18794e}
+.loading-row{text-align:center;padding:40px;color:#94a3b8;font-size:13px}
+.sidebar-overlay{display:none}
+
+@media(max-width:1200px){.summary-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:850px){
+.sidebar{transform:translateX(-100%);transition:transform .25s}
+.sidebar.open{transform:translateX(0)}
+.sidebar-overlay.show{display:block;position:fixed;inset:0;background:#0006;z-index:999}
+.main{margin-left:0}
+.menu-btn{display:block}
+.topbar{padding:0 18px}
+.content{padding:20px}
+}
+@media(max-width:600px){
+.topbar{height:64px;padding:0 13px}
+.topbar h2{font-size:15px}
+.top-profile .profile-info{display:none}
+.content{padding:15px}
+.page-heading h1{font-size:21px}
+.summary-grid{gap:10px}
+.summary-card{padding:14px}
+.summary-card h2{font-size:22px}
+.toolbar{padding:12px}
+.toolbar-row{flex-direction:column}
+.search-box{min-width:0}
+.filter-select{width:100%}
+.form-grid,.detail-grid{grid-template-columns:1fr}
+.form-group.full{grid-column:auto}
+.modal-body{padding:16px}
+.modal-header,.modal-footer{padding:15px}
+.pagination{padding:13px}
+}
+</style>
+</head>
+
+<body>
+
+<aside class="sidebar" id="sidebar">
+
+    <div class="brand">
+        <div class="brand-icon">F</div>
+        <div class="brand-text">
+            FILA GRADES
+            <small>System Administration</small>
+        </div>
+    </div>
+
+    <div class="role-label">Main Navigation</div>
+
+    <nav>
+        <a href="owner.html" class="nav-link"><span class="nav-icon">⌂</span>Dashboard</a>
+        <a href="sectors.html" class="nav-link"><span class="nav-icon">▦</span>Sectors</a>
+        <a href="schools.html" class="nav-link"><span class="nav-icon">▣</span>Schools</a>
+        <a href="users.html" class="nav-link active"><span class="nav-icon">♙</span>User Accounts</a>
+        <a href="subjects.html" class="nav-link"><span class="nav-icon">▤</span>Subjects</a>
+        <a href="examinations.html" class="nav-link"><span class="nav-icon">✓</span>Examinations</a>
+        <a href="reports.html" class="nav-link"><span class="nav-icon">▥</span>Reports</a>
+    </nav>
+
+    <div class="sidebar-bottom">
+        <div class="owner-card">
+            <div class="avatar" id="sidebarAvatar">O</div>
+            <div>
+                <strong id="sidebarOwnerName">Owner</strong>
+                <small>Platform Owner</small>
+            </div>
+        </div>
+        <button class="logout" onclick="logout()">↪ &nbsp; Logout</button>
+    </div>
+</aside>
+
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+<main class="main">
+
+<header class="topbar">
+    <div class="topbar-left">
+        <button class="menu-btn" onclick="toggleSidebar()">☰</button>
+        <h2>User Accounts</h2>
+    </div>
+
+    <div class="top-profile">
+        <div class="avatar" id="topAvatar">O</div>
+        <div class="profile-info">
+            <strong id="ownerName">Platform Owner</strong>
+            <small>System Administrator</small>
+        </div>
+    </div>
+</header>
+
+<div class="content">
+
+    <div class="page-heading">
+        <div>
+            <h1>User Accounts</h1>
+            <p>Manage all accounts registered in Fila Grades System.</p>
+        </div>
+
+        <button class="primary-btn" onclick="openCreateModal()">+ Add User</button>
+    </div>
+
+    <section class="summary-grid">
+        <div class="summary-card">
+            <p>Total Users</p>
+            <h2 id="summaryTotal">—</h2>
+            <div class="summary-note">All accounts</div>
+        </div>
+
+        <div class="summary-card">
+            <p>Active Users</p>
+            <h2 id="summaryActive">—</h2>
+            <div class="summary-note">Currently active accounts</div>
+        </div>
+
+        <div class="summary-card">
+            <p>Inactive Users</p>
+            <h2 id="summaryInactive">—</h2>
+            <div class="summary-note">Deactivated accounts</div>
+        </div>
+
+        <div class="summary-card">
+            <p>Unverified Emails</p>
+            <h2 id="summaryUnverified">—</h2>
+            <div class="summary-note">Accounts requiring verification</div>
+        </div>
+    </section>
+
+    <section class="toolbar">
+        <div class="toolbar-row">
+
+            <div class="search-box">
+                <input type="search" id="searchInput"
+                    placeholder="Search name, phone, email, ID..."
+                    oninput="applyFilters()">
+            </div>
+
+            <select id="roleFilter" class="filter-select" onchange="applyFilters()">
+                <option value="">All Roles</option>
+                <option value="owner">Owner</option>
+                <option value="sector_admin">Sector Admin</option>
+                <option value="school_admin">School Admin</option>
+                <option value="teacher">Teacher</option>
+            </select>
+
+            <select id="sectorFilter" class="filter-select" onchange="applyFilters()">
+                <option value="">All Sectors</option>
+            </select>
+
+            <select id="schoolFilter" class="filter-select" onchange="applyFilters()">
+                <option value="">All Schools</option>
+            </select>
+
+            <select id="statusFilter" class="filter-select" onchange="applyFilters()">
+                <option value="">All Statuses</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+            </select>
+
+            <select id="verificationFilter" class="filter-select" onchange="applyFilters()">
+                <option value="">All Email Statuses</option>
+                <option value="verified">Verified</option>
+                <option value="unverified">Unverified</option>
+                <option value="no_email">No Email</option>
+            </select>
+
+            <button class="secondary-btn" onclick="resetFilters()">Reset</button>
+        </div>
+    </section>
+
+    <section class="table-card">
+
+        <div class="table-header">
+            <h3>All Registered Users</h3>
+            <span id="resultsCount">Loading accounts...</span>
+        </div>
+
+        <div class="table-scroll">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>User</th>
+                        <th>Phone</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Sector</th>
+                        <th>School</th>
+                        <th>Status</th>
+                        <th>Email Verification</th>
+                        <th>Created</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+
+                <tbody id="usersTableBody">
+                    <tr>
+                        <td colspan="11" class="loading-row">Loading users...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="pagination">
+            <div class="page-info" id="pageInfo"></div>
+            <div class="page-controls">
+                <button class="page-btn" id="prevPage" onclick="changePage(-1)">Previous</button>
+                <button class="page-btn" id="nextPage" onclick="changePage(1)">Next</button>
+            </div>
+        </div>
+
+    </section>
+</div>
+</main>
+
+<!-- ADD / EDIT USER MODAL -->
+
+<div class="overlay" id="userModal">
+    <div class="modal">
+
+        <div class="modal-header">
+            <h3 id="modalTitle">Add User</h3>
+            <button class="close-btn" onclick="closeUserModal()">×</button>
+        </div>
+
+        <form id="userForm">
+            <div class="modal-body">
+                <div class="form-grid">
+
+                    <div class="form-group full">
+                        <label for="fullName">Full Name *</label>
+                        <input id="fullName" name="full_name" required maxlength="150">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="phone">Phone Number *</label>
+                        <input id="phone" name="phone" required maxlength="30">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="email">Email Address *</label>
+                        <input id="email" name="email" type="email" required maxlength="254">
+                        <span class="form-help" id="emailHelp">
+                            A verification email will be sent to the new user.
+                        </span>
+                    </div>
+
+                    <div class="form-group full">
+                        <label for="userRole">Account Role *</label>
+                        <select id="userRole" name="role" required onchange="updateAssignmentFields()">
+                            <option value="">Select role</option>
+                            <option value="sector_admin">Sector Admin</option>
+                            <option value="school_admin">School Admin</option>
+                            <option value="teacher">Teacher</option>
+                        </select>
+                    </div>
+
+                    <!-- SECTOR CODE: NOT A SECTOR DROPDOWN -->
+                    <div class="form-group full" id="sectorCodeGroup" style="display:none">
+                        <label for="sectorCode">Sector Code *</label>
+                        <input
+                            id="sectorCode"
+                            name="sector_code"
+                            type="text"
+                            maxlength="50"
+                            placeholder="Enter the existing sector code"
+                            autocomplete="off"
+                        >
+                        <span class="form-help">
+                            Enter the code of the sector. The system will verify
+                            the code and assign the user to that sector.
+                        </span>
+                    </div>
+
+                    <!-- SCHOOL ASSIGNMENT -->
+                    <div class="form-group full" id="schoolGroup" style="display:none">
+                        <label for="userSchool">School *</label>
+                        <select id="userSchool" name="school_id">
+                            <option value="">Select school</option>
+                        </select>
+                        <span class="form-help">
+                            Select the school where this user will work.
+                        </span>
+                    </div>
+
+                    <div class="form-group full">
+                        <span class="form-help">
+                            Administrators will not set passwords for users.
+                            New accounts will receive email verification and
+                            password setup instructions.
+                        </span>
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="secondary-btn" onclick="closeUserModal()">Cancel</button>
+                <button type="submit" class="primary-btn" id="saveUserBtn">Create Account</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- USER DETAILS MODAL -->
+
+<div class="overlay" id="detailsModal">
+    <div class="modal large">
+
+        <div class="modal-header">
+            <h3>User Account Details</h3>
+            <button class="close-btn" onclick="closeDetailsModal()">×</button>
+        </div>
+
+        <div class="modal-body">
+            <div class="detail-grid" id="userDetails"></div>
+        </div>
+
+        <div class="modal-footer">
+            <button class="secondary-btn" onclick="closeDetailsModal()">Close</button>
+        </div>
+
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* =====================================================
+   CONFIGURATION
+===================================================== */
+
+const API_USERS = "/api/owner/users";
+const API_SCHOOLS = "/api/schools";
+const API_SESSION = "/api/auth/session";
+
+const PAGE_SIZE = 15;
+
+let allUsers = [];
+let filteredUsers = [];
+let schools = [];
+let currentPage = 1;
+let editingUserId = null;
+let toastTimer = null;
+
+/* =====================================================
+   HELPERS
+===================================================== */
+
+function escapeHTML(value) {
+    return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+function roleLabel(role) {
+    return {
+        owner: "Owner",
+        sector_admin: "Sector Admin",
+        school_admin: "School Admin",
+        teacher: "Teacher"
+    }[role] || role || "Unknown";
+}
+
+function roleClass(role) {
+    return "role-" + (role || "").replace(/[^a-z_]/g, "");
+}
+
+function formatDate(value) {
+    if (!value) return "—";
+
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) return "—";
+
+    return date.toLocaleDateString(undefined, {
+        year: "numeric",
+        month: "short",
+        day: "numeric"
+    });
+}
+
+function getStatus(user) {
+    return String(user.status || "inactive").toLowerCase();
+}
+
+function isVerified(user) {
+    return user.email_verified === true;
+}
+
+function initials(name) {
+    const parts = String(name || "User").trim().split(/\s+/);
+    return parts.slice(0, 2).map(x => x[0]).join("").toUpperCase();
+}
+
+function showToast(message, type = "success") {
+    const toast = document.getElementById("toast");
+
+    toast.textContent = message;
+    toast.className = "toast show " + type;
+
+    clearTimeout(toastTimer);
+
+    toastTimer = setTimeout(() => {
+        toast.className = "toast";
+    }, 3500);
+}
+
+async function apiRequest(url, options = {}) {
+    const response = await fetch(url, {
+        credentials: "same-origin",
+        headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+            ...(options.headers || {})
+        },
+        ...options
+    });
+
+    const result = await response.json().catch(() => ({
+        success: false,
+        message: "Invalid server response."
+    }));
+
+    if (!response.ok || result.success === false) {
+        throw new Error(result.message || "Request failed.");
+    }
+
+    return result;
+}
+
+/* =====================================================
+   OWNER AUTHENTICATION
+===================================================== */
+
+async function verifyOwner() {
+    try {
+        const result = await apiRequest(API_SESSION, {
+            method: "GET"
+        });
+
+        const user = result.user;
+
+        if (!user || user.role !== "owner") {
+            window.location.replace("../index.html");
+            return false;
+        }
+
+        const name = user.fullName || "Owner";
+        const letter = initials(name);
+
+        document.getElementById("ownerName").textContent = name;
+        document.getElementById("sidebarOwnerName").textContent = name;
+        document.getElementById("topAvatar").textContent = letter;
+        document.getElementById("sidebarAvatar").textContent = letter;
+
+        return true;
+
+    } catch (error) {
+        console.error("Owner verification error:", error);
+        window.location.replace("../index.html");
+        return false;
+    }
+}
+
+/* =====================================================
+   LOAD USERS
+===================================================== */
+
+async function loadUsers() {
+    const tbody = document.getElementById("usersTableBody");
+
+    tbody.innerHTML = `
+        <tr><td colspan="11" class="loading-row">
+            Loading user accounts...
+        </td></tr>
+    `;
+
+    try {
+        const result = await apiRequest(API_USERS, {
+            method: "GET"
+        });
+
+        allUsers = result.users || [];
+
+        populateFilters();
+        updateSummary();
+        applyFilters();
+
+    } catch (error) {
+        console.error("Users loading error:", error);
+
+        tbody.innerHTML = `
+            <tr><td colspan="11" class="empty-state">
+                Unable to load accounts.<br><br>
+                ${escapeHTML(error.message)}
+            </td></tr>
+        `;
+
+        document.getElementById("resultsCount").textContent =
+            "Unable to load users";
+    }
+}
+
+/* =====================================================
+   LOAD SCHOOLS
+
+   No sector selection.
+   Schools will be assigned according to school ID.
+===================================================== */
+
+async function loadSchools() {
+    try {
+        const result = await apiRequest(API_SCHOOLS, {
+            method: "GET"
+        });
+
+        schools = result.schools || result.data || [];
+
+        populateSchoolDropdown();
+        populateSchoolFilter();
+
+    } catch (error) {
+        console.warn("Schools loading error:", error);
+    }
+}
+
+function populateSchoolDropdown() {
+    const select = document.getElementById("userSchool");
+
+    select.innerHTML = `<option value="">Select school</option>`;
+
+    schools.forEach(school => {
+        const name = school.school_name || school.name || "Unnamed School";
+
+        select.innerHTML += `
+            <option value="${escapeHTML(school.id)}">
+                ${escapeHTML(name)}
+            </option>
+        `;
+    });
+}
+
+/* =====================================================
+   FILTER DROPDOWNS
+===================================================== */
+
+function populateFilters() {
+    const sectorFilter = document.getElementById("sectorFilter");
+
+    const sectorValues = [
+        ...new Set(
+            allUsers.map(u => String(u.sector_id ?? "")).filter(Boolean)
+        )
+    ];
+
+    sectorFilter.innerHTML = `<option value="">All Sectors</option>`;
+
+    sectorValues.forEach(id => {
+        const user = allUsers.find(u => String(u.sector_id) === id);
+
+        const sectorName = user?.sector_name || "Sector";
+        const sectorCode = user?.sector_code || "";
+
+        sectorFilter.innerHTML += `
+            <option value="${escapeHTML(id)}">
+                ${escapeHTML(sectorName)}
+                ${sectorCode ? "(" + escapeHTML(sectorCode) + ")" : ""}
+            </option>
+        `;
+    });
+}
+
+function populateSchoolFilter() {
+    const select = document.getElementById("schoolFilter");
+
+    select.innerHTML = `<option value="">All Schools</option>`;
+
+    schools.forEach(school => {
+        select.innerHTML += `
+            <option value="${escapeHTML(school.id)}">
+                ${escapeHTML(school.school_name || school.name)}
+            </option>
+        `;
+    });
+}
+
+/* =====================================================
+   ROLE-DEPENDENT FORM FIELDS
+===================================================== */
+
+function updateAssignmentFields() {
+    const role = document.getElementById("userRole").value;
+
+    const sectorGroup = document.getElementById("sectorCodeGroup");
+    const schoolGroup = document.getElementById("schoolGroup");
+
+    const sectorCode = document.getElementById("sectorCode");
+    const school = document.getElementById("userSchool");
+
+    sectorGroup.style.display = "none";
+    schoolGroup.style.display = "none";
+
+    sectorCode.required = false;
+    school.required = false;
+
+    sectorCode.value = "";
+    school.value = "";
+
+    if (role === "sector_admin") {
+        sectorGroup.style.display = "flex";
+        sectorCode.required = true;
+    }
+
+    if (role === "school_admin" || role === "teacher") {
+        schoolGroup.style.display = "flex";
+        school.required = true;
+    }
+}
+
+/* =====================================================
+   SUMMARY
+===================================================== */
+
+function updateSummary() {
+    const total = allUsers.length;
+    const active = allUsers.filter(u => getStatus(u) === "active").length;
+    const inactive = allUsers.filter(u => getStatus(u) !== "active").length;
+    const unverified = allUsers.filter(u => u.email && !isVerified(u)).length;
+
+    document.getElementById("summaryTotal").textContent = total;
+    document.getElementById("summaryActive").textContent = active;
+    document.getElementById("summaryInactive").textContent = inactive;
+    document.getElementById("summaryUnverified").textContent = unverified;
+}
+
+/* =====================================================
+   SEARCH & FILTERS
+===================================================== */
+
+function applyFilters() {
+    const search = document.getElementById("searchInput").value.trim().toLowerCase();
+    const role = document.getElementById("roleFilter").value;
+    const sector = document.getElementById("sectorFilter").value;
+    const school = document.getElementById("schoolFilter").value;
+    const status = document.getElementById("statusFilter").value;
+    const verification = document.getElementById("verificationFilter").value;
+
+    filteredUsers = allUsers.filter(user => {
+        const searchable = [
+            user.id,
+            user.full_name,
+            user.phone,
+            user.email,
+            user.role,
+            user.sector_name,
+            user.sector_code,
+            user.school_name
+        ].join(" ").toLowerCase();
+
+        if (search && !searchable.includes(search)) return false;
+        if (role && user.role !== role) return false;
+        if (sector && String(user.sector_id) !== sector) return false;
+        if (school && String(user.school_id) !== school) return false;
+        if (status && getStatus(user) !== status) return false;
+
+        if (verification === "verified" && !isVerified(user)) return false;
+        if (verification === "unverified" && (!user.email || isVerified(user))) return false;
+        if (verification === "no_email" && user.email) return false;
+
+        return true;
+    });
+
+    currentPage = 1;
+    renderTable();
+}
+
+function resetFilters() {
+    document.getElementById("searchInput").value = "";
+    document.getElementById("roleFilter").value = "";
+    document.getElementById("sectorFilter").value = "";
+    document.getElementById("schoolFilter").value = "";
+    document.getElementById("statusFilter").value = "";
+    document.getElementById("verificationFilter").value = "";
+
+    applyFilters();
+}
+
+/* =====================================================
+   TABLE RENDERING
+===================================================== */
+
+function renderTable() {
+    const tbody = document.getElementById("usersTableBody");
+    const total = filteredUsers.length;
+    const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+
+    if (currentPage > pages) currentPage = pages;
+
+    const start = (currentPage - 1) * PAGE_SIZE;
+    const pageUsers = filteredUsers.slice(start, start + PAGE_SIZE);
+
+    document.getElementById("resultsCount").textContent =
+        `${total} account${total === 1 ? "" : "s"} found`;
+
+    document.getElementById("pageInfo").textContent = total
+        ? `Showing ${start + 1}–${Math.min(start + PAGE_SIZE, total)} of ${total}`
+        : "No accounts found";
+
+    document.getElementById("prevPage").disabled = currentPage <= 1;
+    document.getElementById("nextPage").disabled = currentPage >= pages;
+
+    if (!pageUsers.length) {
+        tbody.innerHTML = `
+            <tr><td colspan="11" class="empty-state">
+                No user accounts match your search.
+            </td></tr>
+        `;
+        return;
+    }
+
+    tbody.innerHTML = pageUsers.map(user => {
+        const status = getStatus(user);
+        const verified = isVerified(user);
+        const name = user.full_name || "Unnamed User";
+
+        const sector = user.sector_name
+            ? user.sector_name + (user.sector_code ? " (" + user.sector_code + ")" : "")
+            : (user.sector_code || (user.sector_id ? "Sector #" + user.sector_id : "—"));
+
+        const school = user.school_name ||
+            (user.school_id ? "School #" + user.school_id : "—");
+
+        const isOwner = user.role === "owner";
+
+        return `
+            <tr>
+                <td>${escapeHTML(user.id)}</td>
+
+                <td>
+                    <div class="user-cell">
+                        <div class="user-avatar">${escapeHTML(initials(name))}</div>
+                        <div>
+                            <div class="user-name">${escapeHTML(name)}</div>
+                            <div class="user-id">Account #${escapeHTML(user.id)}</div>
+                        </div>
+                    </div>
+                </td>
+
+                <td>${escapeHTML(user.phone || "—")}</td>
+                <td>${escapeHTML(user.email || "—")}</td>
+
+                <td>
+                    <span class="role-badge ${roleClass(user.role)}">
+                        ${escapeHTML(roleLabel(user.role))}
+                    </span>
+                </td>
+
+                <td>${escapeHTML(sector)}</td>
+                <td>${escapeHTML(school)}</td>
+
+                <td>
+                    <span class="status-badge ${status === "active" ? "status-active" : "status-inactive"}">
+                        ${escapeHTML(status)}
+                    </span>
+                </td>
+
+                <td>
+                    ${
+                        !user.email
+                        ? `<span class="muted">No email</span>`
+                        : verified
+                            ? `<span class="verify-badge verify-yes">Verified</span>`
+                            : `<span class="verify-badge verify-no">Unverified</span>`
+                    }
+                </td>
+
+                <td>${escapeHTML(formatDate(user.created_at))}</td>
+
+                <td>
+                    <div class="actions">
+                        <button class="action-btn" onclick="viewUser(${Number(user.id)})">View</button>
+
+                        ${
+                            isOwner
+                            ? `<button class="action-btn" disabled>Protected</button>`
+                            : `
+                                <button class="action-btn" onclick="editUser(${Number(user.id)})">Edit</button>
+                                ${
+                                    status === "active"
+                                    ? `<button class="action-btn danger" onclick="changeStatus(${Number(user.id)},'inactive')">Deactivate</button>`
+                                    : `<button class="action-btn activate" onclick="changeStatus(${Number(user.id)},'active')">Activate</button>`
+                                }
+                            `
+                        }
+                    </div>
+                </td>
+            </tr>
+        `;
+    }).join("");
+}
+
+function changePage(direction) {
+    const pages = Math.max(1, Math.ceil(filteredUsers.length / PAGE_SIZE));
+
+    currentPage += direction;
+    currentPage = Math.max(1, Math.min(currentPage, pages));
+
+    renderTable();
+}
+
+/* =====================================================
+   VIEW ACCOUNT DETAILS
+===================================================== */
+
+function viewUser(id) {
+    const user = allUsers.find(u => Number(u.id) === Number(id));
+    if (!user) return;
+
+    const fields = [
+        ["User ID", user.id],
+        ["Full Name", user.full_name],
+        ["Phone Number", user.phone],
+        ["Email", user.email || "No email"],
+        ["Role", roleLabel(user.role)],
+        ["Sector", user.sector_name || user.sector_code || (user.sector_id ? "Sector #" + user.sector_id : "Not assigned")],
+        ["Sector Code", user.sector_code || "—"],
+        ["School", user.school_name || (user.school_id ? "School #" + user.school_id : "Not assigned")],
+        ["Account Status", user.status],
+        ["Email Verified", user.email ? (isVerified(user) ? "Yes" : "No") : "Not applicable"],
+        ["Created", formatDate(user.created_at)],
+        ["Updated", formatDate(user.updated_at)],
+        ["Must Change Password", user.must_change_password ? "Yes" : "No"]
+    ];
+
+    document.getElementById("userDetails").innerHTML = fields.map(([label, value]) => `
+        <div class="detail-item">
+            <label>${escapeHTML(label)}</label>
+            <strong>${escapeHTML(value ?? "—")}</strong>
+        </div>
+    `).join("");
+
+    document.getElementById("detailsModal").classList.add("show");
+}
+
+function closeDetailsModal() {
+    document.getElementById("detailsModal").classList.remove("show");
+}
+
+/* =====================================================
+   CREATE ACCOUNT
+===================================================== */
+
+function openCreateModal() {
+    editingUserId = null;
+
+    document.getElementById("userForm").reset();
+
+    document.getElementById("modalTitle").textContent = "Create User Account";
+    document.getElementById("saveUserBtn").textContent = "Create Account";
+
+    document.getElementById("email").disabled = false;
+    document.getElementById("userRole").disabled = false;
+
+    document.getElementById("emailHelp").textContent =
+        "A verification email will be sent to the new user.";
+
+    updateAssignmentFields();
+
+    document.getElementById("userModal").classList.add("show");
+}
+
+function closeUserModal() {
+    document.getElementById("userModal").classList.remove("show");
+}
+
+/* =====================================================
+   EDIT USER
+===================================================== */
+
+function editUser(id) {
+    const user = allUsers.find(u => Number(u.id) === Number(id));
+
+    if (!user || user.role === "owner") return;
+
+    editingUserId = Number(id);
+
+    document.getElementById("modalTitle").textContent = "Edit User Account";
+    document.getElementById("saveUserBtn").textContent = "Save Changes";
+
+    document.getElementById("fullName").value = user.full_name || "";
+    document.getElementById("phone").value = user.phone || "";
+    document.getElementById("email").value = user.email || "";
+    document.getElementById("userRole").value = user.role || "";
+
+    document.getElementById("email").disabled = true;
+    document.getElementById("userRole").disabled = true;
+
+    document.getElementById("emailHelp").textContent =
+        "Email and role cannot be changed from this form.";
+
+    updateAssignmentFields();
+
+    if (user.role === "sector_admin") {
+        document.getElementById("sectorCode").value = user.sector_code || "";
+    }
+
+    if (user.role === "school_admin" || user.role === "teacher") {
+        document.getElementById("userSchool").value = user.school_id || "";
+    }
+
+    document.getElementById("userModal").classList.add("show");
+}
+
+/* =====================================================
+   SUBMIT USER FORM
+===================================================== */
+
+document.getElementById("userForm").addEventListener("submit", async function(event) {
+    event.preventDefault();
+
+    const button = document.getElementById("saveUserBtn");
+    const originalText = button.textContent;
+
+    button.disabled = true;
+    button.textContent = "Saving...";
+
+    const role = document.getElementById("userRole").value;
+
+    const payload = {
+        full_name: document.getElementById("fullName").value.trim(),
+        phone: document.getElementById("phone").value.trim()
+    };
+
+    if (role === "sector_admin") {
+        payload.sector_code = document.getElementById("sectorCode").value.trim();
+    }
+
+    if (role === "school_admin" || role === "teacher") {
+        payload.school_id = document.getElementById("userSchool").value;
+    }
+
+    try {
+        if (editingUserId) {
+            payload.id = editingUserId;
+
+            await apiRequest(API_USERS + "/update", {
+                method: "PUT",
+                body: JSON.stringify(payload)
+            });
+
+            showToast("User account updated successfully.");
+
+        } else {
+            payload.email = document.getElementById("email").value.trim();
+            payload.role = role;
+
+            await apiRequest(API_USERS, {
+                method: "POST",
+                body: JSON.stringify(payload)
+            });
+
+            showToast("Account created. Verification email initiated.");
+        }
+
+        closeUserModal();
+        await loadUsers();
+
+    } catch (error) {
+        console.error("Save user error:", error);
+        showToast(error.message, "error");
+
+    } finally {
+        button.disabled = false;
+        button.textContent = originalText;
+    }
+});
+
+/* =====================================================
+   ACTIVATE / DEACTIVATE
+===================================================== */
+
+async function changeStatus(id, newStatus) {
+    const user = allUsers.find(u => Number(u.id) === Number(id));
+
+    if (!user) return;
+
+    if (user.role === "owner") {
+        showToast("The owner account is protected.", "error");
+        return;
+    }
+
+    const action = newStatus === "active" ? "activate" : "deactivate";
+
+    if (!confirm(`Are you sure you want to ${action} ${user.full_name || "this account"}?`)) {
+        return;
+    }
+
+    try {
+        await apiRequest(API_USERS + "/status", {
+            method: "PATCH",
+            body: JSON.stringify({
+                id: id,
+                status: newStatus
+            })
+        });
+
+        showToast(`Account ${action}d successfully.`);
+        await loadUsers();
+
+    } catch (error) {
+        console.error("Status update error:", error);
+        showToast(error.message, "error");
+    }
+}
+
+/* =====================================================
+   LOGOUT
+===================================================== */
+
+async function logout() {
+    if (!confirm("Are you sure you want to log out?")) return;
+
+    try {
+        await fetch("/api/logout", {
+            method: "POST",
+            credentials: "same-origin"
+        });
+    } catch (error) {
+        console.error(error);
+    }
+
+    localStorage.removeItem("currentUser");
+    localStorage.removeItem("role");
+
+    window.location.replace("../index.html");
+}
+
+/* =====================================================
+   MOBILE SIDEBAR
+===================================================== */
+
+function toggleSidebar() {
+    document.getElementById("sidebar").classList.toggle("open");
+    document.getElementById("sidebarOverlay").classList.toggle("show");
+}
+
+function closeSidebar() {
+    document.getElementById("sidebar").classList.remove("open");
+    document.getElementById("sidebarOverlay").classList.remove("show");
+}
+
+/* =====================================================
+   INITIALIZATION
+===================================================== */
+
+async function initialize() {
+    const valid = await verifyOwner();
+
+    if (!valid) return;
+
+    await Promise.all([
+        loadSchools(),
+        loadUsers()
+    ]);
+}
+
+initialize();
+</script>
+
+</body>
+</html>
