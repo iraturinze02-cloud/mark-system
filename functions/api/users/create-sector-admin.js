@@ -1,6 +1,4 @@
 
-import bcrypt from "bcryptjs";
-
 import {
     connectDB,
     json,
@@ -100,10 +98,6 @@ export async function onRequestPost(context) {
 
         /* =============================================
            GENERATE INTERNAL RANDOM CREDENTIAL
-
-           The owner does not choose a password.
-           The administrator sets their own password
-           after email verification.
         ============================================= */
 
         const randomBytes = new Uint8Array(32);
@@ -114,9 +108,6 @@ export async function onRequestPost(context) {
             Array.from(randomBytes)
                 .map(byte => byte.toString(16).padStart(2, "0"))
                 .join("");
-
-        const passwordHash =
-            await bcrypt.hash(temporaryCredential, 12);
 
         /* =============================================
            CONNECT TO DATABASE
@@ -202,7 +193,6 @@ export async function onRequestPost(context) {
 
            email_verified = FALSE
            must_change_password = TRUE
-
         ============================================= */
 
         const adminResult = await client.query(
@@ -241,7 +231,7 @@ export async function onRequestPost(context) {
                 fullName,
                 email,
                 phone,
-                passwordHash,
+                temporaryCredential,
                 sectorId
             ]
         );
