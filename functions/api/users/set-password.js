@@ -1,6 +1,4 @@
 
-import bcrypt from "bcryptjs";
-
 import {
     connectDB,
     json
@@ -61,7 +59,7 @@ export async function onRequestPost(context) {
         }
 
         /* =============================================
-           HASH TOKEN
+           HASH SETUP TOKEN
         ============================================= */
 
         const tokenHash = await hashSetupToken(token);
@@ -157,13 +155,7 @@ export async function onRequestPost(context) {
         }
 
         /* =============================================
-           HASH NEW PASSWORD
-        ============================================= */
-
-        const passwordHash = await bcrypt.hash(password, 12);
-
-        /* =============================================
-           SAVE NEW PASSWORD
+           SAVE PASSWORD AS PLAIN TEXT
         ============================================= */
 
         await client.query(`
@@ -173,7 +165,7 @@ export async function onRequestPost(context) {
                 must_change_password = FALSE,
                 updated_at = CURRENT_TIMESTAMP
             WHERE id = $2
-        `, [passwordHash, user.id]);
+        `, [password, user.id]);
 
         /* =============================================
            MARK TOKEN AS USED
