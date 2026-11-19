@@ -1,3 +1,4 @@
+
 import {
     connectDB,
     json,
@@ -95,6 +96,7 @@ export async function onRequestGet(context) {
 
             const assignedLevelIds = levels
                 .filter(level => {
+
                     const mappingName = String(
                         getMappingName(level.level_name)
                     ).trim().toLowerCase();
@@ -277,40 +279,17 @@ export async function onRequestPost(context) {
             }
 
             /*
-               Existing table has no ID default.
-
-               Use a transaction and advisory lock to
-               safely allocate the next ID.
+               Let PostgreSQL generate the identity ID.
+               Do not manually insert an ID.
             */
-
-            await db.query("BEGIN");
-            transactionStarted = true;
-
-            await db.query(`
-                SELECT pg_advisory_xact_lock(741852963)
-            `);
-
-            const nextIdResult = await db.query(`
-                SELECT COALESCE(MAX(id), 0) + 1 AS next_id
-                FROM education_levels
-            `);
-
-            const nextId = nextIdResult.rows[0].next_id;
 
             const result = await db.query(`
                 INSERT INTO education_levels (
-                    id,
                     level_name
                 )
-                VALUES ($1, $2)
+                VALUES ($1)
                 RETURNING id, level_name
-            `, [
-                nextId,
-                levelName
-            ]);
-
-            await db.query("COMMIT");
-            transactionStarted = false;
+            `, [levelName]);
 
             return json({
                 success: true,
@@ -338,7 +317,7 @@ export async function onRequestPost(context) {
                 : [];
 
             if (
-                !Number.isInteger(subjectId) ||
+                !Number.isSafeInteger(subjectId) ||
                 subjectId <= 0
             ) {
                 return json({
@@ -347,18 +326,30 @@ export async function onRequestPost(context) {
                 }, 400);
             }
 
+            // Reject duplicate IDs instead of silently accepting them.
+            if (
+                new Set(selectedLevelIds).size !==
+                selectedLevelIds.length
+            ) {
+                return json({
+                    success: false,
+                    message: "Duplicate education levels were submitted."
+                }, 400);
+            }
+
             await db.query("BEGIN");
             transactionStarted = true;
 
+            // Lock assignment changes for this subject.
             await db.query(`
-                SELECT pg_advisory_xact_lock(741852964)
-            `);
+                SELECT pg_advisory_xact_lock($1)
+            `, [741852964]);
 
             const subjectCheck = await db.query(`
                 SELECT id
                 FROM subjects
                 WHERE id = $1
-                LIMIT 1
+                FOR UPDATE
             `, [subjectId]);
 
             if (!subjectCheck.rows.length) {
@@ -380,6 +371,7 @@ export async function onRequestPost(context) {
                     SELECT id, level_name
                     FROM education_levels
                     WHERE id = ANY($1::bigint[])
+                    ORDER BY id ASC
                 `, [selectedLevelIds]);
 
                 if (
@@ -400,9 +392,8 @@ export async function onRequestPost(context) {
             }
 
             /*
-               Replace mappings for this subject only.
-
-               Other subjects are not touched.
+               Replace assignments for this subject only.
+               Other subjects remain unchanged.
             */
 
             await db.query(`
@@ -410,41 +401,31 @@ export async function onRequestPost(context) {
                 WHERE subject_id = $1
             `, [subjectId]);
 
-            if (selectedLevels.length > 0) {
+            /*
+               IMPORTANT:
+               subject_class_levels.id is GENERATED ALWAYS
+               AS IDENTITY.
+
+               Therefore, omit id from INSERT.
+               PostgreSQL generates it automatically.
+            */
+
+            for (const level of selectedLevels) {
+
+                const mappingName = getMappingName(
+                    level.level_name
+                );
 
                 await db.query(`
-                    SELECT pg_advisory_xact_lock(741852965)
-                `);
-
-                const idResult = await db.query(`
-                    SELECT COALESCE(MAX(id), 0) AS max_id
-                    FROM subject_class_levels
-                `);
-
-                let nextMappingId =
-                    Number(idResult.rows[0].max_id) + 1;
-
-                for (const level of selectedLevels) {
-
-                    const mappingName = getMappingName(
-                        level.level_name
-                    );
-
-                    await db.query(`
-                        INSERT INTO subject_class_levels (
-                            id,
-                            subject_id,
-                            education_level
-                        )
-                        VALUES ($1, $2, $3)
-                    `, [
-                        nextMappingId,
-                        subjectId,
-                        mappingName
-                    ]);
-
-                    nextMappingId++;
-                }
+                    INSERT INTO subject_class_levels (
+                        subject_id,
+                        education_level
+                    )
+                    VALUES ($1, $2)
+                `, [
+                    subjectId,
+                    mappingName
+                ]);
             }
 
             await db.query("COMMIT");
@@ -458,9 +439,6 @@ export async function onRequestPost(context) {
 
         /* =================================================
            DELETE SUBJECT
-
-           Prevent deletion if referenced by existing
-           examinations, marks, tests or assignments.
         ================================================= */
 
         if (action === "delete_subject") {
@@ -468,7 +446,7 @@ export async function onRequestPost(context) {
             const subjectId = Number(body.subject_id);
 
             if (
-                !Number.isInteger(subjectId) ||
+                !Number.isSafeInteger(subjectId) ||
                 subjectId <= 0
             ) {
                 return json({
@@ -500,9 +478,6 @@ export async function onRequestPost(context) {
 
             /*
                Check known tables that store subject_id.
-
-               If any existing record references the
-               subject, deletion is refused.
             */
 
             const referenceTables = [
@@ -569,11 +544,6 @@ export async function onRequestPost(context) {
 
         /* =================================================
            DELETE EDUCATION LEVEL
-
-           Prevent deletion when referenced by:
-           - subject_class_levels
-           - school_levels
-           - classes
         ================================================= */
 
         if (action === "delete_level") {
@@ -581,7 +551,7 @@ export async function onRequestPost(context) {
             const levelId = Number(body.level_id);
 
             if (
-                !Number.isInteger(levelId) ||
+                !Number.isSafeInteger(levelId) ||
                 levelId <= 0
             ) {
                 return json({
