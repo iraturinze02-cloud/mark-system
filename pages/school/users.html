@@ -1,0 +1,1586 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="description" content="Record and manage student marks for assigned classes and subjects in Fila Grades System.">
+
+    <meta name="theme-color" content="#173f70">
+
+    <link rel="icon" type="image/x-icon" href="/images/favicon/favicon.ico">
+    <link rel="icon" type="image/png" sizes="512x512" href="/images/favicon/favicon.png">
+
+<meta name="theme-color" content="#102b46">
+<title>Teachers Management | Fila Marks System</title>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
+<style>
+:root {
+    --primary:#173b60;
+    --dark:#102b46;
+    --accent:#2878d0;
+    --bg:#f3f6fa;
+    --white:#fff;
+    --text:#26384a;
+    --muted:#8291a2;
+    --border:#e6ecf2;
+    --green:#169b68;
+    --red:#dc5555;
+    --orange:#e99a32;
+}
+
+* {box-sizing:border-box;margin:0;padding:0}
+
+body {
+    font-family:'Segoe UI',Arial,sans-serif;
+    background:var(--bg);
+    color:var(--text);
+}
+
+button,input,select {font:inherit}
+button {cursor:pointer}
+a {text-decoration:none;color:inherit}
+
+.loading-screen {
+    position:fixed;
+    inset:0;
+    background:var(--dark);
+    color:white;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    flex-direction:column;
+    gap:15px;
+    z-index:99999;
+}
+
+.spinner {
+    width:35px;height:35px;
+    border:3px solid #ffffff40;
+    border-top-color:white;
+    border-radius:50%;
+    animation:spin .8s linear infinite;
+}
+
+@keyframes spin {to{transform:rotate(360deg)}}
+
+.app {display:none;min-height:100vh}
+
+.sidebar {
+    position:fixed;
+    inset:0 auto 0 0;
+    width:260px;
+    background:var(--dark);
+    color:white;
+    z-index:1000;
+    display:flex;
+    flex-direction:column;
+    transition:.3s;
+}
+
+.brand {
+    padding:24px 20px;
+    display:flex;
+    align-items:center;
+    gap:12px;
+    border-bottom:1px solid #ffffff18;
+}
+
+.brand-icon {
+    width:43px;height:43px;
+    background:#ffffff19;
+    border-radius:12px;
+    display:grid;
+    place-items:center;
+    font-size:21px;
+}
+
+.brand-name {font-weight:800;font-size:17px}
+.brand-sub {font-size:10px;color:#a8c0d8;margin-top:4px}
+
+.sidebar-content {
+    padding:20px 13px;
+    flex:1;
+    overflow-y:auto;
+}
+
+.nav-label {
+    font-size:10px;
+    font-weight:700;
+    letter-spacing:1px;
+    color:#91a8bf;
+    padding:12px;
+}
+
+.nav-link {
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:12px;
+    border-radius:8px;
+    color:#d4dfeb;
+    font-size:13px;
+    margin:3px 0;
+}
+
+.nav-link i {width:19px;text-align:center}
+.nav-link:hover {background:#ffffff13}
+.nav-link.active {background:var(--accent);color:white;font-weight:700}
+
+.sidebar-footer {
+    border-top:1px solid #ffffff18;
+    padding:17px;
+    font-size:12px;
+}
+
+.main {margin-left:260px;min-height:100vh}
+
+.topbar {
+    height:72px;
+    background:white;
+    border-bottom:1px solid var(--border);
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:0 28px;
+    position:sticky;
+    top:0;
+    z-index:100;
+}
+
+.top-left {display:flex;align-items:center;gap:15px}
+.menu-btn {display:none;background:none;color:var(--primary);font-size:21px}
+.heading {font-size:16px;font-weight:750}
+.breadcrumb {font-size:11px;color:var(--muted);margin-top:4px}
+
+.profile {display:flex;align-items:center;gap:10px}
+.avatar {
+    width:38px;height:38px;
+    background:#e6f0fc;
+    color:var(--accent);
+    border-radius:50%;
+    display:grid;
+    place-items:center;
+}
+.profile-name {font-size:12px;font-weight:700}
+.profile-role {font-size:10px;color:var(--muted);margin-top:3px}
+
+.content {padding:28px;max-width:1600px;margin:auto}
+
+.page-intro {
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:15px;
+    margin-bottom:23px;
+}
+
+.page-intro h2 {font-size:21px;color:var(--dark)}
+.page-intro p {font-size:12px;color:var(--muted);margin-top:7px;line-height:1.5}
+
+.primary-btn {
+    background:var(--accent);
+    color:white;
+    padding:11px 16px;
+    border-radius:8px;
+    font-size:12px;
+    font-weight:650;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    border:0;
+}
+
+.primary-btn:hover {background:#1765b2}
+
+.stats {
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:15px;
+    margin-bottom:24px;
+}
+
+.stat {
+    background:white;
+    border:1px solid var(--border);
+    border-radius:11px;
+    padding:18px;
+}
+
+.stat-icon {
+    width:40px;height:40px;
+    border-radius:10px;
+    display:grid;
+    place-items:center;
+    font-size:17px;
+}
+
+.blue {background:#e9f2ff;color:#2878d0}
+.green {background:#e5f7ed;color:#169b68}
+.orange {background:#fff3e3;color:#df922c}
+.purple {background:#f1ebff;color:#8762cb}
+
+.stat-label {font-size:11px;color:var(--muted);margin-top:13px}
+.stat-value {font-size:26px;font-weight:750;margin-top:5px;color:var(--dark)}
+
+.panel {
+    background:white;
+    border:1px solid var(--border);
+    border-radius:12px;
+    padding:21px;
+}
+
+.panel-heading {
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
+    margin-bottom:19px;
+}
+
+.panel-heading h3 {font-size:14px}
+
+.filters {
+    display:grid;
+    grid-template-columns:minmax(180px,1.7fr) repeat(2,minmax(140px,1fr)) auto;
+    gap:10px;
+    margin-bottom:18px;
+}
+
+.field {
+    width:100%;
+    height:41px;
+    border:1px solid var(--border);
+    background:#fff;
+    border-radius:7px;
+    padding:0 12px;
+    outline:none;
+    font-size:12px;
+    color:var(--text);
+}
+
+.field:focus {border-color:var(--accent)}
+
+.search-box {position:relative}
+.search-box i {
+    position:absolute;
+    left:13px;
+    top:14px;
+    color:var(--muted);
+    font-size:12px;
+}
+.search-box input {padding-left:35px}
+
+.secondary-btn {
+    border:1px solid var(--border);
+    background:white;
+    border-radius:7px;
+    padding:0 13px;
+    font-size:11px;
+    color:var(--text);
+}
+
+.table-wrap {overflow-x:auto}
+
+table {width:100%;border-collapse:collapse;min-width:780px}
+
+th {
+    background:#f7f9fc;
+    color:var(--muted);
+    font-size:10px;
+    text-align:left;
+    padding:14px 12px;
+    white-space:nowrap;
+}
+
+td {
+    padding:13px 12px;
+    font-size:11px;
+    border-bottom:1px solid var(--border);
+    white-space:nowrap;
+}
+
+.teacher-cell {display:flex;align-items:center;gap:10px}
+
+.teacher-avatar {
+    width:34px;height:34px;
+    background:#e9f2ff;
+    color:var(--accent);
+    border-radius:50%;
+    display:grid;
+    place-items:center;
+    font-weight:700;
+}
+
+.teacher-name {font-weight:700;font-size:11px}
+.teacher-email {font-size:10px;color:var(--muted);margin-top:4px}
+
+.badge {
+    padding:5px 9px;
+    border-radius:20px;
+    font-size:9px;
+    font-weight:700;
+    display:inline-block;
+}
+
+.active {background:#e5f7ed;color:#168354}
+.inactive {background:#fbeaea;color:#c34b4b}
+.verified {background:#e7f2ff;color:#2878d0}
+.unverified {background:#fff3dc;color:#ad7621}
+
+.action-btn {
+    width:30px;height:30px;
+    background:#f3f6fa;
+    border-radius:6px;
+    color:var(--primary);
+    margin-right:4px;
+}
+
+.action-btn:hover {background:#e2edfa}
+
+.empty {text-align:center;padding:35px;color:var(--muted);font-size:12px}
+
+.pagination {
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
+    padding-top:17px;
+    font-size:11px;
+    color:var(--muted);
+}
+
+.page-buttons {display:flex;gap:6px}
+.page-buttons button {
+    width:30px;height:30px;
+    background:white;
+    border:1px solid var(--border);
+    border-radius:6px;
+    color:var(--text);
+}
+.page-buttons button.selected {background:var(--accent);color:white}
+
+.overlay {
+    display:none;
+    position:fixed;
+    inset:0;
+    background:#0007;
+    z-index:900;
+}
+
+/* MODAL */
+
+.modal {
+    display:none;
+    position:fixed;
+    inset:0;
+    background:#0007;
+    z-index:3000;
+    align-items:center;
+    justify-content:center;
+    padding:15px;
+}
+
+.modal.show {display:flex}
+
+.modal-box {
+    width:100%;
+    max-width:540px;
+    max-height:90vh;
+    overflow-y:auto;
+    background:white;
+    border-radius:13px;
+    padding:24px;
+    box-shadow:0 10px 40px #0002;
+}
+
+.modal-header {
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:22px;
+}
+
+.modal-header h3 {font-size:17px}
+.close-btn {background:none;font-size:20px;color:var(--muted)}
+
+.form-grid {
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:15px;
+}
+
+.form-group {display:flex;flex-direction:column;gap:7px}
+.form-group.full {grid-column:1/-1}
+.form-group label {font-size:11px;font-weight:650}
+.form-group input,.form-group select {
+    height:42px;
+    border:1px solid var(--border);
+    border-radius:7px;
+    padding:0 11px;
+    outline:none;
+    font-size:12px;
+    background:white;
+    width:100%;
+}
+.form-group input:focus,.form-group select:focus {border-color:var(--accent)}
+
+.form-actions {
+    display:flex;
+    justify-content:flex-end;
+    gap:10px;
+    margin-top:23px;
+}
+
+.cancel-btn {
+    background:#f0f3f7;
+    padding:11px 17px;
+    border-radius:7px;
+    font-size:12px;
+}
+
+.toast {
+    position:fixed;
+    bottom:22px;
+    right:22px;
+    background:var(--dark);
+    color:white;
+    padding:13px 18px;
+    border-radius:8px;
+    font-size:12px;
+    z-index:5000;
+    opacity:0;
+    transform:translateY(10px);
+    transition:.3s;
+    pointer-events:none;
+}
+.toast.show {opacity:1;transform:translateY(0)}
+
+.footer {
+    background:white;
+    border-top:1px solid var(--border);
+    padding:20px 28px;
+    display:flex;
+    justify-content:space-between;
+    color:var(--muted);
+    font-size:10px;
+}
+
+@media(max-width:1050px) {
+    .stats {grid-template-columns:repeat(2,1fr)}
+    .filters {grid-template-columns:1fr 1fr}
+}
+
+@media(max-width:750px) {
+    .sidebar {transform:translateX(-100%)}
+    .sidebar.show {transform:translateX(0)}
+    .main {margin-left:0}
+    .menu-btn {display:block}
+    .topbar {padding:0 15px}
+    .content {padding:20px 14px}
+    .page-intro {align-items:flex-start;flex-direction:column}
+    .filters {grid-template-columns:1fr 1fr}
+    .overlay.show {display:block}
+    .footer {padding:18px 14px;flex-direction:column;gap:8px}
+}
+
+@media(max-width:430px) {
+    .stats {gap:9px}
+    .stat {padding:13px}
+    .stat-value {font-size:22px}
+    .filters {grid-template-columns:1fr}
+    .profile-name {display:none}
+    .form-grid {grid-template-columns:1fr}
+    .form-group.full {grid-column:auto}
+}
+</style>
+</head>
+
+<body>
+
+<div class="loading-screen" id="loadingScreen">
+    <div class="spinner"></div>
+    <span>Verifying School Admin access...</span>
+</div>
+
+<div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
+
+<div class="app" id="app">
+
+<aside class="sidebar" id="sidebar">
+
+    <div class="brand">
+        <div class="brand-icon"><i class="fas fa-graduation-cap"></i></div>
+        <div>
+            <div class="brand-name">FILA MARKS</div>
+            <div class="brand-sub">SCHOOL MANAGEMENT SYSTEM</div>
+        </div>
+    </div>
+
+    <div class="sidebar-content">
+
+        <div class="nav-label">MAIN MENU</div>
+        <a href="school-admin.html" class="nav-link">
+            <i class="fas fa-house"></i> Dashboard
+        </a>
+
+        <div class="nav-label">SCHOOL MANAGEMENT</div>
+        <a href="school-users.html" class="nav-link active">
+            <i class="fas fa-chalkboard-user"></i> Teachers Management
+        </a>
+        <a href="school-students.html" class="nav-link">
+            <i class="fas fa-user-graduate"></i> Students Management
+        </a>
+        <a href="school-classes.html" class="nav-link">
+            <i class="fas fa-layer-group"></i> Classes & Streams
+        </a>
+        <a href="school-subjects.html" class="nav-link">
+            <i class="fas fa-book-open"></i> Subjects
+        </a>
+
+        <div class="nav-label">INSPECTION</div>
+        <a href="school-teachers-inspection.html" class="nav-link">
+            <i class="fas fa-users-viewfinder"></i> Teachers Inspection
+        </a>
+        <a href="school-marks-inspection.html" class="nav-link">
+            <i class="fas fa-clipboard-check"></i> Marks Inspection
+        </a>
+
+        <div class="nav-label">ACADEMIC MANAGEMENT</div>
+        <a href="school-examinations.html" class="nav-link">
+            <i class="fas fa-file-circle-check"></i> Examinations
+        </a>
+        <a href="school-tests.html" class="nav-link">
+            <i class="fas fa-file-pen"></i> Tests
+        </a>
+        <a href="school-results.html" class="nav-link">
+            <i class="fas fa-award"></i> Results
+        </a>
+        <a href="school-reports.html" class="nav-link">
+            <i class="fas fa-chart-column"></i> Reports
+        </a>
+
+        <div class="nav-label">ACCOUNT</div>
+        <a href="school-profile.html" class="nav-link">
+            <i class="fas fa-school"></i> School Profile
+        </a>
+        <a href="school-settings.html" class="nav-link">
+            <i class="fas fa-gear"></i> Settings
+        </a>
+
+    </div>
+
+    <div class="sidebar-footer">
+        <i class="fas fa-school"></i>
+        <span id="sidebarSchool">My School</span>
+    </div>
+
+</aside>
+
+<main class="main">
+
+<header class="topbar">
+    <div class="top-left">
+        <button class="menu-btn" onclick="toggleSidebar()">
+            <i class="fas fa-bars"></i>
+        </button>
+        <div>
+            <div class="heading">Teachers Management</div>
+            <div class="breadcrumb">Dashboard / Teachers Management</div>
+        </div>
+    </div>
+
+    <div class="profile">
+        <div class="avatar"><i class="fas fa-user-tie"></i></div>
+        <div class="profile-name">
+            <div id="adminName">School Admin</div>
+            <div style="font-size:10px;color:var(--muted)">School Administrator</div>
+        </div>
+    </div>
+</header>
+
+<div class="content">
+
+    <section class="page-intro">
+        <div>
+            <h2>Teachers Management</h2>
+            <p>Manage teacher accounts and their school assignments.</p>
+        </div>
+
+        <button class="primary-btn" onclick="openCreateModal()">
+            <i class="fas fa-plus"></i> Register Teacher
+        </button>
+    </section>
+
+    <!-- STATISTICS -->
+
+    <section class="stats">
+
+        <div class="stat">
+            <div class="stat-icon blue"><i class="fas fa-users"></i></div>
+            <div class="stat-label">Total Teachers</div>
+            <div class="stat-value" id="totalTeachers">--</div>
+        </div>
+
+        <div class="stat">
+            <div class="stat-icon green"><i class="fas fa-user-check"></i></div>
+            <div class="stat-label">Active Teachers</div>
+            <div class="stat-value" id="activeTeachers">--</div>
+        </div>
+
+        <div class="stat">
+            <div class="stat-icon orange"><i class="fas fa-user-clock"></i></div>
+            <div class="stat-label">Unverified Teachers</div>
+            <div class="stat-value" id="unverifiedTeachers">--</div>
+        </div>
+
+        <div class="stat">
+            <div class="stat-icon purple"><i class="fas fa-user-slash"></i></div>
+            <div class="stat-label">Inactive Teachers</div>
+            <div class="stat-value" id="inactiveTeachers">--</div>
+        </div>
+
+    </section>
+
+    <!-- TEACHER TABLE -->
+
+    <section class="panel">
+
+        <div class="panel-heading">
+            <h3><i class="fas fa-users" style="color:var(--accent)"></i> School Teachers</h3>
+            <button class="secondary-btn" onclick="loadTeachers()">
+                <i class="fas fa-rotate"></i> Refresh
+            </button>
+        </div>
+
+        <div class="filters">
+
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input
+                    class="field"
+                    type="search"
+                    id="searchInput"
+                    placeholder="Search name, email or phone..."
+                >
+            </div>
+
+            <select class="field" id="statusFilter">
+                <option value="">All account statuses</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+            </select>
+
+            <select class="field" id="verificationFilter">
+                <option value="">All verification statuses</option>
+                <option value="verified">Verified</option>
+                <option value="unverified">Unverified</option>
+            </select>
+
+            <button class="secondary-btn" onclick="resetFilters()">
+                <i class="fas fa-filter-circle-xmark"></i> Reset
+            </button>
+
+        </div>
+
+        <div class="table-wrap">
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>TEACHER</th>
+                        <th>PHONE</th>
+                        <th>SUBJECTS</th>
+                        <th>CLASSES</th>
+                        <th>ACCOUNT</th>
+                        <th>VERIFICATION</th>
+                        <th>REGISTERED</th>
+                        <th>ACTIONS</th>
+                    </tr>
+                </thead>
+
+                <tbody id="teachersTable">
+                    <tr>
+                        <td colspan="8" class="empty">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            Loading teachers...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+        </div>
+
+        <div class="pagination">
+            <span id="resultCount">Loading records...</span>
+            <div class="page-buttons" id="pagination"></div>
+        </div>
+
+    </section>
+
+</div>
+
+<footer class="footer">
+    <span>© 2026 Fila Marks System</span>
+    <span>School Administration Portal</span>
+</footer>
+
+</main>
+</div>
+
+<!-- REGISTER / EDIT MODAL -->
+
+<div class="modal" id="teacherModal">
+
+    <div class="modal-box">
+
+        <div class="modal-header">
+            <h3 id="modalTitle">Register New Teacher</h3>
+            <button class="close-btn" onclick="closeModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <form id="teacherForm">
+
+            <div class="form-grid">
+
+                <div class="form-group full">
+                    <label>Full Name *</label>
+                    <input type="text" id="fullName" required
+                           placeholder="Enter teacher's full name">
+                </div>
+
+                <div class="form-group">
+                    <label>Email Address *</label>
+                    <input type="email" id="email" required
+                           placeholder="teacher@example.com">
+                </div>
+
+                <div class="form-group">
+                    <label>Phone Number</label>
+                    <input type="tel" id="phone"
+                           placeholder="Enter phone number">
+                </div>
+
+                <div class="form-group">
+                    <label>Gender</label>
+                    <select id="gender">
+                        <option value="">Select gender</option>
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Account Status</label>
+                    <select id="accountStatus">
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                    </select>
+                </div>
+
+            </div>
+
+            <div class="form-actions">
+                <button type="button" class="cancel-btn"
+                        onclick="closeModal()">Cancel</button>
+
+                <button type="submit" class="primary-btn" id="saveBtn">
+                    <i class="fas fa-save"></i> Save Teacher
+                </button>
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+<!-- DETAILS MODAL -->
+
+<div class="modal" id="detailsModal">
+    <div class="modal-box">
+
+        <div class="modal-header">
+            <h3>Teacher Information</h3>
+            <button class="close-btn" onclick="closeDetails()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <div id="teacherDetails"></div>
+
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+
+/* =====================================================
+   AUTHENTICATION
+===================================================== */
+
+const LOGIN_PAGE = "login.html";
+const token = localStorage.getItem("auth_token");
+
+function decodeToken(value) {
+    try {
+        const part = value.split(".")[1];
+        const normalized = part.replace(/-/g, "+").replace(/_/g, "/");
+
+        return JSON.parse(
+            decodeURIComponent(
+                atob(normalized)
+                .split("")
+                .map(c => "%" + c.charCodeAt(0).toString(16).padStart(2, "0"))
+                .join("")
+            )
+        );
+    } catch {
+        return null;
+    }
+}
+
+if (!token) {
+    location.replace(LOGIN_PAGE);
+    throw new Error("Authentication required");
+}
+
+const payload = decodeToken(token);
+
+if (!payload) {
+    localStorage.removeItem("auth_token");
+    location.replace(LOGIN_PAGE);
+    throw new Error("Invalid token");
+}
+
+const role = payload.role ||
+             payload.user?.role ||
+             payload.userRole;
+
+if (role !== "school_admin") {
+    document.body.innerHTML = `
+        <div style="padding:50px;text-align:center;font-family:Arial">
+            <h2>Access Restricted</h2>
+            <p>Only School Admins can access Teachers Management.</p>
+            <a href="${LOGIN_PAGE}">Return to Login</a>
+        </div>
+    `;
+    throw new Error("Unauthorized role");
+}
+
+const currentUser = {
+    name: payload.full_name ||
+          payload.name ||
+          payload.user?.full_name ||
+          "School Admin",
+    schoolId: payload.school_id ||
+              payload.user?.school_id ||
+              null
+};
+
+document.getElementById("loadingScreen").style.display = "none";
+document.getElementById("app").style.display = "block";
+
+document.getElementById("adminName").textContent = currentUser.name;
+
+/* =====================================================
+   STATE
+===================================================== */
+
+let teachers = [];
+let currentPage = 1;
+let editingId = null;
+
+const PAGE_SIZE = 10;
+
+const API = "/api/school-admin/users";
+
+const authHeaders = {
+    "Authorization": `Bearer ${token}`,
+    "Content-Type": "application/json"
+};
+
+/* =====================================================
+   SIDEBAR
+===================================================== */
+
+window.toggleSidebar = function() {
+    document.getElementById("sidebar").classList.toggle("show");
+    document.getElementById("overlay").classList.toggle("show");
+};
+
+/* =====================================================
+   LOAD TEACHERS
+===================================================== */
+
+/*
+GET /api/school-admin/users
+
+Expected response:
+
+{
+    "success": true,
+    "teachers": [
+        {
+            "id": 1,
+            "full_name": "Teacher Name",
+            "email": "teacher@example.com",
+            "phone": "07...",
+            "gender": "Male",
+            "status": "active",
+            "is_verified": true,
+            "subjects": ["English", "Mathematics"],
+            "classes": ["P5A", "P6A"],
+            "created_at": "2026-01-01"
+        }
+    ]
+}
+*/
+
+async function loadTeachers() {
+
+    const tbody = document.getElementById("teachersTable");
+
+    tbody.innerHTML = `
+        <tr><td colspan="8" class="empty">
+            <i class="fas fa-spinner fa-spin"></i> Loading teachers...
+        </td></tr>
+    `;
+
+    try {
+
+        const response = await fetch(API, {
+            headers: authHeaders
+        });
+
+        if (response.status === 401) {
+            location.replace(LOGIN_PAGE);
+            return;
+        }
+
+        if (response.status === 403) {
+            throw new Error("You are not authorized to access these records.");
+        }
+
+        if (!response.ok) {
+            throw new Error("Failed to load teachers: HTTP " + response.status);
+        }
+
+        const data = await response.json();
+
+        if (!data.success) {
+            throw new Error(data.message || "Unable to retrieve teachers");
+        }
+
+        teachers = data.teachers || [];
+
+        currentPage = 1;
+
+        renderStatistics();
+        renderTeachers();
+
+    } catch (error) {
+
+        console.error(error);
+
+        tbody.innerHTML = `
+            <tr><td colspan="8" class="empty">
+                ${escapeHTML(error.message)}
+            </td></tr>
+        `;
+
+        showToast(error.message);
+
+    }
+
+}
+
+window.loadTeachers = loadTeachers;
+
+/* =====================================================
+   STATISTICS
+===================================================== */
+
+function renderStatistics() {
+
+    const total = teachers.length;
+
+    const active = teachers.filter(
+        t => String(t.status).toLowerCase() === "active"
+    ).length;
+
+    const inactive = teachers.filter(
+        t => String(t.status).toLowerCase() === "inactive"
+    ).length;
+
+    const unverified = teachers.filter(
+        t => t.is_verified !== true
+    ).length;
+
+    document.getElementById("totalTeachers").textContent = total;
+    document.getElementById("activeTeachers").textContent = active;
+    document.getElementById("inactiveTeachers").textContent = inactive;
+    document.getElementById("unverifiedTeachers").textContent = unverified;
+
+}
+
+/* =====================================================
+   FILTERS
+===================================================== */
+
+const searchInput = document.getElementById("searchInput");
+const statusFilter = document.getElementById("statusFilter");
+const verificationFilter = document.getElementById("verificationFilter");
+
+[searchInput, statusFilter, verificationFilter].forEach(element => {
+    element.addEventListener("input", () => {
+        currentPage = 1;
+        renderTeachers();
+    });
+});
+
+window.resetFilters = function() {
+    searchInput.value = "";
+    statusFilter.value = "";
+    verificationFilter.value = "";
+    currentPage = 1;
+    renderTeachers();
+};
+
+function getFilteredTeachers() {
+
+    const search = searchInput.value.toLowerCase().trim();
+    const status = statusFilter.value;
+    const verification = verificationFilter.value;
+
+    return teachers.filter(t => {
+
+        const matchesSearch =
+            String(t.full_name || "").toLowerCase().includes(search) ||
+            String(t.email || "").toLowerCase().includes(search) ||
+            String(t.phone || "").toLowerCase().includes(search);
+
+        const matchesStatus = !status ||
+            String(t.status || "").toLowerCase() === status;
+
+        const matchesVerification = !verification ||
+            (verification === "verified" && t.is_verified === true) ||
+            (verification === "unverified" && t.is_verified !== true);
+
+        return matchesSearch && matchesStatus && matchesVerification;
+
+    });
+
+}
+
+/* =====================================================
+   RENDER TEACHERS
+===================================================== */
+
+function renderTeachers() {
+
+    const tbody = document.getElementById("teachersTable");
+    const filtered = getFilteredTeachers();
+
+    const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+
+    if (totalPages > 0 && currentPage > totalPages) {
+        currentPage = totalPages;
+    }
+
+    const start = (currentPage - 1) * PAGE_SIZE;
+    const pageData = filtered.slice(start, start + PAGE_SIZE);
+
+    if (!pageData.length) {
+
+        tbody.innerHTML = `
+            <tr><td colspan="8" class="empty">
+                <i class="fas fa-users"></i><br><br>
+                No teachers found.
+            </td></tr>
+        `;
+
+    } else {
+
+        tbody.innerHTML = pageData.map(t => {
+
+            const active = String(t.status).toLowerCase() === "active";
+            const verified = t.is_verified === true;
+
+            const initials = String(t.full_name || "T")
+                .trim()
+                .split(/\s+/)
+                .slice(0,2)
+                .map(x => x.charAt(0))
+                .join("")
+                .toUpperCase();
+
+            return `
+                <tr>
+
+                    <td>
+                        <div class="teacher-cell">
+                            <div class="teacher-avatar">
+                                ${escapeHTML(initials)}
+                            </div>
+                            <div>
+                                <div class="teacher-name">
+                                    ${escapeHTML(t.full_name)}
+                                </div>
+                                <div class="teacher-email">
+                                    ${escapeHTML(t.email)}
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+
+                    <td>${escapeHTML(t.phone || "Not provided")}</td>
+
+                    <td>${escapeHTML(formatList(t.subjects))}</td>
+
+                    <td>${escapeHTML(formatList(t.classes))}</td>
+
+                    <td>
+                        <span class="badge ${active ? "active" : "inactive"}">
+                            ${active ? "Active" : "Inactive"}
+                        </span>
+                    </td>
+
+                    <td>
+                        <span class="badge ${verified ? "verified" : "unverified"}">
+                            ${verified ? "Verified" : "Unverified"}
+                        </span>
+                    </td>
+
+                    <td>${escapeHTML(formatDate(t.created_at))}</td>
+
+                    <td>
+                        <button class="action-btn"
+                            title="View details"
+                            onclick="viewTeacher(${Number(t.id)})">
+                            <i class="fas fa-eye"></i>
+                        </button>
+
+                        <button class="action-btn"
+                            title="Edit teacher"
+                            onclick="editTeacher(${Number(t.id)})">
+                            <i class="fas fa-pen"></i>
+                        </button>
+
+                        <button class="action-btn"
+                            title="${active ? "Deactivate" : "Activate"}"
+                            onclick="toggleTeacherStatus(${Number(t.id)})">
+                            <i class="fas ${active ? "fa-user-slash" : "fa-user-check"}"></i>
+                        </button>
+                    </td>
+
+                </tr>
+            `;
+
+        }).join("");
+
+    }
+
+    document.getElementById("resultCount").textContent =
+        `Showing ${filtered.length ? start + 1 : 0}–${Math.min(start + PAGE_SIZE, filtered.length)} of ${filtered.length} teachers`;
+
+    renderPagination(totalPages);
+
+}
+
+/* =====================================================
+   PAGINATION
+===================================================== */
+
+function renderPagination(totalPages) {
+
+    const container = document.getElementById("pagination");
+
+    if (totalPages <= 1) {
+        container.innerHTML = "";
+        return;
+    }
+
+    let html = `
+        <button onclick="changePage(${currentPage - 1})"
+            ${currentPage === 1 ? "disabled" : ""}>
+            <i class="fas fa-chevron-left"></i>
+        </button>
+    `;
+
+    for (let i = 1; i <= totalPages; i++) {
+
+        if (totalPages > 7 && Math.abs(i - currentPage) > 2 &&
+            i !== 1 && i !== totalPages) {
+            continue;
+        }
+
+        html += `
+            <button class="${i === currentPage ? "selected" : ""}"
+                onclick="changePage(${i})">${i}</button>
+        `;
+
+    }
+
+    html += `
+        <button onclick="changePage(${currentPage + 1})"
+            ${currentPage === totalPages ? "disabled" : ""}>
+            <i class="fas fa-chevron-right"></i>
+        </button>
+    `;
+
+    container.innerHTML = html;
+
+}
+
+window.changePage = function(page) {
+    const total = Math.ceil(getFilteredTeachers().length / PAGE_SIZE);
+
+    if (page < 1 || page > total) return;
+
+    currentPage = page;
+    renderTeachers();
+};
+
+/* =====================================================
+   CREATE TEACHER
+===================================================== */
+
+window.openCreateModal = function() {
+
+    editingId = null;
+
+    document.getElementById("teacherForm").reset();
+    document.getElementById("modalTitle").textContent = "Register New Teacher";
+    document.getElementById("saveBtn").innerHTML =
+        '<i class="fas fa-save"></i> Save Teacher';
+
+    document.getElementById("email").disabled = false;
+    document.getElementById("teacherModal").classList.add("show");
+
+};
+
+/* =====================================================
+   EDIT TEACHER
+===================================================== */
+
+window.editTeacher = function(id) {
+
+    const teacher = teachers.find(t => Number(t.id) === id);
+
+    if (!teacher) return;
+
+    editingId = id;
+
+    document.getElementById("fullName").value = teacher.full_name || "";
+    document.getElementById("email").value = teacher.email || "";
+    document.getElementById("phone").value = teacher.phone || "";
+    document.getElementById("gender").value = teacher.gender || "";
+    document.getElementById("accountStatus").value =
+        String(teacher.status || "active").toLowerCase();
+
+    document.getElementById("email").disabled = true;
+
+    document.getElementById("modalTitle").textContent = "Edit Teacher Information";
+    document.getElementById("saveBtn").innerHTML =
+        '<i class="fas fa-save"></i> Update Teacher';
+
+    document.getElementById("teacherModal").classList.add("show");
+
+};
+
+/* =====================================================
+   SAVE TEACHER
+===================================================== */
+
+/*
+POST /api/school-admin/users
+
+New teacher:
+
+{
+    "full_name": "...",
+    "email": "...",
+    "phone": "...",
+    "gender": "...",
+    "status": "active"
+}
+
+PUT /api/school-admin/users/:id
+
+Updates the selected teacher.
+
+The backend must assign school_id from the authenticated
+School Admin session, never from an untrusted form field.
+*/
+
+document.getElementById("teacherForm").addEventListener("submit", async e => {
+
+    e.preventDefault();
+
+    const saveBtn = document.getElementById("saveBtn");
+
+    const body = {
+        full_name: document.getElementById("fullName").value.trim(),
+        email: document.getElementById("email").value.trim(),
+        phone: document.getElementById("phone").value.trim(),
+        gender: document.getElementById("gender").value,
+        status: document.getElementById("accountStatus").value
+    };
+
+    if (!body.full_name || !body.email) {
+        showToast("Full name and email are required.");
+        return;
+    }
+
+    saveBtn.disabled = true;
+    saveBtn.textContent = "Saving...";
+
+    try {
+
+        const url = editingId
+            ? `${API}/${encodeURIComponent(editingId)}`
+            : API;
+
+        const response = await fetch(url, {
+            method: editingId ? "PUT" : "POST",
+            headers: authHeaders,
+            body: JSON.stringify(body)
+        });
+
+        if (response.status === 401) {
+            location.replace(LOGIN_PAGE);
+            return;
+        }
+
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+            throw new Error(data.message || "Unable to save teacher.");
+        }
+
+        closeModal();
+
+        showToast(editingId
+            ? "Teacher information updated successfully."
+            : "Teacher registered successfully."
+        );
+
+        await loadTeachers();
+
+    } catch (error) {
+
+        showToast(error.message);
+
+    } finally {
+
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = '<i class="fas fa-save"></i> Save Teacher';
+
+    }
+
+});
+
+/* =====================================================
+   VIEW TEACHER
+===================================================== */
+
+window.viewTeacher = function(id) {
+
+    const t = teachers.find(x => Number(x.id) === id);
+
+    if (!t) return;
+
+    document.getElementById("teacherDetails").innerHTML = `
+
+        <div style="text-align:center;margin-bottom:22px">
+            <div style="
+                width:65px;height:65px;
+                background:#e9f2ff;color:#2878d0;
+                border-radius:50%;display:grid;
+                place-items:center;margin:auto;
+                font-size:25px
+            ">
+                <i class="fas fa-user"></i>
+            </div>
+            <h3 style="margin-top:12px">${escapeHTML(t.full_name)}</h3>
+            <p style="font-size:11px;color:#8291a2;margin-top:5px">
+                ${escapeHTML(t.email)}
+            </p>
+        </div>
+
+        ${detailRow("Phone", t.phone)}
+        ${detailRow("Gender", t.gender)}
+        ${detailRow("Account Status", t.status)}
+        ${detailRow("Verification", t.is_verified ? "Verified" : "Unverified")}
+        ${detailRow("Subjects", formatList(t.subjects))}
+        ${detailRow("Classes", formatList(t.classes))}
+        ${detailRow("Registration Date", formatDate(t.created_at))}
+
+    `;
+
+    document.getElementById("detailsModal").classList.add("show");
+
+};
+
+function detailRow(label, value) {
+
+    return `
+        <div style="
+            display:flex;justify-content:space-between;
+            gap:15px;padding:12px 0;
+            border-bottom:1px solid #e6ecf2;
+            font-size:12px
+        ">
+            <strong>${escapeHTML(label)}</strong>
+            <span style="color:#8291a2;text-align:right">
+                ${escapeHTML(value || "Not provided")}
+            </span>
+        </div>
+    `;
+
+}
+
+/* =====================================================
+   ACTIVATE / DEACTIVATE
+===================================================== */
+
+/*
+PATCH /api/school-admin/users/:id/status
+
+{
+    "status": "active" or "inactive"
+}
+
+The backend must verify that the teacher belongs
+to the authenticated School Admin's school.
+*/
+
+window.toggleTeacherStatus = async function(id) {
+
+    const teacher = teachers.find(t => Number(t.id) === id);
+
+    if (!teacher) return;
+
+    const isActive = String(teacher.status).toLowerCase() === "active";
+
+    const newStatus = isActive ? "inactive" : "active";
+
+    if (!confirm(
+        `Are you sure you want to ${isActive ? "deactivate" : "activate"} ${teacher.full_name}?`
+    )) return;
+
+    try {
+
+        const response = await fetch(
+            `${API}/${encodeURIComponent(id)}/status`,
+            {
+                method: "PATCH",
+                headers: authHeaders,
+                body: JSON.stringify({status:newStatus})
+            }
+        );
+
+        if (response.status === 401) {
+            location.replace(LOGIN_PAGE);
+            return;
+        }
+
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+            throw new Error(data.message || "Unable to update teacher status.");
+        }
+
+        showToast(`Teacher ${newStatus} successfully.`);
+        await loadTeachers();
+
+    } catch (error) {
+
+        showToast(error.message);
+
+    }
+
+};
+
+/* =====================================================
+   MODALS
+===================================================== */
+
+window.closeModal = function() {
+    document.getElementById("teacherModal").classList.remove("show");
+    document.getElementById("email").disabled = false;
+};
+
+window.closeDetails = function() {
+    document.getElementById("detailsModal").classList.remove("show");
+};
+
+/* =====================================================
+   HELPERS
+===================================================== */
+
+function formatList(value) {
+
+    if (Array.isArray(value)) {
+        return value.length ? value.join(", ") : "Not assigned";
+    }
+
+    return value || "Not assigned";
+
+}
+
+function formatDate(value) {
+
+    if (!value) return "—";
+
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) return "—";
+
+    return date.toLocaleDateString("en-GB");
+
+}
+
+function escapeHTML(value) {
+
+    return String(value ?? "").replace(
+        /[&<>"']/g,
+        c => ({
+            "&":"&amp;",
+            "<":"&lt;",
+            ">":"&gt;",
+            '"':"&quot;",
+            "'":"&#039;"
+        })[c]
+    );
+
+}
+
+function showToast(message) {
+
+    const toast = document.getElementById("toast");
+
+    toast.textContent = message;
+    toast.classList.add("show");
+
+    setTimeout(() => toast.classList.remove("show"), 3500);
+
+}
+
+/* =====================================================
+   START
+===================================================== */
+
+loadTeachers();
+
+</script>
+
+</body>
+</html>
