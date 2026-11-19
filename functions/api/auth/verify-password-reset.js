@@ -92,17 +92,19 @@ export async function onRequestPost(context) {
             SELECT id
             FROM users
             WHERE
-                (
-                    $1 = TRUE
-                    AND LOWER(email) = LOWER($2)
-                )
-                OR
-                (
-                    $1 = FALSE
-                    AND phone = $2
-                )
-              AND email_verified = TRUE
-              AND status = 'active'
+    (
+        (
+            $1 = TRUE
+            AND LOWER(email) = LOWER($2)
+        )
+        OR
+        (
+            $1 = FALSE
+            AND phone = $2
+        )
+    )
+    AND email_verified = TRUE
+    AND status = 'active'
             LIMIT 1
             FOR UPDATE
         `, [isEmail, accountIdentifier]);
