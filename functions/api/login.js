@@ -1,6 +1,5 @@
 
 import { Client } from "pg";
-import bcrypt from "bcryptjs";
 import { SignJWT } from "jose";
 
 export async function onRequest(context) {
@@ -94,13 +93,10 @@ export async function onRequest(context) {
         }
 
         /* =============================================
-           5. VERIFY PASSWORD
+           5. VERIFY PASSWORD AS PLAIN TEXT
         ============================================= */
 
-        const passwordMatches = await bcrypt.compare(
-            password,
-            user.password_hash
-        );
+        const passwordMatches = password === user.password_hash;
 
         if (!passwordMatches) {
             return Response.json({
