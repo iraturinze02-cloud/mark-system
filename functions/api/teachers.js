@@ -1,6 +1,4 @@
 
-import bcrypt from "bcryptjs";
-
 import {
     connectDB,
     requireSchoolAdmin,
@@ -14,7 +12,6 @@ import {
     sendEmail,
     verificationEmail
 } from "../_email.js";
-
 
 /* =====================================================
    GET TEACHERS
@@ -97,7 +94,6 @@ export async function onRequestGet(context) {
     }
 }
 
-
 /* =====================================================
    CREATE TEACHER
 ===================================================== */
@@ -125,7 +121,6 @@ export async function onRequestPost(context) {
     const staffNumber =
         String(data.staff_number || "").trim() || null;
 
-
     // Validate required fields.
 
     if (!fullName || !phone || !email || !password) {
@@ -134,7 +129,6 @@ export async function onRequestPost(context) {
             message: "Full name, phone number, email and password are required."
         }, 400);
     }
-
 
     // Validate field lengths.
 
@@ -150,7 +144,6 @@ export async function onRequestPost(context) {
         }, 400);
     }
 
-
     // Validate email format.
 
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
@@ -159,7 +152,6 @@ export async function onRequestPost(context) {
             message: "Enter a valid email address."
         }, 400);
     }
-
 
     // Validate password.
 
@@ -170,7 +162,6 @@ export async function onRequestPost(context) {
         }, 400);
     }
 
-
     let client;
     let transactionStarted = false;
 
@@ -179,7 +170,6 @@ export async function onRequestPost(context) {
 
         await client.query("BEGIN");
         transactionStarted = true;
-
 
         // Check duplicate phone number.
 
@@ -201,7 +191,6 @@ export async function onRequestPost(context) {
             }, 409);
         }
 
-
         // Check duplicate email address.
 
         const duplicateEmail = await client.query(
@@ -222,14 +211,7 @@ export async function onRequestPost(context) {
             }, 409);
         }
 
-
-        // Hash password.
-
-        const passwordHash = await bcrypt.hash(password, 12);
-
-
-        // Create teacher user account.
-        // New teacher must verify email before login.
+        // Store password directly.
 
         const userResult = await client.query(
             `INSERT INTO users (
@@ -256,13 +238,12 @@ export async function onRequestPost(context) {
                 fullName,
                 phone,
                 email,
-                passwordHash,
+                password,
                 auth.schoolId
             ]
         );
 
         const user = userResult.rows[0];
-
 
         // Create teacher profile.
 
@@ -281,13 +262,11 @@ export async function onRequestPost(context) {
             ]
         );
 
-
         // Generate and save email verification OTP.
 
         const otp = generateOtp();
 
         await saveOtp(client, user.id, otp);
-
 
         // Send verification email.
 
@@ -304,12 +283,10 @@ export async function onRequestPost(context) {
             text: emailContent.text
         });
 
-
         // Commit transaction.
 
         await client.query("COMMIT");
         transactionStarted = false;
-
 
         return json({
             success: true,
@@ -324,7 +301,6 @@ export async function onRequestPost(context) {
             }
         }, 201);
 
-
     } catch (error) {
 
         if (client && transactionStarted) {
@@ -333,7 +309,6 @@ export async function onRequestPost(context) {
 
         console.error("Create teacher error:", error);
 
-
         if (error.code === "23505") {
             return json({
                 success: false,
@@ -341,12 +316,10 @@ export async function onRequestPost(context) {
             }, 409);
         }
 
-
         return json({
             success: false,
             message: "Failed to create teacher. Please try again."
         }, 500);
-
 
     } finally {
         if (client) await client.end().catch(() => {});
