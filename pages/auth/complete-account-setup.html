@@ -1,0 +1,1606 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#123b70">
+
+    <title>Complete Account Setup | Fila Marks System</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #174b88;
+            --primary-dark: #103762;
+            --primary-light: #eaf2fc;
+            --accent: #2878d0;
+            --success: #168653;
+            --danger: #dc3545;
+            --text: #172b45;
+            --muted: #718096;
+            --border: #e2e8f0;
+            --background: #f3f6fb;
+            --white: #ffffff;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--background);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* HEADER */
+
+        .header {
+            height: 76px;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 7%;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-icon {
+            width: 43px;
+            height: 43px;
+            border-radius: 12px;
+            background: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+        }
+
+        .brand-name {
+            font-size: 19px;
+            font-weight: 800;
+            color: var(--primary-dark);
+            letter-spacing: -0.5px;
+        }
+
+        .brand-subtitle {
+            font-size: 10px;
+            color: var(--muted);
+            margin-top: 3px;
+            letter-spacing: 1.3px;
+            font-weight: 600;
+        }
+
+        .header-right {
+            color: var(--muted);
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .header-right i {
+            color: var(--success);
+        }
+
+        /* MAIN */
+
+        .main {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 45px 18px;
+        }
+
+        .setup-container {
+            width: 100%;
+            max-width: 530px;
+        }
+
+        .welcome {
+            text-align: center;
+            margin-bottom: 27px;
+        }
+
+        .welcome-icon {
+            width: 65px;
+            height: 65px;
+            background: var(--primary-light);
+            color: var(--primary);
+            border-radius: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 27px;
+            margin: 0 auto 18px;
+        }
+
+        .welcome h1 {
+            font-size: 27px;
+            font-weight: 800;
+            letter-spacing: -0.8px;
+            margin-bottom: 10px;
+        }
+
+        .welcome p {
+            color: var(--muted);
+            font-size: 13px;
+            line-height: 1.7;
+            max-width: 410px;
+            margin: auto;
+        }
+
+        /* CARD */
+
+        .setup-card {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 17px;
+            padding: 32px;
+            box-shadow: 0 12px 40px rgba(22, 48, 83, 0.06);
+        }
+
+        /* PROGRESS */
+
+        .progress-area {
+            margin-bottom: 30px;
+        }
+
+        .progress-steps {
+            display: flex;
+            justify-content: space-between;
+            position: relative;
+            margin-bottom: 12px;
+        }
+
+        .progress-steps::before {
+            content: "";
+            position: absolute;
+            height: 2px;
+            background: #e5eaf1;
+            top: 16px;
+            left: 12%;
+            right: 12%;
+        }
+
+        .progress-line {
+            position: absolute;
+            height: 2px;
+            background: var(--primary);
+            top: 16px;
+            left: 12%;
+            width: 0%;
+            transition: width .3s ease;
+        }
+
+        .step {
+            z-index: 1;
+            display: flex;
+            align-items: center;
+            flex-direction: column;
+            gap: 8px;
+            width: 33.33%;
+        }
+
+        .step-circle {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            border: 2px solid #dce3ed;
+            background: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #8794a6;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .step.active .step-circle,
+        .step.completed .step-circle {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .step-label {
+            font-size: 10px;
+            font-weight: 600;
+            color: var(--muted);
+            text-align: center;
+        }
+
+        .step.active .step-label {
+            color: var(--primary);
+        }
+
+        /* FORM CONTENT */
+
+        .form-section {
+            display: none;
+        }
+
+        .form-section.active {
+            display: block;
+            animation: appear .3s ease;
+        }
+
+        @keyframes appear {
+            from {
+                opacity: 0;
+                transform: translateY(7px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .section-title {
+            font-size: 19px;
+            font-weight: 800;
+            margin-bottom: 7px;
+        }
+
+        .section-description {
+            font-size: 12px;
+            color: var(--muted);
+            line-height: 1.7;
+            margin-bottom: 25px;
+        }
+
+        .form-group {
+            margin-bottom: 19px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 12px;
+            font-weight: 700;
+            margin-bottom: 9px;
+            color: #33445a;
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        .input-wrapper > i:first-child {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #8a9aaf;
+            font-size: 14px;
+        }
+
+        .form-control {
+            width: 100%;
+            height: 49px;
+            border: 1px solid var(--border);
+            border-radius: 9px;
+            padding: 0 43px;
+            font-family: inherit;
+            font-size: 13px;
+            color: var(--text);
+            outline: none;
+            transition: .2s;
+            background: white;
+        }
+
+        .form-control:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(40, 120, 208, .10);
+        }
+
+        .form-control::placeholder {
+            color: #a4afbd;
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: #8291a5;
+            font-size: 14px;
+            background: none;
+            border: none;
+        }
+
+        /* INFORMATION BOX */
+
+        .info-box {
+            display: flex;
+            gap: 11px;
+            padding: 13px;
+            border-radius: 9px;
+            background: #f0f6fd;
+            border: 1px solid #dceafa;
+            margin-bottom: 22px;
+        }
+
+        .info-box i {
+            color: var(--accent);
+            margin-top: 2px;
+        }
+
+        .info-box p {
+            color: #536b89;
+            font-size: 11px;
+            line-height: 1.7;
+        }
+
+        /* EMAIL DISPLAY */
+
+        .account-email {
+            padding: 15px;
+            background: #f7f9fc;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 22px;
+        }
+
+        .account-email i {
+            color: var(--primary);
+            font-size: 19px;
+        }
+
+        .account-email small {
+            color: var(--muted);
+            font-size: 10px;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .account-email strong {
+            font-size: 12px;
+            overflow-wrap: anywhere;
+        }
+
+        /* OTP */
+
+        .otp-inputs {
+            display: flex;
+            gap: 9px;
+            justify-content: space-between;
+            margin: 22px 0;
+        }
+
+        .otp-input {
+            width: 48px;
+            height: 53px;
+            border: 1px solid var(--border);
+            border-radius: 9px;
+            font-size: 21px;
+            font-weight: 800;
+            text-align: center;
+            outline: none;
+            color: var(--primary);
+        }
+
+        .otp-input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(40, 120, 208, .10);
+        }
+
+        .resend {
+            text-align: center;
+            font-size: 11px;
+            color: var(--muted);
+            margin-bottom: 20px;
+        }
+
+        .resend button {
+            border: none;
+            background: none;
+            color: var(--primary);
+            font-weight: 700;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        /* PASSWORD STRENGTH */
+
+        .password-rules {
+            margin-top: 12px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 9px;
+        }
+
+        .password-rules span {
+            font-size: 10px;
+            color: var(--muted);
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .password-rules i {
+            font-size: 9px;
+        }
+
+        .password-rules .valid {
+            color: var(--success);
+        }
+
+        /* BUTTONS */
+
+        .button {
+            width: 100%;
+            height: 49px;
+            border: none;
+            border-radius: 9px;
+            background: var(--primary);
+            color: white;
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: .2s;
+        }
+
+        .button:hover {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+
+        .button:disabled {
+            opacity: .65;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .back-button {
+            width: 100%;
+            margin-top: 12px;
+            height: 43px;
+            background: white;
+            border: 1px solid var(--border);
+            color: #52647a;
+            border-radius: 9px;
+            font-family: inherit;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .back-button:hover {
+            background: #f7f9fc;
+        }
+
+        /* ALERTS */
+
+        .message {
+            display: none;
+            padding: 12px 14px;
+            font-size: 11px;
+            line-height: 1.6;
+            border-radius: 8px;
+            margin-bottom: 18px;
+        }
+
+        .message.error {
+            display: block;
+            background: #fff0f1;
+            color: #c32d3b;
+            border: 1px solid #ffd5d9;
+        }
+
+        .message.success {
+            display: block;
+            background: #edfaf3;
+            color: #168653;
+            border: 1px solid #ccebd9;
+        }
+
+        .message.info {
+            display: block;
+            background: #edf5ff;
+            color: #235b9c;
+            border: 1px solid #d5e6fa;
+        }
+
+        /* SUCCESS SCREEN */
+
+        .success-screen {
+            display: none;
+            text-align: center;
+            padding: 12px 0;
+        }
+
+        .success-icon {
+            width: 80px;
+            height: 80px;
+            background: #e5f7ed;
+            color: var(--success);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 35px;
+            margin: 0 auto 22px;
+        }
+
+        .success-screen h2 {
+            font-size: 23px;
+            margin-bottom: 10px;
+        }
+
+        .success-screen p {
+            color: var(--muted);
+            font-size: 12px;
+            line-height: 1.8;
+            margin-bottom: 25px;
+        }
+
+        /* FOOTER */
+
+        .footer {
+            text-align: center;
+            padding: 22px 15px;
+            font-size: 10px;
+            color: var(--muted);
+        }
+
+        .footer a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 700;
+        }
+
+        /* RESPONSIVE */
+
+        @media(max-width: 600px) {
+            .header {
+                height: 66px;
+                padding: 0 17px;
+            }
+
+            .brand-name {
+                font-size: 16px;
+            }
+
+            .header-right {
+                font-size: 10px;
+            }
+
+            .main {
+                padding: 28px 14px;
+                align-items: flex-start;
+            }
+
+            .welcome {
+                margin-bottom: 22px;
+            }
+
+            .welcome h1 {
+                font-size: 23px;
+            }
+
+            .setup-card {
+                padding: 23px 19px;
+            }
+
+            .otp-inputs {
+                gap: 5px;
+            }
+
+            .otp-input {
+                width: 42px;
+                height: 49px;
+            }
+        }
+
+        @media(max-width: 360px) {
+            .step-label {
+                font-size: 9px;
+            }
+
+            .password-rules {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<header class="header">
+
+    <div class="brand">
+        <div class="brand-icon">
+            <i class="fas fa-graduation-cap"></i>
+        </div>
+
+        <div>
+            <div class="brand-name">Fila Marks</div>
+            <div class="brand-subtitle">SYSTEM</div>
+        </div>
+    </div>
+
+    <div class="header-right">
+        <i class="fas fa-shield-halved"></i>
+        Account Setup
+    </div>
+
+</header>
+
+
+<main class="main">
+
+    <div class="setup-container">
+
+        <div class="welcome">
+
+            <div class="welcome-icon">
+                <i class="fas fa-user-check"></i>
+            </div>
+
+            <h1>Complete Your Account</h1>
+
+            <p>
+                Your account has been created by an administrator.
+                Complete the remaining steps to activate your account
+                and access the Fila Marks System.
+            </p>
+
+        </div>
+
+
+        <div class="setup-card">
+
+            <!-- PROGRESS -->
+
+            <div class="progress-area" id="progressArea">
+
+                <div class="progress-steps">
+
+                    <div class="progress-line" id="progressLine"></div>
+
+                    <div class="step active" id="step1">
+                        <div class="step-circle">1</div>
+                        <span class="step-label">Identify</span>
+                    </div>
+
+                    <div class="step" id="step2">
+                        <div class="step-circle">2</div>
+                        <span class="step-label">Verify</span>
+                    </div>
+
+                    <div class="step" id="step3">
+                        <div class="step-circle">3</div>
+                        <span class="step-label">Finish</span>
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div id="message" class="message"></div>
+
+
+            <!-- STEP 1 -->
+
+            <section class="form-section active" id="section1">
+
+                <h2 class="section-title">Find Your Account</h2>
+
+                <p class="section-description">
+                    Enter the email address or phone number registered
+                    by your administrator.
+                </p>
+
+
+                <div class="form-group">
+
+                    <label for="identifier">
+                        Email Address or Phone Number
+                    </label>
+
+                    <div class="input-wrapper">
+
+                        <i class="fas fa-user"></i>
+
+                        <input
+                            type="text"
+                            id="identifier"
+                            class="form-control"
+                            placeholder="Enter email or phone number"
+                            autocomplete="username"
+                            required
+                        >
+
+                    </div>
+
+                </div>
+
+
+                <div class="info-box">
+
+                    <i class="fas fa-circle-info"></i>
+
+                    <p>
+                        Use the same phone number or email address
+                        that your administrator used when creating
+                        your account.
+                    </p>
+
+                </div>
+
+
+                <button class="button" id="findAccountBtn"
+                    onclick="findAccount()">
+
+                    Continue
+                    <i class="fas fa-arrow-right"></i>
+
+                </button>
+
+            </section>
+
+
+            <!-- STEP 2 -->
+
+            <section class="form-section" id="section2">
+
+                <h2 class="section-title">Verify Your Account</h2>
+
+                <p class="section-description">
+                    We need to confirm that you own this account.
+                    Enter the verification code sent to your registered email.
+                </p>
+
+
+                <div class="account-email">
+
+                    <i class="fas fa-envelope-circle-check"></i>
+
+                    <div>
+                        <small>Verification code sent to</small>
+                        <strong id="displayEmail">user@example.com</strong>
+                    </div>
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label>Enter 6-Digit Verification Code</label>
+
+                    <div class="otp-inputs">
+
+                        <input class="otp-input" maxlength="1"
+                            inputmode="numeric" autocomplete="one-time-code">
+
+                        <input class="otp-input" maxlength="1"
+                            inputmode="numeric">
+
+                        <input class="otp-input" maxlength="1"
+                            inputmode="numeric">
+
+                        <input class="otp-input" maxlength="1"
+                            inputmode="numeric">
+
+                        <input class="otp-input" maxlength="1"
+                            inputmode="numeric">
+
+                        <input class="otp-input" maxlength="1"
+                            inputmode="numeric">
+
+                    </div>
+
+                </div>
+
+
+                <div class="resend">
+                    Didn't receive the code?
+                    <button onclick="resendCode()" id="resendBtn">
+                        Resend code
+                    </button>
+                </div>
+
+
+                <button class="button" id="verifyBtn"
+                    onclick="verifyCode()">
+
+                    Verify Account
+                    <i class="fas fa-check"></i>
+
+                </button>
+
+
+                <button class="back-button" onclick="goToStep(1)">
+                    <i class="fas fa-arrow-left"></i>
+                    Change Email or Phone
+                </button>
+
+            </section>
+
+
+            <!-- STEP 3 -->
+
+            <section class="form-section" id="section3">
+
+                <h2 class="section-title">Set Your Password</h2>
+
+                <p class="section-description">
+                    Your account has been verified.
+                    You can now choose the password you will use
+                    to access the Fila Marks System.
+                </p>
+
+
+                <div class="form-group">
+
+                    <label for="newPassword">New Password</label>
+
+                    <div class="input-wrapper">
+
+                        <i class="fas fa-lock"></i>
+
+                        <input
+                            type="password"
+                            id="newPassword"
+                            class="form-control"
+                            placeholder="Enter your password"
+                            autocomplete="new-password"
+                        >
+
+                        <button type="button"
+                            class="toggle-password"
+                            onclick="togglePassword('newPassword', this)">
+                            <i class="fas fa-eye"></i>
+                        </button>
+
+                    </div>
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label for="confirmPassword">
+                        Confirm Password
+                    </label>
+
+                    <div class="input-wrapper">
+
+                        <i class="fas fa-lock"></i>
+
+                        <input
+                            type="password"
+                            id="confirmPassword"
+                            class="form-control"
+                            placeholder="Re-enter your password"
+                            autocomplete="new-password"
+                        >
+
+                        <button type="button"
+                            class="toggle-password"
+                            onclick="togglePassword('confirmPassword', this)">
+                            <i class="fas fa-eye"></i>
+                        </button>
+
+                    </div>
+
+                </div>
+
+
+                <div class="info-box">
+
+                    <i class="fas fa-shield-halved"></i>
+
+                    <p>
+                        Choose a password that you can remember.
+                        You may also keep the password already
+                        provided by your administrator.
+                    </p>
+
+                </div>
+
+
+                <button class="button" id="finishBtn"
+                    onclick="completeSetup()">
+
+                    Complete Account Setup
+                    <i class="fas fa-arrow-right"></i>
+
+                </button>
+
+
+                <button class="back-button" onclick="goToStep(2)">
+                    <i class="fas fa-arrow-left"></i>
+                    Back
+                </button>
+
+            </section>
+
+
+            <!-- SUCCESS -->
+
+            <section class="success-screen" id="successScreen">
+
+                <div class="success-icon">
+                    <i class="fas fa-check"></i>
+                </div>
+
+                <h2>Account Successfully Activated!</h2>
+
+                <p>
+                    Congratulations! Your account setup is complete.
+                    You can now sign in to the Fila Marks System
+                    using your registered email or phone number
+                    and your password.
+                </p>
+
+                <button class="button" onclick="goToLogin()">
+
+                    Continue to Login
+                    <i class="fas fa-arrow-right"></i>
+
+                </button>
+
+            </section>
+
+        </div>
+
+    </div>
+
+</main>
+
+
+<footer class="footer">
+
+    <p>
+        &copy; <span id="year"></span> Fila Marks System.
+        All rights reserved.
+    </p>
+
+    <p style="margin-top:8px;">
+        Need help?
+        <a href="mailto:support@filagrades.online">
+            Contact Support
+        </a>
+    </p>
+
+</footer>
+
+
+<script>
+
+    /* =====================================================
+       API CONFIGURATION
+
+       Connect these endpoints to your Cloudflare Functions.
+    ===================================================== */
+
+    const API = {
+
+        FIND_ACCOUNT: "/api/account-setup/find",
+
+        SEND_CODE: "/api/account-setup/send-code",
+
+        VERIFY_CODE: "/api/account-setup/verify-code",
+
+        COMPLETE_SETUP: "/api/account-setup/complete"
+
+    };
+
+
+    /* =====================================================
+       STATE
+    ===================================================== */
+
+    let currentStep = 1;
+
+    let accountData = null;
+
+    let setupToken = null;
+
+    let resendCountdown = null;
+
+
+    /* =====================================================
+       ELEMENTS
+    ===================================================== */
+
+    const messageBox = document.getElementById("message");
+
+
+    document.getElementById("year").textContent =
+        new Date().getFullYear();
+
+
+    /* =====================================================
+       MESSAGE HANDLER
+    ===================================================== */
+
+    function showMessage(message, type = "error") {
+
+        messageBox.textContent = message;
+
+        messageBox.className = "message " + type;
+
+        messageBox.style.display = "block";
+
+    }
+
+
+    function clearMessage() {
+
+        messageBox.textContent = "";
+
+        messageBox.className = "message";
+
+        messageBox.style.display = "none";
+
+    }
+
+
+    /* =====================================================
+       API REQUEST
+    ===================================================== */
+
+    async function apiRequest(url, data) {
+
+        const response = await fetch(url, {
+
+            method: "POST",
+
+            headers: {
+                "Content-Type": "application/json"
+            },
+
+            credentials: "same-origin",
+
+            body: JSON.stringify(data)
+
+        });
+
+        const result = await response.json().catch(() => ({}));
+
+        if (!response.ok || result.success === false) {
+
+            throw new Error(
+                result.message || "Something went wrong. Please try again."
+            );
+
+        }
+
+        return result;
+
+    }
+
+
+    /* =====================================================
+       STEP NAVIGATION
+    ===================================================== */
+
+    function goToStep(step) {
+
+        currentStep = step;
+
+        clearMessage();
+
+        document.querySelectorAll(".form-section").forEach(section => {
+
+            section.classList.remove("active");
+
+        });
+
+        document.getElementById("section" + step)
+            .classList.add("active");
+
+
+        for (let i = 1; i <= 3; i++) {
+
+            const stepElement =
+                document.getElementById("step" + i);
+
+            stepElement.classList.remove("active", "completed");
+
+            if (i < step) {
+
+                stepElement.classList.add("completed");
+
+                stepElement.querySelector(".step-circle").innerHTML =
+                    '<i class="fas fa-check"></i>';
+
+            } else {
+
+                stepElement.querySelector(".step-circle").textContent = i;
+
+                if (i === step) {
+                    stepElement.classList.add("active");
+                }
+
+            }
+
+        }
+
+
+        const progressWidths = {
+            1: "0%",
+            2: "38%",
+            3: "76%"
+        };
+
+        document.getElementById("progressLine").style.width =
+            progressWidths[step];
+
+
+        window.scrollTo({
+            top: 0,
+            behavior: "smooth"
+        });
+
+    }
+
+
+    /* =====================================================
+       LOADING BUTTON
+    ===================================================== */
+
+    function setLoading(buttonId, loading, text = "Please wait...") {
+
+        const button = document.getElementById(buttonId);
+
+        if (loading) {
+
+            button.dataset.original =
+                button.innerHTML;
+
+            button.disabled = true;
+
+            button.innerHTML =
+                '<i class="fas fa-spinner fa-spin"></i> ' + text;
+
+        } else {
+
+            button.disabled = false;
+
+            if (button.dataset.original) {
+                button.innerHTML = button.dataset.original;
+            }
+
+        }
+
+    }
+
+
+    /* =====================================================
+       STEP 1: FIND ACCOUNT
+    ===================================================== */
+
+    async function findAccount() {
+
+        clearMessage();
+
+        const identifier =
+            document.getElementById("identifier").value.trim();
+
+        if (!identifier) {
+
+            showMessage("Please enter your registered email or phone number.");
+
+            return;
+
+        }
+
+        setLoading("findAccountBtn", true, "Finding account...");
+
+        try {
+
+            const result = await apiRequest(
+                API.FIND_ACCOUNT,
+                { identifier }
+            );
+
+            accountData = result.account;
+
+            if (!accountData) {
+                throw new Error("Account information was not returned.");
+            }
+
+            /*
+              The backend should return a masked email address.
+              Never expose unnecessary account information.
+            */
+
+            document.getElementById("displayEmail").textContent =
+                accountData.maskedEmail || "Registered email";
+
+            goToStep(2);
+
+            await sendVerificationCode();
+
+        } catch (error) {
+
+            showMessage(error.message);
+
+        } finally {
+
+            setLoading("findAccountBtn", false);
+
+        }
+
+    }
+
+
+    /* =====================================================
+       SEND VERIFICATION CODE
+    ===================================================== */
+
+    async function sendVerificationCode() {
+
+        try {
+
+            const result = await apiRequest(
+                API.SEND_CODE,
+                {
+                    accountToken: accountData.accountToken
+                }
+            );
+
+            showMessage(
+                result.message || "Verification code sent successfully.",
+                "success"
+            );
+
+            startResendCountdown();
+
+        } catch (error) {
+
+            showMessage(error.message);
+
+        }
+
+    }
+
+
+    /* =====================================================
+       OTP INPUT BEHAVIOUR
+    ===================================================== */
+
+    const otpInputs =
+        document.querySelectorAll(".otp-input");
+
+
+    otpInputs.forEach((input, index) => {
+
+        input.addEventListener("input", () => {
+
+            input.value = input.value.replace(/\D/g, "").slice(0, 1);
+
+            if (input.value && index < otpInputs.length - 1) {
+
+                otpInputs[index + 1].focus();
+
+            }
+
+        });
+
+
+        input.addEventListener("keydown", event => {
+
+            if (
+                event.key === "Backspace" &&
+                !input.value &&
+                index > 0
+            ) {
+
+                otpInputs[index - 1].focus();
+
+            }
+
+        });
+
+
+        input.addEventListener("paste", event => {
+
+            const pasted = event.clipboardData
+                .getData("text")
+                .replace(/\D/g, "")
+                .slice(0, 6);
+
+            if (!pasted) return;
+
+            event.preventDefault();
+
+            pasted.split("").forEach((digit, i) => {
+
+                otpInputs[i].value = digit;
+
+            });
+
+            otpInputs[Math.min(pasted.length, 5)].focus();
+
+        });
+
+    });
+
+
+    function getOTP() {
+
+        return Array.from(otpInputs)
+            .map(input => input.value)
+            .join("");
+
+    }
+
+
+    /* =====================================================
+       STEP 2: VERIFY CODE
+    ===================================================== */
+
+    async function verifyCode() {
+
+        clearMessage();
+
+        const code = getOTP();
+
+        if (code.length !== 6) {
+
+            showMessage("Please enter the complete 6-digit verification code.");
+
+            return;
+
+        }
+
+        setLoading("verifyBtn", true, "Verifying...");
+
+        try {
+
+            const result = await apiRequest(
+                API.VERIFY_CODE,
+                {
+                    accountToken: accountData.accountToken,
+                    code
+                }
+            );
+
+            setupToken = result.setupToken;
+
+            if (!setupToken) {
+
+                throw new Error("Verification token was not returned.");
+
+            }
+
+            goToStep(3);
+
+        } catch (error) {
+
+            showMessage(error.message);
+
+        } finally {
+
+            setLoading("verifyBtn", false);
+
+        }
+
+    }
+
+
+    /* =====================================================
+       RESEND CODE
+    ===================================================== */
+
+    function startResendCountdown() {
+
+        const button = document.getElementById("resendBtn");
+
+        let seconds = 60;
+
+        button.disabled = true;
+
+        button.style.opacity = ".5";
+
+        clearInterval(resendCountdown);
+
+        button.textContent = `Resend in ${seconds}s`;
+
+        resendCountdown = setInterval(() => {
+
+            seconds--;
+
+            if (seconds <= 0) {
+
+                clearInterval(resendCountdown);
+
+                button.disabled = false;
+
+                button.style.opacity = "1";
+
+                button.textContent = "Resend code";
+
+            } else {
+
+                button.textContent = `Resend in ${seconds}s`;
+
+            }
+
+        }, 1000);
+
+    }
+
+
+    async function resendCode() {
+
+        clearMessage();
+
+        const button = document.getElementById("resendBtn");
+
+        if (button.disabled) return;
+
+        button.disabled = true;
+
+        try {
+
+            await sendVerificationCode();
+
+        } finally {
+
+            if (!resendCountdown) {
+                button.disabled = false;
+            }
+
+        }
+
+    }
+
+
+    /* =====================================================
+       PASSWORD VISIBILITY
+    ===================================================== */
+
+    function togglePassword(inputId, button) {
+
+        const input = document.getElementById(inputId);
+
+        const icon = button.querySelector("i");
+
+        if (input.type === "password") {
+
+            input.type = "text";
+
+            icon.classList.remove("fa-eye");
+
+            icon.classList.add("fa-eye-slash");
+
+        } else {
+
+            input.type = "password";
+
+            icon.classList.remove("fa-eye-slash");
+
+            icon.classList.add("fa-eye");
+
+        }
+
+    }
+
+
+    /* =====================================================
+       STEP 3: COMPLETE ACCOUNT SETUP
+    ===================================================== */
+
+    async function completeSetup() {
+
+        clearMessage();
+
+        const password =
+            document.getElementById("newPassword").value;
+
+        const confirmPassword =
+            document.getElementById("confirmPassword").value;
+
+
+        if (!password) {
+
+            showMessage("Please enter your password.");
+
+            return;
+
+        }
+
+
+        if (password !== confirmPassword) {
+
+            showMessage("The passwords do not match.");
+
+            return;
+
+        }
+
+
+        setLoading("finishBtn", true, "Completing setup...");
+
+        try {
+
+            const result = await apiRequest(
+                API.COMPLETE_SETUP,
+                {
+                    setupToken,
+                    password
+                }
+            );
+
+            document.querySelectorAll(".form-section")
+                .forEach(section => section.classList.remove("active"));
+
+            document.getElementById("progressArea").style.display = "none";
+
+            messageBox.style.display = "none";
+
+            document.getElementById("successScreen").style.display = "block";
+
+        } catch (error) {
+
+            showMessage(error.message);
+
+        } finally {
+
+            setLoading("finishBtn", false);
+
+        }
+
+    }
+
+
+    /* =====================================================
+       LOGIN REDIRECTION
+    ===================================================== */
+
+    function goToLogin() {
+
+        window.location.href = "/login.html";
+
+    }
+
+
+    /* =====================================================
+       CLEANUP ON PAGE EXIT
+    ===================================================== */
+
+    window.addEventListener("pagehide", () => {
+
+        clearInterval(resendCountdown);
+
+    });
+
+</script>
+
+</body>
+</html>
