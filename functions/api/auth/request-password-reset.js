@@ -15,7 +15,18 @@ import {
 const GENERIC_MESSAGE =
     "If an account matches the information provided, a password reset code has been sent to the email address registered with your account.";
 
+function maskEmail(email) {
+    const [name, domain] = String(email).split("@");
 
+    if (!name || !domain) return email;
+
+    const visible = name.slice(0, 2);
+    const hidden = "*".repeat(
+        Math.max(3, name.length - visible.length)
+    );
+
+    return `${visible}${hidden}@${domain}`;
+}
 export async function onRequestPost(context) {
     let client;
     let transactionStarted = false;
@@ -103,7 +114,7 @@ export async function onRequestPost(context) {
         await client.query("COMMIT");
         transactionStarted = false;
 
-        const safeName = String(user.full_name || "User")
+                const safeName = String(user.full_name || "User")
             .replace(/&/g, "&amp;")
             .replace(/</g, "&lt;")
             .replace(/>/g, "&gt;")
@@ -116,14 +127,8 @@ export async function onRequestPost(context) {
             <body style="margin:0;padding:25px;background:#f3f6fb;font-family:Arial,sans-serif;">
                 <div style="max-width:520px;margin:auto;background:#ffffff;padding:30px;border-radius:10px;">
                     <h2 style="color:#174ea6;">Fila Grades System</h2>
-
                     <p>Hello ${safeName},</p>
-
-                    <p>
-                        We received a request to reset the password
-                        associated with your account.
-                    </p>
-
+                    <p>We received a request to reset your password.</p>
                     <p>Your password reset confirmation code is:</p>
 
                     <div style="background:#f1f5f9;padding:18px;text-align:center;border-radius:8px;margin:20px 0;">
@@ -132,19 +137,10 @@ export async function onRequestPost(context) {
                         </strong>
                     </div>
 
-                    <p>
-                        This code expires in <strong>5 minutes</strong>.
-                        Do not share it with anyone.
-                    </p>
-
-                    <p>
-                        If you did not request a password reset,
-                        you can ignore this email.
-                    </p>
-
-                    <p style="color:#64748b;font-size:13px;">
-                        Fila Grades System
-                    </p>
+                    <p>This code expires in <strong>5 minutes</strong>.</p>
+                    <p>Do not share this code with anyone.</p>
+                    <p>If you did not request a password reset, ignore this email.</p>
+                    <p style="color:#64748b;font-size:13px;">Fila Grades System</p>
                 </div>
             </body>
             </html>
@@ -161,10 +157,14 @@ Your password reset confirmation code is: ${otp}
 
 This code expires in 5 minutes. Do not share it with anyone.
 
-If you did not request a password reset, you can ignore this email.
+If you did not request a password reset, ignore this email.
 
 Fila Grades System
         `;
+
+        /* =============================================
+           SEND EMAIL BEFORE COMMITTING OTP
+        ============================================= */
 
         try {
             await sendEmail(context, {
@@ -173,33 +173,31 @@ Fila Grades System
                 html: emailHtml,
                 text: emailText
             });
+
         } catch (emailError) {
+
             console.error(
-                "Password reset email error:",
+                "Password reset email delivery failed:",
                 emailError
             );
+
+            await client.query("ROLLBACK");
+            transactionStarted = false;
+
+            return json({
+                success: false,
+                message: "We could not send your confirmation code at this time. Please try again after some time."
+            }, 503);
         }
+
+        await client.query("COMMIT");
+        transactionStarted = false;
 
         return json({
             success: true,
-            message: GENERIC_MESSAGE
+            message: "A password reset confirmation code has been sent to your registered email address.",
+            email: maskEmail(user.email)
         });
-
-    } catch (error) {
-
-        if (client && transactionStarted) {
-            await client.query("ROLLBACK").catch(() => {});
-        }
-
-        console.error(
-            "Request password reset error:",
-            error
-        );
-
-        return json({
-            success: false,
-            message: "Could not process your request. Please try again."
-        }, 500);
 
     } finally {
         if (client) {
