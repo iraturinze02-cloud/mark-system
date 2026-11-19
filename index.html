@@ -11,9 +11,48 @@
 
     <link rel="icon" type="image/x-icon" href="/images/favicon/favicon.ico">
     <link rel="icon" type="image/png" sizes="512x512" href="/images/favicon/favicon.png">
+
     <title>Login - Fila Grades System</title>
+
     <link rel="stylesheet" href="style.css">
+
+    <style>
+        .auth-links {
+            margin-top: 22px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .auth-links a {
+            color: #173f70;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .auth-links a:hover {
+            text-decoration: underline;
+        }
+
+        .setup-link {
+            padding: 12px;
+            background: #f0f5fa;
+            border-radius: 8px;
+            line-height: 1.5;
+        }
+
+        .setup-link span {
+            display: block;
+            font-size: 13px;
+            font-weight: normal;
+            color: #555;
+            margin-bottom: 5px;
+        }
+    </style>
 </head>
+
 <body>
 
 <header>
@@ -51,6 +90,26 @@
         </button>
 
         <p id="message" style="margin-top:15px;"></p>
+
+        <!-- ACCOUNT HELP LINKS -->
+        <div class="auth-links">
+
+            <a href="/pages/auth/reset-password.com">
+                Forgot password?
+            </a>
+
+            <a
+                href="/pages/auth/complete-account-setup.html"
+                class="setup-link"
+            >
+                <span>
+                    Did an administrator create an account for you,
+                    but you haven't set it up yet?
+                </span>
+                Finish setting up your account
+            </a>
+
+        </div>
 
     </div>
 </main>
