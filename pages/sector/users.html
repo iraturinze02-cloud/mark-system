@@ -1,0 +1,1493 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="description" content="Record and manage student marks for assigned classes and subjects in Fila Grades System.">
+
+    <meta name="theme-color" content="#173f70">
+
+    <link rel="icon" type="image/x-icon" href="/images/favicon/favicon.ico">
+    <link rel="icon" type="image/png" sizes="512x512" href="/images/favicon/favicon.png">
+
+    <title>Sector Users | Fila Grades System</title>
+
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
+    <style>
+        :root {
+            --primary: #173f75;
+            --primary-light: #eaf1fb;
+            --background: #f4f6fa;
+            --white: #ffffff;
+            --text: #202b3c;
+            --muted: #718096;
+            --border: #e5eaf1;
+            --green: #168653;
+            --green-bg: #e7f6ee;
+            --red: #c83c45;
+            --red-bg: #fdecee;
+            --orange: #b7791f;
+            --orange-bg: #fff5df;
+            --shadow: 0 4px 18px rgba(20, 40, 70, .06);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            background: var(--background);
+            color: var(--text);
+        }
+
+        button, input, select {
+            font: inherit;
+        }
+
+        button {
+            cursor: pointer;
+        }
+
+        .topbar {
+            height: 68px;
+            background: var(--white);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 30px;
+            position: sticky;
+            top: 0;
+            z-index: 20;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 800;
+            color: var(--primary);
+            font-size: 19px;
+        }
+
+        .brand-icon {
+            width: 38px;
+            height: 38px;
+            background: var(--primary);
+            color: white;
+            border-radius: 10px;
+            display: grid;
+            place-items: center;
+        }
+
+        .top-right {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .role-label {
+            background: var(--primary-light);
+            color: var(--primary);
+            border-radius: 20px;
+            padding: 8px 13px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .profile-icon {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            display: grid;
+            place-items: center;
+            background: #e9edf5;
+            color: var(--primary);
+        }
+
+        .container {
+            max-width: 1500px;
+            margin: auto;
+            padding: 28px;
+        }
+
+        .page-heading {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 15px;
+            margin-bottom: 24px;
+        }
+
+        .page-heading h1 {
+            font-size: 25px;
+            margin: 0 0 7px;
+        }
+
+        .page-heading p {
+            margin: 0;
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        .refresh-btn {
+            border: 1px solid var(--border);
+            background: white;
+            color: var(--primary);
+            border-radius: 8px;
+            padding: 10px 15px;
+            font-weight: 600;
+        }
+
+        .refresh-btn:hover {
+            background: var(--primary-light);
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .summary-card {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 19px;
+            box-shadow: var(--shadow);
+        }
+
+        .summary-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 13px;
+        }
+
+        .summary-title {
+            color: var(--muted);
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .summary-icon {
+            width: 37px;
+            height: 37px;
+            display: grid;
+            place-items: center;
+            border-radius: 10px;
+            background: var(--primary-light);
+            color: var(--primary);
+        }
+
+        .summary-number {
+            font-size: 27px;
+            font-weight: 800;
+        }
+
+        .panel {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+
+        .panel-header {
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .panel-header h2 {
+            font-size: 17px;
+            margin: 0;
+        }
+
+        .filters {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .search-box {
+            position: relative;
+        }
+
+        .search-box i {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--muted);
+        }
+
+        .search-box input {
+            padding: 10px 12px 10px 35px;
+            width: 230px;
+        }
+
+        .filters select,
+        .search-box input {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            outline: none;
+            background: white;
+            color: var(--text);
+            min-height: 39px;
+        }
+
+        .filters select {
+            padding: 9px 12px;
+        }
+
+        input:focus, select:focus {
+            border-color: var(--primary);
+        }
+
+        .table-wrap {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 950px;
+        }
+
+        th, td {
+            text-align: left;
+            padding: 15px 17px;
+            border-bottom: 1px solid var(--border);
+            font-size: 13px;
+            vertical-align: middle;
+        }
+
+        th {
+            background: #f8fafd;
+            color: #637187;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: .4px;
+            white-space: nowrap;
+        }
+
+        tbody tr:hover {
+            background: #fafcff;
+        }
+
+        .school-name {
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 4px;
+        }
+
+        .sub-text {
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .count {
+            font-weight: 700;
+            font-size: 14px;
+        }
+
+        .count-detail {
+            color: var(--muted);
+            font-size: 11px;
+            margin-top: 4px;
+            white-space: nowrap;
+        }
+
+        .status {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            border-radius: 20px;
+            padding: 6px 10px;
+            font-size: 11px;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .status.active {
+            background: var(--green-bg);
+            color: var(--green);
+        }
+
+        .status.inactive {
+            background: var(--red-bg);
+            color: var(--red);
+        }
+
+        .status.pending {
+            background: var(--orange-bg);
+            color: var(--orange);
+        }
+
+        .admin-name {
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .actions {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            border: 0;
+            border-radius: 7px;
+            padding: 8px 11px;
+            font-size: 12px;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-view {
+            color: var(--primary);
+            background: var(--primary-light);
+        }
+
+        .btn-danger {
+            color: var(--red);
+            background: var(--red-bg);
+        }
+
+        .btn-success {
+            color: var(--green);
+            background: var(--green-bg);
+        }
+
+        .btn:disabled {
+            opacity: .55;
+            cursor: not-allowed;
+        }
+
+        .empty-state {
+            padding: 45px 20px;
+            text-align: center;
+            color: var(--muted);
+        }
+
+        .empty-state i {
+            font-size: 32px;
+            margin-bottom: 12px;
+        }
+
+        .loading {
+            padding: 45px 20px;
+            text-align: center;
+            color: var(--muted);
+        }
+
+        .loading i {
+            margin-right: 8px;
+        }
+
+        .table-footer {
+            padding: 14px 20px;
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        /* MODAL */
+
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(12, 25, 45, .55);
+            z-index: 100;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 18px;
+        }
+
+        .modal-overlay.show {
+            display: flex;
+        }
+
+        .modal {
+            background: white;
+            border-radius: 13px;
+            width: 100%;
+            max-width: 1050px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 15px 50px rgba(0,0,0,.2);
+        }
+
+        .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+            position: sticky;
+            top: 0;
+            background: white;
+            z-index: 2;
+        }
+
+        .modal-header h2 {
+            margin: 0 0 5px;
+            font-size: 19px;
+        }
+
+        .modal-close {
+            border: 0;
+            background: #f0f2f6;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            color: var(--text);
+        }
+
+        .modal-body {
+            padding: 20px;
+        }
+
+        .detail-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 13px;
+            margin-bottom: 24px;
+        }
+
+        .detail-card {
+            border: 1px solid var(--border);
+            padding: 14px;
+            border-radius: 9px;
+        }
+
+        .detail-card span {
+            display: block;
+            font-size: 11px;
+            color: var(--muted);
+            margin-bottom: 7px;
+        }
+
+        .detail-card strong {
+            font-size: 15px;
+        }
+
+        .section-title {
+            font-size: 15px;
+            margin: 24px 0 13px;
+        }
+
+        .user-table {
+            min-width: 850px;
+        }
+
+        .user-info strong {
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .user-info span {
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .toast {
+            position: fixed;
+            right: 22px;
+            bottom: 22px;
+            background: #202b3c;
+            color: white;
+            padding: 14px 18px;
+            border-radius: 9px;
+            z-index: 200;
+            box-shadow: var(--shadow);
+            max-width: 350px;
+            display: none;
+            font-size: 13px;
+        }
+
+        .toast.show {
+            display: block;
+            animation: fadeIn .2s ease;
+        }
+
+        .toast.error {
+            background: #a92f39;
+        }
+
+        .toast.success {
+            background: #137849;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media(max-width: 900px) {
+            .summary-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .container {
+                padding: 20px;
+            }
+        }
+
+        @media(max-width: 600px) {
+            .topbar {
+                padding: 0 15px;
+                height: 60px;
+            }
+
+            .brand {
+                font-size: 15px;
+            }
+
+            .role-label {
+                display: none;
+            }
+
+            .container {
+                padding: 17px 12px;
+            }
+
+            .page-heading {
+                align-items: flex-start;
+            }
+
+            .page-heading h1 {
+                font-size: 21px;
+            }
+
+            .summary-grid {
+                gap: 10px;
+            }
+
+            .summary-card {
+                padding: 14px;
+            }
+
+            .summary-number {
+                font-size: 23px;
+            }
+
+            .panel-header {
+                align-items: stretch;
+            }
+
+            .filters {
+                width: 100%;
+            }
+
+            .search-box {
+                flex: 1;
+            }
+
+            .search-box input {
+                width: 100%;
+            }
+
+            .filters select {
+                max-width: 125px;
+            }
+
+            .detail-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .modal-overlay {
+                padding: 8px;
+            }
+
+            .modal {
+                max-height: 95vh;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<header class="topbar">
+    <div class="brand">
+        <div class="brand-icon">
+            <i class="fas fa-graduation-cap"></i>
+        </div>
+        <span>Fila Grades System</span>
+    </div>
+
+    <div class="top-right">
+        <span class="role-label">SECTOR ADMIN</span>
+        <div class="profile-icon">
+            <i class="fas fa-user"></i>
+        </div>
+    </div>
+</header>
+
+<main class="container">
+
+    <div class="page-heading">
+        <div>
+            <h1>Schools & Users Management</h1>
+            <p>Manage schools and user accounts registered within your sector.</p>
+        </div>
+
+        <button class="refresh-btn" id="refreshBtn">
+            <i class="fas fa-rotate"></i> Refresh
+        </button>
+    </div>
+
+    <!-- SUMMARY -->
+
+    <section class="summary-grid">
+
+        <div class="summary-card">
+            <div class="summary-top">
+                <span class="summary-title">Total Schools</span>
+                <div class="summary-icon">
+                    <i class="fas fa-school"></i>
+                </div>
+            </div>
+            <div class="summary-number" id="totalSchools">—</div>
+        </div>
+
+        <div class="summary-card">
+            <div class="summary-top">
+                <span class="summary-title">Total Teachers</span>
+                <div class="summary-icon">
+                    <i class="fas fa-chalkboard-user"></i>
+                </div>
+            </div>
+            <div class="summary-number" id="totalTeachers">—</div>
+        </div>
+
+        <div class="summary-card">
+            <div class="summary-top">
+                <span class="summary-title">Active Teachers</span>
+                <div class="summary-icon">
+                    <i class="fas fa-user-check"></i>
+                </div>
+            </div>
+            <div class="summary-number" id="activeTeachers">—</div>
+        </div>
+
+        <div class="summary-card">
+            <div class="summary-top">
+                <span class="summary-title">Inactive Teachers</span>
+                <div class="summary-icon">
+                    <i class="fas fa-user-slash"></i>
+                </div>
+            </div>
+            <div class="summary-number" id="inactiveTeachers">—</div>
+        </div>
+
+    </section>
+
+    <!-- SCHOOL TABLE -->
+
+    <section class="panel">
+
+        <div class="panel-header">
+            <h2>Registered Schools</h2>
+
+            <div class="filters">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input
+                        type="search"
+                        id="searchInput"
+                        placeholder="Search schools..."
+                    >
+                </div>
+
+                <select id="statusFilter">
+                    <option value="all">All Schools</option>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>School</th>
+                        <th>Teachers</th>
+                        <th>Active Teachers</th>
+                        <th>Inactive Teachers</th>
+                        <th>School Admin</th>
+                        <th>School Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+
+                <tbody id="schoolsTable">
+                    <tr>
+                        <td colspan="7">
+                            <div class="loading">
+                                <i class="fas fa-spinner fa-spin"></i>
+                                Loading schools...
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="table-footer" id="tableFooter">
+            Loading school records...
+        </div>
+
+    </section>
+
+</main>
+
+<!-- SCHOOL DETAILS MODAL -->
+
+<div class="modal-overlay" id="schoolModal">
+
+    <div class="modal">
+
+        <div class="modal-header">
+            <div>
+                <h2 id="modalSchoolName">School Details</h2>
+                <div class="sub-text" id="modalSchoolCode"></div>
+            </div>
+
+            <button class="modal-close" id="closeModalBtn"
+                    aria-label="Close">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <div class="modal-body">
+
+            <div class="detail-grid">
+
+                <div class="detail-card">
+                    <span>Total Teachers</span>
+                    <strong id="detailTotalTeachers">—</strong>
+                </div>
+
+                <div class="detail-card">
+                    <span>Active Teachers</span>
+                    <strong id="detailActiveTeachers">—</strong>
+                </div>
+
+                <div class="detail-card">
+                    <span>Inactive Teachers</span>
+                    <strong id="detailInactiveTeachers">—</strong>
+                </div>
+
+                <div class="detail-card">
+                    <span>School Status</span>
+                    <strong id="detailSchoolStatus">—</strong>
+                </div>
+
+                <div class="detail-card">
+                    <span>School Admin</span>
+                    <strong id="detailAdminName">—</strong>
+                </div>
+
+                <div class="detail-card">
+                    <span>Admin Email Verification</span>
+                    <strong id="detailAdminVerification">—</strong>
+                </div>
+
+            </div>
+
+            <h3 class="section-title">School Users</h3>
+
+            <div class="table-wrap">
+                <table class="user-table">
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Role</th>
+                            <th>Email Verification</th>
+                            <th>Account Setup</th>
+                            <th>Account Status</th>
+                            <th>Registration Date</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+
+                    <tbody id="usersTable">
+                        <tr>
+                            <td colspan="7">
+                                <div class="loading">
+                                    <i class="fas fa-spinner fa-spin"></i>
+                                    Loading users...
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+
+/* =====================================================
+   API CONFIGURATION
+
+   The next backend file will implement this endpoint.
+===================================================== */
+
+const API_URL = "/api/sector-users";
+
+let schools = [];
+let selectedSchool = null;
+let toastTimer = null;
+
+/* =====================================================
+   DOM HELPERS
+===================================================== */
+
+const $ = id => document.getElementById(id);
+
+function escapeHTML(value) {
+    return String(value ?? "").replace(/[&<>"']/g, char => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#039;"
+    })[char]);
+}
+
+function formatDate(value) {
+    if (!value) return "—";
+
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) return "—";
+
+    return date.toLocaleDateString(undefined, {
+        year: "numeric",
+        month: "short",
+        day: "numeric"
+    });
+}
+
+function normalizeStatus(value) {
+    return String(value || "").toLowerCase() === "active"
+        ? "active"
+        : "inactive";
+}
+
+function statusBadge(status) {
+    const normalized = normalizeStatus(status);
+
+    return `
+        <span class="status ${normalized}">
+            <i class="fas ${normalized === "active"
+                ? "fa-circle-check"
+                : "fa-circle-xmark"}"></i>
+            ${normalized.toUpperCase()}
+        </span>
+    `;
+}
+
+function showToast(message, type = "success") {
+    const toast = $("toast");
+
+    toast.textContent = message;
+    toast.className = `toast show ${type}`;
+
+    clearTimeout(toastTimer);
+
+    toastTimer = setTimeout(() => {
+        toast.className = "toast";
+    }, 3500);
+}
+
+/* =====================================================
+   API REQUEST
+
+   Uses the existing HTTP-only ses_token cookie.
+===================================================== */
+
+async function apiRequest(action, payload = {}, method = "POST") {
+
+    const options = {
+        method,
+        credentials: "same-origin",
+        headers: {
+            "Accept": "application/json"
+        }
+    };
+
+    let url = API_URL;
+
+    if (method === "GET") {
+        const params = new URLSearchParams({
+            action,
+            ...Object.fromEntries(
+                Object.entries(payload).map(([key, value]) => [
+                    key,
+                    String(value ?? "")
+                ])
+            )
+        });
+
+        url += "?" + params.toString();
+
+    } else {
+        options.headers["Content-Type"] = "application/json";
+
+        options.body = JSON.stringify({
+            action,
+            ...payload
+        });
+    }
+
+    const response = await fetch(url, options);
+
+    let result;
+
+    try {
+        result = await response.json();
+    } catch {
+        throw new Error("The server returned an invalid response.");
+    }
+
+    if (response.status === 401) {
+        window.location.href = "login.html";
+        throw new Error("Your session has expired. Please log in again.");
+    }
+
+    if (response.status === 403) {
+        throw new Error(result.message || "You are not authorized to perform this action.");
+    }
+
+    if (!response.ok || !result.success) {
+        throw new Error(result.message || "The request could not be completed.");
+    }
+
+    return result;
+}
+
+/* =====================================================
+   LOAD SCHOOLS
+===================================================== */
+
+async function loadSchools() {
+
+    $("schoolsTable").innerHTML = `
+        <tr>
+            <td colspan="7">
+                <div class="loading">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    Loading schools...
+                </div>
+            </td>
+        </tr>
+    `;
+
+    $("tableFooter").textContent = "Loading school records...";
+
+    try {
+
+        const result = await apiRequest("get_schools", {}, "GET");
+
+        schools = Array.isArray(result.schools)
+            ? result.schools
+            : [];
+
+        updateSummary();
+        renderSchools();
+
+    } catch (error) {
+
+        $("schoolsTable").innerHTML = `
+            <tr>
+                <td colspan="7">
+                    <div class="empty-state">
+                        <i class="fas fa-triangle-exclamation"></i>
+                        <p>${escapeHTML(error.message)}</p>
+                        <button class="btn btn-view" onclick="loadSchools()">
+                            <i class="fas fa-rotate"></i> Try Again
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+
+        $("tableFooter").textContent = "Unable to load school records.";
+    }
+}
+
+/* =====================================================
+   UPDATE SUMMARY
+===================================================== */
+
+function updateSummary() {
+
+    const totalTeachers = schools.reduce(
+        (sum, school) => sum + Number(school.teacher_count || 0),
+        0
+    );
+
+    const activeTeachers = schools.reduce(
+        (sum, school) => sum + Number(school.active_teacher_count || 0),
+        0
+    );
+
+    const inactiveTeachers = schools.reduce(
+        (sum, school) => sum + Number(school.inactive_teacher_count || 0),
+        0
+    );
+
+    $("totalSchools").textContent = schools.length;
+    $("totalTeachers").textContent = totalTeachers;
+    $("activeTeachers").textContent = activeTeachers;
+    $("inactiveTeachers").textContent = inactiveTeachers;
+}
+
+/* =====================================================
+   RENDER SCHOOL TABLE
+===================================================== */
+
+function renderSchools() {
+
+    const search = $("searchInput").value.trim().toLowerCase();
+    const filter = $("statusFilter").value;
+
+    const filtered = schools.filter(school => {
+
+        const name = String(school.school_name || "").toLowerCase();
+        const code = String(school.school_code || "").toLowerCase();
+
+        const matchesSearch =
+            name.includes(search) || code.includes(search);
+
+        const matchesStatus =
+            filter === "all" ||
+            normalizeStatus(school.status) === filter;
+
+        return matchesSearch && matchesStatus;
+    });
+
+    if (!filtered.length) {
+
+        $("schoolsTable").innerHTML = `
+            <tr>
+                <td colspan="7">
+                    <div class="empty-state">
+                        <i class="fas fa-school"></i>
+                        <p>No schools found.</p>
+                    </div>
+                </td>
+            </tr>
+        `;
+
+        $("tableFooter").textContent = "0 schools displayed.";
+        return;
+    }
+
+    $("schoolsTable").innerHTML = filtered.map(school => {
+
+        const admin = school.school_admin || null;
+
+        const adminHTML = admin
+            ? `
+                <div class="admin-name">
+                    ${escapeHTML(admin.full_name || "Unnamed Admin")}
+                </div>
+                <div class="sub-text">
+                    ${escapeHTML(admin.email || admin.phone || "No contact")}
+                </div>
+            `
+            : `
+                <span class="sub-text">Not registered</span>
+            `;
+
+        const schoolStatus = normalizeStatus(school.status);
+
+        return `
+            <tr>
+                <td>
+                    <div class="school-name">
+                        ${escapeHTML(school.school_name)}
+                    </div>
+                    <div class="sub-text">
+                        Code: ${escapeHTML(school.school_code || "—")}
+                    </div>
+                </td>
+
+                <td>
+                    <div class="count">
+                        ${Number(school.teacher_count || 0)}
+                    </div>
+                </td>
+
+                <td>
+                    <div class="count" style="color:var(--green)">
+                        ${Number(school.active_teacher_count || 0)}
+                    </div>
+                </td>
+
+                <td>
+                    <div class="count" style="color:var(--red)">
+                        ${Number(school.inactive_teacher_count || 0)}
+                    </div>
+                </td>
+
+                <td>${adminHTML}</td>
+
+                <td>${statusBadge(school.status)}</td>
+
+                <td>
+                    <div class="actions">
+                        <button class="btn btn-view"
+                                onclick="viewSchool('${escapeHTML(school.id)}')">
+                            <i class="fas fa-eye"></i> View
+                        </button>
+
+                        <button
+                            class="btn ${schoolStatus === "active"
+                                ? "btn-danger"
+                                : "btn-success"}"
+                            onclick="toggleSchool('${escapeHTML(school.id)}')">
+
+                            <i class="fas ${schoolStatus === "active"
+                                ? "fa-ban"
+                                : "fa-check"}"></i>
+
+                            ${schoolStatus === "active"
+                                ? "Deactivate"
+                                : "Activate"}
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }).join("");
+
+    $("tableFooter").textContent =
+        `Showing ${filtered.length} of ${schools.length} schools.`;
+}
+
+/* =====================================================
+   VIEW SCHOOL DETAILS
+===================================================== */
+
+async function viewSchool(schoolId) {
+
+    $("schoolModal").classList.add("show");
+
+    $("modalSchoolName").textContent = "Loading school...";
+    $("modalSchoolCode").textContent = "";
+
+    $("usersTable").innerHTML = `
+        <tr>
+            <td colspan="7">
+                <div class="loading">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    Loading users...
+                </div>
+            </td>
+        </tr>
+    `;
+
+    try {
+
+        const result = await apiRequest(
+            "get_school_details",
+            { school_id: schoolId },
+            "GET"
+        );
+
+        selectedSchool = result.school;
+
+        renderSchoolDetails(result.school);
+
+    } catch (error) {
+
+        $("usersTable").innerHTML = `
+            <tr>
+                <td colspan="7">
+                    <div class="empty-state">
+                        ${escapeHTML(error.message)}
+                    </div>
+                </td>
+            </tr>
+        `;
+
+        $("modalSchoolName").textContent = "Unable to load school";
+    }
+}
+
+/* =====================================================
+   RENDER SCHOOL DETAILS AND USERS
+===================================================== */
+
+function renderSchoolDetails(school) {
+
+    $("modalSchoolName").textContent =
+        school.school_name || "School Details";
+
+    $("modalSchoolCode").textContent =
+        "School code: " + (school.school_code || "—");
+
+    $("detailTotalTeachers").textContent =
+        Number(school.teacher_count || 0);
+
+    $("detailActiveTeachers").textContent =
+        Number(school.active_teacher_count || 0);
+
+    $("detailInactiveTeachers").textContent =
+        Number(school.inactive_teacher_count || 0);
+
+    $("detailSchoolStatus").textContent =
+        normalizeStatus(school.status).toUpperCase();
+
+    const admin = school.school_admin || {};
+
+    $("detailAdminName").textContent =
+        admin.full_name || "Not registered";
+
+    $("detailAdminVerification").textContent =
+        admin.id
+            ? (admin.email_verified ? "Verified" : "Not verified")
+            : "—";
+
+    const users = Array.isArray(school.users) ? school.users : [];
+
+    if (!users.length) {
+
+        $("usersTable").innerHTML = `
+            <tr>
+                <td colspan="7">
+                    <div class="empty-state">
+                        No users registered in this school.
+                    </div>
+                </td>
+            </tr>
+        `;
+
+        return;
+    }
+
+    $("usersTable").innerHTML = users.map(user => {
+
+        const emailStatus = user.email_verified
+            ? `<span class="status active">Verified</span>`
+            : `<span class="status pending">Not verified</span>`;
+
+        let setupStatus;
+
+        if (!user.email_verified) {
+            setupStatus = `<span class="status pending">Email pending</span>`;
+        } else if (user.must_change_password) {
+            setupStatus = `<span class="status pending">Password pending</span>`;
+        } else {
+            setupStatus = `<span class="status active">Complete</span>`;
+        }
+
+        const active = normalizeStatus(user.status) === "active";
+
+        return `
+            <tr>
+                <td>
+                    <div class="user-info">
+                        <strong>${escapeHTML(user.full_name || "Unnamed User")}</strong>
+                        <span>${escapeHTML(user.email || "No email")}</span>
+                        <span>${escapeHTML(user.phone || "")}</span>
+                    </div>
+                </td>
+
+                <td>${escapeHTML(formatRole(user.role))}</td>
+
+                <td>${emailStatus}</td>
+
+                <td>${setupStatus}</td>
+
+                <td>${statusBadge(user.status)}</td>
+
+                <td>${escapeHTML(formatDate(user.created_at))}</td>
+
+                <td>
+                    <button
+                        class="btn ${active ? "btn-danger" : "btn-success"}"
+                        onclick="toggleUser('${escapeHTML(user.id)}')">
+
+                        <i class="fas ${active
+                            ? "fa-ban"
+                            : "fa-check"}"></i>
+
+                        ${active ? "Deactivate" : "Activate"}
+                    </button>
+                </td>
+            </tr>
+        `;
+    }).join("");
+}
+
+/* =====================================================
+   FORMAT ROLE
+===================================================== */
+
+function formatRole(role) {
+
+    const roles = {
+        owner: "Owner",
+        sector_admin: "Sector Admin",
+        school_admin: "School Admin",
+        teacher: "Teacher"
+    };
+
+    return roles[role] || role || "Unknown";
+}
+
+/* =====================================================
+   ACTIVATE / DEACTIVATE SCHOOL
+===================================================== */
+
+async function toggleSchool(schoolId) {
+
+    const school = schools.find(
+        item => String(item.id) === String(schoolId)
+    );
+
+    if (!school) return;
+
+    const currentStatus = normalizeStatus(school.status);
+    const newStatus = currentStatus === "active" ? "inactive" : "active";
+
+    const actionText = newStatus === "inactive"
+        ? "deactivate"
+        : "activate";
+
+    const confirmed = confirm(
+        `Are you sure you want to ${actionText} ${school.school_name}?`
+    );
+
+    if (!confirmed) return;
+
+    try {
+
+        const result = await apiRequest("toggle_school", {
+            school_id: schoolId,
+            status: newStatus
+        });
+
+        showToast(result.message || "School status updated successfully.");
+
+        await loadSchools();
+
+        if (selectedSchool &&
+            String(selectedSchool.id) === String(schoolId)) {
+            await viewSchool(schoolId);
+        }
+
+    } catch (error) {
+        showToast(error.message, "error");
+    }
+}
+
+/* =====================================================
+   ACTIVATE / DEACTIVATE USER
+===================================================== */
+
+async function toggleUser(userId) {
+
+    if (!selectedSchool) return;
+
+    const user = (selectedSchool.users || []).find(
+        item => String(item.id) === String(userId)
+    );
+
+    if (!user) return;
+
+    const currentStatus = normalizeStatus(user.status);
+    const newStatus = currentStatus === "active" ? "inactive" : "active";
+
+    const actionText = newStatus === "inactive"
+        ? "deactivate"
+        : "activate";
+
+    const confirmed = confirm(
+        `Are you sure you want to ${actionText} the account of ${user.full_name}?`
+    );
+
+    if (!confirmed) return;
+
+    try {
+
+        const result = await apiRequest("toggle_user", {
+            user_id: userId,
+            status: newStatus
+        });
+
+        showToast(result.message || "User status updated successfully.");
+
+        await loadSchools();
+        await viewSchool(selectedSchool.id);
+
+    } catch (error) {
+        showToast(error.message, "error");
+    }
+}
+
+/* =====================================================
+   CLOSE MODAL
+===================================================== */
+
+function closeModal() {
+    $("schoolModal").classList.remove("show");
+    selectedSchool = null;
+}
+
+$("closeModalBtn").addEventListener("click", closeModal);
+
+$("schoolModal").addEventListener("click", event => {
+    if (event.target === $("schoolModal")) {
+        closeModal();
+    }
+});
+
+/* =====================================================
+   SEARCH AND FILTER
+===================================================== */
+
+$("searchInput").addEventListener("input", renderSchools);
+$("statusFilter").addEventListener("change", renderSchools);
+$("refreshBtn").addEventListener("click", loadSchools);
+
+/* =====================================================
+   INITIALIZE PAGE
+===================================================== */
+
+loadSchools();
+
+</script>
+
+</body>
+</html>
