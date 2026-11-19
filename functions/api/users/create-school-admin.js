@@ -70,9 +70,6 @@ function validateLevelIds(value) {
 
 /* =====================================================
    GENERATE INTERNAL TEMPORARY PASSWORD
-
-   This password is never returned or emailed.
-   The administrator creates their own password later.
 ===================================================== */
 
 function generateTemporaryPassword() {
@@ -145,8 +142,6 @@ export async function onRequestPost(context) {
 
     /* =============================================
        VALIDATE REQUIRED FIELDS
-
-       Password is no longer required.
     ============================================= */
 
     const missing = [];
@@ -185,9 +180,14 @@ export async function onRequestPost(context) {
 
     let client;
     let transactionStarted = false;
+    let admin;
 
     try {
         client = await connectDB(context);
+
+        /* =============================================
+           START DATABASE TRANSACTION
+        ============================================= */
 
         await client.query("BEGIN");
         transactionStarted = true;
@@ -306,9 +306,6 @@ export async function onRequestPost(context) {
 
         /* =============================================
            GENERATE INTERNAL TEMPORARY PASSWORD
-
-           The sector admin does not choose a password.
-           The school admin will set their own password.
         ============================================= */
 
         const temporaryPassword =
@@ -321,9 +318,6 @@ export async function onRequestPost(context) {
 
         /* =============================================
            CREATE SCHOOL ADMINISTRATOR
-
-           email_verified = FALSE
-           must_change_password = TRUE
         ============================================= */
 
         const result = await client.query(
@@ -367,7 +361,7 @@ export async function onRequestPost(context) {
             ]
         );
 
-        const admin = result.rows[0];
+        admin = result.rows[0];
 
         /* =============================================
            GENERATE AND SAVE EMAIL VERIFICATION OTP
@@ -382,7 +376,24 @@ export async function onRequestPost(context) {
         );
 
         /* =============================================
+           COMMIT DATABASE TRANSACTION
+
+           IMPORTANT:
+           Commit before attempting to send email.
+        ============================================= */
+
+        await client.query("COMMIT");
+        transactionStarted = false;
+
+        console.log(
+            "School administrator account created:",
+            admin.id
+        );
+
+        /* =============================================
            SEND VERIFICATION EMAIL
+
+           Email failure must NOT roll back the account.
         ============================================= */
 
         const emailContent = verificationEmail(
@@ -391,28 +402,45 @@ export async function onRequestPost(context) {
             email
         );
 
-        await sendEmail(context, {
-            to: email,
-            subject: emailContent.subject,
-            html: emailContent.html,
-            text: emailContent.text
-        });
+        try {
+            const emailResult = await sendEmail(context, {
+                to: email,
+                subject: emailContent.subject,
+                html: emailContent.html,
+                text: emailContent.text
+            });
 
-        /* =============================================
-           COMMIT TRANSACTION
-        ============================================= */
+            console.log(
+                "School administrator verification email sent:",
+                emailResult
+            );
 
-        await client.query("COMMIT");
-        transactionStarted = false;
+            return json({
+                success: true,
+                email_sent: true,
+                message: "School administrator created successfully. A verification code has been sent to the administrator's email address.",
+                admin: {
+                    ...admin,
+                    school_name: schoolName
+                }
+            }, 201);
 
-        return json({
-            success: true,
-            message: "School administrator created successfully. A verification code has been sent to the administrator's email address.",
-            admin: {
-                ...admin,
-                school_name: schoolName
-            }
-        }, 201);
+        } catch (emailError) {
+            console.error(
+                "School administrator email delivery failed:",
+                emailError
+            );
+
+            return json({
+                success: true,
+                email_sent: false,
+                message: "The school administrator account was created successfully, but the verification email could not be sent. Please check the email configuration and resend the verification email.",
+                admin: {
+                    ...admin,
+                    school_name: schoolName
+                }
+            }, 201);
+        }
 
     } catch (error) {
         if (client && transactionStarted) {
@@ -421,7 +449,7 @@ export async function onRequestPost(context) {
         }
 
         console.error(
-            "Create school administrator error:",
+            "Create school administrator database error:",
             error
         );
 
@@ -434,7 +462,7 @@ export async function onRequestPost(context) {
 
         return json({
             success: false,
-            message: "Failed to create school administrator or send the verification email."
+            message: "Failed to create school administrator. Please check the server logs for details."
         }, 500);
 
     } finally {
