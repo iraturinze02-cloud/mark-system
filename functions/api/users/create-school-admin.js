@@ -1,6 +1,4 @@
 
-import bcrypt from "bcryptjs";
-
 import {
     connectDB,
     requireSectorAdmin,
@@ -311,11 +309,6 @@ export async function onRequestPost(context) {
         const temporaryPassword =
             generateTemporaryPassword();
 
-        const passwordHash = await bcrypt.hash(
-            temporaryPassword,
-            12
-        );
-
         /* =============================================
            CREATE SCHOOL ADMINISTRATOR
         ============================================= */
@@ -356,7 +349,7 @@ export async function onRequestPost(context) {
                 fullName,
                 phone,
                 email,
-                passwordHash,
+                temporaryPassword,
                 schoolId
             ]
         );
@@ -377,9 +370,6 @@ export async function onRequestPost(context) {
 
         /* =============================================
            COMMIT DATABASE TRANSACTION
-
-           IMPORTANT:
-           Commit before attempting to send email.
         ============================================= */
 
         await client.query("COMMIT");
@@ -392,8 +382,6 @@ export async function onRequestPost(context) {
 
         /* =============================================
            SEND VERIFICATION EMAIL
-
-           Email failure must NOT roll back the account.
         ============================================= */
 
         const emailContent = verificationEmail(
