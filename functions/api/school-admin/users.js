@@ -101,7 +101,7 @@ export async function onRequestGet(context) {
                 ON t.user_id = u.id
                AND t.school_id = u.school_id
             WHERE u.school_id = $1
-              AND u.role IN ('school_admin', 'teacher')
+              AND u.role = 'teacher'
             ORDER BY
                 CASE
                     WHEN u.role = 'school_admin' THEN 1
