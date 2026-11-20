@@ -115,15 +115,15 @@
 </main>
 
 <script>
-
+    
 // ROLE-BASED DASHBOARD REDIRECTION
 function redirectByRole(role) {
 
     const dashboards = {
-        owner: "pages/admin/owner.html",
-        sector_admin: "pages/sector/sector-admin.html",
-        school_admin: "pages/school/school-admin.html",
-        teacher: "pages/teacher/teacher-dashboard.html"
+        owner: "/pages/admin/owner.html",
+        sector_admin: "/pages/sector/sector-admin.html",
+        school_admin: "/pages/school/school-admin.html",
+        teacher: "/pages/teacher/teacher-dashboard.html"
     };
 
     if (dashboards[role]) {
@@ -134,18 +134,74 @@ function redirectByRole(role) {
     return false;
 }
 
-// CHECK EXISTING SESSION
-const existingRole = localStorage.getItem("role");
+// VERIFY EXISTING SESSION BEFORE REDIRECTING
+async function checkExistingSession() {
 
-if (existingRole) {
-    redirectByRole(existingRole);
+    const btn = document.getElementById("loginBtn");
+    const message = document.getElementById("message");
+
+    try {
+
+        const response = await fetch("/api/auth/session", {
+            method: "GET",
+            credentials: "same-origin",
+            headers: {
+                "Accept": "application/json"
+            }
+        });
+
+        const result = await response.json();
+
+        if (!response.ok || !result.success || !result.user) {
+
+            // Clear stale local session information
+            if (response.status === 401 || response.status === 403) {
+                localStorage.removeItem("role");
+                localStorage.removeItem("currentUser");
+            }
+
+            return;
+        }
+
+        const role = result.user.role;
+
+        if (![
+            "owner",
+            "sector_admin",
+            "school_admin",
+            "teacher"
+        ].includes(role)) {
+            localStorage.removeItem("role");
+            localStorage.removeItem("currentUser");
+            return;
+        }
+
+        // Save only information from the verified session
+        localStorage.setItem("role", role);
+        localStorage.setItem("currentUser", JSON.stringify(result.user));
+
+        redirectByRole(role);
+
+    } catch (error) {
+
+        // Do not redirect based on unverified localStorage data.
+        message.textContent =
+            "Unable to verify your session. Please check your connection.";
+
+        message.style.color = "red";
+    }
 }
+
+// Check session when login page opens
+checkExistingSession();
 
 // ENTER KEY SUPPORT
 document.addEventListener("keydown", function(e) {
+
     if (e.key === "Enter") {
         loginUser();
     }
+
 });
 
 async function loginUser() {
@@ -156,7 +212,8 @@ async function loginUser() {
     const message = document.getElementById("message");
 
     if (!username || !password) {
-        message.textContent = "Please enter your phone number and password.";
+        message.textContent =
+            "Please enter your phone number and password.";
         message.style.color = "red";
         return;
     }
@@ -169,6 +226,7 @@ async function loginUser() {
 
         const response = await fetch("/api/login", {
             method: "POST",
+            credentials: "same-origin",
             headers: {
                 "Content-Type": "application/json"
             },
@@ -193,25 +251,26 @@ async function loginUser() {
             throw new Error("Invalid user role.");
         }
 
-        // SAVE SESSION
+        // SAVE LOGIN INFORMATION
         localStorage.setItem("role", result.user.role);
         localStorage.setItem("currentUser", JSON.stringify(result.user));
 
-        // REDIRECT TO CORRECT DASHBOARD
+        // REDIRECT
         if (!redirectByRole(result.user.role)) {
             throw new Error("Dashboard not found for this role.");
         }
 
     } catch (error) {
 
-        message.textContent = error.message || "Server error. Try again.";
+        message.textContent =
+            error.message || "Server error. Try again.";
+
         message.style.color = "red";
 
         btn.innerText = "Login";
         btn.disabled = false;
     }
 }
-
 </script>
 
 </body>
