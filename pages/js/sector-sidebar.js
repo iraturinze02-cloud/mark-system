@@ -50,6 +50,11 @@ document.addEventListener("DOMContentLoaded", () => {
                     <span>Schools & Admins</span>
                 </a>
 
+                <a href="users.html" class="sidebar-link">
+                    <span class="sidebar-icon">👥</span>
+                    <span>Manage Users</span>
+                </a>
+
                 <a href="view-all-students-marks.html" class="sidebar-link">
                     <span class="sidebar-icon">👨‍🎓</span>
                     <span>Students' Marks</span>
@@ -58,6 +63,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 <a href="../school/school-marks.html" class="sidebar-link">
                     <span class="sidebar-icon">📈</span>
                     <span>School Records</span>
+                </a>
+
+                <a href="inspect-marks-recording.html" class="sidebar-link">
+                    <span class="sidebar-icon">🔍</span>
+                    <span>Inspect Marks Recording</span>
                 </a>
 
                 <div class="sector-sidebar-section">
