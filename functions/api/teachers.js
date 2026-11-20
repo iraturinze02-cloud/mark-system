@@ -7,11 +7,15 @@ import {
 
 import {
     normalizeEmail,
-    generateOtp,
-    saveOtp,
-    sendEmail,
-    verificationEmail
+    sendEmail
 } from "../_email.js";
+
+/* =====================================================
+   ACCOUNT SETUP PAGE
+===================================================== */
+
+const ACCOUNT_SETUP_URL =
+    "https://www.filagrades.online/pages/auth/complete-account-setup.html";
 
 /* =====================================================
    GET TEACHERS
@@ -116,21 +120,20 @@ export async function onRequestPost(context) {
     const fullName = String(data.full_name || "").trim();
     const phone = String(data.phone || "").trim();
     const email = normalizeEmail(data.email);
-    const password = String(data.password || "");
 
     const staffNumber =
         String(data.staff_number || "").trim() || null;
 
-    // Validate required fields.
+    /* ================================================
+       VALIDATION
+    ================================================ */
 
-    if (!fullName || !phone || !email || !password) {
+    if (!fullName || !phone || !email) {
         return json({
             success: false,
-            message: "Full name, phone number, email and password are required."
+            message: "Full name, phone number and email are required."
         }, 400);
     }
-
-    // Validate field lengths.
 
     if (
         fullName.length > 200 ||
@@ -144,21 +147,10 @@ export async function onRequestPost(context) {
         }, 400);
     }
 
-    // Validate email format.
-
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
         return json({
             success: false,
             message: "Enter a valid email address."
-        }, 400);
-    }
-
-    // Validate password.
-
-    if (password.length < 8) {
-        return json({
-            success: false,
-            message: "Password must contain at least 8 characters."
         }, 400);
     }
 
@@ -171,7 +163,9 @@ export async function onRequestPost(context) {
         await client.query("BEGIN");
         transactionStarted = true;
 
-        // Check duplicate phone number.
+        /* ============================================
+           CHECK DUPLICATE PHONE
+        ============================================ */
 
         const duplicatePhone = await client.query(
             `SELECT id
@@ -191,7 +185,9 @@ export async function onRequestPost(context) {
             }, 409);
         }
 
-        // Check duplicate email address.
+        /* ============================================
+           CHECK DUPLICATE EMAIL
+        ============================================ */
 
         const duplicateEmail = await client.query(
             `SELECT id
@@ -211,7 +207,23 @@ export async function onRequestPost(context) {
             }, 409);
         }
 
-        // Store password directly.
+        /* ============================================
+           CREATE TEMPORARY PASSWORD VALUE
+
+           The teacher will replace this through
+           the Complete Account Setup workflow.
+        ============================================ */
+
+        const temporaryPassword =
+            `PENDING_SETUP_${crypto.randomUUID()}`;
+
+        /* ============================================
+           CREATE USER ACCOUNT
+
+           must_change_password = TRUE ensures that
+           the account setup workflow can identify
+           this account as awaiting password creation.
+        ============================================ */
 
         const userResult = await client.query(
             `INSERT INTO users (
@@ -222,11 +234,12 @@ export async function onRequestPost(context) {
                 password_hash,
                 role,
                 school_id,
-                status
+                status,
+                must_change_password
             )
             VALUES (
                 $1, $2, $3, FALSE, $4,
-                'teacher', $5, 'active'
+                'teacher', $5, 'active', TRUE
             )
             RETURNING
                 id,
@@ -238,14 +251,16 @@ export async function onRequestPost(context) {
                 fullName,
                 phone,
                 email,
-                password,
+                temporaryPassword,
                 auth.schoolId
             ]
         );
 
         const user = userResult.rows[0];
 
-        // Create teacher profile.
+        /* ============================================
+           CREATE TEACHER PROFILE
+        ============================================ */
 
         const teacherResult = await client.query(
             `INSERT INTO teachers (
@@ -262,35 +277,102 @@ export async function onRequestPost(context) {
             ]
         );
 
-        // Generate and save email verification OTP.
-
-        const otp = generateOtp();
-
-        await saveOtp(client, user.id, otp);
-
-        // Send verification email.
-
-        const emailContent = verificationEmail(
-            fullName,
-            otp,
-            email
-        );
-
-        await sendEmail(context, {
-            to: email,
-            subject: emailContent.subject,
-            html: emailContent.html,
-            text: emailContent.text
-        });
-
-        // Commit transaction.
+        /* ============================================
+           COMMIT TRANSACTION
+        ============================================ */
 
         await client.query("COMMIT");
         transactionStarted = false;
 
+        /* ============================================
+           SEND ACCOUNT SETUP INVITATION
+
+           OTP is NOT generated here.
+           The existing account setup page handles
+           OTP generation, verification and password
+           creation.
+        ============================================ */
+
+        let invitationSent = false;
+
+        try {
+            await sendEmail(context, {
+                to: email,
+                subject: "Complete Your Fila Grades System Account Setup",
+                html: `
+                    <div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;padding:25px;color:#222;">
+                        <h2>Welcome to Fila Grades System</h2>
+
+                        <p>Hello ${fullName},</p>
+
+                        <p>
+                            Your teacher account has been created
+                            by your school administrator.
+                        </p>
+
+                        <p>
+                            To activate your account, verify your
+                            email address and create your own password.
+                        </p>
+
+                        <p style="margin:30px 0;">
+                            <a href="${ACCOUNT_SETUP_URL}"
+                               style="background:#2563eb;color:white;padding:13px 22px;text-decoration:none;border-radius:6px;display:inline-block;">
+                                Complete Account Setup
+                            </a>
+                        </p>
+
+                        <p>
+                            Use this email address when completing
+                            your account setup:
+                            <strong>${email}</strong>
+                        </p>
+
+                        <p>
+                            If you were not expecting this account,
+                            please contact your school administrator.
+                        </p>
+
+                        <p>Fila Grades System</p>
+                    </div>
+                `,
+                text: `
+Welcome to Fila Grades System.
+
+Hello ${fullName},
+
+Your teacher account has been created.
+
+Complete your account setup, verify your email and create your own password here:
+
+${ACCOUNT_SETUP_URL}
+
+Use this email address: ${email}
+
+Fila Grades System
+                `
+            });
+
+            invitationSent = true;
+
+        } catch (emailError) {
+            console.error(
+                "Teacher setup invitation email error:",
+                emailError
+            );
+        }
+
+        /* ============================================
+           RESPONSE
+        ============================================ */
+
         return json({
             success: true,
-            message: "Teacher created successfully. A verification code has been sent to the teacher's email address.",
+            message: invitationSent
+                ? "Teacher created successfully. An account setup invitation has been sent."
+                : "Teacher created successfully, but the invitation email could not be sent. Share the setup link with the teacher.",
+            setup_url: ACCOUNT_SETUP_URL,
+            invitation_sent: invitationSent,
             teacher: {
                 ...teacherResult.rows[0],
                 full_name: user.full_name,
