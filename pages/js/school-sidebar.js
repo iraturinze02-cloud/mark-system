@@ -71,7 +71,10 @@
                     <span class="sidebar-link-icon">🔍</span>
                     <span>Inspect Marks Recording</span>
                 </a>
-
+                <a href="teachers-performance.html" class="sidebar-link">
+                    <span class="sidebar-link-icon">📊</span>
+                    <span>Teachers' Performance</span>
+                </a>
             </nav>
 
             <div class="sidebar-footer">
