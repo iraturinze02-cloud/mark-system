@@ -3,6 +3,18 @@
    FILA GRADES SYSTEM
    SCHOOL ADMIN RESPONSIVE SIDEBAR
 ===================================================== */
+.school-sidebar .sidebar-link.active {
+    background-color: #2563eb !important;
+    background-image: linear-gradient(135deg, #2563eb, #1d4ed8) !important;
+    color: #ffffff !important;
+    border-left: 4px solid #93c5fd;
+    padding-left: 10px;
+    font-weight: 700;
+}
+
+.school-sidebar .sidebar-link.active span {
+    color: #ffffff !important;
+}
 
 :root {
     --sidebar-width: 260px;
