@@ -3,14 +3,14 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <meta name="description" content="Record and manage student marks for assigned classes and subjects in Fila Grades System.">
+<meta name="description" content="Record and manage student marks for assigned classes and subjects in Fila Grades System.">
+<meta name="theme-color" content="#173f70">
 
-    <meta name="theme-color" content="#173f70">
+<link rel="icon" type="image/x-icon" href="../../images/favicon/favicon.ico">
+<link rel="icon" type="image/png" sizes="512x512" href="../../images/favicon/favicon.png">
 
-    <link rel="icon" type="image/x-icon" href="../../images/favicon/favicon.ico">
-    <link rel="icon" type="image/png" sizes="512x512" href="../../images/favicon/favicon.png">
 <title>Teachers Management</title>
 <link rel="stylesheet" href="style.css">
 
@@ -230,7 +230,8 @@ tbody tr:hover {
     font-size: 11px;
     font-weight: 600;
 }
-    .assignment-item {
+
+.assignment-item {
     display: inline-flex;
     align-items: center;
     gap: 5px;
@@ -352,6 +353,17 @@ tbody tr:hover {
     line-height: 1.5;
 }
 
+.setup-notice {
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 9px;
+    padding: 12px;
+    margin-bottom: 17px;
+    color: #1e40af;
+    font-size: 12px;
+    line-height: 1.6;
+}
+
 .modal-actions {
     display: flex;
     gap: 10px;
@@ -470,6 +482,7 @@ tbody tr:hover {
 <main class="page-content">
 
     <section class="summary-grid">
+
         <div class="summary-card">
             <div class="summary-icon">👨‍🏫</div>
             <div>
@@ -493,6 +506,7 @@ tbody tr:hover {
                 <strong id="subjectCount">0</strong>
             </div>
         </div>
+
     </section>
 
     <section class="management-card">
@@ -534,62 +548,77 @@ tbody tr:hover {
 </main>
 
 <!-- TEACHER MODAL -->
+
 <div class="modal" id="teacherModal">
     <div class="modal-content">
 
         <div class="modal-heading">
             <h2 id="modalTitle">Add Teacher</h2>
-            <p>Enter the teacher's account and personal details.</p>
+            <p>Enter the teacher's personal and account details.</p>
         </div>
 
         <input type="hidden" id="teacherId">
 
+        <div class="setup-notice" id="setupNotice">
+            The teacher will receive an account setup invitation by email.
+            They will verify their email address and create their own password.
+        </div>
+
         <div class="form-group">
             <label for="teacherName">Full Name</label>
-            <input type="text" id="teacherName"
-                   maxlength="200" placeholder="Enter full name">
+            <input
+                type="text"
+                id="teacherName"
+                maxlength="200"
+                placeholder="Enter full name"
+                autocomplete="name"
+                required
+            >
         </div>
 
         <div class="form-group">
             <label for="teacherPhone">Phone Number</label>
-            <input type="tel" id="teacherPhone"
-                   maxlength="30" placeholder="e.g. 0786728623">
+            <input
+                type="tel"
+                id="teacherPhone"
+                maxlength="30"
+                placeholder="e.g. 0786728623"
+                autocomplete="tel"
+                required
+            >
         </div>
-        <div class="form-group">
-    <label for="teacherEmail">Email Address</label>
-    <input
-        type="email"
-        id="teacherEmail"
-        maxlength="254"
-        placeholder="Enter teacher's email address"
-        autocomplete="email"
-        required
-    >
-    <small class="form-hint">
-        A verification code will be sent to this email address.
-        The teacher must verify it before logging in.
-    </small>
-</div>
 
         <div class="form-group">
-            <label for="teacherPassword">Password</label>
-            <input type="password" id="teacherPassword"
-                   minlength="8" placeholder="At least 8 characters">
-            <small id="passwordHint" class="form-hint">
-                Required when creating a new teacher.
+            <label for="teacherEmail">Email Address</label>
+            <input
+                type="email"
+                id="teacherEmail"
+                maxlength="254"
+                placeholder="Enter teacher's email address"
+                autocomplete="email"
+                required
+            >
+            <small class="form-hint">
+                The teacher will use this email address to verify their account
+                and create their own password.
             </small>
         </div>
 
         <div class="form-group">
             <label for="staffNumber">Staff Number (optional)</label>
-            <input type="text" id="staffNumber"
-                   maxlength="50" placeholder="Enter staff number">
+            <input
+                type="text"
+                id="staffNumber"
+                maxlength="50"
+                placeholder="Enter staff number"
+            >
         </div>
 
         <div class="modal-actions">
             <button class="btn btn-success" id="saveTeacherBtn">
                 Save Teacher
             </button>
+
             <button class="btn btn-danger" id="cancelTeacherBtn">
                 Cancel
             </button>
@@ -599,6 +628,7 @@ tbody tr:hover {
 </div>
 
 <!-- ASSIGNMENT MODAL -->
+
 <div class="modal" id="assignmentModal">
     <div class="modal-content">
 
@@ -621,6 +651,7 @@ tbody tr:hover {
             <select id="assignmentSubject" disabled>
                 <option value="">First select a class</option>
             </select>
+
             <small class="form-hint" id="subjectHint">
                 Subjects will appear according to the selected class level.
             </small>
@@ -628,8 +659,8 @@ tbody tr:hover {
 
         <div class="current-assignments">
             <h3>Current Assignments</h3>
-            <div class="current-assignments-list"
-                 id="currentAssignments">
+
+            <div class="current-assignments-list" id="currentAssignments">
                 <span>No assignments yet.</span>
             </div>
         </div>
@@ -638,6 +669,7 @@ tbody tr:hover {
             <button class="btn btn-success" id="saveAssignmentBtn">
                 + Add Assignment
             </button>
+
             <button class="btn btn-danger" id="cancelAssignmentBtn">
                 Close
             </button>
@@ -649,6 +681,11 @@ tbody tr:hover {
 <div class="toast" id="toast"></div>
 
 <script type="module">
+
+/* =====================================================
+   AUTHENTICATION CHECK
+===================================================== */
+
 const currentUser = JSON.parse(
     localStorage.getItem("currentUser") || "null"
 );
@@ -665,17 +702,27 @@ if (
     throw new Error("Unauthorized access.");
 }
 
+/* =====================================================
+   ELEMENTS AND STATE
+===================================================== */
+
 const teacherTable = document.getElementById("teacherTable");
 const teacherModal = document.getElementById("teacherModal");
-const teacherEmailInput = document.getElementById("teacherEmail");
 const assignmentModal = document.getElementById("assignmentModal");
+
+const teacherEmailInput = document.getElementById("teacherEmail");
 
 let teachers = [];
 let classes = [];
 let subjects = [];
+
 let editMode = false;
 let activeTeacher = null;
 let toastTimer;
+
+/* =====================================================
+   TOAST MESSAGES
+===================================================== */
 
 function showToast(message, type = "success") {
     const toast = document.getElementById("toast");
@@ -688,15 +735,22 @@ function showToast(message, type = "success") {
 
     toastTimer = setTimeout(() => {
         toast.style.display = "none";
-    }, 4000);
+    }, 4500);
 }
 
+/* =====================================================
+   API HELPER
+===================================================== */
+
 async function api(url, options = {}) {
+
     const response = await fetch(url, {
         ...options,
         credentials: "same-origin",
+
         headers: {
             ...(options.headers || {}),
+
             ...(options.body ? {
                 "Content-Type": "application/json"
             } : {})
@@ -716,16 +770,25 @@ async function api(url, options = {}) {
     }
 
     if (!response.ok || result.success === false) {
-        throw new Error(result.message || "Request failed.");
+        throw new Error(
+            result.message || "Request failed."
+        );
     }
 
     return result;
 }
 
+/* =====================================================
+   TABLE HELPERS
+===================================================== */
+
 function addCell(row, value) {
     const cell = document.createElement("td");
+
     cell.textContent = value ?? "-";
+
     row.appendChild(cell);
+
     return cell;
 }
 
@@ -743,21 +806,35 @@ function showTableMessage(message) {
     teacherTable.appendChild(row);
 }
 
+/* =====================================================
+   LOAD TEACHERS
+===================================================== */
+
 async function loadTeachers() {
+
     showTableMessage("Loading teachers...");
 
     try {
         const data = await api("/api/teachers");
 
         teachers = data.teachers || [];
+
         renderTeachers();
 
     } catch (error) {
+
         showTableMessage(error.message);
+
+        showToast(error.message, "error");
     }
 }
 
+/* =====================================================
+   DISPLAY TEACHERS
+===================================================== */
+
 function renderTeachers() {
+
     teacherTable.replaceChildren();
 
     document.getElementById("teacherCount").textContent =
@@ -769,9 +846,12 @@ function renderTeachers() {
     }
 
     teachers.forEach((teacher, index) => {
+
         const row = document.createElement("tr");
 
         addCell(row, index + 1);
+
+        /* Teacher details */
 
         const nameCell = document.createElement("td");
 
@@ -784,11 +864,17 @@ function renderTeachers() {
         phone.textContent = teacher.phone || "-";
 
         nameCell.append(name, phone);
+
         row.appendChild(nameCell);
+
+        /* Staff number */
 
         addCell(row, teacher.staff_number || "-");
 
+        /* Assignments */
+
         const assignmentCell = document.createElement("td");
+
         const assignmentList = document.createElement("div");
         assignmentList.className = "assignment-list";
 
@@ -797,15 +883,19 @@ function renderTeachers() {
             : [];
 
         if (assignments.length) {
+
             assignments.forEach(item => {
+
                 const wrapper = document.createElement("div");
                 wrapper.className = "assignment-item";
 
                 const label = document.createElement("span");
+
                 label.textContent =
                     `${item.class_name} — ${item.subject_name}`;
 
                 const removeButton = document.createElement("button");
+
                 removeButton.className = "remove-assignment";
                 removeButton.type = "button";
                 removeButton.textContent = "×";
@@ -816,10 +906,14 @@ function renderTeachers() {
                 });
 
                 wrapper.append(label, removeButton);
+
                 assignmentList.appendChild(wrapper);
             });
+
         } else {
+
             const empty = document.createElement("span");
+
             empty.className = "no-assignment";
             empty.textContent = "No assignments";
 
@@ -827,13 +921,18 @@ function renderTeachers() {
         }
 
         assignmentCell.appendChild(assignmentList);
+
         row.appendChild(assignmentCell);
 
+        /* Actions */
+
         const actionsCell = document.createElement("td");
+
         const actions = document.createElement("div");
         actions.className = "actions";
 
         const editButton = document.createElement("button");
+
         editButton.className = "btn btn-warning btn-sm";
         editButton.textContent = "Edit";
 
@@ -842,6 +941,7 @@ function renderTeachers() {
         });
 
         const assignButton = document.createElement("button");
+
         assignButton.className = "btn btn-success btn-sm";
         assignButton.textContent = "+ Assignment";
 
@@ -850,18 +950,27 @@ function renderTeachers() {
         });
 
         actions.append(editButton, assignButton);
+
         actionsCell.appendChild(actions);
+
         row.appendChild(actionsCell);
 
         teacherTable.appendChild(row);
     });
 }
-    async function removeAssignment(assignmentId) {
+
+/* =====================================================
+   REMOVE TEACHER ASSIGNMENT
+===================================================== */
+
+async function removeAssignment(assignmentId) {
+
     if (!assignmentId) {
         showToast(
             "Assignment ID is missing. Reload the page and try again.",
             "error"
         );
+
         return;
     }
 
@@ -872,10 +981,12 @@ function renderTeachers() {
     if (!confirmed) return;
 
     try {
+
         const result = await api(
             "/api/teachers/assignments/delete",
             {
                 method: "POST",
+
                 body: JSON.stringify({
                     assignment_id: assignmentId
                 })
@@ -888,25 +999,35 @@ function renderTeachers() {
 
         await loadTeachers();
 
-        // Refresh the assignment modal if it is open.
         if (activeTeacher) {
+
             const updatedTeacher = teachers.find(
                 teacher =>
                     String(teacher.id) === String(activeTeacher.id)
             );
 
             if (updatedTeacher) {
+
                 activeTeacher = updatedTeacher;
+
                 renderCurrentAssignments(updatedTeacher);
             }
         }
 
     } catch (error) {
+
         showToast(error.message, "error");
     }
 }
+
+/* =====================================================
+   LOAD CLASSES AND SUBJECTS
+===================================================== */
+
 async function loadOptions() {
+
     try {
+
         const [classData, subjectData] = await Promise.all([
             api("/api/classes"),
             api("/api/subjects")
@@ -924,17 +1045,27 @@ async function loadOptions() {
         populateClasses();
 
     } catch (error) {
+
         showToast(error.message, "error");
     }
 }
 
+/* =====================================================
+   POPULATE CLASSES
+===================================================== */
+
 function populateClasses() {
+
     const select = document.getElementById("assignmentClass");
 
     select.replaceChildren();
-    select.add(new Option("-- Select Class --", ""));
+
+    select.add(
+        new Option("-- Select Class --", "")
+    );
 
     classes.forEach(item => {
+
         const option = new Option(
             `${item.class_name} (${item.class_level})`,
             String(item.id)
@@ -944,21 +1075,34 @@ function populateClasses() {
     });
 }
 
+/* =====================================================
+   FILTER SUBJECTS BY CLASS
+===================================================== */
+
 function filterSubjectsByClass() {
-    const classId = document.getElementById("assignmentClass").value;
-    const subjectSelect = document.getElementById("assignmentSubject");
-    const hint = document.getElementById("subjectHint");
+
+    const classId =
+        document.getElementById("assignmentClass").value;
+
+    const subjectSelect =
+        document.getElementById("assignmentSubject");
+
+    const hint =
+        document.getElementById("subjectHint");
 
     subjectSelect.replaceChildren();
 
     if (!classId) {
+
         subjectSelect.add(
             new Option("First select a class", "")
         );
 
         subjectSelect.disabled = true;
+
         hint.textContent =
             "Subjects will appear according to the selected class level.";
+
         return;
     }
 
@@ -979,6 +1123,7 @@ function filterSubjectsByClass() {
     );
 
     allowedSubjects.forEach(subject => {
+
         subjectSelect.add(
             new Option(
                 subject.subject_name,
@@ -994,7 +1139,12 @@ function filterSubjectsByClass() {
         : "No subjects are configured for this class level.";
 }
 
+/* =====================================================
+   DISPLAY CURRENT ASSIGNMENTS
+===================================================== */
+
 function renderCurrentAssignments(teacher) {
+
     const container =
         document.getElementById("currentAssignments");
 
@@ -1005,21 +1155,29 @@ function renderCurrentAssignments(teacher) {
         : [];
 
     if (!assignments.length) {
+
         const empty = document.createElement("span");
+
         empty.textContent = "No assignments yet.";
+
         container.appendChild(empty);
+
         return;
     }
 
     assignments.forEach(item => {
+
         const wrapper = document.createElement("div");
+
         wrapper.className = "assignment-item";
 
         const label = document.createElement("span");
+
         label.textContent =
             `${item.class_name} — ${item.subject_name}`;
 
         const removeButton = document.createElement("button");
+
         removeButton.className = "remove-assignment";
         removeButton.type = "button";
         removeButton.textContent = "×";
@@ -1030,57 +1188,88 @@ function renderCurrentAssignments(teacher) {
         });
 
         wrapper.append(label, removeButton);
+
         container.appendChild(wrapper);
     });
 }
+
+/* =====================================================
+   OPEN ADD TEACHER MODAL
+===================================================== */
+
 function openAddTeacher() {
+
     editMode = false;
 
-    document.getElementById("modalTitle").textContent = "Add Teacher";
+    document.getElementById("modalTitle").textContent =
+        "Add Teacher";
+
     document.getElementById("teacherId").value = "";
+
     document.getElementById("teacherName").value = "";
+
     document.getElementById("teacherPhone").value = "";
+
     teacherEmailInput.value = "";
-    document.getElementById("teacherPassword").value = "";
+
     document.getElementById("staffNumber").value = "";
 
-    document.getElementById("teacherPassword").required = true;
-    document.getElementById("passwordHint").textContent =
-        "Required when creating a new teacher.";
+    document.getElementById("setupNotice").style.display = "block";
+
+    document.getElementById("saveTeacherBtn").textContent =
+        "Create Teacher";
 
     teacherModal.style.display = "flex";
 }
 
+/* =====================================================
+   OPEN EDIT TEACHER MODAL
+===================================================== */
+
 function openEditTeacher(teacher) {
+
     editMode = true;
 
-    document.getElementById("modalTitle").textContent = "Edit Teacher";
-    document.getElementById("teacherId").value = teacher.id;
+    document.getElementById("modalTitle").textContent =
+        "Edit Teacher";
+
+    document.getElementById("teacherId").value =
+        teacher.id;
+
     document.getElementById("teacherName").value =
         teacher.full_name || "";
 
     document.getElementById("teacherPhone").value =
         teacher.phone || "";
-    teacherEmailInput.value = teacher.email || "";
 
-    document.getElementById("teacherPassword").value = "";
+    teacherEmailInput.value =
+        teacher.email || "";
 
     document.getElementById("staffNumber").value =
         teacher.staff_number || "";
 
-    document.getElementById("teacherPassword").required = false;
+    document.getElementById("setupNotice").style.display = "none";
 
-    document.getElementById("passwordHint").textContent =
-        "Leave blank to keep the current password.";
+    document.getElementById("saveTeacherBtn").textContent =
+        "Update Teacher";
 
     teacherModal.style.display = "flex";
 }
+
+/* =====================================================
+   CLOSE TEACHER MODAL
+===================================================== */
 
 function closeTeacherModal() {
     teacherModal.style.display = "none";
 }
 
+/* =====================================================
+   OPEN ASSIGNMENT MODAL
+===================================================== */
+
 function openAssignment(teacher) {
+
     activeTeacher = teacher;
 
     document.getElementById("assignmentTeacherId").value =
@@ -1089,96 +1278,142 @@ function openAssignment(teacher) {
     document.getElementById("assignmentClass").value = "";
 
     filterSubjectsByClass();
+
     renderCurrentAssignments(teacher);
 
     assignmentModal.style.display = "flex";
 }
 
+/* =====================================================
+   CLOSE ASSIGNMENT MODAL
+===================================================== */
+
 function closeAssignmentModal() {
+
     assignmentModal.style.display = "none";
+
     activeTeacher = null;
 }
 
+/* =====================================================
+   SAVE TEACHER
+===================================================== */
+
 async function saveTeacher() {
+
     const full_name =
         document.getElementById("teacherName").value.trim();
 
     const phone =
         document.getElementById("teacherPhone").value.trim();
-    const email = teacherEmailInput.value.trim().toLowerCase();
 
-    const password =
-        document.getElementById("teacherPassword").value;
+    const email =
+        teacherEmailInput.value.trim().toLowerCase();
 
     const staff_number =
         document.getElementById("staffNumber").value.trim();
 
-   if (!full_name || !phone || !email || (!editMode && !password)) {
-    showToast("Complete all required fields.", "error");
-    return;
-}
+    /* Validate required fields */
 
-if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    showToast("Enter a valid email address.", "error");
-    return;
-}
+    if (!full_name || !phone || !email) {
 
-    
-    if (password && password.length < 8) {
         showToast(
-            "Password must contain at least 8 characters.",
+            "Enter the teacher's full name, phone number and email.",
             "error"
         );
+
         return;
     }
 
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+
+        showToast(
+            "Enter a valid email address.",
+            "error"
+        );
+
+        return;
+    }
+
+    /* Build payload matching the backend */
+
     const payload = {
-    full_name,
-    phone,
-    email,
-    staff_number
-};
-    if (password) payload.password = password;
+        full_name,
+        phone,
+        email,
+        staff_number
+    };
 
     if (editMode) {
+
         payload.id =
             document.getElementById("teacherId").value;
     }
 
-    const button = document.getElementById("saveTeacherBtn");
+    const button =
+        document.getElementById("saveTeacherBtn");
 
     button.disabled = true;
-    button.textContent = "Saving...";
+
+    button.textContent = editMode
+        ? "Updating..."
+        : "Creating...";
 
     try {
+
+        /*
+         * Teacher creation:
+         * POST /api/teachers
+         *
+         * The backend creates the account with
+         * must_change_password = TRUE and sends
+         * the account setup invitation.
+         *
+         * No password is sent from this page.
+         */
+
         const endpoint = editMode
             ? "/api/teachers/update"
             : "/api/teachers";
 
-        await api(endpoint, {
+        const result = await api(endpoint, {
             method: "POST",
             body: JSON.stringify(payload)
         });
 
         showToast(
-            editMode
-                ? "Teacher updated successfully."
-                : "Teacher created successfully."
+            result.message ||
+            (
+                editMode
+                    ? "Teacher updated successfully."
+                    : "Teacher created successfully. Account setup invitation sent."
+            )
         );
 
         closeTeacherModal();
+
         await loadTeachers();
 
     } catch (error) {
+
         showToast(error.message, "error");
 
     } finally {
+
         button.disabled = false;
-        button.textContent = "Save Teacher";
+
+        button.textContent = editMode
+            ? "Update Teacher"
+            : "Create Teacher";
     }
 }
 
+/* =====================================================
+   SAVE TEACHING ASSIGNMENT
+===================================================== */
+
 async function saveAssignment() {
+
     const teacher_id =
         document.getElementById("assignmentTeacherId").value;
 
@@ -1189,10 +1424,12 @@ async function saveAssignment() {
         document.getElementById("assignmentSubject").value;
 
     if (!class_id || !subject_id) {
+
         showToast(
             "Select a class and an available subject.",
             "error"
         );
+
         return;
     }
 
@@ -1200,11 +1437,14 @@ async function saveAssignment() {
         document.getElementById("saveAssignmentBtn");
 
     button.disabled = true;
+
     button.textContent = "Saving...";
 
     try {
+
         await api("/api/teachers/assignments", {
             method: "POST",
+
             body: JSON.stringify({
                 teacher_id,
                 class_id,
@@ -1212,7 +1452,9 @@ async function saveAssignment() {
             })
         });
 
-        showToast("Teaching assignment saved successfully.");
+        showToast(
+            "Teaching assignment saved successfully."
+        );
 
         await loadTeachers();
 
@@ -1221,21 +1463,31 @@ async function saveAssignment() {
         );
 
         if (updatedTeacher) {
+
             activeTeacher = updatedTeacher;
+
             renderCurrentAssignments(updatedTeacher);
         }
 
         document.getElementById("assignmentClass").value = "";
+
         filterSubjectsByClass();
 
     } catch (error) {
+
         showToast(error.message, "error");
 
     } finally {
+
         button.disabled = false;
+
         button.textContent = "+ Add Assignment";
     }
 }
+
+/* =====================================================
+   EVENT LISTENERS
+===================================================== */
 
 document.getElementById("addTeacherBtn")
     .addEventListener("click", openAddTeacher);
@@ -1256,21 +1508,28 @@ document.getElementById("assignmentClass")
     .addEventListener("change", filterSubjectsByClass);
 
 teacherModal.addEventListener("click", event => {
+
     if (event.target === teacherModal) {
         closeTeacherModal();
     }
 });
 
 assignmentModal.addEventListener("click", event => {
+
     if (event.target === assignmentModal) {
         closeAssignmentModal();
     }
 });
 
+/* =====================================================
+   INITIAL LOAD
+===================================================== */
+
 await Promise.all([
     loadOptions(),
     loadTeachers()
 ]);
+
 </script>
 
 </body>
