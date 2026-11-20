@@ -16,6 +16,7 @@
     <title>Sector Admin Dashboard</title>
 
     <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="../css/sector-sidebar.css">
 
     <style>
         :root {
@@ -434,6 +435,10 @@
 
 <body>
 
+<div id="sectorSidebarContainer"></div>
+
+<div class="sector-main-content">
+
 <header class="top-header">
     <h1>SCHOOL CLUSTER ADMIN DASHBOARD</h1>
     <p>Manage schools, school administrators and TESTS</p>
@@ -486,6 +491,45 @@
             <span class="card-link">View schools →</span>
         </div>
 
+        
+<!-- MANAGE USERS -->
+
+<div class="dashboard-card"
+     onclick="navigateTo('users.html')">
+
+    <div class="card-icon">👥</div>
+
+    <h3>Manage Users</h3>
+
+    <p>
+        View and manage user accounts registered
+        within your sector, including school administrators
+        and teachers.
+    </p>
+
+    <span class="card-link">Manage sector users →</span>
+</div>
+
+
+<!-- INSPECT MARKS RECORDING -->
+
+<div class="dashboard-card"
+     onclick="navigateTo('inspect-marks-recording.html')">
+
+    <div class="card-icon">🔍</div>
+
+    <h3>Inspect Marks Recording</h3>
+
+    <p>
+        Monitor marks recording activities across schools
+        in your sector and inspect the progress of
+        teachers recording student marks.
+    </p>
+
+    <span class="card-link">Inspect marks recording →</span>
+</div>
+
+
         <div class="dashboard-card"
              onclick="navigateTo('../school/school-marks.html')">
 
@@ -520,7 +564,7 @@
 
 </main>
 
-
+<script src="../js/sector-sidebar.js"></script>
 
 
 
