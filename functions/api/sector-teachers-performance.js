@@ -3,7 +3,7 @@ import {
     connectDB,
     json,
     requireSectorAdmin
-} from "../../_utils.js";
+} from "../_utils.js";
 
 /* =====================================================
    HELPERS
