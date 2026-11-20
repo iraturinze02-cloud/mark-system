@@ -2,7 +2,7 @@
 import {
     connectDB,
     json
-} from "../../_utils.js";
+} from "../_utils.js";
 
 import { jwtVerify } from "jose";
 
