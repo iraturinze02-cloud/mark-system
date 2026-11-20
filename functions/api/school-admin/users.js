@@ -49,7 +49,10 @@ export async function onRequestGet(context) {
                     u.role,
                     u.school_id,
                     u.status,
-                    s.name AS school_name
+                    COALESCE(
+    to_jsonb(s)->>'name',
+    to_jsonb(s)->>'school_name'
+) AS school_name
                 FROM users u
                 LEFT JOIN schools s
                     ON s.id = u.school_id
