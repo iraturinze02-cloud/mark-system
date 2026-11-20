@@ -1,10 +1,11 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <meta name="description" content="Record and manage student marks for assigned classes and subjects in Fila Grades System.">
+     <meta name="description" content="Record and manage student marks for assigned classes and subjects in Fila Grades System.">
 
     <meta name="theme-color" content="#173f70">
 
@@ -12,34 +13,36 @@
     <link rel="icon" type="image/png" sizes="512x512" href="/images/favicon/favicon.png">
 
 <meta name="theme-color" content="#102b46">
-<title>Teachers Management | Fila Marks System</title>
+<title>School Users | Fila Grades System</title>
 
-<link rel="stylesheet"
- href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
 <style>
 :root {
-    --primary: #174ea6;
-    --primary-dark: #123d82;
-    --background: #f4f7fb;
-    --surface: #ffffff;
-    --text: #1e293b;
-    --muted: #64748b;
-    --border: #e2e8f0;
+    --primary: #173f75;
+    --primary-dark: #102e57;
+    --background: #f4f6fa;
+    --white: #ffffff;
+    --text: #1f2937;
+    --muted: #6b7280;
+    --border: #e5e7eb;
     --green: #15803d;
-    --red: #dc2626;
-    --orange: #d97706;
-    --shadow: 0 5px 20px rgba(15, 23, 42, .06);
+    --green-bg: #dcfce7;
+    --red: #b91c1c;
+    --red-bg: #fee2e2;
+    --orange: #c2410c;
+    --orange-bg: #ffedd5;
+    --blue-bg: #dbeafe;
+    --shadow: 0 3px 12px rgba(0,0,0,.05);
 }
 
 * {
     box-sizing: border-box;
-    margin: 0;
-    padding: 0;
 }
 
 body {
-    font-family: Arial, sans-serif;
+    margin: 0;
+    font-family: Arial, Helvetica, sans-serif;
     background: var(--background);
     color: var(--text);
 }
@@ -48,309 +51,272 @@ button, input, select {
     font: inherit;
 }
 
-button {
-    cursor: pointer;
-}
-
-.loading-screen {
-    position: fixed;
-    inset: 0;
-    background: white;
+.topbar {
+    background: var(--white);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 24px;
     display: flex;
+    justify-content: space-between;
     align-items: center;
-    justify-content: center;
-    flex-direction: column;
-    gap: 14px;
-    z-index: 9999;
-}
-
-.loading-screen i {
-    font-size: 32px;
-    color: var(--primary);
-}
-
-.app {
-    display: none;
-    min-height: 100vh;
-}
-
-.sidebar {
-    width: 250px;
-    background: #102b52;
-    color: white;
-    position: fixed;
-    inset: 0 auto 0 0;
-    overflow-y: auto;
-    z-index: 1000;
-    transition: transform .25s;
+    position: sticky;
+    top: 0;
+    z-index: 20;
 }
 
 .brand {
-    padding: 25px 20px;
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    color: var(--primary);
     font-size: 19px;
     font-weight: 800;
-    border-bottom: 1px solid rgba(255,255,255,.12);
 }
 
-.brand span {
-    color: #75b7ff;
-}
-
-.sidebar-label {
-    padding: 22px 20px 9px;
-    color: #9eb3d1;
-    font-size: 10px;
-    font-weight: bold;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-}
-
-.nav-link {
-    display: flex;
-    align-items: center;
-    gap: 13px;
-    padding: 13px 20px;
-    color: #dce8f8;
-    text-decoration: none;
-    font-size: 13px;
-    transition: .2s;
-}
-
-.nav-link i {
-    width: 18px;
-    text-align: center;
-}
-
-.nav-link:hover,
-.nav-link.active {
-    background: rgba(255,255,255,.12);
-    color: white;
-    border-left: 4px solid #75b7ff;
-    padding-left: 16px;
-}
-
-.main {
-    margin-left: 250px;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-}
-
-.topbar {
-    background: white;
-    min-height: 76px;
-    padding: 15px 28px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    border-bottom: 1px solid var(--border);
-    gap: 15px;
-}
-
-.topbar-left {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-}
-
-.topbar h1 {
-    font-size: 19px;
-}
-
-.breadcrumb {
-    color: var(--muted);
-    font-size: 12px;
-    margin-top: 5px;
-}
-
-.profile {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 13px;
-    font-weight: bold;
-}
-
-.avatar {
+.brand-icon {
     width: 38px;
     height: 38px;
-    background: #e7efff;
-    color: var(--primary);
-    border-radius: 50%;
+    border-radius: 10px;
+    background: var(--primary);
+    color: white;
     display: grid;
     place-items: center;
 }
 
-.menu-btn {
-    display: none;
-    border: 0;
-    background: transparent;
-    font-size: 21px;
-    color: var(--text);
+.topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 14px;
 }
 
-.content {
-    padding: 28px;
-    flex: 1;
+.role-label {
+    background: var(--blue-bg);
+    color: var(--primary);
+    padding: 8px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: .4px;
 }
 
-.page-intro {
+.profile-icon {
+    width: 37px;
+    height: 37px;
+    border-radius: 50%;
+    background: #eef2f7;
+    color: var(--primary);
+    display: grid;
+    place-items: center;
+}
+
+.container {
+    width: min(1500px, 100%);
+    margin: auto;
+    padding: 28px 24px 50px;
+}
+
+.page-heading {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 15px;
-    margin-bottom: 25px;
+    gap: 16px;
+    margin-bottom: 24px;
 }
 
-.page-intro h2 {
-    font-size: 23px;
-    margin-bottom: 7px;
+.page-heading h1 {
+    margin: 0 0 7px;
+    font-size: 25px;
+    color: var(--primary-dark);
 }
 
-.page-intro p {
+.page-heading p {
+    margin: 0;
     color: var(--muted);
-    font-size: 13px;
+    font-size: 14px;
 }
 
-.primary-btn,
-.secondary-btn,
-.danger-btn {
-    border: 0;
-    border-radius: 7px;
-    padding: 11px 15px;
-    font-size: 12px;
-    font-weight: bold;
+.school-name {
+    margin-top: 8px;
+    color: var(--primary);
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.btn {
+    border: none;
+    border-radius: 8px;
+    padding: 10px 15px;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 13px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 8px;
+    transition: .2s;
 }
 
-.primary-btn {
+.btn-primary {
     background: var(--primary);
     color: white;
 }
 
-.primary-btn:hover {
+.btn-primary:hover {
     background: var(--primary-dark);
 }
 
-.secondary-btn {
-    background: #edf2f7;
-    color: #334155;
-}
-
-.danger-btn {
-    background: #fee2e2;
-    color: #b91c1c;
-}
-
-.stats {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 17px;
-    margin-bottom: 24px;
-}
-
-.stat {
+.btn-light {
     background: white;
-    padding: 20px;
-    border-radius: 11px;
-    box-shadow: var(--shadow);
+    color: var(--primary);
     border: 1px solid var(--border);
 }
 
-.stat-icon {
-    width: 39px;
-    height: 39px;
-    border-radius: 9px;
+.btn-light:hover {
+    background: #f8fafc;
+}
+
+.btn-danger {
+    background: var(--red-bg);
+    color: var(--red);
+}
+
+.btn-success {
+    background: var(--green-bg);
+    color: var(--green);
+}
+
+.btn:disabled {
+    opacity: .55;
+    cursor: not-allowed;
+}
+
+.summary-grid {
     display: grid;
-    place-items: center;
-    margin-bottom: 14px;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 17px;
+    margin-bottom: 25px;
 }
 
-.stat-icon.blue {
-    background: #dbeafe;
-    color: #1d4ed8;
+.summary-card {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 112px;
 }
 
-.stat-icon.green {
-    background: #dcfce7;
-    color: #15803d;
-}
-
-.stat-icon.orange {
-    background: #ffedd5;
-    color: #c2410c;
-}
-
-.stat-icon.purple {
-    background: #ede9fe;
-    color: #6d28d9;
-}
-
-.stat-label {
+.summary-card h3 {
+    margin: 0 0 9px;
     color: var(--muted);
     font-size: 12px;
+    font-weight: 700;
 }
 
-.stat-value {
-    font-size: 25px;
-    font-weight: 800;
-    margin-top: 7px;
+.summary-card strong {
+    font-size: 27px;
+    color: var(--primary-dark);
+}
+
+.summary-icon {
+    width: 45px;
+    height: 45px;
+    border-radius: 12px;
+    display: grid;
+    place-items: center;
+    font-size: 18px;
+    background: var(--blue-bg);
+    color: var(--primary);
+}
+
+.summary-card:nth-child(2) .summary-icon {
+    background: var(--green-bg);
+    color: var(--green);
+}
+
+.summary-card:nth-child(3) .summary-icon {
+    background: var(--red-bg);
+    color: var(--red);
+}
+
+.summary-card:nth-child(4) .summary-icon {
+    background: var(--orange-bg);
+    color: var(--orange);
 }
 
 .panel {
     background: white;
     border: 1px solid var(--border);
-    border-radius: 11px;
+    border-radius: 12px;
     box-shadow: var(--shadow);
     overflow: hidden;
 }
 
-.panel-heading {
-    padding: 19px 21px;
+.panel-header {
+    padding: 20px;
+    border-bottom: 1px solid var(--border);
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 12px;
-    border-bottom: 1px solid var(--border);
+    gap: 15px;
 }
 
-.panel-heading h3 {
-    font-size: 15px;
+.panel-header h2 {
+    margin: 0;
+    font-size: 17px;
+    color: var(--primary-dark);
+}
+
+.panel-header p {
+    margin: 6px 0 0;
+    color: var(--muted);
+    font-size: 12px;
 }
 
 .filters {
     padding: 17px 20px;
     display: grid;
-    grid-template-columns: minmax(180px, 1fr) 170px 190px auto;
-    gap: 10px;
+    grid-template-columns: minmax(220px, 1fr) 180px 180px 180px;
+    gap: 12px;
     border-bottom: 1px solid var(--border);
 }
 
-.filters input,
-.filters select,
-.form-group input,
-.form-group select {
+.filter-control {
     width: 100%;
-    padding: 11px 12px;
-    border: 1px solid var(--border);
+    min-height: 40px;
+    padding: 9px 11px;
+    border: 1px solid #d1d5db;
     border-radius: 7px;
     outline: none;
     background: white;
     color: var(--text);
-    font-size: 12px;
+    font-size: 13px;
 }
 
-.filters input:focus,
-.filters select:focus,
-.form-group input:focus,
-.form-group select:focus {
+.filter-control:focus {
     border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(23,63,117,.1);
 }
 
-.table-wrap {
+.search-box {
+    position: relative;
+}
+
+.search-box i {
+    position: absolute;
+    left: 12px;
+    top: 13px;
+    color: #9ca3af;
+    font-size: 13px;
+}
+
+.search-box input {
+    padding-left: 35px;
+}
+
+.table-wrapper {
     width: 100%;
     overflow-x: auto;
 }
@@ -358,328 +324,311 @@ button {
 table {
     width: 100%;
     border-collapse: collapse;
-    min-width: 850px;
+    min-width: 1050px;
+}
+
+thead {
+    background: #f8fafc;
 }
 
 th {
     text-align: left;
-    padding: 14px 15px;
-    background: #f8fafc;
+    padding: 13px 15px;
     color: #64748b;
-    font-size: 10px;
-    letter-spacing: .5px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .4px;
     white-space: nowrap;
 }
 
 td {
     padding: 14px 15px;
     border-top: 1px solid #edf0f4;
-    font-size: 12px;
+    font-size: 13px;
     vertical-align: middle;
 }
 
-.teacher-name {
-    font-weight: bold;
-    margin-bottom: 5px;
+tbody tr:hover {
+    background: #fafcff;
 }
 
-.teacher-email {
+.user-name {
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.user-email {
     color: var(--muted);
-    font-size: 11px;
+    font-size: 12px;
+    margin-top: 4px;
 }
 
-.status,
-.verification {
-    display: inline-block;
+.badge {
+    display: inline-flex;
+    align-items: center;
     padding: 5px 9px;
     border-radius: 20px;
     font-size: 10px;
-    font-weight: bold;
+    font-weight: 800;
     white-space: nowrap;
 }
 
-.status.active,
-.verification.verified {
-    background: #dcfce7;
-    color: #166534;
+.badge-active,
+.badge-verified,
+.badge-complete {
+    color: var(--green);
+    background: var(--green-bg);
 }
 
-.status.inactive,
-.verification.unverified {
-    background: #fee2e2;
-    color: #991b1b;
+.badge-inactive,
+.badge-unverified {
+    color: var(--red);
+    background: var(--red-bg);
+}
+
+.badge-pending {
+    color: var(--orange);
+    background: var(--orange-bg);
+}
+
+.badge-role {
+    color: var(--primary);
+    background: var(--blue-bg);
 }
 
 .action-buttons {
     display: flex;
-    gap: 6px;
+    align-items: center;
+    gap: 7px;
+    white-space: nowrap;
 }
 
 .icon-btn {
-    width: 30px;
-    height: 30px;
-    border: 0;
-    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: white;
+    color: var(--primary);
+    border-radius: 7px;
+    width: 33px;
+    height: 33px;
+    cursor: pointer;
+}
+
+.icon-btn:hover {
     background: #eff6ff;
-    color: #1d4ed8;
 }
 
-.icon-btn.edit {
-    background: #fef3c7;
-    color: #92400e;
-}
-
-.icon-btn.toggle {
-    background: #f1f5f9;
-    color: #475569;
-}
-
-.empty {
+.empty-state {
     text-align: center;
+    padding: 45px 15px;
     color: var(--muted);
-    padding: 35px;
 }
 
-.pagination {
-    padding: 16px 20px;
+.empty-state i {
+    font-size: 30px;
+    margin-bottom: 12px;
+    color: #9ca3af;
+}
+
+.table-footer {
+    padding: 14px 20px;
+    border-top: 1px solid var(--border);
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 10px;
     color: var(--muted);
     font-size: 12px;
 }
 
-.page-buttons {
-    display: flex;
-    gap: 5px;
-}
-
-.page-buttons button {
-    padding: 7px 10px;
-    border: 1px solid var(--border);
-    background: white;
-    border-radius: 5px;
-    font-size: 11px;
-}
-
-.page-buttons button.active {
-    background: var(--primary);
-    color: white;
-    border-color: var(--primary);
-}
-
-.footer {
-    padding: 17px 28px;
-    display: flex;
-    justify-content: space-between;
+.loading {
+    text-align: center;
+    padding: 45px;
     color: var(--muted);
-    font-size: 11px;
-    border-top: 1px solid var(--border);
 }
 
-.modal {
+.loading i {
+    margin-right: 8px;
+}
+
+.modal-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(15, 23, 42, .55);
+    background: rgba(15,23,42,.55);
+    z-index: 100;
     display: none;
     align-items: center;
     justify-content: center;
-    padding: 15px;
-    z-index: 2000;
+    padding: 18px;
 }
 
-.modal.show {
+.modal-overlay.show {
     display: flex;
 }
 
-.modal-box {
-    background: white;
-    width: 100%;
-    max-width: 550px;
+.modal {
+    width: min(650px, 100%);
     max-height: 90vh;
     overflow-y: auto;
-    border-radius: 12px;
-    box-shadow: 0 20px 60px rgba(0,0,0,.2);
+    background: white;
+    border-radius: 13px;
+    box-shadow: 0 15px 50px rgba(0,0,0,.2);
 }
 
 .modal-header {
     padding: 19px 22px;
-    border-bottom: 1px solid var(--border);
     display: flex;
-    align-items: center;
     justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
 }
 
-.modal-header h3 {
-    font-size: 16px;
+.modal-header h2 {
+    margin: 0;
+    color: var(--primary-dark);
+    font-size: 18px;
 }
 
-.close-btn {
+.modal-close {
+    border: none;
     background: transparent;
-    border: 0;
-    font-size: 19px;
+    font-size: 22px;
     color: var(--muted);
+    cursor: pointer;
 }
 
 .modal-body {
     padding: 22px;
 }
 
-.form-grid {
+.detail-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 17px;
+    grid-template-columns: repeat(2, minmax(0,1fr));
+    gap: 18px;
 }
 
-.form-group.full {
-    grid-column: 1 / -1;
+.detail-item {
+    min-width: 0;
 }
 
-.form-group label {
-    display: block;
-    font-size: 12px;
-    font-weight: bold;
-    margin-bottom: 7px;
-}
-
-.form-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 9px;
-    margin-top: 22px;
-}
-
-.details-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 17px;
-}
-
-.detail-item small {
+.detail-item label {
     display: block;
     color: var(--muted);
-    font-size: 10px;
+    font-size: 11px;
     margin-bottom: 6px;
 }
 
 .detail-item strong {
+    display: block;
     font-size: 13px;
     overflow-wrap: anywhere;
 }
 
+.modal-footer {
+    padding: 15px 22px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.toast-container {
+    position: fixed;
+    top: 85px;
+    right: 20px;
+    z-index: 200;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
 .toast {
-    position: fixed;
-    bottom: 25px;
-    right: 25px;
-    background: #172b4d;
+    background: #1f2937;
     color: white;
-    padding: 14px 19px;
+    padding: 13px 17px;
     border-radius: 8px;
+    box-shadow: 0 5px 20px rgba(0,0,0,.15);
     font-size: 13px;
-    box-shadow: var(--shadow);
-    display: none;
-    z-index: 5000;
-    max-width: min(400px, calc(100vw - 40px));
+    max-width: 350px;
 }
 
-.toast.show {
-    display: block;
+.toast.success {
+    background: #166534;
 }
 
-.overlay {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,.4);
-    z-index: 900;
+.toast.error {
+    background: #991b1b;
 }
 
-@media(max-width: 1050px) {
-    .stats {
-        grid-template-columns: repeat(2, 1fr);
+.toast.warning {
+    background: #9a3412;
+}
+
+@media (max-width: 950px) {
+    .summary-grid {
+        grid-template-columns: repeat(2, minmax(0,1fr));
     }
 
     .filters {
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: repeat(2, minmax(0,1fr));
     }
 }
 
-@media(max-width: 750px) {
-    .sidebar {
-        transform: translateX(-100%);
-    }
-
-    .sidebar.show {
-        transform: translateX(0);
-    }
-
-    .overlay.show {
-        display: block;
-    }
-
-    .main {
-        margin-left: 0;
-    }
-
-    .menu-btn {
-        display: block;
-    }
-
+@media (max-width: 600px) {
     .topbar {
-        padding: 13px 16px;
+        padding: 12px 15px;
     }
 
-    .content {
-        padding: 18px 13px;
+    .brand {
+        font-size: 15px;
     }
 
-    .page-intro {
+    .container {
+        padding: 22px 13px 35px;
+    }
+
+    .page-heading {
         align-items: flex-start;
         flex-direction: column;
     }
 
+    .page-heading h1 {
+        font-size: 22px;
+    }
+
+    .summary-grid {
+        gap: 10px;
+    }
+
+    .summary-card {
+        padding: 13px;
+        min-height: 95px;
+    }
+
+    .summary-card strong {
+        font-size: 23px;
+    }
+
+    .summary-icon {
+        width: 36px;
+        height: 36px;
+        font-size: 15px;
+    }
+
     .filters {
         grid-template-columns: 1fr;
-    }
-
-    .footer {
-        padding: 15px;
-        gap: 10px;
-        flex-direction: column;
-    }
-}
-
-@media(max-width: 450px) {
-    .stats {
-        grid-template-columns: 1fr 1fr;
-        gap: 9px;
-    }
-
-    .stat {
         padding: 14px;
     }
 
-    .stat-value {
-        font-size: 21px;
+    .panel-header {
+        padding: 16px;
     }
 
-    .profile-name {
-        display: none;
-    }
-
-    .form-grid,
-    .details-grid {
+    .detail-grid {
         grid-template-columns: 1fr;
     }
 
-    .form-group.full {
-        grid-column: auto;
-    }
-
-    .pagination {
-        flex-direction: column;
-        align-items: flex-start;
+    .role-label {
+        font-size: 9px;
+        padding: 7px 9px;
     }
 }
 </style>
@@ -687,349 +636,187 @@ td {
 
 <body>
 
-<div class="loading-screen" id="loadingScreen">
-    <i class="fas fa-circle-notch fa-spin"></i>
-    <strong>Loading Teachers Management...</strong>
-    <small>Please wait.</small>
-</div>
-
-<div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
-
-<div class="app" id="app">
-
-<aside class="sidebar" id="sidebar">
-
-    <div class="brand">
-        FILA <span>MARKS</span>
-    </div>
-
-    <div class="sidebar-label">Main Menu</div>
-
-    <a class="nav-link" href="school-admin.html">
-        <i class="fas fa-chart-line"></i> Dashboard
-    </a>
-
-    <a class="nav-link" href="school-users.html">
-        <i class="fas fa-users"></i> School Users
-    </a>
-
-    <a class="nav-link" href="school-students.html">
-        <i class="fas fa-user-graduate"></i> Students
-    </a>
-
-    <a class="nav-link" href="school-classes.html">
-        <i class="fas fa-chalkboard"></i> Classes
-    </a>
-
-    <a class="nav-link" href="school-subjects.html">
-        <i class="fas fa-book"></i> Subjects
-    </a>
-
-    <a class="nav-link active" href="teachers.html">
-        <i class="fas fa-chalkboard-teacher"></i> Teachers
-    </a>
-
-    <div class="sidebar-label">Academic Management</div>
-
-    <a class="nav-link" href="school-teachers-inspection.html">
-        <i class="fas fa-user-check"></i> Teachers Inspection
-    </a>
-
-    <a class="nav-link" href="school-marks-inspection.html">
-        <i class="fas fa-clipboard-check"></i> Marks Inspection
-    </a>
-
-    <a class="nav-link" href="school-examinations.html">
-        <i class="fas fa-file-alt"></i> Examinations
-    </a>
-
-    <a class="nav-link" href="school-tests.html">
-        <i class="fas fa-pen"></i> Tests
-    </a>
-
-    <a class="nav-link" href="school-results.html">
-        <i class="fas fa-poll"></i> Results
-    </a>
-
-    <a class="nav-link" href="school-reports.html">
-        <i class="fas fa-chart-bar"></i> Reports
-    </a>
-
-    <div class="sidebar-label">Account</div>
-
-    <a class="nav-link" href="school-profile.html">
-        <i class="fas fa-user"></i> My Profile
-    </a>
-
-    <a class="nav-link" href="school-settings.html">
-        <i class="fas fa-cog"></i> Settings
-    </a>
-
-</aside>
-
-<main class="main">
-
 <header class="topbar">
-
-    <div class="topbar-left">
-        <button class="menu-btn" onclick="toggleSidebar()">
-            <i class="fas fa-bars"></i>
-        </button>
-
-        <div>
-            <h1>Teachers Management</h1>
-            <div class="breadcrumb">
-                School Administration / Teachers
-            </div>
+    <div class="brand">
+        <div class="brand-icon">
+            <i class="fas fa-graduation-cap"></i>
         </div>
+        <span>Fila Grades System</span>
     </div>
 
-    <div class="profile">
-        <div class="avatar">
-            <i class="fas fa-user-tie"></i>
-        </div>
-
-        <div class="profile-name">
-            <div id="adminName">School Admin</div>
-            <small id="sidebarSchool"
-                   style="color:#64748b;font-weight:normal">
-                School Administrator
-            </small>
+    <div class="topbar-right">
+        <span class="role-label">SCHOOL ADMIN</span>
+        <div class="profile-icon">
+            <i class="fas fa-user"></i>
         </div>
     </div>
-
 </header>
 
-<div class="content">
+<main class="container">
 
-    <section class="page-intro">
+    <section class="page-heading">
         <div>
-            <h2>Teachers Management</h2>
-            <p>Manage teacher accounts and their school assignments.</p>
+            <h1>School Users Management</h1>
+            <p>View and manage user accounts belonging to your school.</p>
+            <div class="school-name" id="schoolName">
+                <i class="fas fa-school"></i> Loading school information...
+            </div>
         </div>
 
-        <button class="primary-btn" onclick="openCreateModal()">
-            <i class="fas fa-plus"></i>
-            Register Teacher
+        <button class="btn btn-primary" id="refreshBtn">
+            <i class="fas fa-sync-alt"></i>
+            Refresh
         </button>
     </section>
 
-    <section class="stats">
+    <section class="summary-grid">
 
-        <div class="stat">
-            <div class="stat-icon blue">
+        <div class="summary-card">
+            <div>
+                <h3>Total Users</h3>
+                <strong id="totalUsers">0</strong>
+            </div>
+            <div class="summary-icon">
                 <i class="fas fa-users"></i>
             </div>
-            <div class="stat-label">Total Teachers</div>
-            <div class="stat-value" id="totalTeachers">0</div>
         </div>
 
-        <div class="stat">
-            <div class="stat-icon green">
+        <div class="summary-card">
+            <div>
+                <h3>Active Users</h3>
+                <strong id="activeUsers">0</strong>
+            </div>
+            <div class="summary-icon">
                 <i class="fas fa-user-check"></i>
             </div>
-            <div class="stat-label">Active Teachers</div>
-            <div class="stat-value" id="activeTeachers">0</div>
         </div>
 
-        <div class="stat">
-            <div class="stat-icon orange">
-                <i class="fas fa-user-clock"></i>
+        <div class="summary-card">
+            <div>
+                <h3>Inactive Users</h3>
+                <strong id="inactiveUsers">0</strong>
             </div>
-            <div class="stat-label">Unverified Teachers</div>
-            <div class="stat-value" id="unverifiedTeachers">0</div>
-        </div>
-
-        <div class="stat">
-            <div class="stat-icon purple">
+            <div class="summary-icon">
                 <i class="fas fa-user-slash"></i>
             </div>
-            <div class="stat-label">Inactive Teachers</div>
-            <div class="stat-value" id="inactiveTeachers">0</div>
+        </div>
+
+        <div class="summary-card">
+            <div>
+                <h3>Pending Account Setup</h3>
+                <strong id="pendingUsers">0</strong>
+            </div>
+            <div class="summary-icon">
+                <i class="fas fa-user-clock"></i>
+            </div>
         </div>
 
     </section>
 
     <section class="panel">
 
-        <div class="panel-heading">
-            <h3>
-                <i class="fas fa-users" style="color:var(--primary)"></i>
-                School Teachers
-            </h3>
-
-            <button class="secondary-btn" onclick="loadTeachers()">
-                <i class="fas fa-rotate"></i> Refresh
-            </button>
+        <div class="panel-header">
+            <div>
+                <h2><i class="fas fa-users"></i> School Users</h2>
+                <p>View account information and manage user account status.</p>
+            </div>
         </div>
 
         <div class="filters">
 
-            <input
-                type="search"
-                id="searchInput"
-                placeholder="Search by name, email or phone..."
-                oninput="applyFilters()">
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input
+                    type="search"
+                    id="searchInput"
+                    class="filter-control"
+                    placeholder="Search name, email or phone..."
+                >
+            </div>
 
-            <select id="statusFilter" onchange="applyFilters()">
-                <option value="">All account statuses</option>
+            <select id="roleFilter" class="filter-control">
+                <option value="">All Roles</option>
+                <option value="school_admin">School Admin</option>
+                <option value="teacher">Teacher</option>
+            </select>
+
+            <select id="statusFilter" class="filter-control">
+                <option value="">All Statuses</option>
                 <option value="active">Active</option>
                 <option value="inactive">Inactive</option>
             </select>
 
-            <select id="verificationFilter" onchange="applyFilters()">
-                <option value="">All verification statuses</option>
-                <option value="verified">Verified</option>
-                <option value="unverified">Unverified</option>
+            <select id="setupFilter" class="filter-control">
+                <option value="">All Account Setup</option>
+                <option value="complete">Complete</option>
+                <option value="pending">Pending</option>
             </select>
-
-            <button class="secondary-btn" onclick="resetFilters()">
-                <i class="fas fa-filter-circle-xmark"></i> Reset
-            </button>
 
         </div>
 
-        <div class="table-wrap">
+        <div class="table-wrapper">
+
             <table>
                 <thead>
                     <tr>
-                        <th>TEACHER</th>
-                        <th>PHONE</th>
-                        <th>SUBJECTS</th>
-                        <th>CLASSES</th>
-                        <th>ACCOUNT</th>
-                        <th>VERIFICATION</th>
-                        <th>REGISTERED</th>
-                        <th>ACTIONS</th>
+                        <th>User</th>
+                        <th>Phone</th>
+                        <th>Role</th>
+                        <th>Email Verification</th>
+                        <th>Account Setup</th>
+                        <th>Status</th>
+                        <th>Registered</th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
 
-                <tbody id="teachersTable">
+                <tbody id="usersTableBody">
                     <tr>
-                        <td colspan="8" class="empty">
-                            Loading teachers...
+                        <td colspan="8">
+                            <div class="loading">
+                                <i class="fas fa-spinner fa-spin"></i>
+                                Loading users...
+                            </div>
                         </td>
                     </tr>
                 </tbody>
             </table>
+
         </div>
 
-        <div class="pagination">
-            <span id="resultCount">Loading records...</span>
-            <div class="page-buttons" id="pagination"></div>
+        <div class="table-footer">
+            <span id="resultsCount">Showing 0 users</span>
+            <span>Fila Grades System</span>
         </div>
 
     </section>
 
-</div>
-
-<footer class="footer">
-    <span>© 2026 Fila Marks System</span>
-    <span>School Administration Portal</span>
-</footer>
-
 </main>
-</div>
 
-<!-- REGISTER / EDIT MODAL -->
+<!-- USER DETAILS MODAL -->
 
-<div class="modal" id="teacherModal">
-    <div class="modal-box">
+<div class="modal-overlay" id="detailsModal">
+    <div class="modal">
 
         <div class="modal-header">
-            <h3 id="modalTitle">Register New Teacher</h3>
-
-            <button class="close-btn" onclick="closeModal()">
-                <i class="fas fa-times"></i>
-            </button>
+            <h2><i class="fas fa-user-circle"></i> User Details</h2>
+            <button class="modal-close" id="closeModalBtn">&times;</button>
         </div>
 
         <div class="modal-body">
-
-            <form id="teacherForm">
-
-                <div class="form-grid">
-
-                    <div class="form-group full">
-                        <label for="fullName">Full Name *</label>
-                        <input type="text" id="fullName"
-                               required maxlength="200"
-                               placeholder="Enter teacher's full name">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="email">Email Address *</label>
-                        <input type="email" id="email"
-                               required maxlength="254"
-                               placeholder="teacher@example.com">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="phone">Phone Number *</label>
-                        <input type="tel" id="phone"
-                               required maxlength="30"
-                               placeholder="Enter phone number">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="gender">Gender</label>
-                        <select id="gender">
-                            <option value="">Select gender</option>
-                            <option value="Male">Male</option>
-                            <option value="Female">Female</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="teacherStatus">Account Status</label>
-                        <select id="teacherStatus">
-                            <option value="active">Active</option>
-                            <option value="inactive">Inactive</option>
-                        </select>
-                    </div>
-
-                </div>
-
-                <div class="form-actions">
-                    <button type="button"
-                            class="secondary-btn"
-                            onclick="closeModal()">
-                        Cancel
-                    </button>
-
-                    <button type="submit"
-                            class="primary-btn"
-                            id="saveButton">
-                        <i class="fas fa-save"></i>
-                        Save Teacher
-                    </button>
-                </div>
-
-            </form>
-
+            <div class="detail-grid" id="userDetails"></div>
         </div>
-    </div>
-</div>
 
-<!-- TEACHER DETAILS MODAL -->
-
-<div class="modal" id="detailsModal">
-    <div class="modal-box">
-
-        <div class="modal-header">
-            <h3>Teacher Information</h3>
-
-            <button class="close-btn" onclick="closeDetails()">
-                <i class="fas fa-times"></i>
+        <div class="modal-footer">
+            <button class="btn btn-light" id="closeDetailsBtn">
+                Close
             </button>
         </div>
 
-        <div class="modal-body" id="teacherDetails"></div>
-
     </div>
 </div>
 
-<div class="toast" id="toast"></div>
+<div class="toast-container" id="toastContainer"></div>
 
 <script>
 "use strict";
@@ -1038,44 +825,26 @@ td {
    CONFIGURATION
 ===================================================== */
 
-const LOGIN_PAGE = "../login.html";
-const API = "/api/school-admin/users";
+const API_URL = "/api/school-admin/users";
 
-const PAGE_SIZE = 10;
-
-let teachers = [];
-let filteredTeachers = [];
-let currentPage = 1;
-let editingId = null;
-let toastTimer = null;
+let users = [];
+let currentUser = null;
+let isLoading = false;
 
 /* =====================================================
-   ELEMENT HELPERS
+   DOM HELPERS
 ===================================================== */
 
 const $ = id => document.getElementById(id);
 
 function escapeHTML(value) {
-    return String(value ?? "").replace(/[&<>"']/g, char => ({
+    return String(value ?? "").replace(/[&<>"']/g, character => ({
         "&": "&amp;",
         "<": "&lt;",
         ">": "&gt;",
         '"': "&quot;",
         "'": "&#039;"
-    })[char]);
-}
-
-function showToast(message) {
-    const toast = $("toast");
-
-    toast.textContent = message;
-    toast.classList.add("show");
-
-    clearTimeout(toastTimer);
-
-    toastTimer = setTimeout(() => {
-        toast.classList.remove("show");
-    }, 3500);
+    })[character]);
 }
 
 function formatDate(value) {
@@ -1085,36 +854,70 @@ function formatDate(value) {
 
     if (Number.isNaN(date.getTime())) return "—";
 
-    return date.toLocaleDateString();
+    return date.toLocaleDateString("en-GB", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric"
+    });
 }
 
 function normalizeStatus(value) {
-    return String(value || "").toLowerCase();
+    return String(value || "").trim().toLowerCase();
+}
+
+function showToast(message, type = "success") {
+    const toast = document.createElement("div");
+    toast.className = `toast ${type}`;
+    toast.textContent = message;
+
+    $("toastContainer").appendChild(toast);
+
+    setTimeout(() => {
+        toast.remove();
+    }, 3500);
 }
 
 /* =====================================================
-   AUTHENTICATION AND API REQUESTS
-
-   Authentication uses the HttpOnly ses_token cookie.
-   The browser sends it automatically with same-origin
-   requests. The server must verify the session.
+   API REQUEST
 ===================================================== */
 
-async function apiRequest(url, options = {}) {
+async function apiRequest(action = "", payload = {}, method = "GET") {
 
-    const response = await fetch(url, {
-        ...options,
+    const options = {
+        method,
         credentials: "same-origin",
         headers: {
-            "Content-Type": "application/json",
-            ...(options.headers || {})
+            "Accept": "application/json"
         }
-    });
+    };
 
-    if (response.status === 401) {
-        location.replace(LOGIN_PAGE);
-        throw new Error("Your session has expired. Please log in again.");
+    let url = API_URL;
+
+    if (method === "GET") {
+
+        const params = new URLSearchParams();
+
+        if (action) params.set("action", action);
+
+        Object.entries(payload).forEach(([key, value]) => {
+            params.set(key, String(value ?? ""));
+        });
+
+        if (params.toString()) {
+            url += "?" + params.toString();
+        }
+
+    } else {
+
+        options.headers["Content-Type"] = "application/json";
+
+        options.body = JSON.stringify({
+            ...(action ? { action } : {}),
+            ...payload
+        });
     }
+
+    const response = await fetch(url, options);
 
     let data;
 
@@ -1124,18 +927,572 @@ async function apiRequest(url, options = {}) {
         throw new Error("The server returned an invalid response.");
     }
 
+    if (response.status === 401) {
+        window.location.href = "../login.html";
+        throw new Error("Your session has expired.");
+    }
+
     if (response.status === 403) {
-        throw new Error(data.message || "Access denied.");
+        throw new Error(data.message || "You are not authorized to access this page.");
     }
 
     if (!response.ok || data.success === false) {
-        throw new Error(
-            data.message || `Request failed: HTTP ${response.status}`
-        );
+        throw new Error(data.message || "The request could not be completed.");
     }
 
     return data;
 }
+
+/* =====================================================
+   ACCOUNT INFORMATION
+===================================================== */
+
+async function loadProfile() {
+
+    const data = await apiRequest("profile");
+
+    const user = data.user;
+
+    if (!user || user.role !== "school_admin") {
+        window.location.href = "../login.html";
+        throw new Error("Access denied. School administrator account required.");
+    }
+
+    currentUser = user;
+
+    const schoolName =
+        user.school_name ||
+        user.school?.name ||
+        user.school?.school_name ||
+        "Your School";
+
+    $("schoolName").innerHTML =
+        `<i class="fas fa-school"></i> ${escapeHTML(schoolName)}`;
+}
+
+/* =====================================================
+   LOAD USERS
+===================================================== */
+
+async function loadUsers() {
+
+    if (isLoading) return;
+
+    isLoading = true;
+
+    $("refreshBtn").disabled = true;
+
+    $("usersTableBody").innerHTML = `
+        <tr>
+            <td colspan="8">
+                <div class="loading">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    Loading users...
+                </div>
+            </td>
+        </tr>
+    `;
+
+    try {
+
+        const data = await apiRequest("");
+
+        /*
+          The page accepts either "users" or "teachers"
+          while the backend is being aligned with this page.
+        */
+
+        const returnedUsers = data.users || data.teachers;
+
+        if (!Array.isArray(returnedUsers)) {
+            throw new Error("The server did not return a valid users list.");
+        }
+
+        users = returnedUsers;
+
+        renderSummary();
+        renderUsers();
+
+    } catch (error) {
+
+        $("usersTableBody").innerHTML = `
+            <tr>
+                <td colspan="8">
+                    <div class="empty-state">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <p>${escapeHTML(error.message)}</p>
+                    </div>
+                </td>
+            </tr>
+        `;
+
+        showToast(error.message, "error");
+
+    } finally {
+
+        isLoading = false;
+        $("refreshBtn").disabled = false;
+    }
+}
+
+/* =====================================================
+   USER HELPERS
+===================================================== */
+
+function getUserId(user) {
+    return user.id ?? user.user_id;
+}
+
+function getUserName(user) {
+    return user.full_name || user.name || "Unnamed User";
+}
+
+function getUserRole(user) {
+    return normalizeStatus(user.role);
+}
+
+function getUserStatus(user) {
+    return normalizeStatus(user.status);
+}
+
+function isEmailVerified(user) {
+    return user.email_verified === true ||
+           user.email_verified === 1 ||
+           user.email_verified === "true";
+}
+
+function mustCompleteSetup(user) {
+    return user.must_change_password === true ||
+           user.must_change_password === 1 ||
+           user.must_change_password === "true";
+}
+
+function getSetupStatus(user) {
+
+    if (!isEmailVerified(user)) {
+        return "pending";
+    }
+
+    if (mustCompleteSetup(user)) {
+        return "pending";
+    }
+
+    return "complete";
+}
+
+function getSetupLabel(user) {
+
+    if (!isEmailVerified(user)) {
+        return "Email Pending";
+    }
+
+    if (mustCompleteSetup(user)) {
+        return "Password Pending";
+    }
+
+    return "Complete";
+}
+
+function getRoleLabel(role) {
+
+    const labels = {
+        owner: "Owner",
+        sector_admin: "Sector Admin",
+        school_admin: "School Admin",
+        teacher: "Teacher"
+    };
+
+    return labels[role] || role.replaceAll("_", " ");
+}
+
+/* =====================================================
+   SUMMARY CARDS
+===================================================== */
+
+function renderSummary() {
+
+    const total = users.length;
+
+    const active = users.filter(user =>
+        getUserStatus(user) === "active"
+    ).length;
+
+    const inactive = users.filter(user =>
+        getUserStatus(user) === "inactive"
+    ).length;
+
+    const pending = users.filter(user =>
+        getSetupStatus(user) === "pending"
+    ).length;
+
+    $("totalUsers").textContent = total;
+    $("activeUsers").textContent = active;
+    $("inactiveUsers").textContent = inactive;
+    $("pendingUsers").textContent = pending;
+}
+
+/* =====================================================
+   FILTER USERS
+===================================================== */
+
+function getFilteredUsers() {
+
+    const search = $("searchInput").value.trim().toLowerCase();
+    const role = $("roleFilter").value;
+    const status = $("statusFilter").value;
+    const setup = $("setupFilter").value;
+
+    return users.filter(user => {
+
+        const searchableText = [
+            getUserName(user),
+            user.email,
+            user.phone
+        ].join(" ").toLowerCase();
+
+        if (search && !searchableText.includes(search)) {
+            return false;
+        }
+
+        if (role && getUserRole(user) !== role) {
+            return false;
+        }
+
+        if (status && getUserStatus(user) !== status) {
+            return false;
+        }
+
+        if (setup && getSetupStatus(user) !== setup) {
+            return false;
+        }
+
+        return true;
+    });
+}
+
+/* =====================================================
+   BADGES
+===================================================== */
+
+function statusBadge(status) {
+
+    const normalized = normalizeStatus(status);
+
+    if (normalized === "active") {
+        return `<span class="badge badge-active">Active</span>`;
+    }
+
+    if (normalized === "inactive") {
+        return `<span class="badge badge-inactive">Inactive</span>`;
+    }
+
+    return `<span class="badge badge-pending">${escapeHTML(status || "Unknown")}</span>`;
+}
+
+function verificationBadge(user) {
+
+    if (isEmailVerified(user)) {
+        return `<span class="badge badge-verified">Verified</span>`;
+    }
+
+    return `<span class="badge badge-unverified">Not Verified</span>`;
+}
+
+function setupBadge(user) {
+
+    if (getSetupStatus(user) === "complete") {
+        return `<span class="badge badge-complete">Complete</span>`;
+    }
+
+    return `<span class="badge badge-pending">${escapeHTML(getSetupLabel(user))}</span>`;
+}
+
+/* =====================================================
+   RENDER USERS TABLE
+===================================================== */
+
+function renderUsers() {
+
+    const filteredUsers = getFilteredUsers();
+
+    $("resultsCount").textContent =
+        `Showing ${filteredUsers.length} of ${users.length} users`;
+
+    if (!filteredUsers.length) {
+
+        $("usersTableBody").innerHTML = `
+            <tr>
+                <td colspan="8">
+                    <div class="empty-state">
+                        <i class="fas fa-users"></i>
+                        <p>No users found.</p>
+                    </div>
+                </td>
+            </tr>
+        `;
+
+        return;
+    }
+
+    $("usersTableBody").innerHTML = filteredUsers.map(user => {
+
+        const id = getUserId(user);
+        const role = getUserRole(user);
+        const status = getUserStatus(user);
+
+        const canToggle =
+            id !== undefined &&
+            role !== "owner" &&
+            role !== "sector_admin";
+
+        const toggleButton = canToggle
+            ? status === "active"
+                ? `
+                    <button
+                        class="btn btn-danger"
+                        data-action="toggle"
+                        data-id="${escapeHTML(id)}"
+                        data-status="inactive"
+                        title="Deactivate user"
+                    >
+                        <i class="fas fa-user-slash"></i>
+                        Deactivate
+                    </button>
+                `
+                : `
+                    <button
+                        class="btn btn-success"
+                        data-action="toggle"
+                        data-id="${escapeHTML(id)}"
+                        data-status="active"
+                        title="Activate user"
+                    >
+                        <i class="fas fa-user-check"></i>
+                        Activate
+                    </button>
+                `
+            : "";
+
+        return `
+            <tr>
+                <td>
+                    <div class="user-name">${escapeHTML(getUserName(user))}</div>
+                    <div class="user-email">${escapeHTML(user.email || "No email")}</div>
+                </td>
+
+                <td>${escapeHTML(user.phone || "—")}</td>
+
+                <td>
+                    <span class="badge badge-role">
+                        ${escapeHTML(getRoleLabel(role))}
+                    </span>
+                </td>
+
+                <td>${verificationBadge(user)}</td>
+
+                <td>${setupBadge(user)}</td>
+
+                <td>${statusBadge(status)}</td>
+
+                <td>${formatDate(user.created_at)}</td>
+
+                <td>
+                    <div class="action-buttons">
+
+                        <button
+                            class="icon-btn"
+                            data-action="details"
+                            data-id="${escapeHTML(id)}"
+                            title="View details"
+                        >
+                            <i class="fas fa-eye"></i>
+                        </button>
+
+                        ${toggleButton}
+
+                    </div>
+                </td>
+            </tr>
+        `;
+
+    }).join("");
+}
+
+/* =====================================================
+   USER DETAILS MODAL
+===================================================== */
+
+function showUserDetails(user) {
+
+    const details = [
+        ["Full Name", getUserName(user)],
+        ["Email Address", user.email],
+        ["Phone Number", user.phone],
+        ["Gender", user.gender],
+        ["Role", getRoleLabel(getUserRole(user))],
+        ["Email Verification", isEmailVerified(user) ? "Verified" : "Not Verified"],
+        ["Account Setup", getSetupLabel(user)],
+        ["Account Status", getUserStatus(user)],
+        ["Registration Date", formatDate(user.created_at)],
+        ["User ID", getUserId(user)]
+    ];
+
+    $("userDetails").innerHTML = details.map(([label, value]) => `
+        <div class="detail-item">
+            <label>${escapeHTML(label)}</label>
+            <strong>${escapeHTML(value || "—")}</strong>
+        </div>
+    `).join("");
+
+    $("detailsModal").classList.add("show");
+}
+
+function closeModal() {
+    $("detailsModal").classList.remove("show");
+}
+
+/* =====================================================
+   ACTIVATE / DEACTIVATE USER
+===================================================== */
+
+async function toggleUser(userId, newStatus) {
+
+    const user = users.find(item =>
+        String(getUserId(item)) === String(userId)
+    );
+
+    if (!user) {
+        showToast("User not found.", "error");
+        return;
+    }
+
+    const name = getUserName(user);
+
+    const actionText =
+        newStatus === "active" ? "activate" : "deactivate";
+
+    const confirmed = confirm(
+        `Are you sure you want to ${actionText} ${name}'s account?`
+    );
+
+    if (!confirmed) return;
+
+    try {
+
+        /*
+          Backend contract:
+          PATCH /api/school-admin/users/{userId}/status
+          Body: { status: "active" | "inactive" }
+        */
+
+        const response = await fetch(
+            `${API_URL}/${encodeURIComponent(userId)}/status`,
+            {
+                method: "PATCH",
+                credentials: "same-origin",
+                headers: {
+                    "Accept": "application/json",
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    status: newStatus
+                })
+            }
+        );
+
+        let data;
+
+        try {
+            data = await response.json();
+        } catch {
+            throw new Error("The server returned an invalid response.");
+        }
+
+        if (response.status === 401) {
+            window.location.href = "../login.html";
+            return;
+        }
+
+        if (response.status === 403) {
+            throw new Error(data.message || "You are not authorized to perform this action.");
+        }
+
+        if (!response.ok || data.success === false) {
+            throw new Error(data.message || "Unable to update user status.");
+        }
+
+        showToast(
+            `${name}'s account has been ${newStatus === "active" ? "activated" : "deactivated"}.`,
+            "success"
+        );
+
+        await loadUsers();
+
+    } catch (error) {
+
+        showToast(error.message, "error");
+    }
+}
+
+/* =====================================================
+   TABLE EVENT DELEGATION
+===================================================== */
+
+$("usersTableBody").addEventListener("click", event => {
+
+    const button = event.target.closest("[data-action]");
+
+    if (!button) return;
+
+    const action = button.dataset.action;
+    const id = button.dataset.id;
+
+    const user = users.find(item =>
+        String(getUserId(item)) === String(id)
+    );
+
+    if (!user) return;
+
+    if (action === "details") {
+        showUserDetails(user);
+    }
+
+    if (action === "toggle") {
+        toggleUser(id, button.dataset.status);
+    }
+});
+
+/* =====================================================
+   FILTER EVENTS
+===================================================== */
+
+$("searchInput").addEventListener("input", renderUsers);
+$("roleFilter").addEventListener("change", renderUsers);
+$("statusFilter").addEventListener("change", renderUsers);
+$("setupFilter").addEventListener("change", renderUsers);
+
+/* =====================================================
+   BUTTON EVENTS
+===================================================== */
+
+$("refreshBtn").addEventListener("click", async () => {
+    await loadUsers();
+});
+
+$("closeModalBtn").addEventListener("click", closeModal);
+$("closeDetailsBtn").addEventListener("click", closeModal);
+
+$("detailsModal").addEventListener("click", event => {
+    if (event.target === $("detailsModal")) {
+        closeModal();
+    }
+});
+
+document.addEventListener("keydown", event => {
+    if (event.key === "Escape") {
+        closeModal();
+    }
+});
 
 /* =====================================================
    INITIALIZE PAGE
@@ -1145,609 +1502,19 @@ async function initializePage() {
 
     try {
 
-        const data = await apiRequest(API + "?action=profile");
+        await loadProfile();
+        await loadUsers();
 
-        if (data.user?.role !== "school_admin") {
-            document.body.innerHTML = `
-                <div style="padding:50px;text-align:center">
-                    <h2>Access Restricted</h2>
-                    <p>Only School Admins can access this page.</p>
-                    <a href="${LOGIN_PAGE}">Return to Login</a>
-                </div>
-            `;
-            return;
+    } catch (error) {
+
+        showToast(error.message, "error");
+
+        if (!window.location.href.includes("login.html") &&
+            error.message.toLowerCase().includes("access")) {
+            window.location.href = "../login.html";
         }
-
-        $("adminName").textContent =
-            data.user.full_name || "School Admin";
-
-        $("sidebarSchool").textContent =
-            data.school?.school_name || "School Administrator";
-
-        $("loadingScreen").style.display = "none";
-        $("app").style.display = "block";
-
-        await loadTeachers();
-
-    } catch (error) {
-
-        console.error(error);
-
-        if (error.message.includes("expired")) return;
-
-        $("loadingScreen").innerHTML = `
-            <div style="text-align:center;padding:25px">
-                <h2 style="color:#b91c1c;margin-bottom:10px">
-                    Unable to Load Teachers Management
-                </h2>
-                <p style="color:#64748b;margin-bottom:15px">
-                    ${escapeHTML(error.message)}
-                </p>
-                <button class="primary-btn"
-                        onclick="location.reload()">
-                    Try Again
-                </button>
-            </div>
-        `;
     }
 }
-
-/* =====================================================
-   SIDEBAR
-===================================================== */
-
-function toggleSidebar() {
-    $("sidebar").classList.toggle("show");
-    $("overlay").classList.toggle("show");
-}
-
-window.toggleSidebar = toggleSidebar;
-
-/* =====================================================
-   LOAD TEACHERS
-===================================================== */
-
-async function loadTeachers() {
-
-    $("teachersTable").innerHTML = `
-        <tr>
-            <td colspan="8" class="empty">
-                <i class="fas fa-spinner fa-spin"></i>
-                Loading teachers...
-            </td>
-        </tr>
-    `;
-
-    try {
-
-        const data = await apiRequest(API);
-
-        teachers = Array.isArray(data.teachers)
-            ? data.teachers
-            : [];
-
-        currentPage = 1;
-
-        renderStatistics();
-        applyFilters();
-
-    } catch (error) {
-
-        console.error(error);
-
-        $("teachersTable").innerHTML = `
-            <tr>
-                <td colspan="8" class="empty">
-                    ${escapeHTML(error.message)}
-                </td>
-            </tr>
-        `;
-
-        showToast(error.message);
-    }
-}
-
-window.loadTeachers = loadTeachers;
-
-/* =====================================================
-   STATISTICS
-===================================================== */
-
-function renderStatistics() {
-
-    const total = teachers.length;
-
-    const active = teachers.filter(
-        t => normalizeStatus(t.status) === "active"
-    ).length;
-
-    const inactive = teachers.filter(
-        t => normalizeStatus(t.status) === "inactive"
-    ).length;
-
-    const unverified = teachers.filter(
-        t => t.email_verified !== true
-    ).length;
-
-    $("totalTeachers").textContent = total;
-    $("activeTeachers").textContent = active;
-    $("inactiveTeachers").textContent = inactive;
-    $("unverifiedTeachers").textContent = unverified;
-}
-
-/* =====================================================
-   FILTERS
-===================================================== */
-
-function applyFilters() {
-
-    const search = $("searchInput").value.trim().toLowerCase();
-    const status = $("statusFilter").value;
-    const verification = $("verificationFilter").value;
-
-    filteredTeachers = teachers.filter(teacher => {
-
-        const searchable = [
-            teacher.full_name,
-            teacher.email,
-            teacher.phone
-        ].join(" ").toLowerCase();
-
-        const matchesSearch = !search || searchable.includes(search);
-
-        const matchesStatus =
-            !status || normalizeStatus(teacher.status) === status;
-
-        const verified = teacher.email_verified === true;
-
-        const matchesVerification =
-            !verification ||
-            (verification === "verified" && verified) ||
-            (verification === "unverified" && !verified);
-
-        return matchesSearch && matchesStatus && matchesVerification;
-    });
-
-    currentPage = 1;
-    renderTeachers();
-}
-
-window.applyFilters = applyFilters;
-
-function resetFilters() {
-
-    $("searchInput").value = "";
-    $("statusFilter").value = "";
-    $("verificationFilter").value = "";
-
-    applyFilters();
-}
-
-window.resetFilters = resetFilters;
-
-/* =====================================================
-   RENDER TEACHERS
-===================================================== */
-
-function renderTeachers() {
-
-    const tbody = $("teachersTable");
-
-    const total = filteredTeachers.length;
-    const totalPages = Math.ceil(total / PAGE_SIZE);
-
-    if (currentPage > totalPages && totalPages > 0) {
-        currentPage = totalPages;
-    }
-
-    const start = (currentPage - 1) * PAGE_SIZE;
-
-    const pageTeachers = filteredTeachers.slice(
-        start,
-        start + PAGE_SIZE
-    );
-
-    if (!pageTeachers.length) {
-
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="8" class="empty">
-                    <i class="fas fa-folder-open"></i>
-                    <p style="margin-top:8px">No teachers found.</p>
-                </td>
-            </tr>
-        `;
-
-    } else {
-
-        tbody.innerHTML = pageTeachers.map(teacher => {
-
-            const active = normalizeStatus(teacher.status) === "active";
-            const verified = teacher.email_verified === true;
-
-            const subjects = Array.isArray(teacher.subjects)
-                ? teacher.subjects.join(", ")
-                : "—";
-
-            const classes = Array.isArray(teacher.classes)
-                ? teacher.classes.join(", ")
-                : "—";
-
-            return `
-                <tr>
-                    <td>
-                        <div class="teacher-name">
-                            ${escapeHTML(teacher.full_name)}
-                        </div>
-                        <div class="teacher-email">
-                            ${escapeHTML(teacher.email || "No email")}
-                        </div>
-                    </td>
-
-                    <td>${escapeHTML(teacher.phone || "—")}</td>
-
-                    <td>${escapeHTML(subjects || "—")}</td>
-
-                    <td>${escapeHTML(classes || "—")}</td>
-
-                    <td>
-                        <span class="status ${active ? "active" : "inactive"}">
-                            ${active ? "Active" : "Inactive"}
-                        </span>
-                    </td>
-
-                    <td>
-                        <span class="verification ${verified ? "verified" : "unverified"}">
-                            ${verified ? "Verified" : "Unverified"}
-                        </span>
-                    </td>
-
-                    <td>${escapeHTML(formatDate(teacher.created_at))}</td>
-
-                    <td>
-                        <div class="action-buttons">
-
-                            <button class="icon-btn"
-                                title="View details"
-                                onclick="viewTeacher(${Number(teacher.id)})">
-                                <i class="fas fa-eye"></i>
-                            </button>
-
-                            <button class="icon-btn edit"
-                                title="Edit teacher"
-                                onclick="editTeacher(${Number(teacher.id)})">
-                                <i class="fas fa-pen"></i>
-                            </button>
-
-                            <button class="icon-btn toggle"
-                                title="${active ? "Deactivate" : "Activate"} teacher"
-                                onclick="toggleTeacherStatus(${Number(teacher.id)})">
-                                <i class="fas ${active ? "fa-user-slash" : "fa-user-check"}"></i>
-                            </button>
-
-                        </div>
-                    </td>
-                </tr>
-            `;
-
-        }).join("");
-    }
-
-    $("resultCount").textContent =
-        `Showing ${total ? start + 1 : 0}–${Math.min(start + PAGE_SIZE, total)} of ${total} teachers`;
-
-    renderPagination(totalPages);
-}
-
-/* =====================================================
-   PAGINATION
-===================================================== */
-
-function renderPagination(totalPages) {
-
-    const container = $("pagination");
-
-    if (totalPages <= 1) {
-        container.innerHTML = "";
-        return;
-    }
-
-    let html = `
-        <button onclick="changePage(${currentPage - 1})"
-            ${currentPage === 1 ? "disabled" : ""}>
-            <i class="fas fa-chevron-left"></i>
-        </button>
-    `;
-
-    for (let page = 1; page <= totalPages; page++) {
-
-        html += `
-            <button
-                class="${page === currentPage ? "active" : ""}"
-                onclick="changePage(${page})">
-                ${page}
-            </button>
-        `;
-    }
-
-    html += `
-        <button onclick="changePage(${currentPage + 1})"
-            ${currentPage === totalPages ? "disabled" : ""}>
-            <i class="fas fa-chevron-right"></i>
-        </button>
-    `;
-
-    container.innerHTML = html;
-}
-
-function changePage(page) {
-
-    const totalPages = Math.ceil(filteredTeachers.length / PAGE_SIZE);
-
-    if (page < 1 || page > totalPages) return;
-
-    currentPage = page;
-    renderTeachers();
-}
-
-window.changePage = changePage;
-
-/* =====================================================
-   CREATE TEACHER
-===================================================== */
-
-function openCreateModal() {
-
-    editingId = null;
-
-    $("teacherForm").reset();
-    $("email").disabled = false;
-
-    $("modalTitle").textContent = "Register New Teacher";
-
-    $("saveButton").innerHTML =
-        '<i class="fas fa-save"></i> Save Teacher';
-
-    $("teacherModal").classList.add("show");
-}
-
-window.openCreateModal = openCreateModal;
-
-function closeModal() {
-    $("teacherModal").classList.remove("show");
-}
-
-window.closeModal = closeModal;
-
-/* =====================================================
-   EDIT TEACHER
-===================================================== */
-
-function editTeacher(id) {
-
-    const teacher = teachers.find(
-        item => Number(item.id) === Number(id)
-    );
-
-    if (!teacher) {
-        showToast("Teacher record not found.");
-        return;
-    }
-
-    editingId = teacher.id;
-
-    $("modalTitle").textContent = "Edit Teacher";
-
-    $("fullName").value = teacher.full_name || "";
-    $("email").value = teacher.email || "";
-    $("phone").value = teacher.phone || "";
-    $("gender").value = teacher.gender || "";
-    $("teacherStatus").value = normalizeStatus(teacher.status);
-
-    // Email changes are handled separately by the backend.
-    $("email").disabled = true;
-
-    $("saveButton").innerHTML =
-        '<i class="fas fa-save"></i> Update Teacher';
-
-    $("teacherModal").classList.add("show");
-}
-
-window.editTeacher = editTeacher;
-
-/* =====================================================
-   SAVE TEACHER
-===================================================== */
-
-$("teacherForm").addEventListener("submit", async event => {
-
-    event.preventDefault();
-
-    const payload = {
-        full_name: $("fullName").value.trim(),
-        email: $("email").value.trim(),
-        phone: $("phone").value.trim(),
-        gender: $("gender").value,
-        status: $("teacherStatus").value
-    };
-
-    if (!payload.full_name || !payload.email || !payload.phone) {
-        showToast("Please complete all required fields.");
-        return;
-    }
-
-    const button = $("saveButton");
-
-    button.disabled = true;
-    button.textContent = "Saving...";
-
-    try {
-
-        const url = editingId
-            ? `${API}/${encodeURIComponent(editingId)}`
-            : API;
-
-        const method = editingId ? "PUT" : "POST";
-
-        const data = await apiRequest(url, {
-            method,
-            body: JSON.stringify(payload)
-        });
-
-        closeModal();
-
-        showToast(
-            data.message ||
-            (editingId
-                ? "Teacher updated successfully."
-                : "Teacher registered successfully.")
-        );
-
-        await loadTeachers();
-
-    } catch (error) {
-
-        console.error(error);
-        showToast(error.message);
-
-    } finally {
-
-        button.disabled = false;
-
-        button.innerHTML = editingId
-            ? '<i class="fas fa-save"></i> Update Teacher'
-            : '<i class="fas fa-save"></i> Save Teacher';
-    }
-});
-
-/* =====================================================
-   VIEW TEACHER DETAILS
-===================================================== */
-
-function viewTeacher(id) {
-
-    const teacher = teachers.find(
-        item => Number(item.id) === Number(id)
-    );
-
-    if (!teacher) {
-        showToast("Teacher record not found.");
-        return;
-    }
-
-    const verified = teacher.email_verified === true;
-
-    const details = [
-        ["Full Name", teacher.full_name],
-        ["Email Address", teacher.email],
-        ["Phone Number", teacher.phone],
-        ["Gender", teacher.gender],
-        ["Account Status", teacher.status],
-        ["Email Verification", verified ? "Verified" : "Unverified"],
-        ["Subjects", Array.isArray(teacher.subjects)
-            ? teacher.subjects.join(", ")
-            : "—"],
-        ["Classes", Array.isArray(teacher.classes)
-            ? teacher.classes.join(", ")
-            : "—"],
-        ["Registration Date", formatDate(teacher.created_at)]
-    ];
-
-    $("teacherDetails").innerHTML = `
-        <div class="details-grid">
-            ${details.map(([label, value]) => `
-                <div class="detail-item">
-                    <small>${escapeHTML(label)}</small>
-                    <strong>${escapeHTML(value || "—")}</strong>
-                </div>
-            `).join("")}
-        </div>
-    `;
-
-    $("detailsModal").classList.add("show");
-}
-
-window.viewTeacher = viewTeacher;
-
-function closeDetails() {
-    $("detailsModal").classList.remove("show");
-}
-
-window.closeDetails = closeDetails;
-
-/* =====================================================
-   ACTIVATE / DEACTIVATE TEACHER
-===================================================== */
-
-async function toggleTeacherStatus(id) {
-
-    const teacher = teachers.find(
-        item => Number(item.id) === Number(id)
-    );
-
-    if (!teacher) {
-        showToast("Teacher record not found.");
-        return;
-    }
-
-    const currentlyActive =
-        normalizeStatus(teacher.status) === "active";
-
-    const newStatus = currentlyActive ? "inactive" : "active";
-
-    const confirmed = confirm(
-        `Are you sure you want to ${newStatus} ${teacher.full_name}?`
-    );
-
-    if (!confirmed) return;
-
-    try {
-
-        const data = await apiRequest(
-            `${API}/${encodeURIComponent(id)}/status`,
-            {
-                method: "PATCH",
-                body: JSON.stringify({
-                    status: newStatus
-                })
-            }
-        );
-
-        showToast(
-            data.message ||
-            `Teacher ${newStatus === "active" ? "activated" : "deactivated"} successfully.`
-        );
-
-        await loadTeachers();
-
-    } catch (error) {
-
-        console.error(error);
-        showToast(error.message);
-    }
-}
-
-window.toggleTeacherStatus = toggleTeacherStatus;
-
-/* =====================================================
-   CLOSE MODALS ON BACKGROUND CLICK
-===================================================== */
-
-$("teacherModal").addEventListener("click", event => {
-    if (event.target === $("teacherModal")) {
-        closeModal();
-    }
-});
-
-$("detailsModal").addEventListener("click", event => {
-    if (event.target === $("detailsModal")) {
-        closeDetails();
-    }
-});
-
-/* =====================================================
-   START APPLICATION
-===================================================== */
 
 initializePage();
 
