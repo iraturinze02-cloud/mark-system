@@ -149,25 +149,30 @@
        
 /* ACTIVE PAGE DETECTION */
 
-const currentPath = window.location.pathname
-    .replace(/\/+$/, "")
+/* =============================================
+   ACTIVE PAGE DETECTION
+============================================= */
+
+const currentPage = window.location.pathname
+    .split("/")
+    .filter(Boolean)
+    .pop()
     .toLowerCase();
 
 sidebar.querySelectorAll(".sidebar-link").forEach(link => {
 
-    const linkUrl = new URL(link.getAttribute("href"), window.location.href);
-
-    const linkPath = linkUrl.pathname
-        .replace(/\/+$/, "")
+    const linkPage = link.getAttribute("href")
+        .split("/")
+        .pop()
         .toLowerCase();
 
-    if (currentPath === linkPath) {
+    if (currentPage === linkPage) {
         link.classList.add("active");
         link.setAttribute("aria-current", "page");
     }
 
 });
-
+       
         /* OPEN SIDEBAR */
 
         function openSidebar() {
