@@ -69,6 +69,10 @@ document.addEventListener("DOMContentLoaded", () => {
                     <span class="sidebar-icon">🔍</span>
                     <span>Inspect Marks Recording</span>
                 </a>
+                 <a href="sector-teachers-performance.html" class="sidebar-link">
+                    <span class="sidebar-icon">📈</span>
+                    <span>Teachers' Perfomance</span>
+                </a>
 
                 <div class="sector-sidebar-section">
                     Assessments
