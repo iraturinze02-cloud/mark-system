@@ -154,12 +154,13 @@ async function getTestTeacherProgress(db, schoolId) {
             FROM teacher_assignments ta
 
             JOIN tests t
-                ON t.school_id = ta.school_id
-
-            JOIN test_classes tc
-                ON tc.test_id = t.id
-               AND tc.school_id = ta.school_id
-               AND tc.class_id = ta.class_id
+                ON EXISTS (
+                    SELECT 1
+                    FROM test_classes tc_check
+                    WHERE tc_check.test_id = t.id
+                      AND tc_check.school_id = ta.school_id
+                      AND tc_check.class_id = ta.class_id
+                )
 
             JOIN test_subjects ts
                 ON ts.test_id = t.id
@@ -250,6 +251,7 @@ async function getTestTeacherProgress(db, schoolId) {
 
     return result.rows;
 }
+
 
 /* =====================================================
    EXAMINATIONS — TEACHER PROGRESS
@@ -393,6 +395,11 @@ async function getExaminationTeacherProgress(db, schoolId) {
    TEACHER BREAKDOWN — TESTS
 ===================================================== */
 
+
+/* =====================================================
+   TEACHER BREAKDOWN — TESTS
+===================================================== */
+
 async function getTestTeacherBreakdown(
     db,
     schoolId,
@@ -420,12 +427,13 @@ async function getTestTeacherBreakdown(
                 ON teacher.id = ta.teacher_id
 
             JOIN tests t
-                ON t.school_id = ta.school_id
-
-            JOIN test_classes tc
-                ON tc.test_id = t.id
-               AND tc.school_id = ta.school_id
-               AND tc.class_id = ta.class_id
+                ON EXISTS (
+                    SELECT 1
+                    FROM test_classes tc_check
+                    WHERE tc_check.test_id = t.id
+                      AND tc_check.school_id = ta.school_id
+                      AND tc_check.class_id = ta.class_id
+                )
 
             JOIN test_subjects ts
                 ON ts.test_id = t.id
@@ -505,6 +513,7 @@ async function getTestTeacherBreakdown(
 
     return result.rows;
 }
+
 
 /* =====================================================
    TEACHER BREAKDOWN — EXAMINATIONS
