@@ -1,0 +1,1757 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>School Teachers Performance | Fila Grades System</title>
+
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+    <style>
+        :root {
+            --primary: #174ea6;
+            --primary-dark: #123b7a;
+            --background: #f4f6fa;
+            --surface: #ffffff;
+            --text: #202938;
+            --muted: #6b7280;
+            --border: #e5e7eb;
+            --green: #15803d;
+            --red: #dc2626;
+            --orange: #d97706;
+            --blue-light: #eaf1ff;
+            --shadow: 0 3px 12px rgba(0,0,0,.05);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            background: var(--background);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        button, input, select {
+            font: inherit;
+        }
+
+        .topbar {
+            background: var(--primary);
+            color: white;
+            padding: 17px 25px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-icon {
+            width: 42px;
+            height: 42px;
+            background: rgba(255,255,255,.15);
+            border-radius: 10px;
+            display: grid;
+            place-items: center;
+            font-size: 20px;
+        }
+
+        .brand h2 {
+            font-size: 17px;
+            margin-bottom: 3px;
+        }
+
+        .brand small {
+            opacity: .85;
+            font-size: 12px;
+        }
+
+        .top-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .top-actions button {
+            border: 1px solid rgba(255,255,255,.35);
+            background: rgba(255,255,255,.12);
+            color: white;
+            padding: 9px 13px;
+            border-radius: 7px;
+            cursor: pointer;
+        }
+
+        .top-actions button:hover {
+            background: rgba(255,255,255,.23);
+        }
+
+        .container {
+            width: min(1500px, 96%);
+            margin: 25px auto;
+        }
+
+        .page-heading {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-bottom: 22px;
+        }
+
+        .page-heading h1 {
+            font-size: 25px;
+            margin-bottom: 7px;
+        }
+
+        .page-heading p {
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        .school-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            background: var(--blue-light);
+            color: var(--primary);
+            padding: 9px 12px;
+            border-radius: 7px;
+            font-size: 13px;
+            font-weight: bold;
+        }
+
+        .filters {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(160px, 1fr));
+            gap: 13px;
+            background: var(--surface);
+            padding: 18px;
+            border-radius: 11px;
+            box-shadow: var(--shadow);
+            margin-bottom: 20px;
+        }
+
+        .filter-group label {
+            display: block;
+            font-size: 12px;
+            font-weight: bold;
+            color: #4b5563;
+            margin-bottom: 7px;
+        }
+
+        .filter-group select,
+        .filter-group input {
+            width: 100%;
+            padding: 11px;
+            border: 1px solid var(--border);
+            border-radius: 7px;
+            outline: none;
+            background: white;
+            color: var(--text);
+            min-width: 0;
+        }
+
+        .filter-group select:focus,
+        .filter-group input:focus {
+            border-color: var(--primary);
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 15px;
+            margin-bottom: 22px;
+        }
+
+        .summary-card {
+            background: white;
+            padding: 19px;
+            border-radius: 11px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            min-width: 0;
+        }
+
+        .summary-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+
+        .summary-top span {
+            font-size: 13px;
+            color: var(--muted);
+            font-weight: 600;
+        }
+
+        .summary-icon {
+            width: 37px;
+            height: 37px;
+            display: grid;
+            place-items: center;
+            border-radius: 9px;
+            background: var(--blue-light);
+            color: var(--primary);
+        }
+
+        .summary-card h2 {
+            font-size: 27px;
+            font-weight: 700;
+        }
+
+        .summary-card small {
+            display: block;
+            color: var(--muted);
+            margin-top: 5px;
+            font-size: 11px;
+        }
+
+        .section {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 11px;
+            box-shadow: var(--shadow);
+            margin-bottom: 22px;
+            overflow: hidden;
+        }
+
+        .section-header {
+            padding: 17px 19px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .section-header h2 {
+            font-size: 16px;
+        }
+
+        .section-header p {
+            font-size: 12px;
+            color: var(--muted);
+            margin-top: 5px;
+        }
+
+        .section-content {
+            padding: 17px;
+        }
+
+        .table-wrap {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 750px;
+        }
+
+        th, td {
+            padding: 12px 13px;
+            text-align: left;
+            border-bottom: 1px solid #edf0f4;
+            font-size: 13px;
+            white-space: nowrap;
+        }
+
+        th {
+            background: #f8fafc;
+            color: #4b5563;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: .35px;
+        }
+
+        tbody tr:hover {
+            background: #fafcff;
+        }
+
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .position {
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        .percentage {
+            font-weight: bold;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 5px 9px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+
+        .status.completed {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .status.pending {
+            background: #fff1dc;
+            color: #9a5700;
+        }
+
+        .status.no-data {
+            background: #f3f4f6;
+            color: #6b7280;
+        }
+
+        .pass {
+            color: var(--green);
+            font-weight: bold;
+        }
+
+        .fail {
+            color: var(--red);
+            font-weight: bold;
+        }
+
+        .muted {
+            color: var(--muted);
+        }
+
+        .breakdown-btn {
+            border: 1px solid #cbd5e1;
+            background: white;
+            color: var(--primary);
+            padding: 7px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .breakdown-btn:hover {
+            background: var(--blue-light);
+        }
+
+        .breakdown-row {
+            display: none;
+            background: #f8fafc;
+        }
+
+        .breakdown-row.show {
+            display: table-row;
+        }
+
+        .breakdown-container {
+            padding: 15px;
+        }
+
+        .breakdown-container h4 {
+            font-size: 13px;
+            margin-bottom: 12px;
+        }
+
+        .breakdown-container table {
+            min-width: 650px;
+            background: white;
+            border: 1px solid var(--border);
+        }
+
+        .breakdown-container th,
+        .breakdown-container td {
+            font-size: 12px;
+            padding: 10px;
+        }
+
+        .action-btn {
+            border: none;
+            background: var(--primary);
+            color: white;
+            padding: 10px 14px;
+            border-radius: 7px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .action-btn:hover {
+            background: var(--primary-dark);
+        }
+
+        .action-btn:disabled {
+            opacity: .5;
+            cursor: not-allowed;
+        }
+
+        .secondary-btn {
+            background: #eef2f7;
+            color: #374151;
+        }
+
+        .secondary-btn:hover {
+            background: #e1e7ef;
+        }
+
+        .message {
+            display: none;
+            padding: 13px 15px;
+            border-radius: 8px;
+            margin-bottom: 18px;
+            font-size: 13px;
+        }
+
+        .message.error {
+            display: block;
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .message.info {
+            display: block;
+            background: #eaf1ff;
+            color: #174ea6;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px 15px;
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        .loading i {
+            margin-right: 8px;
+            color: var(--primary);
+        }
+
+        .empty {
+            text-align: center;
+            padding: 35px 15px;
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .empty i {
+            display: block;
+            font-size: 28px;
+            margin-bottom: 12px;
+            color: #9ca3af;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 15px;
+            color: var(--muted);
+            font-size: 11px;
+        }
+
+        @media(max-width: 900px) {
+            .filters {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .summary-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media(max-width: 520px) {
+            .topbar {
+                padding: 14px;
+            }
+
+            .container {
+                width: 94%;
+                margin: 18px auto;
+            }
+
+            .page-heading h1 {
+                font-size: 21px;
+            }
+
+            .filters {
+                grid-template-columns: 1fr;
+                padding: 14px;
+            }
+
+            .summary-grid {
+                gap: 10px;
+            }
+
+            .summary-card {
+                padding: 14px;
+            }
+
+            .summary-card h2 {
+                font-size: 23px;
+            }
+
+            .section-content {
+                padding: 12px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<header class="topbar">
+
+    <div class="brand">
+        <div class="brand-icon">
+            <i class="fas fa-chart-line"></i>
+        </div>
+
+        <div>
+            <h2>Fila Grades System</h2>
+            <small>School Administration</small>
+        </div>
+    </div>
+
+    <div class="top-actions">
+        <button onclick="window.location.href='dashboard.html'">
+            <i class="fas fa-home"></i>
+            Dashboard
+        </button>
+
+        <button id="logoutBtn">
+            <i class="fas fa-sign-out-alt"></i>
+            Logout
+        </button>
+    </div>
+
+</header>
+
+<main class="container">
+
+    <div class="page-heading">
+
+        <div>
+            <h1>Teachers' Performance</h1>
+            <p>Examination results and marks recording analysis for your school.</p>
+        </div>
+
+        <div class="school-label">
+            <i class="fas fa-school"></i>
+            School Performance
+        </div>
+
+    </div>
+
+    <div id="message" class="message"></div>
+
+    <!-- FILTERS -->
+
+    <section class="filters">
+
+        <div class="filter-group">
+            <label for="testFilter">Select Test</label>
+
+            <select id="testFilter">
+                <option value="">Loading tests...</option>
+            </select>
+        </div>
+
+        <div class="filter-group">
+            <label for="subjectFilter">Subject</label>
+
+            <select id="subjectFilter">
+                <option value="all">All Subjects</option>
+            </select>
+        </div>
+
+        <div class="filter-group">
+            <label for="statusFilter">Marks Entry Status</label>
+
+            <select id="statusFilter">
+                <option value="all">All Statuses</option>
+                <option value="completed">Completed</option>
+                <option value="pending">Pending</option>
+            </select>
+        </div>
+
+        <div class="filter-group">
+            <label for="searchInput">Search Teacher</label>
+
+            <input
+                type="search"
+                id="searchInput"
+                placeholder="Search teacher name..."
+            >
+        </div>
+
+    </section>
+
+    <!-- SUMMARY -->
+
+    <section class="summary-grid">
+
+        <div class="summary-card">
+            <div class="summary-top">
+                <span>Total Teachers</span>
+                <div class="summary-icon">
+                    <i class="fas fa-users"></i>
+                </div>
+            </div>
+
+            <h2 id="totalTeachers">0</h2>
+            <small>Teachers with assignments in this test</small>
+        </div>
+
+        <div class="summary-card">
+            <div class="summary-top">
+                <span>Completed Entries</span>
+                <div class="summary-icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+            </div>
+
+            <h2 id="completedEntries">0</h2>
+            <small>Teacher and subject entries completed</small>
+        </div>
+
+        <div class="summary-card">
+            <div class="summary-top">
+                <span>Pending Entries</span>
+                <div class="summary-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+            </div>
+
+            <h2 id="pendingEntries">0</h2>
+            <small>Teacher and subject entries pending</small>
+        </div>
+
+        <div class="summary-card">
+            <div class="summary-top">
+                <span>School Pass Rate</span>
+                <div class="summary-icon">
+                    <i class="fas fa-chart-pie"></i>
+                </div>
+            </div>
+
+            <h2 id="schoolAverage">0%</h2>
+            <small>Passed candidates across subjects</small>
+        </div>
+
+    </section>
+
+    <!-- SUBJECT PERFORMANCE -->
+
+    <section class="section">
+
+        <div class="section-header">
+
+            <div>
+                <h2>
+                    <i class="fas fa-book-open"></i>
+                    Subject Performance
+                </h2>
+
+                <p>Performance of subjects included in the selected test.</p>
+            </div>
+
+        </div>
+
+        <div class="section-content">
+
+            <div class="table-wrap" id="subjectTableContainer">
+
+                <div class="empty">
+                    <i class="fas fa-chart-bar"></i>
+                    Select a test to view subject performance.
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+    <!-- TEACHER PERFORMANCE -->
+
+    <section class="section">
+
+        <div class="section-header">
+
+            <div>
+                <h2>
+                    <i class="fas fa-user-graduate"></i>
+                    Teacher Performance Ranking
+                </h2>
+
+                <p>Teacher results, marks recording status and class breakdown.</p>
+            </div>
+
+            <button class="action-btn" id="exportBtn" disabled>
+                <i class="fas fa-file-csv"></i>
+                Export CSV
+            </button>
+
+        </div>
+
+        <div class="section-content">
+
+            <div class="table-wrap" id="teacherTableContainer">
+
+                <div class="empty">
+                    <i class="fas fa-users"></i>
+                    Select a test to view teacher performance.
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+</main>
+
+<footer class="footer">
+    Fila Grades System &copy; <span id="year"></span>
+</footer>
+
+<script>
+"use strict";
+
+/* =====================================================
+   CONFIGURATION
+===================================================== */
+
+const API_URL = "/api/school-teachers-performance";
+
+/* =====================================================
+   ELEMENTS
+===================================================== */
+
+const testFilter = document.getElementById("testFilter");
+const subjectFilter = document.getElementById("subjectFilter");
+const statusFilter = document.getElementById("statusFilter");
+const searchInput = document.getElementById("searchInput");
+
+const messageBox = document.getElementById("message");
+
+const subjectTableContainer =
+    document.getElementById("subjectTableContainer");
+
+const teacherTableContainer =
+    document.getElementById("teacherTableContainer");
+
+const exportBtn = document.getElementById("exportBtn");
+
+/* =====================================================
+   STATE
+===================================================== */
+
+let tests = [];
+let subjects = [];
+let teachers = [];
+
+let selectedTest = null;
+let requestNumber = 0;
+
+/* =====================================================
+   HELPERS
+===================================================== */
+
+function escapeHTML(value) {
+
+    return String(value ?? "").replace(/[&<>"']/g, char => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#039;"
+    })[char]);
+}
+
+function formatNumber(value) {
+
+    return Number(value || 0).toLocaleString("en-US", {
+        maximumFractionDigits: 2
+    });
+}
+
+function formatPercentage(value) {
+
+    return `${formatNumber(value)}%`;
+}
+
+function showMessage(text, type = "info") {
+
+    messageBox.textContent = text;
+    messageBox.className = `message ${type}`;
+}
+
+function hideMessage() {
+
+    messageBox.textContent = "";
+    messageBox.className = "message";
+}
+
+function showLoading(element, text = "Loading performance...") {
+
+    element.innerHTML = `
+        <div class="loading">
+            <i class="fas fa-spinner fa-spin"></i>
+            ${escapeHTML(text)}
+        </div>
+    `;
+}
+
+function showEmpty(element, text) {
+
+    element.innerHTML = `
+        <div class="empty">
+            <i class="fas fa-chart-bar"></i>
+            ${escapeHTML(text)}
+        </div>
+    `;
+}
+
+function getStatusHTML(status) {
+
+    if (status === "completed") {
+        return `<span class="status completed">Completed</span>`;
+    }
+
+    if (status === "pending") {
+        return `<span class="status pending">Pending</span>`;
+    }
+
+    return `<span class="status no-data">No data</span>`;
+}
+
+function getPercentageClass(value) {
+
+    return Number(value) >= 50 ? "pass" : "fail";
+}
+
+/* =====================================================
+   API REQUEST
+===================================================== */
+
+async function apiRequest(url) {
+
+    const response = await fetch(url, {
+        method: "GET",
+        credentials: "include",
+        headers: {
+            "Accept": "application/json"
+        }
+    });
+
+    const data = await response.json().catch(() => null);
+
+    if (!response.ok) {
+
+        const error = new Error(
+            data?.message || `Request failed (${response.status}).`
+        );
+
+        error.status = response.status;
+
+        throw error;
+    }
+
+    if (!data || data.success !== true) {
+
+        throw new Error(
+            data?.message || "Unable to process the request."
+        );
+    }
+
+    return data;
+}
+
+/* =====================================================
+   INITIALIZE PAGE AND LOAD TESTS
+===================================================== */
+
+async function initializePage() {
+
+    hideMessage();
+
+    testFilter.innerHTML = `
+        <option value="">Loading tests...</option>
+    `;
+
+    try {
+
+        const data = await apiRequest(API_URL);
+
+        if (data.user?.role !== "school_admin") {
+
+            throw new Error(
+                "Access denied. This page is for school administrators only."
+            );
+        }
+
+        tests = Array.isArray(data.tests)
+            ? data.tests
+            : [];
+
+        if (tests.length === 0) {
+
+            testFilter.innerHTML = `
+                <option value="">No tests available</option>
+            `;
+
+            showEmpty(
+                subjectTableContainer,
+                "No tests are available for your school."
+            );
+
+            showEmpty(
+                teacherTableContainer,
+                "No teacher performance data is available."
+            );
+
+            resetSummary();
+
+            return;
+        }
+
+        testFilter.innerHTML = `
+            <option value="">Select a test</option>
+            ${tests.map(test => `
+                <option value="${escapeHTML(test.id)}">
+                    ${escapeHTML(test.name)}
+                    ${test.status
+                        ? ` (${escapeHTML(test.status)})`
+                        : ""}
+                </option>
+            `).join("")}
+        `;
+
+        if (tests.length === 1) {
+
+            testFilter.value = String(tests[0].id);
+
+            await loadSelectedTest();
+
+        } else {
+
+            showEmpty(
+                subjectTableContainer,
+                "Select a test to view subject performance."
+            );
+
+            showEmpty(
+                teacherTableContainer,
+                "Select a test to view teacher performance."
+            );
+
+            resetSummary();
+        }
+
+    } catch (error) {
+
+        showMessage(error.message, "error");
+
+        if (error.status === 401 || error.status === 403) {
+            testFilter.innerHTML = `
+                <option value="">Access unavailable</option>
+            `;
+        } else {
+            testFilter.innerHTML = `
+                <option value="">Unable to load tests</option>
+            `;
+        }
+    }
+}
+
+/* =====================================================
+   LOAD SELECTED TEST
+===================================================== */
+
+async function loadSelectedTest() {
+
+    const testId = testFilter.value;
+
+    if (!testId) {
+
+        selectedTest = null;
+        subjects = [];
+        teachers = [];
+
+        resetSummary();
+
+        showEmpty(
+            subjectTableContainer,
+            "Select a test to view subject performance."
+        );
+
+        showEmpty(
+            teacherTableContainer,
+            "Select a test to view teacher performance."
+        );
+
+        exportBtn.disabled = true;
+
+        subjectFilter.innerHTML = `
+            <option value="all">All Subjects</option>
+        `;
+
+        return;
+    }
+
+    const currentRequest = ++requestNumber;
+
+    hideMessage();
+
+    showLoading(subjectTableContainer);
+    showLoading(teacherTableContainer);
+
+    exportBtn.disabled = true;
+
+    try {
+
+        const data = await apiRequest(
+            `${API_URL}?test_id=${encodeURIComponent(testId)}`
+        );
+
+        if (currentRequest !== requestNumber) return;
+
+        if (data.user?.role !== "school_admin") {
+
+            throw new Error(
+                "Access denied. This page is for school administrators only."
+            );
+        }
+
+        selectedTest = data.test || null;
+
+        subjects = Array.isArray(data.subjects)
+            ? data.subjects
+            : [];
+
+        teachers = Array.isArray(data.teachers)
+            ? data.teachers
+            : [];
+
+        populateSubjectFilter();
+
+        renderAll();
+
+        exportBtn.disabled = teachers.length === 0;
+
+    } catch (error) {
+
+        if (currentRequest !== requestNumber) return;
+
+        showMessage(error.message, "error");
+
+        resetSummary();
+
+        showEmpty(
+            subjectTableContainer,
+            "Unable to load subject performance."
+        );
+
+        showEmpty(
+            teacherTableContainer,
+            "Unable to load teacher performance."
+        );
+    }
+}
+
+/* =====================================================
+   SUBJECT FILTER
+===================================================== */
+
+function populateSubjectFilter() {
+
+    const previousValue = subjectFilter.value;
+
+    subjectFilter.innerHTML = `
+        <option value="all">All Subjects</option>
+
+        ${subjects.map(subject => `
+            <option value="${escapeHTML(subject.id)}">
+                ${escapeHTML(subject.name)}
+            </option>
+        `).join("")}
+    `;
+
+    const exists = Array.from(subjectFilter.options)
+        .some(option => option.value === previousValue);
+
+    subjectFilter.value = exists
+        ? previousValue
+        : "all";
+}
+
+/* =====================================================
+   FILTER TEACHERS
+===================================================== */
+
+function getFilteredTeachers() {
+
+    const subject = subjectFilter.value;
+    const status = statusFilter.value;
+
+    const search = searchInput.value
+        .trim()
+        .toLowerCase();
+
+    return teachers.filter(teacher => {
+
+        const subjectMatches =
+            subject === "all" ||
+            String(teacher.subject_id) === subject;
+
+        const statusMatches =
+            status === "all" ||
+            teacher.status === status;
+
+        const searchMatches =
+            !search ||
+            String(teacher.teacher || "")
+                .toLowerCase()
+                .includes(search);
+
+        return subjectMatches &&
+               statusMatches &&
+               searchMatches;
+    }).sort((a, b) => {
+
+        const percentageDifference =
+            Number(b.percentage || 0) -
+            Number(a.percentage || 0);
+
+        if (percentageDifference !== 0) {
+            return percentageDifference;
+        }
+
+        return Number(b.passed || 0) -
+               Number(a.passed || 0);
+    });
+}
+
+/* =====================================================
+   FILTER SUBJECTS
+===================================================== */
+
+function getFilteredSubjects() {
+
+    const subject = subjectFilter.value;
+
+    return subjects.filter(item => {
+
+        return subject === "all" ||
+            String(item.id) === subject;
+
+    }).sort((a, b) => {
+
+        const percentageDifference =
+            Number(b.percentage || 0) -
+            Number(a.percentage || 0);
+
+        if (percentageDifference !== 0) {
+            return percentageDifference;
+        }
+
+        return Number(b.passed || 0) -
+               Number(a.passed || 0);
+    });
+}
+
+/* =====================================================
+   SUMMARY
+===================================================== */
+
+function renderSummary(filteredTeachers, filteredSubjects) {
+
+    const uniqueTeachers = new Set(
+        filteredTeachers.map(teacher => teacher.teacher_id)
+    );
+
+    const completed = filteredTeachers.filter(
+        teacher => teacher.status === "completed"
+    ).length;
+
+    const pending = filteredTeachers.filter(
+        teacher => teacher.status === "pending"
+    ).length;
+
+    const totalPassed = filteredSubjects.reduce(
+        (sum, subject) => sum + Number(subject.passed || 0),
+        0
+    );
+
+    const totalCandidates = filteredSubjects.reduce(
+        (sum, subject) => sum + Number(subject.total_candidates || 0),
+        0
+    );
+
+    const schoolPassRate = totalCandidates > 0
+        ? (totalPassed / totalCandidates) * 100
+        : 0;
+
+    document.getElementById("totalTeachers").textContent =
+        formatNumber(uniqueTeachers.size);
+
+    document.getElementById("completedEntries").textContent =
+        formatNumber(completed);
+
+    document.getElementById("pendingEntries").textContent =
+        formatNumber(pending);
+
+    document.getElementById("schoolAverage").textContent =
+        formatPercentage(schoolPassRate);
+}
+
+function resetSummary() {
+
+    document.getElementById("totalTeachers").textContent = "0";
+    document.getElementById("completedEntries").textContent = "0";
+    document.getElementById("pendingEntries").textContent = "0";
+    document.getElementById("schoolAverage").textContent = "0%";
+}
+
+/* =====================================================
+   RENDER SUBJECT TABLE
+===================================================== */
+
+function renderSubjectTable() {
+
+    const data = getFilteredSubjects();
+
+    if (data.length === 0) {
+
+        showEmpty(
+            subjectTableContainer,
+            "No subject performance records found."
+        );
+
+        return;
+    }
+
+    subjectTableContainer.innerHTML = `
+        <table>
+
+            <thead>
+                <tr>
+                    <th>Position</th>
+                    <th>Subject</th>
+                    <th>Average</th>
+                    <th>Percentage</th>
+                    <th>Pass Rate</th>
+                    <th>Passed</th>
+                    <th>Failed</th>
+                    <th>Candidates</th>
+                    <th>Recorded</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                ${data.map((subject, index) => {
+
+                    const percentage =
+                        Number(subject.percentage || 0);
+
+                    return `
+                        <tr>
+                            <td class="position">#${index + 1}</td>
+
+                            <td>
+                                <strong>
+                                    ${escapeHTML(subject.name)}
+                                </strong>
+                            </td>
+
+                            <td>${formatNumber(subject.average)}</td>
+
+                            <td class="percentage ${getPercentageClass(percentage)}">
+                                ${formatPercentage(percentage)}
+                            </td>
+
+                            <td>
+                                ${formatPercentage(subject.pass_rate)}
+                            </td>
+
+                            <td class="pass">
+                                ${formatNumber(subject.passed)}
+                            </td>
+
+                            <td class="fail">
+                                ${formatNumber(subject.failed)}
+                            </td>
+
+                            <td>
+                                ${formatNumber(subject.total_candidates)}
+                            </td>
+
+                            <td>
+                                ${formatNumber(subject.recorded)}
+                            </td>
+                        </tr>
+                    `;
+                }).join("")}
+
+            </tbody>
+
+        </table>
+    `;
+}
+
+/* =====================================================
+   RENDER TEACHER TABLE
+===================================================== */
+
+function renderTeacherTable() {
+
+    const data = getFilteredTeachers();
+
+    if (data.length === 0) {
+
+        showEmpty(
+            teacherTableContainer,
+            "No teacher performance records match your filters."
+        );
+
+        return;
+    }
+
+    teacherTableContainer.innerHTML = `
+        <table>
+
+            <thead>
+                <tr>
+                    <th>Position</th>
+                    <th>Teacher</th>
+                    <th>Subject</th>
+                    <th>Marks Entry Status</th>
+                    <th>Total Candidates</th>
+                    <th>Recorded</th>
+                    <th>Missing</th>
+                    <th>Passed</th>
+                    <th>Failed</th>
+                    <th>Average</th>
+                    <th>Percentage</th>
+                    <th>Breakdown</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                ${data.map((teacher, index) => {
+
+                    const percentage =
+                        Number(teacher.percentage || 0);
+
+                    const breakdownId =
+                        `breakdown-${index}`;
+
+                    return `
+
+                        <tr>
+
+                            <td class="position">
+                                #${index + 1}
+                            </td>
+
+                            <td>
+                                <strong>
+                                    ${escapeHTML(teacher.teacher)}
+                                </strong>
+                            </td>
+
+                            <td>
+                                ${escapeHTML(teacher.subject)}
+                            </td>
+
+                            <td>
+                                ${getStatusHTML(teacher.status)}
+                            </td>
+
+                            <td>
+                                ${formatNumber(teacher.total_candidates)}
+                            </td>
+
+                            <td>
+                                ${formatNumber(teacher.recorded)}
+                            </td>
+
+                            <td class="fail">
+                                ${formatNumber(teacher.missing)}
+                            </td>
+
+                            <td class="pass">
+                                ${formatNumber(teacher.passed)}
+                            </td>
+
+                            <td class="fail">
+                                ${formatNumber(teacher.failed)}
+                            </td>
+
+                            <td>
+                                ${formatNumber(teacher.average)}
+                            </td>
+
+                            <td class="percentage ${getPercentageClass(percentage)}">
+                                ${formatPercentage(percentage)}
+                            </td>
+
+                            <td>
+                                <button
+                                    class="breakdown-btn"
+                                    data-breakdown="${breakdownId}"
+                                >
+                                    <i class="fas fa-eye"></i>
+                                    View
+                                </button>
+                            </td>
+
+                        </tr>
+
+                        <tr
+                            class="breakdown-row"
+                            id="${breakdownId}"
+                        >
+                            <td colspan="12">
+                                ${renderBreakdown(teacher)}
+                            </td>
+                        </tr>
+
+                    `;
+
+                }).join("")}
+
+            </tbody>
+
+        </table>
+    `;
+
+    teacherTableContainer
+        .querySelectorAll("[data-breakdown]")
+        .forEach(button => {
+
+            button.addEventListener("click", () => {
+
+                const row = document.getElementById(
+                    button.dataset.breakdown
+                );
+
+                if (!row) return;
+
+                row.classList.toggle("show");
+
+                button.innerHTML = row.classList.contains("show")
+                    ? `<i class="fas fa-eye-slash"></i> Hide`
+                    : `<i class="fas fa-eye"></i> View`;
+            });
+        });
+}
+
+/* =====================================================
+   CLASS BREAKDOWN
+===================================================== */
+
+function renderBreakdown(teacher) {
+
+    const breakdown = Array.isArray(teacher.breakdown)
+        ? teacher.breakdown
+        : [];
+
+    if (breakdown.length === 0) {
+
+        return `
+            <div class="empty">
+                No class breakdown available.
+            </div>
+        `;
+    }
+
+    return `
+
+        <div class="breakdown-container">
+
+            <h4>
+                <i class="fas fa-list"></i>
+                Class Performance Breakdown
+                — ${escapeHTML(teacher.teacher)}
+            </h4>
+
+            <div class="table-wrap">
+
+                <table>
+
+                    <thead>
+                        <tr>
+                            <th>Class</th>
+                            <th>Candidates</th>
+                            <th>Recorded</th>
+                            <th>Missing</th>
+                            <th>Passed</th>
+                            <th>Failed</th>
+                            <th>Average</th>
+                            <th>Percentage</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+
+                        ${breakdown.map(item => `
+
+                            <tr>
+
+                                <td>
+                                    ${escapeHTML(item.class_name)}
+                                </td>
+
+                                <td>
+                                    ${formatNumber(item.total_candidates)}
+                                </td>
+
+                                <td>
+                                    ${formatNumber(item.recorded)}
+                                </td>
+
+                                <td class="fail">
+                                    ${formatNumber(item.missing)}
+                                </td>
+
+                                <td class="pass">
+                                    ${formatNumber(item.passed)}
+                                </td>
+
+                                <td class="fail">
+                                    ${formatNumber(item.failed)}
+                                </td>
+
+                                <td>
+                                    ${formatNumber(item.average)}
+                                </td>
+
+                                <td class="percentage ${getPercentageClass(item.percentage)}">
+                                    ${formatPercentage(item.percentage)}
+                                </td>
+
+                                <td>
+                                    ${getStatusHTML(item.status)}
+                                </td>
+
+                            </tr>
+
+                        `).join("")}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    `;
+}
+
+/* =====================================================
+   RENDER ALL
+===================================================== */
+
+function renderAll() {
+
+    const filteredTeachers = getFilteredTeachers();
+    const filteredSubjects = getFilteredSubjects();
+
+    renderSummary(filteredTeachers, filteredSubjects);
+
+    renderSubjectTable();
+
+    renderTeacherTable();
+
+    exportBtn.disabled = filteredTeachers.length === 0;
+}
+
+/* =====================================================
+   CSV EXPORT
+===================================================== */
+
+function csvEscape(value) {
+
+    const text = String(value ?? "");
+
+    return `"${text.replace(/"/g, '""')}"`;
+}
+
+function exportCSV() {
+
+    const data = getFilteredTeachers();
+
+    if (data.length === 0) {
+
+        showMessage(
+            "There are no teacher records to export.",
+            "error"
+        );
+
+        return;
+    }
+
+    const rows = [];
+
+    rows.push([
+        "Position",
+        "Teacher",
+        "School",
+        "Subject",
+        "Marks Entry Status",
+        "Total Candidates",
+        "Recorded",
+        "Missing",
+        "Passed",
+        "Failed",
+        "Average",
+        "Percentage"
+    ]);
+
+    data.forEach((teacher, index) => {
+
+        rows.push([
+            index + 1,
+            teacher.teacher,
+            teacher.school,
+            teacher.subject,
+            teacher.status,
+            teacher.total_candidates,
+            teacher.recorded,
+            teacher.missing,
+            teacher.passed,
+            teacher.failed,
+            teacher.average,
+            teacher.percentage
+        ]);
+
+        const breakdown = Array.isArray(teacher.breakdown)
+            ? teacher.breakdown
+            : [];
+
+        breakdown.forEach(item => {
+
+            rows.push([
+                "",
+                `${teacher.teacher} - ${item.class_name}`,
+                teacher.school,
+                item.subject,
+                item.status,
+                item.total_candidates,
+                item.recorded,
+                item.missing,
+                item.passed,
+                item.failed,
+                item.average,
+                item.percentage
+            ]);
+        });
+    });
+
+    const csvContent = rows
+        .map(row => row.map(csvEscape).join(","))
+        .join("\r\n");
+
+    const blob = new Blob(
+        ["\uFEFF" + csvContent],
+        { type: "text/csv;charset=utf-8;" }
+    );
+
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+
+    const testName = selectedTest?.name || "test";
+
+    const safeName = testName
+        .replace(/[^a-z0-9_-]/gi, "_");
+
+    link.href = url;
+
+    link.download =
+        `school_teachers_performance_${safeName}.csv`;
+
+    document.body.appendChild(link);
+
+    link.click();
+
+    link.remove();
+
+    URL.revokeObjectURL(url);
+}
+
+/* =====================================================
+   EVENT LISTENERS
+===================================================== */
+
+testFilter.addEventListener("change", loadSelectedTest);
+
+subjectFilter.addEventListener("change", renderAll);
+
+statusFilter.addEventListener("change", renderAll);
+
+searchInput.addEventListener("input", renderAll);
+
+exportBtn.addEventListener("click", exportCSV);
+
+/* =====================================================
+   LOGOUT
+===================================================== */
+
+document.getElementById("logoutBtn")
+    .addEventListener("click", async () => {
+
+        const confirmed = confirm(
+            "Are you sure you want to log out?"
+        );
+
+        if (!confirmed) return;
+
+        try {
+
+            await fetch("/api/logout", {
+                method: "POST",
+                credentials: "include"
+            });
+
+        } catch (error) {
+
+            console.error("Logout request failed:", error);
+        }
+
+        window.location.href = "../../index.html";
+    });
+
+/* =====================================================
+   PAGE START
+===================================================== */
+
+document.getElementById("year").textContent =
+    new Date().getFullYear();
+
+initializePage();
+
+</script>
+
+</body>
+</html>
