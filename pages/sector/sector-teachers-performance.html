@@ -1,0 +1,1141 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#173f70">
+
+<title>Sector Teachers Performance | Fila Grades System</title>
+
+<link rel="icon" href="../../images/favicon/favicon.ico">
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: #f3f6fb;
+    color: #1e293b;
+}
+
+header {
+    background: linear-gradient(135deg,#173f70,#2563eb);
+    color: white;
+    padding: 25px 5%;
+}
+
+header h1 {
+    margin: 0 0 6px;
+    font-size: 25px;
+}
+
+header p {
+    margin: 0;
+    opacity: .9;
+}
+
+main {
+    width: 95%;
+    max-width: 1550px;
+    margin: 22px auto;
+}
+
+.panel {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,.05);
+}
+
+.panel h2 {
+    margin: 0 0 18px;
+    color: #173f70;
+    font-size: 19px;
+}
+
+.filters {
+    display: grid;
+    grid-template-columns: repeat(4,minmax(160px,1fr));
+    gap: 15px;
+}
+
+.filter label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 7px;
+}
+
+input, select {
+    width: 100%;
+    padding: 11px;
+    border: 1px solid #cbd5e1;
+    border-radius: 7px;
+    background: white;
+    font-size: 14px;
+    outline: none;
+}
+
+input:focus, select:focus {
+    border-color: #2563eb;
+}
+
+.stats {
+    display: grid;
+    grid-template-columns: repeat(4,1fr);
+    gap: 15px;
+}
+
+.stat {
+    padding: 17px;
+    border: 1px solid #e2e8f0;
+    border-radius: 9px;
+}
+
+.stat small {
+    color: #64748b;
+    display: block;
+    margin-bottom: 8px;
+}
+
+.stat strong {
+    font-size: 25px;
+    color: #173f70;
+}
+
+.toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 15px;
+}
+
+button {
+    border: none;
+    border-radius: 7px;
+    padding: 10px 15px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.primary-btn {
+    background: #2563eb;
+    color: white;
+}
+
+.secondary-btn {
+    background: #e2e8f0;
+    color: #334155;
+}
+
+.logout-btn {
+    background: #ef4444;
+    color: white;
+}
+
+.table-scroll {
+    width: 100%;
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 1100px;
+}
+
+th, td {
+    border-bottom: 1px solid #e2e8f0;
+    padding: 12px 10px;
+    text-align: center;
+    font-size: 13px;
+    white-space: nowrap;
+}
+
+thead {
+    background: #173f70;
+    color: white;
+}
+
+tbody tr:hover {
+    background: #f8fafc;
+}
+
+.teacher-name {
+    text-align: left;
+    font-weight: 700;
+    color: #173f70;
+}
+
+.school-name {
+    text-align: left;
+}
+
+.percentage {
+    font-weight: 800;
+    color: #173f70;
+}
+
+.status {
+    display: inline-block;
+    padding: 5px 9px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.completed {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.pending {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.breakdown-row {
+    display: none;
+    background: #f8fafc;
+}
+
+.breakdown-row.open {
+    display: table-row;
+}
+
+.breakdown-content {
+    padding: 15px;
+    text-align: left;
+    white-space: normal;
+}
+
+.breakdown-content h3 {
+    color: #173f70;
+    margin: 5px 0 15px;
+}
+
+.breakdown-content table {
+    min-width: 650px;
+    background: white;
+}
+
+.breakdown-content th {
+    background: #334e75;
+}
+
+.subject-summary {
+    display: grid;
+    grid-template-columns: repeat(4,1fr);
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.subject-summary div {
+    background: white;
+    padding: 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 7px;
+}
+
+.subject-summary small {
+    display: block;
+    color: #64748b;
+}
+
+.subject-summary strong {
+    font-size: 18px;
+    color: #173f70;
+}
+
+.empty, .loading {
+    padding: 30px;
+    text-align: center;
+    color: #64748b;
+}
+
+.message {
+    padding: 12px;
+    border-radius: 7px;
+    margin-bottom: 15px;
+    display: none;
+}
+
+.error {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.info {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.subject-rank {
+    font-weight: 700;
+    color: #173f70;
+}
+
+@media(max-width:900px) {
+    .filters {
+        grid-template-columns: repeat(2,1fr);
+    }
+
+    .stats {
+        grid-template-columns: repeat(2,1fr);
+    }
+}
+
+@media(max-width:550px) {
+    .filters {
+        grid-template-columns: 1fr;
+    }
+
+    .panel {
+        padding: 13px;
+    }
+
+    header h1 {
+        font-size: 20px;
+    }
+
+    .subject-summary {
+        grid-template-columns: repeat(2,1fr);
+    }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <div class="toolbar">
+        <div>
+            <h1>Teachers' Performance</h1>
+            <p>Sector-wide examination and marks recording analysis</p>
+        </div>
+
+        <button class="logout-btn" onclick="logout()">Logout</button>
+    </div>
+</header>
+
+<main>
+
+    <div id="message" class="message"></div>
+
+    <!-- TEST AND FILTERS -->
+
+    <section class="panel">
+
+        <h2>Performance Filters</h2>
+
+        <div class="filters">
+
+            <div class="filter">
+                <label for="testSelect">Select Test</label>
+                <select id="testSelect">
+                    <option value="">Loading tests...</option>
+                </select>
+            </div>
+
+            <div class="filter">
+                <label for="subjectSelect">Filter by Subject</label>
+                <select id="subjectSelect">
+                    <option value="">All Subjects</option>
+                </select>
+            </div>
+
+            <div class="filter">
+                <label for="statusSelect">Marks Entry Status</label>
+                <select id="statusSelect">
+                    <option value="">All Statuses</option>
+                    <option value="completed">Completed</option>
+                    <option value="pending">Pending</option>
+                </select>
+            </div>
+
+            <div class="filter">
+                <label for="searchInput">Search Teacher / School</label>
+                <input
+                    type="search"
+                    id="searchInput"
+                    placeholder="Enter teacher or school name">
+            </div>
+
+        </div>
+
+    </section>
+
+    <!-- SUMMARY -->
+
+    <section class="panel">
+
+        <h2>Sector Performance Summary</h2>
+
+        <div class="stats">
+
+            <div class="stat">
+                <small>Total Teachers</small>
+                <strong id="totalTeachers">0</strong>
+            </div>
+
+            <div class="stat">
+                <small>Completed Entries</small>
+                <strong id="completedEntries">0</strong>
+            </div>
+
+            <div class="stat">
+                <small>Pending Entries</small>
+                <strong id="pendingEntries">0</strong>
+            </div>
+
+            <div class="stat">
+                <small>Sector Average</small>
+                <strong id="sectorAverage">0%</strong>
+            </div>
+
+        </div>
+
+    </section>
+
+    <!-- SUBJECT PERFORMANCE -->
+
+    <section class="panel">
+
+        <div class="toolbar">
+            <h2>Subject Performance Ranking</h2>
+            <small>Percentage receives the highest ranking priority.</small>
+        </div>
+
+        <div class="table-scroll">
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Position</th>
+                        <th>Subject</th>
+                        <th>Average</th>
+                        <th>Percentage</th>
+                        <th>Pass Rate</th>
+                        <th>Passed</th>
+                        <th>Failed</th>
+                        <th>Candidates</th>
+                    </tr>
+                </thead>
+
+                <tbody id="subjectBody">
+                    <tr>
+                        <td colspan="8" class="empty">
+                            Select a test to view subject performance.
+                        </td>
+                    </tr>
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </section>
+
+    <!-- TEACHERS -->
+
+    <section class="panel">
+
+        <div class="toolbar">
+
+            <h2>Teachers' Performance Ranking</h2>
+
+            <button class="primary-btn" onclick="exportCSV()">
+                Download CSV
+            </button>
+
+        </div>
+
+        <div class="table-scroll">
+
+            <table id="teachersTable">
+
+                <thead>
+                    <tr>
+                        <th>Position</th>
+                        <th>Teacher</th>
+                        <th>School</th>
+                        <th>Subject</th>
+                        <th>Marks Entry Status</th>
+                        <th>Total Candidates</th>
+                        <th>Failed</th>
+                        <th>Passed</th>
+                        <th>Average</th>
+                        <th>Percentage</th>
+                        <th>Breakdown</th>
+                    </tr>
+                </thead>
+
+                <tbody id="teachersBody">
+                    <tr>
+                        <td colspan="11" class="empty">
+                            Select a test to view teachers.
+                        </td>
+                    </tr>
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </section>
+
+</main>
+
+<script>
+
+/* =====================================================
+   CONFIGURATION
+===================================================== */
+
+const API_URL = "/api/sector-teachers-performance";
+
+let tests = [];
+let subjects = [];
+let teachers = [];
+let filteredTeachers = [];
+
+/* =====================================================
+   HELPERS
+===================================================== */
+
+function number(value) {
+    const n = Number(value);
+    return Number.isFinite(n) ? n : 0;
+}
+
+function format(value) {
+    return number(value).toFixed(2).replace(/\.00$/, "");
+}
+
+function escapeHTML(value) {
+    return String(value ?? "").replace(/[&<>"']/g, char => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#039;"
+    })[char]);
+}
+
+function showMessage(message, type = "info") {
+    const box = document.getElementById("message");
+    box.textContent = message;
+    box.className = "message " + type;
+    box.style.display = "block";
+}
+
+function clearMessage() {
+    document.getElementById("message").style.display = "none";
+}
+
+async function request(url) {
+
+    const response = await fetch(url, {
+        method: "GET",
+        credentials: "same-origin",
+        headers: {
+            "Accept": "application/json"
+        },
+        cache: "no-store"
+    });
+
+    const data = await response.json();
+
+    if (!response.ok || !data.success) {
+        throw new Error(data.message || "Unable to load performance data.");
+    }
+
+    if (data.user && data.user.role !== "sector_admin") {
+        throw new Error("Sector administrator access is required.");
+    }
+
+    return data;
+}
+
+/* =====================================================
+   LOAD TESTS
+===================================================== */
+
+async function loadTests() {
+
+    try {
+
+        const data = await request(API_URL);
+
+        if (data.user?.role !== "sector_admin") {
+            throw new Error("Access denied. Sector administrator access is required.");
+        }
+
+        tests = data.tests || [];
+
+        const select = document.getElementById("testSelect");
+
+        select.innerHTML = "";
+
+        if (!tests.length) {
+
+            select.innerHTML = '<option value="">No tests available</option>';
+
+            showMessage("No tests are available for your sector.");
+
+            return;
+        }
+
+        tests.forEach(test => {
+
+            const option = document.createElement("option");
+
+            option.value = test.id;
+            option.textContent = test.name;
+
+            select.appendChild(option);
+
+        });
+
+        await loadTestPerformance();
+
+    } catch (error) {
+
+        showMessage(error.message, "error");
+
+        document.getElementById("testSelect").innerHTML =
+            '<option value="">Unable to load tests</option>';
+
+    }
+
+}
+
+/* =====================================================
+   LOAD SELECTED TEST PERFORMANCE
+===================================================== */
+
+async function loadTestPerformance() {
+
+    const testId = document.getElementById("testSelect").value;
+
+    if (!testId) return;
+
+    const body = document.getElementById("teachersBody");
+
+    body.innerHTML = `
+        <tr>
+            <td colspan="11" class="loading">Loading performance...</td>
+        </tr>
+    `;
+
+    try {
+
+        clearMessage();
+
+        const data = await request(
+            API_URL + "?test_id=" + encodeURIComponent(testId)
+        );
+
+        subjects = data.subjects || [];
+        teachers = data.teachers || [];
+
+        populateSubjectFilter();
+
+        applyFilters();
+
+    } catch (error) {
+
+        showMessage(error.message, "error");
+
+        body.innerHTML = `
+            <tr>
+                <td colspan="11" class="empty">
+                    Unable to load teacher performance.
+                </td>
+            </tr>
+        `;
+
+    }
+
+}
+
+/* =====================================================
+   SUBJECT FILTER
+   RANK: PERCENTAGE, PASS RATE, PASSED, AVERAGE
+===================================================== */
+
+function populateSubjectFilter() {
+
+    const select = document.getElementById("subjectSelect");
+
+    const selectedValue = select.value;
+
+    const ranked = [...subjects].sort((a, b) =>
+
+        number(b.percentage) - number(a.percentage) ||
+
+        number(b.pass_rate) - number(a.pass_rate) ||
+
+        number(b.passed) - number(a.passed) ||
+
+        number(b.average) - number(a.average)
+
+    );
+
+    select.innerHTML = '<option value="">All Subjects</option>';
+
+    ranked.forEach(subject => {
+
+        const option = document.createElement("option");
+
+        option.value = subject.id;
+
+        option.textContent =
+            `${subject.name} — ${format(subject.percentage)}%`;
+
+        select.appendChild(option);
+
+    });
+
+    if ([...select.options].some(option => option.value === selectedValue)) {
+        select.value = selectedValue;
+    }
+
+    renderSubjectRanking(ranked);
+
+}
+
+/* =====================================================
+   SUBJECT RANKING TABLE
+===================================================== */
+
+function renderSubjectRanking(ranked) {
+
+    const body = document.getElementById("subjectBody");
+
+    if (!ranked.length) {
+
+        body.innerHTML = `
+            <tr>
+                <td colspan="8" class="empty">
+                    No subject performance available.
+                </td>
+            </tr>
+        `;
+
+        return;
+    }
+
+    body.innerHTML = ranked.map((subject, index) => `
+
+        <tr>
+            <td class="subject-rank">${index + 1}</td>
+
+            <td>${escapeHTML(subject.name)}</td>
+
+            <td>${format(subject.average)}</td>
+
+            <td class="percentage">${format(subject.percentage)}%</td>
+
+            <td>${format(subject.pass_rate)}%</td>
+
+            <td>${number(subject.passed)}</td>
+
+            <td>${number(subject.failed)}</td>
+
+            <td>${number(subject.total_candidates)}</td>
+        </tr>
+
+    `).join("");
+
+}
+
+/* =====================================================
+   FILTER TEACHERS
+===================================================== */
+
+function applyFilters() {
+
+    const subjectId = document.getElementById("subjectSelect").value;
+
+    const status = document.getElementById("statusSelect").value;
+
+    const search = document.getElementById("searchInput")
+        .value.trim().toLowerCase();
+
+    filteredTeachers = teachers.filter(teacher => {
+
+        const matchesSubject = !subjectId ||
+            String(teacher.subject_id) === String(subjectId);
+
+        const matchesStatus = !status ||
+            teacher.status === status;
+
+        const matchesSearch =
+            !search ||
+            String(teacher.teacher).toLowerCase().includes(search) ||
+            String(teacher.school).toLowerCase().includes(search);
+
+        return matchesSubject && matchesStatus && matchesSearch;
+
+    });
+
+    // Rank the filtered teachers by percentage.
+    filteredTeachers.sort((a, b) =>
+
+        number(b.percentage) - number(a.percentage) ||
+
+        number(b.pass_rate) - number(a.pass_rate) ||
+
+        number(b.passed) - number(a.passed) ||
+
+        number(b.average) - number(a.average)
+
+    );
+
+    updateSummary();
+
+    renderTeachers();
+
+}
+
+/* =====================================================
+   SUMMARY
+===================================================== */
+
+function updateSummary() {
+
+    const completed = filteredTeachers.filter(
+        teacher => teacher.status === "completed"
+    ).length;
+
+    const pending = filteredTeachers.filter(
+        teacher => teacher.status === "pending"
+    ).length;
+
+    const valid = filteredTeachers.filter(
+        teacher => number(teacher.total_candidates) > 0
+    );
+
+    const average = valid.length
+        ? valid.reduce((sum, teacher) =>
+            sum + number(teacher.percentage), 0) / valid.length
+        : 0;
+
+    document.getElementById("totalTeachers").textContent =
+        filteredTeachers.length;
+
+    document.getElementById("completedEntries").textContent = completed;
+
+    document.getElementById("pendingEntries").textContent = pending;
+
+    document.getElementById("sectorAverage").textContent =
+        format(average) + "%";
+
+}
+
+/* =====================================================
+   RENDER TEACHERS
+===================================================== */
+
+function renderTeachers() {
+
+    const body = document.getElementById("teachersBody");
+
+    if (!filteredTeachers.length) {
+
+        body.innerHTML = `
+            <tr>
+                <td colspan="11" class="empty">
+                    No teachers match the selected filters.
+                </td>
+            </tr>
+        `;
+
+        return;
+    }
+
+    body.innerHTML = filteredTeachers.map((teacher, index) => {
+
+        const status = teacher.status === "completed"
+            ? "Completed"
+            : "Pending";
+
+        return `
+
+            <tr>
+
+                <td><strong>${index + 1}</strong></td>
+
+                <td class="teacher-name">
+                    ${escapeHTML(teacher.teacher)}
+                </td>
+
+                <td class="school-name">
+                    ${escapeHTML(teacher.school)}
+                </td>
+
+                <td>${escapeHTML(teacher.subject)}</td>
+
+                <td>
+                    <span class="status ${teacher.status === "completed"
+                        ? "completed" : "pending"}">
+                        ${status}
+                    </span>
+                </td>
+
+                <td>${number(teacher.total_candidates)}</td>
+
+                <td>${number(teacher.failed)}</td>
+
+                <td>${number(teacher.passed)}</td>
+
+                <td>${format(teacher.average)}</td>
+
+                <td class="percentage">
+                    ${format(teacher.percentage)}%
+                </td>
+
+                <td>
+                    <button class="secondary-btn"
+                        onclick="toggleBreakdown(${index})">
+                        View
+                    </button>
+                </td>
+
+            </tr>
+
+            <tr class="breakdown-row" id="breakdown-${index}">
+
+                <td colspan="11">
+
+                    <div class="breakdown-content">
+
+                        ${renderBreakdown(teacher)}
+
+                    </div>
+
+                </td>
+
+            </tr>
+
+        `;
+
+    }).join("");
+
+}
+
+/* =====================================================
+   TEACHER BREAKDOWN
+===================================================== */
+
+function renderBreakdown(teacher) {
+
+    const details = teacher.breakdown || [];
+
+    return `
+
+        <h3>
+            ${escapeHTML(teacher.teacher)} —
+            ${escapeHTML(teacher.school)}
+        </h3>
+
+        <div class="subject-summary">
+
+            <div>
+                <small>Total Candidates</small>
+                <strong>${number(teacher.total_candidates)}</strong>
+            </div>
+
+            <div>
+                <small>Passed</small>
+                <strong>${number(teacher.passed)}</strong>
+            </div>
+
+            <div>
+                <small>Failed</small>
+                <strong>${number(teacher.failed)}</strong>
+            </div>
+
+            <div>
+                <small>Percentage</small>
+                <strong>${format(teacher.percentage)}%</strong>
+            </div>
+
+        </div>
+
+        <div class="table-scroll">
+
+            <table>
+
+                <thead>
+                    <tr>
+                        <th>Class</th>
+                        <th>Subject</th>
+                        <th>Candidates</th>
+                        <th>Completed Marks</th>
+                        <th>Missing Marks</th>
+                        <th>Passed</th>
+                        <th>Failed</th>
+                        <th>Average</th>
+                        <th>Percentage</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                    ${details.length ? details.map(item => `
+
+                        <tr>
+                            <td>${escapeHTML(item.class_name)}</td>
+                            <td>${escapeHTML(item.subject)}</td>
+                            <td>${number(item.total_candidates)}</td>
+                            <td>${number(item.recorded)}</td>
+                            <td>${number(item.missing)}</td>
+                            <td>${number(item.passed)}</td>
+                            <td>${number(item.failed)}</td>
+                            <td>${format(item.average)}</td>
+                            <td>${format(item.percentage)}%</td>
+                            <td>
+                                ${item.status === "completed"
+                                    ? "Completed" : "Pending"}
+                            </td>
+                        </tr>
+
+                    `).join("") : `
+
+                        <tr>
+                            <td colspan="10">
+                                No detailed breakdown available.
+                            </td>
+                        </tr>
+
+                    `}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    `;
+
+}
+
+/* =====================================================
+   TOGGLE BREAKDOWN
+===================================================== */
+
+function toggleBreakdown(index) {
+
+    const row = document.getElementById("breakdown-" + index);
+
+    if (!row) return;
+
+    row.classList.toggle("open");
+
+}
+
+/* =====================================================
+   CSV EXPORT
+===================================================== */
+
+function exportCSV() {
+
+    if (!filteredTeachers.length) {
+        showMessage("There are no records to export.");
+        return;
+    }
+
+    const headers = [
+        "Position",
+        "Teacher",
+        "School",
+        "Subject",
+        "Marks Entry Status",
+        "Total Candidates",
+        "Failed",
+        "Passed",
+        "Average",
+        "Percentage"
+    ];
+
+    const rows = filteredTeachers.map((teacher, index) => [
+        index + 1,
+        teacher.teacher,
+        teacher.school,
+        teacher.subject,
+        teacher.status,
+        teacher.total_candidates,
+        teacher.failed,
+        teacher.passed,
+        teacher.average,
+        teacher.percentage
+    ]);
+
+    const csv = [headers, ...rows].map(row =>
+        row.map(value =>
+            '"' + String(value ?? "").replace(/"/g, '""') + '"'
+        ).join(",")
+    ).join("\n");
+
+    const blob = new Blob(["\uFEFF" + csv], {
+        type: "text/csv;charset=utf-8;"
+    });
+
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+
+    link.href = url;
+    link.download = "sector-teachers-performance.csv";
+    link.click();
+
+    URL.revokeObjectURL(url);
+
+}
+
+/* =====================================================
+   LOGOUT
+===================================================== */
+
+function logout() {
+
+    location.href = "../../index.html";
+
+}
+
+/* =====================================================
+   EVENTS
+===================================================== */
+
+document.getElementById("testSelect")
+    .addEventListener("change", loadTestPerformance);
+
+document.getElementById("subjectSelect")
+    .addEventListener("change", applyFilters);
+
+document.getElementById("statusSelect")
+    .addEventListener("change", applyFilters);
+
+document.getElementById("searchInput")
+    .addEventListener("input", applyFilters);
+
+/* =====================================================
+   START
+===================================================== */
+
+loadTests();
+
+</script>
+
+</body>
+</html>
