@@ -33,7 +33,7 @@
                     Main Menu
                 </div>
 
-                <a href="dashboard.html" class="sidebar-link">
+                <a href="school-admin.html" class="sidebar-link">
                     <span class="sidebar-link-icon">🏠</span>
                     <span>Dashboard</span>
                 </a>
