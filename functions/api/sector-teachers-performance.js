@@ -1,109 +1,129 @@
 
 import {
     connectDB,
-    json,
-    requireSectorAdmin
+    authenticateRole,
+    json
 } from "../_utils.js";
 
 /* =====================================================
    HELPERS
 ===================================================== */
 
-function toNumber(value) {
+function validId(value) {
+    const number = Number(value);
+
+    return Number.isSafeInteger(number) && number > 0
+        ? number
+        : null;
+}
+
+function number(value) {
     return Number(value || 0);
 }
 
 function round(value) {
-    return Math.round(value * 100) / 100;
-}
-
-function calculateStatus(recorded, total) {
-    return total > 0 && recorded >= total
-        ? "completed"
-        : "pending";
+    return Math.round((Number(value) + Number.EPSILON) * 100) / 100;
 }
 
 /* =====================================================
-   GET TESTS AVAILABLE TO THE SECTOR
+   CHECK THAT TEST BELONGS TO THE ADMIN'S SECTOR
 ===================================================== */
 
-async function getSectorTests(client, sectorId) {
+async function getSectorTest(client, testId, sectorId) {
     const result = await client.query(
-        `SELECT DISTINCT
-            t.id::text AS id,
-            t.test_name AS name,
+        `SELECT
+            t.id,
+            t.test_name,
             t.status,
             t.created_at
          FROM tests t
-         WHERE
-            t.sector_id = $1
-
-            OR (
-                t.school_id IS NOT NULL
-                AND EXISTS (
-                    SELECT 1
-                    FROM schools s
-                    WHERE s.id = t.school_id
-                    AND s.sector_id = $1
-                )
-            )
-
-            OR EXISTS (
-                SELECT 1
-                FROM test_classes tc
-                JOIN schools s
-                    ON s.id = tc.school_id
-                WHERE tc.test_id = t.id
-                AND s.sector_id = $1
-            )
-
-         ORDER BY t.created_at DESC`,
-        [sectorId]
-    );
-
-    return result.rows;
-}
-
-/* =====================================================
-   VERIFY THAT THE TEST BELONGS TO THE SECTOR
-===================================================== */
-
-async function verifyTest(client, testId, sectorId) {
-    const result = await client.query(
-        `SELECT t.id
-         FROM tests t
          WHERE t.id = $1
-         AND (
-            t.sector_id = $2
-
-            OR (
-                t.school_id IS NOT NULL
-                AND EXISTS (
+           AND (
+                t.sector_id = $2
+                OR EXISTS (
                     SELECT 1
-                    FROM schools s
-                    WHERE s.id = t.school_id
-                    AND s.sector_id = $2
+                    FROM test_schools tst
+                    INNER JOIN schools s
+                        ON s.id = tst.school_id
+                    WHERE tst.test_id = t.id
+                      AND s.sector_id = $2
                 )
-            )
-
-            OR EXISTS (
-                SELECT 1
-                FROM test_classes tc
-                JOIN schools s
-                    ON s.id = tc.school_id
-                WHERE tc.test_id = t.id
-                AND s.sector_id = $2
-            )
-         )
+                OR (
+                    t.school_id IS NOT NULL
+                    AND EXISTS (
+                        SELECT 1
+                        FROM schools s
+                        WHERE s.id = t.school_id
+                          AND s.sector_id = $2
+                    )
+                )
+           )
          LIMIT 1`,
         [testId, sectorId]
     );
 
-    return result.rows.length > 0;
+    return result.rows[0] || null;
+}
+
+/* =====================================================
+   GET AVAILABLE TESTS
+===================================================== */
+
+async function getTests(client, sectorId) {
+    const result = await client.query(
+        `SELECT DISTINCT
+            t.id,
+            t.test_name AS name,
+            t.status,
+            t.created_at
+
+         FROM tests t
+
+         WHERE (
+                t.sector_id = $1
+
+                OR EXISTS (
+                    SELECT 1
+                    FROM test_schools tst
+                    INNER JOIN schools s
+                        ON s.id = tst.school_id
+                    WHERE tst.test_id = t.id
+                      AND s.sector_id = $1
+                )
+
+                OR (
+                    t.school_id IS NOT NULL
+                    AND EXISTS (
+                        SELECT 1
+                        FROM schools s
+                        WHERE s.id = t.school_id
+                          AND s.sector_id = $1
+                    )
+                )
+         )
+
+         ORDER BY t.created_at DESC, t.id DESC`,
+        [sectorId]
+    );
+
+    return result.rows.map(row => ({
+        id: String(row.id),
+        name: row.name,
+        status: row.status,
+        created_at: row.created_at
+    }));
 }
 
 /* =====================================================
    SUBJECT PERFORMANCE
+
+   Candidates come from:
+   - Test classes
+   - Participating schools
+   - Active students
+   - Test subjects
+
+   Pass mark: 50% or above.
 ===================================================== */
 
 async function getSubjectPerformance(
@@ -112,153 +132,144 @@ async function getSubjectPerformance(
     sectorId
 ) {
     const result = await client.query(
-        `WITH scoped_classes AS (
-            SELECT DISTINCT
-                tc.school_id,
-                tc.class_id
-            FROM test_classes tc
-            JOIN schools s
-                ON s.id = tc.school_id
-            WHERE tc.test_id = $1
-            AND s.sector_id = $2
-        ),
-
-        latest_marks AS (
-            SELECT DISTINCT ON (
-                m.test_id,
-                m.student_id,
-                m.class_id,
-                m.subject_id
-            )
-                m.id,
-                m.test_id,
-                m.student_id,
-                m.class_id,
-                m.subject_id,
-                m.score
-            FROM marks m
-            WHERE m.test_id = $1
-            ORDER BY
-                m.test_id,
-                m.student_id,
-                m.class_id,
-                m.subject_id,
-                m.updated_at DESC NULLS LAST,
-                m.created_at DESC NULLS LAST,
-                m.id DESC
-        ),
-
-        candidates AS (
+        `WITH candidates AS (
             SELECT
                 ts.subject_id,
-                sub.subject_name,
                 ts.total_marks,
-                st.id AS student_id,
-                lm.id AS mark_id,
-                lm.score
+                tc.school_id,
+                tc.class_id,
+                st.id AS student_id
 
-            FROM scoped_classes sc
+            FROM test_subjects ts
 
-            JOIN students st
-                ON st.class_id = sc.class_id
-                AND st.school_id = sc.school_id
+            INNER JOIN test_classes tc
+                ON tc.test_id = ts.test_id
 
-            JOIN test_subjects ts
-                ON ts.test_id = $1
+            INNER JOIN schools sch
+                ON sch.id = tc.school_id
+               AND sch.sector_id = $2
 
-            JOIN subjects sub
-                ON sub.id = ts.subject_id
+            INNER JOIN students st
+                ON st.school_id = tc.school_id
+               AND st.class_id = tc.class_id
+               AND st.status = 'active'
 
-            LEFT JOIN latest_marks lm
-                ON lm.student_id = st.id
-                AND lm.class_id = sc.class_id
-                AND lm.subject_id = ts.subject_id
-        )
+            WHERE ts.test_id = $1
+         )
 
-        SELECT
-            subject_id::text,
-            subject_name,
+         SELECT
+            sub.id AS subject_id,
+            sub.subject_name,
 
-            COUNT(*) AS total_candidates,
+            COUNT(DISTINCT c.student_id) AS total_candidates,
 
-            COUNT(mark_id) AS recorded,
+            COUNT(DISTINCT c.student_id)
+                FILTER (WHERE m.score IS NOT NULL)
+                AS recorded,
 
-            COUNT(*) - COUNT(mark_id) AS missing,
+            COUNT(DISTINCT c.student_id)
+                FILTER (
+                    WHERE m.score IS NOT NULL
+                      AND m.score >= c.total_marks * 0.5
+                ) AS passed,
 
-            COUNT(*) FILTER (
-                WHERE mark_id IS NOT NULL
-                AND score >= total_marks * 0.5
-            ) AS passed,
-
-            COUNT(*) FILTER (
-                WHERE mark_id IS NOT NULL
-                AND score < total_marks * 0.5
-            ) AS failed,
+            COUNT(DISTINCT c.student_id)
+                FILTER (
+                    WHERE m.score IS NOT NULL
+                      AND m.score < c.total_marks * 0.5
+                ) AS failed,
 
             ROUND(
-                AVG(score) FILTER (
-                    WHERE mark_id IS NOT NULL
-                ),
+                AVG(m.score)::numeric,
                 2
             ) AS average,
 
             ROUND(
                 AVG(
-                    score / NULLIF(total_marks, 0) * 100
-                ) FILTER (
-                    WHERE mark_id IS NOT NULL
-                ),
+                    (m.score / NULLIF(c.total_marks, 0)) * 100
+                )::numeric,
                 2
-            ) AS percentage,
+            ) AS percentage
 
-            ROUND(
-                COUNT(*) FILTER (
-                    WHERE mark_id IS NOT NULL
-                    AND score >= total_marks * 0.5
-                )::numeric
-                /
-                NULLIF(COUNT(mark_id), 0)
-                * 100,
-                2
-            ) AS pass_rate
+         FROM candidates c
 
-        FROM candidates
+         INNER JOIN subjects sub
+            ON sub.id = c.subject_id
 
-        GROUP BY
-            subject_id,
-            subject_name
+         LEFT JOIN LATERAL (
+            SELECT
+                mk.score
 
-        ORDER BY
+            FROM marks mk
+
+            WHERE mk.test_id = $1
+              AND mk.student_id = c.student_id
+              AND mk.class_id = c.class_id
+              AND mk.subject_id = c.subject_id
+
+            ORDER BY mk.updated_at DESC, mk.id DESC
+            LIMIT 1
+         ) m ON TRUE
+
+         GROUP BY
+            sub.id,
+            sub.subject_name
+
+         ORDER BY
             percentage DESC NULLS LAST,
-            pass_rate DESC NULLS LAST,
+            CASE
+                WHEN COUNT(DISTINCT c.student_id)
+                     FILTER (WHERE m.score IS NOT NULL) = 0
+                THEN 0
+                ELSE
+                    COUNT(DISTINCT c.student_id)
+                    FILTER (
+                        WHERE m.score IS NOT NULL
+                          AND m.score >= c.total_marks * 0.5
+                    ) * 100.0 /
+                    COUNT(DISTINCT c.student_id)
+                    FILTER (WHERE m.score IS NOT NULL)
+            END DESC,
             passed DESC,
             average DESC NULLS LAST`,
         [testId, sectorId]
     );
 
     return result.rows.map(row => {
-        const total = toNumber(row.total_candidates);
-        const recorded = toNumber(row.recorded);
+        const total = number(row.total_candidates);
+        const recorded = number(row.recorded);
+        const passed = number(row.passed);
 
         return {
-            id: row.subject_id,
+            id: String(row.subject_id),
             name: row.subject_name,
-            subject_id: row.subject_id,
-            average: toNumber(row.average),
-            percentage: toNumber(row.percentage),
-            pass_rate: toNumber(row.pass_rate),
-            passed: toNumber(row.passed),
-            failed: toNumber(row.failed),
+
             total_candidates: total,
             recorded,
-            missing: toNumber(row.missing),
-            status: calculateStatus(recorded, total)
+            missing: Math.max(0, total - recorded),
+
+            passed,
+            failed: number(row.failed),
+
+            average: number(row.average),
+            percentage: number(row.percentage),
+
+            pass_rate: recorded > 0
+                ? round((passed / recorded) * 100)
+                : 0,
+
+            status: total > 0 && recorded >= total
+                ? "completed"
+                : "pending"
         };
     });
 }
 
 /* =====================================================
-   TEACHER PERFORMANCE AND CLASS BREAKDOWN
+   TEACHER PERFORMANCE BY CLASS AND SUBJECT
+
+   Each teacher is evaluated against their assigned
+   classes and subjects included in the selected test.
 ===================================================== */
 
 async function getTeacherPerformance(
@@ -267,387 +278,325 @@ async function getTeacherPerformance(
     sectorId
 ) {
     const result = await client.query(
-        `WITH scoped_classes AS (
-            SELECT DISTINCT
-                tc.school_id,
-                tc.class_id
-            FROM test_classes tc
-            JOIN schools s
-                ON s.id = tc.school_id
-            WHERE tc.test_id = $1
-            AND s.sector_id = $2
-        ),
+        `SELECT
+            t.id AS teacher_id,
+            u.full_name AS teacher_name,
 
-        assignments AS (
-            SELECT DISTINCT
-                ta.teacher_id,
-                ta.school_id,
-                ta.class_id,
-                ta.subject_id
+            sch.id AS school_id,
+            sch.school_name,
 
-            FROM teacher_assignments ta
+            sub.id AS subject_id,
+            sub.subject_name,
 
-            JOIN scoped_classes sc
-                ON sc.school_id = ta.school_id
-                AND sc.class_id = ta.class_id
+            c.id AS class_id,
+            c.class_name,
 
-            JOIN users u
-                ON u.id = ta.teacher_id
-                AND u.role = 'teacher'
+            ts.total_marks,
 
-            JOIN test_subjects ts
-                ON ts.test_id = $1
-                AND ts.subject_id = ta.subject_id
-        ),
+            COUNT(DISTINCT st.id) AS total_candidates,
 
-        latest_marks AS (
-            SELECT DISTINCT ON (
-                m.test_id,
-                m.student_id,
-                m.class_id,
-                m.subject_id
-            )
-                m.id,
-                m.student_id,
-                m.class_id,
-                m.subject_id,
-                m.score
+            COUNT(DISTINCT st.id)
+                FILTER (WHERE m.score IS NOT NULL)
+                AS recorded,
 
-            FROM marks m
+            COUNT(DISTINCT st.id)
+                FILTER (
+                    WHERE m.score IS NOT NULL
+                      AND m.score >= ts.total_marks * 0.5
+                ) AS passed,
 
-            WHERE m.test_id = $1
+            COUNT(DISTINCT st.id)
+                FILTER (
+                    WHERE m.score IS NOT NULL
+                      AND m.score < ts.total_marks * 0.5
+                ) AS failed,
 
-            ORDER BY
-                m.test_id,
-                m.student_id,
-                m.class_id,
-                m.subject_id,
-                m.updated_at DESC NULLS LAST,
-                m.created_at DESC NULLS LAST,
-                m.id DESC
-        ),
+            SUM(m.score) AS score_sum,
 
-        candidates AS (
+            SUM(
+                (m.score / NULLIF(ts.total_marks, 0)) * 100
+            ) AS percentage_sum
+
+         FROM teacher_assignments ta
+
+         INNER JOIN teachers t
+            ON t.id = ta.teacher_id
+           AND t.school_id = ta.school_id
+
+         INNER JOIN users u
+            ON u.id = t.user_id
+           AND u.school_id = t.school_id
+           AND u.role = 'teacher'
+
+         INNER JOIN schools sch
+            ON sch.id = ta.school_id
+           AND sch.sector_id = $2
+
+         INNER JOIN classes c
+            ON c.id = ta.class_id
+
+         INNER JOIN subjects sub
+            ON sub.id = ta.subject_id
+
+         INNER JOIN test_classes tc
+            ON tc.test_id = $1
+           AND tc.school_id = ta.school_id
+           AND tc.class_id = ta.class_id
+
+         INNER JOIN test_subjects ts
+            ON ts.test_id = $1
+           AND ts.subject_id = ta.subject_id
+
+         LEFT JOIN students st
+            ON st.school_id = ta.school_id
+           AND st.class_id = ta.class_id
+           AND st.status = 'active'
+
+         LEFT JOIN LATERAL (
             SELECT
-                a.teacher_id,
-                u.full_name AS teacher,
+                mk.score
 
-                a.school_id,
-                s.school_name AS school,
+            FROM marks mk
 
-                a.class_id,
-                c.class_name,
+            WHERE mk.test_id = $1
+              AND mk.student_id = st.id
+              AND mk.class_id = ta.class_id
+              AND mk.subject_id = ta.subject_id
 
-                a.subject_id,
-                sub.subject_name AS subject,
+            ORDER BY mk.updated_at DESC, mk.id DESC
+            LIMIT 1
+         ) m ON TRUE
 
-                ts.total_marks,
+         GROUP BY
+            t.id,
+            u.full_name,
+            sch.id,
+            sch.school_name,
+            sub.id,
+            sub.subject_name,
+            c.id,
+            c.class_name,
+            ts.total_marks
 
-                st.id AS student_id,
-
-                lm.id AS mark_id,
-                lm.score
-
-            FROM assignments a
-
-            JOIN users u
-                ON u.id = a.teacher_id
-
-            JOIN schools s
-                ON s.id = a.school_id
-
-            JOIN classes c
-                ON c.id = a.class_id
-
-            JOIN subjects sub
-                ON sub.id = a.subject_id
-
-            JOIN test_subjects ts
-                ON ts.test_id = $1
-                AND ts.subject_id = a.subject_id
-
-            JOIN students st
-                ON st.school_id = a.school_id
-                AND st.class_id = a.class_id
-
-            LEFT JOIN latest_marks lm
-                ON lm.student_id = st.id
-                AND lm.class_id = a.class_id
-                AND lm.subject_id = a.subject_id
-        )
-
-        SELECT
-            teacher_id::text,
-            teacher,
-
-            school_id::text,
-            school,
-
-            class_id::text,
-            class_name,
-
-            subject_id::text,
-            subject,
-
-            COUNT(*) AS total_candidates,
-
-            COUNT(mark_id) AS recorded,
-
-            COUNT(*) - COUNT(mark_id) AS missing,
-
-            COUNT(*) FILTER (
-                WHERE mark_id IS NOT NULL
-                AND score >= total_marks * 0.5
-            ) AS passed,
-
-            COUNT(*) FILTER (
-                WHERE mark_id IS NOT NULL
-                AND score < total_marks * 0.5
-            ) AS failed,
-
-            ROUND(
-                AVG(score) FILTER (
-                    WHERE mark_id IS NOT NULL
-                ),
-                2
-            ) AS average,
-
-            ROUND(
-                AVG(
-                    score / NULLIF(total_marks, 0) * 100
-                ) FILTER (
-                    WHERE mark_id IS NOT NULL
-                ),
-                2
-            ) AS percentage
-
-        FROM candidates
-
-        GROUP BY
-            teacher_id,
-            teacher,
-            school_id,
-            school,
-            class_id,
-            class_name,
-            subject_id,
-            subject
-
-        ORDER BY
-            teacher,
-            subject,
-            class_name`,
+         ORDER BY
+            u.full_name,
+            sch.school_name,
+            sub.subject_name,
+            c.class_name`,
         [testId, sectorId]
     );
 
     /* ---------------------------------------------
-       GROUP CLASS BREAKDOWNS BY TEACHER + SUBJECT
+       ORGANIZE CLASS BREAKDOWNS BY TEACHER + SUBJECT
     --------------------------------------------- */
 
-    const grouped = new Map();
+    const teachersMap = new Map();
 
     for (const row of result.rows) {
-        const key = [
-            row.teacher_id,
-            row.school_id,
-            row.subject_id
-        ].join("_");
+        const teacherId = String(row.teacher_id);
+        const subjectId = String(row.subject_id);
 
-        const total = toNumber(row.total_candidates);
-        const recorded = toNumber(row.recorded);
+        const teacherKey =
+            `${teacherId}_${row.school_id}_${subjectId}`;
+
+        const total = number(row.total_candidates);
+        const recorded = number(row.recorded);
+        const passed = number(row.passed);
+        const failed = number(row.failed);
+
+        const scoreSum = number(row.score_sum);
+        const percentageSum = number(row.percentage_sum);
 
         const breakdown = {
-            class_id: row.class_id,
+            class_id: String(row.class_id),
             class_name: row.class_name,
-            subject: row.subject,
+            subject: row.subject_name,
+            subject_id: subjectId,
 
             total_candidates: total,
             recorded,
-            missing: toNumber(row.missing),
+            missing: Math.max(0, total - recorded),
 
-            passed: toNumber(row.passed),
-            failed: toNumber(row.failed),
+            passed,
+            failed,
 
-            average: toNumber(row.average),
-            percentage: toNumber(row.percentage),
+            average: recorded > 0
+                ? round(scoreSum / recorded)
+                : 0,
 
-            status: calculateStatus(recorded, total)
+            percentage: recorded > 0
+                ? round(percentageSum / recorded)
+                : 0,
+
+            status: total > 0 && recorded >= total
+                ? "completed"
+                : "pending"
         };
 
-        if (!grouped.has(key)) {
-            grouped.set(key, {
-                teacher_id: row.teacher_id,
-                teacher: row.teacher,
+        if (!teachersMap.has(teacherKey)) {
+            teachersMap.set(teacherKey, {
+                teacher_id: teacherId,
+                teacher: row.teacher_name,
 
-                school_id: row.school_id,
-                school: row.school,
+                school_id: String(row.school_id),
+                school: row.school_name,
 
-                subject_id: row.subject_id,
-                subject: row.subject,
+                subject_id: subjectId,
+                subject: row.subject_name,
 
                 total_candidates: 0,
                 recorded: 0,
                 missing: 0,
+
                 passed: 0,
                 failed: 0,
 
-                weighted_average: 0,
-                weighted_percentage: 0,
+                score_sum: 0,
+                percentage_sum: 0,
 
                 breakdown: []
             });
         }
 
-        const teacher = grouped.get(key);
+        const teacher = teachersMap.get(teacherKey);
 
         teacher.total_candidates += total;
         teacher.recorded += recorded;
-        teacher.missing += toNumber(row.missing);
-        teacher.passed += toNumber(row.passed);
-        teacher.failed += toNumber(row.failed);
+        teacher.missing += Math.max(0, total - recorded);
 
-        if (recorded > 0) {
-            teacher.weighted_average +=
-                toNumber(row.average) * recorded;
+        teacher.passed += passed;
+        teacher.failed += failed;
 
-            teacher.weighted_percentage +=
-                toNumber(row.percentage) * recorded;
-        }
+        teacher.score_sum += scoreSum;
+        teacher.percentage_sum += percentageSum;
 
         teacher.breakdown.push(breakdown);
     }
 
-    return Array.from(grouped.values())
-        .map(teacher => {
-            const recorded = teacher.recorded;
-            const total = teacher.total_candidates;
+    /* ---------------------------------------------
+       FINAL TEACHER STATISTICS
+    --------------------------------------------- */
 
-            return {
-                teacher_id: teacher.teacher_id,
-                teacher: teacher.teacher,
+    return Array.from(teachersMap.values()).map(teacher => {
+        const recorded = teacher.recorded;
+        const total = teacher.total_candidates;
 
-                school_id: teacher.school_id,
-                school: teacher.school,
+        const average = recorded > 0
+            ? round(teacher.score_sum / recorded)
+            : 0;
 
-                subject_id: teacher.subject_id,
-                subject: teacher.subject,
+        const percentage = recorded > 0
+            ? round(teacher.percentage_sum / recorded)
+            : 0;
 
-                total_candidates: total,
-                recorded,
-                missing: teacher.missing,
+        return {
+            teacher_id: teacher.teacher_id,
+            teacher: teacher.teacher,
 
-                passed: teacher.passed,
-                failed: teacher.failed,
+            school_id: teacher.school_id,
+            school: teacher.school,
 
-                average: recorded > 0
-                    ? round(
-                        teacher.weighted_average / recorded
-                    )
-                    : 0,
+            subject_id: teacher.subject_id,
+            subject: teacher.subject,
 
-                percentage: recorded > 0
-                    ? round(
-                        teacher.weighted_percentage / recorded
-                    )
-                    : 0,
+            total_candidates: total,
+            recorded,
+            missing: teacher.missing,
 
-                pass_rate: recorded > 0
-                    ? round(
-                        teacher.passed / recorded * 100
-                    )
-                    : 0,
+            passed: teacher.passed,
+            failed: teacher.failed,
 
-                status: calculateStatus(recorded, total),
+            average,
+            percentage,
 
-                breakdown: teacher.breakdown
-            };
-        })
-        .sort((a, b) =>
-            b.percentage - a.percentage ||
-            b.pass_rate - a.pass_rate ||
-            b.passed - a.passed ||
-            b.average - a.average
-        );
+            pass_rate: recorded > 0
+                ? round((teacher.passed / recorded) * 100)
+                : 0,
+
+            status: total > 0 && recorded >= total
+                ? "completed"
+                : "pending",
+
+            breakdown: teacher.breakdown
+        };
+    });
 }
 
 /* =====================================================
-   GET REQUEST
+   GET: SECTOR TEACHERS' PERFORMANCE
 ===================================================== */
 
 export async function onRequestGet(context) {
-    const auth = await requireSectorAdmin(context);
 
-    if (auth.error) {
-        return auth.error;
-    }
+    const auth = await authenticateRole(
+        context,
+        "sector_admin"
+    );
+
+    if (auth.error) return auth.error;
 
     if (!auth.sectorId) {
         return json({
             success: false,
-            message: "Your account is not assigned to a sector."
+            message: "Your account is not linked to a sector."
         }, 403);
     }
+
+    const url = new URL(context.request.url);
+
+    const requestedTestId =
+        url.searchParams.get("test_id");
 
     let client;
 
     try {
         client = await connectDB(context);
 
-        const sectorId = auth.sectorId;
-
-        const testId = new URL(
-            context.request.url
-        ).searchParams.get("test_id");
-
         /* ---------------------------------------------
-           LOAD AVAILABLE TESTS
+           LOAD TESTS
         --------------------------------------------- */
 
-        const tests = await getSectorTests(
-            client,
-            sectorId
-        );
+        if (!requestedTestId) {
+            const tests = await getTests(
+                client,
+                auth.sectorId
+            );
 
-        /* ---------------------------------------------
-           NO TEST SELECTED
-        --------------------------------------------- */
-
-        if (!testId) {
             return json({
                 success: true,
+
                 user: {
-                    role: auth.role,
-                    full_name: auth.fullName
+                    id: auth.userId,
+                    role: auth.role
                 },
+
                 tests
             });
         }
 
         /* ---------------------------------------------
-           VALIDATE TEST ID
+           VALIDATE SELECTED TEST
         --------------------------------------------- */
 
-        if (!/^[1-9][0-9]*$/.test(testId)) {
+        const testId = validId(requestedTestId);
+
+        if (!testId) {
             return json({
                 success: false,
-                message: "Invalid test ID."
+                message: "Please select a valid test."
             }, 400);
         }
 
-        /* ---------------------------------------------
-           VERIFY SECTOR ACCESS
-        --------------------------------------------- */
-
-        const allowed = await verifyTest(
+        const test = await getSectorTest(
             client,
             testId,
-            sectorId
+            auth.sectorId
         );
 
-        if (!allowed) {
+        if (!test) {
             return json({
                 success: false,
-                message: "This test does not belong to your sector."
+                message: "This test is not accessible within your sector."
             }, 403);
         }
 
@@ -655,69 +604,35 @@ export async function onRequestGet(context) {
            LOAD PERFORMANCE DATA
         --------------------------------------------- */
 
-        const [
-            subjects,
-            teachers
-        ] = await Promise.all([
-            getSubjectPerformance(
-                client,
-                testId,
-                sectorId
-            ),
+        const subjects = await getSubjectPerformance(
+            client,
+            testId,
+            auth.sectorId
+        );
 
-            getTeacherPerformance(
-                client,
-                testId,
-                sectorId
-            )
-        ]);
+        const teachers = await getTeacherPerformance(
+            client,
+            testId,
+            auth.sectorId
+        );
 
         /* ---------------------------------------------
-           SUMMARY
+           SUCCESS RESPONSE
         --------------------------------------------- */
-
-        const totalTeachers = new Set(
-            teachers.map(item => item.teacher_id)
-        ).size;
-
-        const completedEntries = teachers.filter(
-            item => item.status === "completed"
-        ).length;
-
-        const pendingEntries = teachers.filter(
-            item => item.status === "pending"
-        ).length;
-
-        const allRecorded = teachers.reduce(
-            (sum, item) => sum + item.recorded,
-            0
-        );
-
-        const weightedPercentage = teachers.reduce(
-            (sum, item) =>
-                sum + item.percentage * item.recorded,
-            0
-        );
-
-        const sectorAverage = allRecorded > 0
-            ? round(weightedPercentage / allRecorded)
-            : 0;
 
         return json({
             success: true,
 
             user: {
-                role: auth.role,
-                full_name: auth.fullName
+                id: auth.userId,
+                role: auth.role
             },
 
-            tests,
-
-            summary: {
-                total_teachers: totalTeachers,
-                completed_entries: completedEntries,
-                pending_entries: pendingEntries,
-                sector_average: sectorAverage
+            test: {
+                id: String(test.id),
+                name: test.test_name,
+                status: test.status,
+                created_at: test.created_at
             },
 
             subjects,
@@ -725,17 +640,25 @@ export async function onRequestGet(context) {
         });
 
     } catch (error) {
+
         console.error(
-            "Sector teachers performance error:",
-            error
+            "Sector Teachers Performance API error:",
+            {
+                message: error?.message,
+                code: error?.code,
+                detail: error?.detail,
+                table: error?.table,
+                constraint: error?.constraint
+            }
         );
 
         return json({
             success: false,
-            message: "Unable to load sector performance."
+            message: "Unable to load sector teachers' performance."
         }, 500);
 
     } finally {
+
         if (client) {
             await client.end().catch(() => {});
         }
