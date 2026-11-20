@@ -17,27 +17,35 @@ export async function onRequestGet(context) {
 
         const result = await client.query(`
             SELECT
-                c.id,
-                c.class_name,
-                c.level_id,
-                el.level_name AS class_level
-            FROM classes c
-            LEFT JOIN education_levels el
-                ON el.id = c.level_id
-            ORDER BY c.class_name
+                s.id,
+                s.subject_name,
+                s.subject_code,
+                COALESCE(
+                    ARRAY_AGG(scl.education_level)
+                    FILTER (WHERE scl.education_level IS NOT NULL),
+                    ARRAY[]::VARCHAR[]
+                ) AS education_levels
+            FROM subjects s
+            LEFT JOIN subject_class_levels scl
+                ON scl.subject_id = s.id
+            GROUP BY
+                s.id,
+                s.subject_name,
+                s.subject_code
+            ORDER BY s.subject_name
         `);
 
         return json({
             success: true,
-            classes: result.rows
+            subjects: result.rows
         });
 
     } catch (error) {
-        console.error("Load classes error:", error);
+        console.error("Load subjects error:", error);
 
         return json({
             success: false,
-            message: "Could not load classes."
+            message: "Could not load subjects."
         }, 500);
 
     } finally {
