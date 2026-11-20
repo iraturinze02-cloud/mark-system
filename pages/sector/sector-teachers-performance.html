@@ -519,6 +519,40 @@ function format(value) {
     return number(value).toFixed(2).replace(/\.00$/, "");
 }
 
+/*
+   Percentage in performance tables means PASS RATE.
+
+   Pass Rate = Passed / Total Candidates * 100
+
+   Return null when there are no candidates, so that
+   missing results are not incorrectly displayed as 0%.
+*/
+
+function calculatePassRate(passed, totalCandidates) {
+
+    const total = number(totalCandidates);
+
+    if (total <= 0) {
+        return null;
+    }
+
+    return (number(passed) / total) * 100;
+}
+
+function formatPassRate(passed, totalCandidates) {
+
+    const rate = calculatePassRate(passed, totalCandidates);
+
+    return rate === null ? "—" : format(rate);
+}
+
+function passRateForSorting(passed, totalCandidates) {
+
+    const rate = calculatePassRate(passed, totalCandidates);
+
+    return rate === null ? -1 : rate;
+}
+
 function escapeHTML(value) {
     return String(value ?? "").replace(/[&<>"']/g, char => ({
         "&": "&amp;",
@@ -667,8 +701,8 @@ async function loadTestPerformance() {
 }
 
 /* =====================================================
-   SUBJECT FILTER
-   RANK: PERCENTAGE, PASS RATE, PASSED, AVERAGE
+   SUBJECT FILTER AND RANKING
+   RANK: PASS RATE, PASSED, AVERAGE
 ===================================================== */
 
 function populateSubjectFilter() {
@@ -679,7 +713,8 @@ function populateSubjectFilter() {
 
     const ranked = [...subjects].sort((a, b) =>
 
-        number(b.percentage) - number(a.percentage) ||
+        passRateForSorting(b.passed, b.total_candidates) -
+        passRateForSorting(a.passed, a.total_candidates) ||
 
         number(b.pass_rate) - number(a.pass_rate) ||
 
@@ -698,7 +733,10 @@ function populateSubjectFilter() {
         option.value = subject.id;
 
         option.textContent =
-            `${subject.name} — ${format(subject.percentage)}%`;
+            `${subject.name} — ${formatPassRate(
+                subject.passed,
+                subject.total_candidates
+            )}%`;
 
         select.appendChild(option);
 
@@ -733,27 +771,36 @@ function renderSubjectRanking(ranked) {
         return;
     }
 
-    body.innerHTML = ranked.map((subject, index) => `
+    body.innerHTML = ranked.map((subject, index) => {
 
-        <tr>
-            <td class="subject-rank">${index + 1}</td>
+        const percentage = formatPassRate(
+            subject.passed,
+            subject.total_candidates
+        );
 
-            <td>${escapeHTML(subject.name)}</td>
+        return `
 
-            <td>${format(subject.average)}</td>
+            <tr>
+                <td class="subject-rank">${index + 1}</td>
 
-            <td class="percentage">${format(subject.percentage)}%</td>
+                <td>${escapeHTML(subject.name)}</td>
 
-            <td>${format(subject.pass_rate)}%</td>
+                <td>${format(subject.average)}</td>
 
-            <td>${number(subject.passed)}</td>
+                <td class="percentage">${percentage}${percentage === "—" ? "" : "%"}</td>
 
-            <td>${number(subject.failed)}</td>
+                <td>${percentage}${percentage === "—" ? "" : "%"}</td>
 
-            <td>${number(subject.total_candidates)}</td>
-        </tr>
+                <td>${number(subject.passed)}</td>
 
-    `).join("");
+                <td>${number(subject.failed)}</td>
+
+                <td>${number(subject.total_candidates)}</td>
+            </tr>
+
+        `;
+
+    }).join("");
 
 }
 
@@ -787,10 +834,12 @@ function applyFilters() {
 
     });
 
-    // Rank the filtered teachers by percentage.
+    // Rank teachers by their calculated pass rate.
+
     filteredTeachers.sort((a, b) =>
 
-        number(b.percentage) - number(a.percentage) ||
+        passRateForSorting(b.passed, b.total_candidates) -
+        passRateForSorting(a.passed, a.total_candidates) ||
 
         number(b.pass_rate) - number(a.pass_rate) ||
 
@@ -820,14 +869,26 @@ function updateSummary() {
         teacher => teacher.status === "pending"
     ).length;
 
-    const valid = filteredTeachers.filter(
-        teacher => number(teacher.total_candidates) > 0
+    /*
+       Sector pass rate is calculated using total passed
+       divided by total candidates, rather than averaging
+       the percentages of individual teachers.
+    */
+
+    const totalCandidates = filteredTeachers.reduce(
+        (sum, teacher) => sum + number(teacher.total_candidates),
+        0
     );
 
-    const average = valid.length
-        ? valid.reduce((sum, teacher) =>
-            sum + number(teacher.percentage), 0) / valid.length
-        : 0;
+    const totalPassed = filteredTeachers.reduce(
+        (sum, teacher) => sum + number(teacher.passed),
+        0
+    );
+
+    const average = calculatePassRate(
+        totalPassed,
+        totalCandidates
+    );
 
     document.getElementById("totalTeachers").textContent =
         filteredTeachers.length;
@@ -837,7 +898,7 @@ function updateSummary() {
     document.getElementById("pendingEntries").textContent = pending;
 
     document.getElementById("sectorAverage").textContent =
-        format(average) + "%";
+        average === null ? "—" : format(average) + "%";
 
 }
 
@@ -867,6 +928,11 @@ function renderTeachers() {
         const status = teacher.status === "completed"
             ? "Completed"
             : "Pending";
+
+        const percentage = formatPassRate(
+            teacher.passed,
+            teacher.total_candidates
+        );
 
         return `
 
@@ -900,7 +966,7 @@ function renderTeachers() {
                 <td>${format(teacher.average)}</td>
 
                 <td class="percentage">
-                    ${format(teacher.percentage)}%
+                    ${percentage}${percentage === "—" ? "" : "%"}
                 </td>
 
                 <td>
@@ -940,6 +1006,11 @@ function renderBreakdown(teacher) {
 
     const details = teacher.breakdown || [];
 
+    const teacherPercentage = formatPassRate(
+        teacher.passed,
+        teacher.total_candidates
+    );
+
     return `
 
         <h3>
@@ -965,8 +1036,8 @@ function renderBreakdown(teacher) {
             </div>
 
             <div>
-                <small>Percentage</small>
-                <strong>${format(teacher.percentage)}%</strong>
+                <small>Pass Rate</small>
+                <strong>${teacherPercentage}${teacherPercentage === "—" ? "" : "%"}</strong>
             </div>
 
         </div>
@@ -992,25 +1063,34 @@ function renderBreakdown(teacher) {
 
                 <tbody>
 
-                    ${details.length ? details.map(item => `
+                    ${details.length ? details.map(item => {
 
-                        <tr>
-                            <td>${escapeHTML(item.class_name)}</td>
-                            <td>${escapeHTML(item.subject)}</td>
-                            <td>${number(item.total_candidates)}</td>
-                            <td>${number(item.recorded)}</td>
-                            <td>${number(item.missing)}</td>
-                            <td>${number(item.passed)}</td>
-                            <td>${number(item.failed)}</td>
-                            <td>${format(item.average)}</td>
-                            <td>${format(item.percentage)}%</td>
-                            <td>
-                                ${item.status === "completed"
-                                    ? "Completed" : "Pending"}
-                            </td>
-                        </tr>
+                        const itemPercentage = formatPassRate(
+                            item.passed,
+                            item.total_candidates
+                        );
 
-                    `).join("") : `
+                        return `
+
+                            <tr>
+                                <td>${escapeHTML(item.class_name)}</td>
+                                <td>${escapeHTML(item.subject)}</td>
+                                <td>${number(item.total_candidates)}</td>
+                                <td>${number(item.recorded)}</td>
+                                <td>${number(item.missing)}</td>
+                                <td>${number(item.passed)}</td>
+                                <td>${number(item.failed)}</td>
+                                <td>${format(item.average)}</td>
+                                <td>${itemPercentage}${itemPercentage === "—" ? "" : "%"}</td>
+                                <td>
+                                    ${item.status === "completed"
+                                        ? "Completed" : "Pending"}
+                                </td>
+                            </tr>
+
+                        `;
+
+                    }).join("") : `
 
                         <tr>
                             <td colspan="10">
@@ -1069,6 +1149,7 @@ function exportCSV() {
     ];
 
     const rows = filteredTeachers.map((teacher, index) => [
+
         index + 1,
         teacher.teacher,
         teacher.school,
@@ -1078,7 +1159,12 @@ function exportCSV() {
         teacher.failed,
         teacher.passed,
         teacher.average,
-        teacher.percentage
+
+        calculatePassRate(
+            teacher.passed,
+            teacher.total_candidates
+        ) ?? ""
+
     ]);
 
     const csv = [headers, ...rows].map(row =>
