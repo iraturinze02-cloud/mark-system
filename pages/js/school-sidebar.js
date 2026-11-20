@@ -146,20 +146,27 @@
         const menuButton = document.getElementById("sidebarMenuButton");
         const logoutButton = document.getElementById("sidebarLogout");
 
-        /* ACTIVE PAGE */
+       
+/* ACTIVE PAGE DETECTION */
 
-        const currentPage = window.location.pathname
-            .split("/")
-            .pop() || "dashboard.html";
+const currentPath = window.location.pathname
+    .replace(/\/+$/, "")
+    .toLowerCase();
 
-        sidebar.querySelectorAll(".sidebar-link").forEach(link => {
-            const linkPage = link.getAttribute("href").split("/").pop();
+sidebar.querySelectorAll(".sidebar-link").forEach(link => {
 
-            if (linkPage === currentPage) {
-                link.classList.add("active");
-                link.setAttribute("aria-current", "page");
-            }
-        });
+    const linkUrl = new URL(link.getAttribute("href"), window.location.href);
+
+    const linkPath = linkUrl.pathname
+        .replace(/\/+$/, "")
+        .toLowerCase();
+
+    if (currentPath === linkPath) {
+        link.classList.add("active");
+        link.setAttribute("aria-current", "page");
+    }
+
+});
 
         /* OPEN SIDEBAR */
 
