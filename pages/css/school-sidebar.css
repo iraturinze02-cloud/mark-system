@@ -109,11 +109,26 @@ body {
     color: white;
 }
 
+
+/* CURRENT ACTIVE PAGE */
+
 .sidebar-link.active {
-    background: var(--sidebar-active);
-    color: white;
-    font-weight: 600;
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    color: #ffffff;
+    font-weight: 700;
+    border-left: 4px solid #93c5fd;
+    padding-left: 10px;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
 }
+
+.sidebar-link.active .sidebar-link-icon {
+    color: #ffffff;
+}
+
+.sidebar-link.active:hover {
+    background: linear-gradient(135deg, #1d4ed8, #1e40af);
+}
+
 
 .sidebar-link-icon {
     width: 20px;
