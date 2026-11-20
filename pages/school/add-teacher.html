@@ -1081,6 +1081,7 @@ function populateClasses() {
    FILTER SUBJECTS BY CLASS
 ===================================================== */
 
+
 function filterSubjectsByClass() {
 
     const classId =
@@ -1114,11 +1115,29 @@ function filterSubjectsByClass() {
 
     if (!selectedClass) return;
 
-    const allowedSubjects = subjects.filter(subject =>
-        (subject.education_levels || []).includes(
-            selectedClass.class_level
-        )
-    );
+    // Map class education levels to subject education levels
+    const levelMapping = {
+        "PRIMARY": "PRIMARY",
+        "ORDINARY LEVEL": "LOWER SECONDARY",
+        "ADVANCED LEVEL": "UPPER SECONDARY"
+    };
+
+    const classLevel = String(
+        selectedClass.class_level || ""
+    ).trim().toUpperCase();
+
+    const expectedLevel = levelMapping[classLevel];
+
+    const allowedSubjects = subjects.filter(subject => {
+
+        const levels = Array.isArray(subject.education_levels)
+            ? subject.education_levels
+            : [];
+
+        return levels.some(level =>
+            String(level).trim().toUpperCase() === expectedLevel
+        );
+    });
 
     subjectSelect.add(
         new Option("-- Select Subject --", "")
