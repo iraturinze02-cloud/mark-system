@@ -903,7 +903,7 @@ async function initializePage() {
 
         const data = await apiRequest(API_URL);
 
-        if (data.user?.role !== "school_admin") {
+        if (data.user?.role !== "school_admin" || "dos") {
 
             throw new Error(
                 "Access denied. This page is for school administrators only."
