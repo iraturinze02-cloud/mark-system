@@ -8,7 +8,7 @@ import { jwtVerify } from "jose";
 
 /* =====================================================
    FILA GRADES SYSTEM
-   SCHOOL ADMIN — MARKS RECORDING INSPECTION
+   SCHOOL ADMIN / DOS — MARKS RECORDING INSPECTION
 ===================================================== */
 
 function getCookie(request, name) {
@@ -27,7 +27,12 @@ function getCookie(request, name) {
     return null;
 }
 
+/* =====================================================
+   AUTHENTICATE SCHOOL ADMIN OR DOS
+===================================================== */
+
 async function authenticateSchoolAdmin(request, env, db) {
+
     const token = getCookie(request, "ses_token");
 
     if (!token) {
@@ -59,10 +64,12 @@ async function authenticateSchoolAdmin(request, env, db) {
         };
     }
 
+    /* Allow School Admin and DOS */
+
     if (
-    !["school_admin", "dos"].includes(payload.role) ||
-    !payload.sub
-) {
+        !["school_admin", "dos"].includes(payload.role) ||
+        !payload.sub
+    ) {
         return {
             error: json({
                 success: false,
@@ -70,6 +77,8 @@ async function authenticateSchoolAdmin(request, env, db) {
             }, 403)
         };
     }
+
+    /* Verify the current role and account status in database */
 
     const result = await db.query(
         `SELECT
@@ -87,14 +96,15 @@ async function authenticateSchoolAdmin(request, env, db) {
 
     if (
         !user ||
-        user.role !== "school_admin" ||
+        !["school_admin", "dos"].includes(user.role) ||
+        user.role !== payload.role ||
         user.status !== "active" ||
         !user.school_id
     ) {
         return {
             error: json({
                 success: false,
-                message: "Active School Admin account required."
+                message: "An active School Admin or DOS account linked to a school is required."
             }, 403)
         };
     }
@@ -252,7 +262,6 @@ async function getTestTeacherProgress(db, schoolId) {
     return result.rows;
 }
 
-
 /* =====================================================
    EXAMINATIONS — TEACHER PROGRESS
 ===================================================== */
@@ -395,11 +404,6 @@ async function getExaminationTeacherProgress(db, schoolId) {
    TEACHER BREAKDOWN — TESTS
 ===================================================== */
 
-
-/* =====================================================
-   TEACHER BREAKDOWN — TESTS
-===================================================== */
-
 async function getTestTeacherBreakdown(
     db,
     schoolId,
@@ -513,7 +517,6 @@ async function getTestTeacherBreakdown(
 
     return result.rows;
 }
-
 
 /* =====================================================
    TEACHER BREAKDOWN — EXAMINATIONS
@@ -629,6 +632,7 @@ async function getExaminationTeacherBreakdown(
 ===================================================== */
 
 export async function onRequest(context) {
+
     const { request, env } = context;
 
     if (request.method !== "GET") {
@@ -696,6 +700,7 @@ export async function onRequest(context) {
         ============================================= */
 
         if (action === "get_teacher_progress") {
+
             const teachers =
                 recordType === "tests"
                     ? await getTestTeacherProgress(
@@ -709,6 +714,7 @@ export async function onRequest(context) {
 
             const summary = teachers.reduce(
                 (total, teacher) => {
+
                     total.total_teachers++;
 
                     total.expected_marks +=
@@ -745,6 +751,7 @@ export async function onRequest(context) {
         ============================================= */
 
         if (action === "get_teacher_breakdown") {
+
             const teacherId =
                 url.searchParams.get("teacher_id");
 
@@ -799,6 +806,7 @@ export async function onRequest(context) {
 
             const summary = breakdown.reduce(
                 (total, item) => {
+
                     total.expected_marks +=
                         Number(item.expected_marks || 0);
 
@@ -834,8 +842,9 @@ export async function onRequest(context) {
         }, 400);
 
     } catch (error) {
+
         console.error(
-            "School Admin Marks Inspection Error:",
+            "School Admin / DOS Marks Inspection Error:",
             error
         );
 
@@ -845,6 +854,7 @@ export async function onRequest(context) {
         }, 500);
 
     } finally {
+
         if (db) {
             try {
                 await db.end();
