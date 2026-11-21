@@ -3,16 +3,15 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Manage active and inactive students in Fila Grades System.">
+<meta name="theme-color" content="#173f70">
 
-    <meta name="description" content="Record and manage student marks for assigned classes and subjects in Fila Grades System.">
-
-    <meta name="theme-color" content="#173f70">
-
-    <link rel="icon" type="image/x-icon" href="../../images/favicon/favicon.ico">
-    <link rel="icon" type="image/png" sizes="512x512" href="../../images/favicon/favicon.png">
-<title>Students Management</title>
+<link rel="icon" type="image/x-icon" href="../../images/favicon/favicon.ico">
+<link rel="icon" type="image/png" sizes="512x512" href="../../images/favicon/favicon.png">
 <link rel="stylesheet" href="../../style.css">
+
+<title>Students Management | Fila Grades System</title>
 
 <style>
 :root {
@@ -20,6 +19,7 @@
     --primary-dark: #1d4ed8;
     --success: #15803d;
     --danger: #dc2626;
+    --warning: #b45309;
     --background: #f4f6fb;
     --border: #e5e7eb;
     --text: #1f2937;
@@ -38,14 +38,32 @@ body {
     font-family: Arial, sans-serif;
 }
 
-.container {
-    max-width: 1050px;
-    margin: 25px auto;
-    background: white;
-    padding: 25px;
-    border-radius: 12px;
-    box-shadow: 0 4px 18px rgba(0,0,0,.06);
+button {
+    border: none;
+    border-radius: 7px;
+    padding: 10px 15px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 13px;
+    transition: .2s ease;
 }
+
+button:disabled {
+    opacity: .6;
+    cursor: not-allowed;
+}
+
+.container {
+    max-width: 1100px;
+    margin: 25px auto;
+    padding: 26px;
+    background: white;
+    border: 1px solid #edf0f5;
+    border-radius: 14px;
+    box-shadow: 0 5px 22px rgba(15, 23, 42, .05);
+}
+
+/* HEADER */
 
 .header {
     display: flex;
@@ -53,26 +71,19 @@ body {
     justify-content: space-between;
     gap: 15px;
     flex-wrap: wrap;
-    margin-bottom: 25px;
+    margin-bottom: 23px;
 }
 
 .header h2 {
-    margin: 0;
+    margin: 0 0 6px;
     font-size: 21px;
+    color: #173f70;
 }
 
-button {
-    border: none;
-    border-radius: 6px;
-    padding: 10px 15px;
-    cursor: pointer;
-    font-weight: 600;
+.header p {
+    margin: 0;
     font-size: 13px;
-}
-
-button:disabled {
-    opacity: .6;
-    cursor: not-allowed;
+    color: var(--muted);
 }
 
 .add-btn,
@@ -86,131 +97,109 @@ button:disabled {
     background: var(--primary-dark);
 }
 
-/* =====================================
-   CLASS SELECTION CARDS
-===================================== */
+/* SUMMARY */
 
-.class-instruction {
-    font-size: 14px;
-    color: var(--muted);
-    margin: 0 0 14px;
-}
-
-.class-cards {
+.summary-cards {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(145px, 1fr));
-    gap: 12px;
-    margin-bottom: 25px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+    margin-bottom: 24px;
 }
 
-.class-card {
-    display: block;
-    width: 100%;
-    padding: 17px 12px;
-    border: 2px solid var(--border);
-    border-radius: 9px;
+.summary-card {
+    padding: 17px 19px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
     background: #fff;
-    color: var(--text);
-    text-align: center;
-    transition: .2s ease;
 }
 
-.class-card:hover {
-    border-color: var(--primary);
-    background: #eff6ff;
+.summary-card.active-summary {
+    border-left: 4px solid var(--success);
 }
 
-.class-card.active {
-    background: var(--primary);
-    border-color: var(--primary);
-    color: white;
+.summary-card.inactive-summary {
+    border-left: 4px solid #d97706;
 }
 
-.class-card strong {
+.summary-card span {
     display: block;
-    font-size: 16px;
+    color: var(--muted);
+    font-size: 13px;
     margin-bottom: 7px;
 }
 
-.class-card small {
-    font-size: 12px;
-    font-weight: 400;
-    opacity: .85;
+.summary-card strong {
+    font-size: 25px;
+    color: var(--text);
 }
 
-/* =====================================
-   STUDENT TABLE
-===================================== */
+/* TABS */
 
-.class-section {
-    margin-top: 20px;
-}
-
-.class-title {
-    background: #eff6ff;
-    color: #1d4ed8;
-    padding: 12px 15px;
-    border-radius: 7px;
-    margin-bottom: 12px;
-    font-size: 16px;
-}
-
-.table-wrapper {
-    width: 100%;
-    overflow-x: auto;
-}
-
-table {
-    width: 100%;
-    border-collapse: collapse;
-    min-width: 500px;
-}
-
-th,
-td {
-    text-align: left;
-    padding: 13px 12px;
+.student-tabs {
+    display: flex;
+    gap: 8px;
     border-bottom: 1px solid var(--border);
+    margin-bottom: 23px;
+}
+
+.tab-button {
+    position: relative;
+    background: transparent;
+    color: var(--muted);
+    border-radius: 7px 7px 0 0;
+    padding: 13px 17px;
     font-size: 14px;
 }
 
-th {
+.tab-button:hover {
     background: #f8fafc;
-    font-weight: 700;
+    color: var(--primary);
 }
 
-.action-buttons {
-    display: flex;
-    gap: 7px;
+.tab-button.active {
+    color: var(--primary);
+    background: #eff6ff;
 }
 
-.edit-btn {
+.tab-button.active::after {
+    content: "";
+    position: absolute;
+    height: 3px;
+    bottom: -1px;
+    left: 0;
+    right: 0;
+    background: var(--primary);
+    border-radius: 5px 5px 0 0;
+}
+
+.tab-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    height: 21px;
+    margin-left: 5px;
+    padding: 0 6px;
+    border-radius: 20px;
+    background: #e2e8f0;
+    color: #475569;
+    font-size: 11px;
+}
+
+.tab-button.active .tab-count {
     background: #dbeafe;
     color: #1d4ed8;
 }
 
-.delete-btn {
-    background: #fee2e2;
-    color: #b91c1c;
-}
-
-.empty-message {
-    text-align: center;
-    color: var(--muted);
-    padding: 22px;
-    font-size: 14px;
-}
-
-/* =====================================
-   STATUS MESSAGE
-===================================== */
+/* STATUS MESSAGE */
 
 .status-message {
     display: none;
-    padding: 12px 15px;
+    padding: 13px 15px;
     margin-bottom: 18px;
-    border-radius: 7px;
+    border-radius: 8px;
     font-size: 14px;
+    line-height: 1.5;
 }
 
 .status-message.success {
@@ -231,16 +220,180 @@ th {
     color: #1d4ed8;
 }
 
-/* =====================================
-   MODAL
-===================================== */
+/* SECTION INSTRUCTIONS */
+
+.section-intro {
+    margin: 0 0 15px;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+/* CLASS CARDS */
+
+.class-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(145px, 1fr));
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.class-card {
+    display: block;
+    width: 100%;
+    padding: 17px 12px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: #fff;
+    color: var(--text);
+    text-align: center;
+}
+
+.class-card:hover {
+    border-color: var(--primary);
+    background: #f8fbff;
+}
+
+.class-card.active {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: white;
+}
+
+.class-card strong {
+    display: block;
+    font-size: 16px;
+    margin-bottom: 7px;
+}
+
+.class-card small {
+    font-size: 12px;
+    opacity: .85;
+}
+
+/* STUDENT TABLE */
+
+.class-section {
+    margin-top: 20px;
+}
+
+.class-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+    padding: 14px 16px;
+    margin: 0 0 13px;
+    border-radius: 8px;
+    background: #eff6ff;
+    color: #1d4ed8;
+    font-size: 15px;
+}
+
+.table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 580px;
+}
+
+th,
+td {
+    text-align: left;
+    padding: 13px 12px;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+}
+
+th {
+    background: #f8fafc;
+    color: #475569;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+tbody tr:last-child td {
+    border-bottom: none;
+}
+
+tbody tr:hover {
+    background: #fafcff;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 7px;
+    flex-wrap: wrap;
+}
+
+.edit-btn {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+.deactivate-btn {
+    background: #fff7ed;
+    color: #c2410c;
+}
+
+.activate-btn {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.delete-btn {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.edit-btn:hover,
+.deactivate-btn:hover,
+.activate-btn:hover,
+.delete-btn:hover {
+    filter: brightness(.96);
+}
+
+.status-pill {
+    display: inline-block;
+    padding: 5px 9px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.status-pill.active {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.status-pill.inactive {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.empty-message {
+    text-align: center;
+    color: var(--muted);
+    padding: 25px 15px;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+/* MODAL */
 
 .modal {
     display: none;
     position: fixed;
     z-index: 1000;
     inset: 0;
-    background: rgba(0,0,0,.5);
+    background: rgba(15, 23, 42, .55);
     align-items: center;
     justify-content: center;
     padding: 15px;
@@ -249,16 +402,25 @@ th {
 .modal-content {
     background: white;
     width: 100%;
-    max-width: 470px;
+    max-width: 480px;
     padding: 25px;
-    border-radius: 12px;
-    box-shadow: 0 10px 35px rgba(0,0,0,.15);
+    border-radius: 13px;
+    box-shadow: 0 15px 45px rgba(0,0,0,.18);
     max-height: 90vh;
     overflow-y: auto;
 }
 
 .modal-content h3 {
-    margin: 0 0 20px;
+    margin: 0 0 7px;
+    color: #173f70;
+    font-size: 19px;
+}
+
+.modal-subtitle {
+    margin: 0 0 22px;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.5;
 }
 
 .form-group {
@@ -267,8 +429,8 @@ th {
 
 .form-group label {
     display: block;
-    font-size: 14px;
-    font-weight: 600;
+    font-size: 13px;
+    font-weight: 700;
     margin-bottom: 9px;
 }
 
@@ -277,7 +439,7 @@ th {
     width: 100%;
     padding: 12px;
     border: 1px solid #d1d5db;
-    border-radius: 6px;
+    border-radius: 7px;
     outline: none;
     font-size: 14px;
     background: white;
@@ -286,11 +448,10 @@ th {
 .form-group input:focus,
 .form-group select:focus {
     border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, .1);
 }
 
-/* =====================================
-   MODAL CLASS CARDS
-===================================== */
+/* MODAL CLASS CARDS */
 
 .form-class-cards {
     display: grid;
@@ -305,9 +466,7 @@ th {
     border-radius: 7px;
     background: white;
     color: var(--text);
-    font-size: 13px;
-    text-align: center;
-    transition: .2s ease;
+    font-size: 12px;
 }
 
 .form-class-card:hover {
@@ -333,11 +492,9 @@ th {
     color: #374151;
 }
 
-/* =====================================
-   RESPONSIVE
-===================================== */
+/* RESPONSIVE */
 
-@media(max-width:600px) {
+@media(max-width: 600px) {
     body {
         padding: 10px;
     }
@@ -347,12 +504,38 @@ th {
         margin: 10px auto;
     }
 
+    .header {
+        align-items: flex-start;
+    }
+
     .header h2 {
         font-size: 18px;
     }
 
-    .header button {
+    .header .add-btn {
         width: 100%;
+    }
+
+    .summary-cards {
+        gap: 9px;
+    }
+
+    .summary-card {
+        padding: 13px;
+    }
+
+    .summary-card strong {
+        font-size: 21px;
+    }
+
+    .student-tabs {
+        gap: 2px;
+    }
+
+    .tab-button {
+        flex: 1;
+        padding: 12px 5px;
+        font-size: 12px;
     }
 
     .class-cards {
@@ -366,67 +549,106 @@ th {
     .modal-content {
         padding: 20px;
     }
+
+    .action-buttons button {
+        padding: 9px 10px;
+        font-size: 12px;
+    }
 }
 </style>
 </head>
 
 <body>
-    <div id="schoolSidebarContainer"></div>
+
+<div id="schoolSidebarContainer"></div>
+
 <main class="school-main-content">
 
 <div class="container">
 
     <div class="header">
-        <h2>REGISTERED STUDENTS</h2>
+        <div>
+            <h2>STUDENT MANAGEMENT</h2>
+            <p>Manage student registration and enrolment status.</p>
+        </div>
 
         <button class="add-btn" id="addStudentBtn">
-            + Add Student
+            + Register Student
         </button>
+    </div>
+
+    <div class="summary-cards">
+        <div class="summary-card active-summary">
+            <span>Active Students</span>
+            <strong id="activeTotal">0</strong>
+        </div>
+
+        <div class="summary-card inactive-summary">
+            <span>Inactive Students</span>
+            <strong id="inactiveTotal">0</strong>
+        </div>
     </div>
 
     <div id="statusMessage" class="status-message"></div>
 
-    <p class="class-instruction">
-        Select a class to view its registered students.
+    <!-- TABS -->
+
+    <div class="student-tabs" role="tablist">
+        <button
+            type="button"
+            class="tab-button active"
+            id="activeTab"
+            role="tab"
+            aria-selected="true"
+        >
+            Active Students
+            <span class="tab-count" id="activeTabCount">0</span>
+        </button>
+
+        <button
+            type="button"
+            class="tab-button"
+            id="inactiveTab"
+            role="tab"
+            aria-selected="false"
+        >
+            Inactive Students
+            <span class="tab-count" id="inactiveTabCount">0</span>
+        </button>
+    </div>
+
+    <p class="section-intro" id="sectionInstruction">
+        Select a class to view its active students.
     </p>
 
-    <!-- ONLY CLASSES WITH ACTIVE STUDENTS -->
     <div id="classCards" class="class-cards"></div>
 
-    <!-- SELECTED CLASS STUDENTS -->
     <div id="studentsContainer">
         <p class="empty-message">Loading students...</p>
     </div>
 
 </div>
 
-<!-- =====================================
-     STUDENT MODAL
-===================================== -->
+<!-- STUDENT REGISTRATION / EDIT MODAL -->
 
 <div class="modal" id="studentModal">
-
     <div class="modal-content">
 
         <h3 id="modalTitle">Register Student</h3>
 
+        <p class="modal-subtitle">
+            Enter the student's details and select their class.
+        </p>
+
         <form id="studentForm">
 
             <div class="form-group">
-
                 <label>Select Class</label>
-
-                <!-- ALL CLASSES, INCLUDING EMPTY CLASSES -->
                 <div id="formClassCards" class="form-class-cards"></div>
-
             </div>
 
             <div class="form-group">
-
-                <label for="studentName">
-                    Student Full Name
-                </label>
-
+                <label for="studentName">Student Full Name</label>
                 <input
                     type="text"
                     id="studentName"
@@ -435,47 +657,35 @@ th {
                     autocomplete="off"
                     required
                 >
-
             </div>
 
             <div class="form-group">
-
                 <label for="studentGender">Gender</label>
-
                 <select id="studentGender">
                     <option value="">Select gender</option>
                     <option value="Male">Male</option>
                     <option value="Female">Female</option>
                 </select>
-
             </div>
 
             <div class="modal-actions">
-
-                <button
-                    type="button"
-                    class="cancel-btn"
-                    id="cancelBtn"
-                >
+                <button type="button" class="cancel-btn" id="cancelBtn">
                     Cancel
                 </button>
 
-                <button
-                    type="submit"
-                    class="save-btn"
-                    id="saveBtn"
-                >
+                <button type="submit" class="save-btn" id="saveBtn">
                     Save Student
                 </button>
-
             </div>
 
         </form>
-
     </div>
-
 </div>
-    </main>
+
+</main>
+
+<!-- SIDEBAR: SCHOOL ADMIN ONLY -->
+
 <script>
 document.addEventListener("DOMContentLoaded", async function () {
     try {
@@ -486,21 +696,15 @@ document.addEventListener("DOMContentLoaded", async function () {
 
         const data = await response.json();
 
-        if (!response.ok || !data.success || !data.user) {
-            return;
-        }
+        if (!response.ok || !data.success || !data.user) return;
 
-        if (data.user.role !== "school_admin") {
-            return;
-        }
+        if (data.user.role !== "school_admin") return;
 
-        // Load sidebar CSS only for school_admin
         const css = document.createElement("link");
         css.rel = "stylesheet";
         css.href = "../css/school-sidebar.css";
         document.head.appendChild(css);
 
-        // Load sidebar JavaScript only for school_admin
         const script = document.createElement("script");
         script.src = "../js/school-sidebar.js";
         document.body.appendChild(script);
@@ -510,7 +714,6 @@ document.addEventListener("DOMContentLoaded", async function () {
     }
 });
 </script>
-
 
 <script>
 "use strict";
@@ -540,38 +743,31 @@ if (
    ELEMENTS
 ===================================== */
 
-const studentsContainer =
-    document.getElementById("studentsContainer");
+const studentsContainer = document.getElementById("studentsContainer");
+const classCards = document.getElementById("classCards");
+const formClassCards = document.getElementById("formClassCards");
 
-const classCards =
-    document.getElementById("classCards");
+const studentModal = document.getElementById("studentModal");
+const studentForm = document.getElementById("studentForm");
 
-const formClassCards =
-    document.getElementById("formClassCards");
+const studentName = document.getElementById("studentName");
+const studentGender = document.getElementById("studentGender");
 
-const studentModal =
-    document.getElementById("studentModal");
+const modalTitle = document.getElementById("modalTitle");
+const saveBtn = document.getElementById("saveBtn");
+const statusMessage = document.getElementById("statusMessage");
+const addStudentBtn = document.getElementById("addStudentBtn");
 
-const studentForm =
-    document.getElementById("studentForm");
+const activeTab = document.getElementById("activeTab");
+const inactiveTab = document.getElementById("inactiveTab");
 
-const studentName =
-    document.getElementById("studentName");
+const activeTotal = document.getElementById("activeTotal");
+const inactiveTotal = document.getElementById("inactiveTotal");
 
-const studentGender =
-    document.getElementById("studentGender");
+const activeTabCount = document.getElementById("activeTabCount");
+const inactiveTabCount = document.getElementById("inactiveTabCount");
 
-const modalTitle =
-    document.getElementById("modalTitle");
-
-const saveBtn =
-    document.getElementById("saveBtn");
-
-const statusMessage =
-    document.getElementById("statusMessage");
-
-const addStudentBtn =
-    document.getElementById("addStudentBtn");
+const sectionInstruction = document.getElementById("sectionInstruction");
 
 /* =====================================
    STATE
@@ -580,6 +776,7 @@ const addStudentBtn =
 let students = [];
 let classes = [];
 
+let currentTab = "active";
 let selectedClassId = "";
 let formClassId = "";
 
@@ -591,12 +788,9 @@ let messageTimer = null;
 ===================================== */
 
 async function apiRequest(url, options = {}) {
-
     const response = await fetch(url, {
         ...options,
-
         credentials: "same-origin",
-
         headers: {
             ...(options.body
                 ? { "Content-Type": "application/json" }
@@ -613,15 +807,13 @@ async function apiRequest(url, options = {}) {
         );
     }
 
+    if (response.status === 401) {
+        window.location.replace("../../index.html");
+        throw new Error("Your session has expired. Please log in again.");
+    }
+
     if (!response.ok || result.success === false) {
-
-        if (response.status === 401 || response.status === 403) {
-            window.location.replace("../../index.html");
-        }
-
-        throw new Error(
-            result.message || "Request failed."
-        );
+        throw new Error(result.message || "Request failed.");
     }
 
     return result;
@@ -632,18 +824,16 @@ async function apiRequest(url, options = {}) {
 ===================================== */
 
 function showMessage(message, type = "success") {
-
     clearTimeout(messageTimer);
 
     statusMessage.textContent = message;
     statusMessage.className = "status-message " + type;
 
     if (type !== "info") {
-
         messageTimer = setTimeout(() => {
             statusMessage.className = "status-message";
             statusMessage.textContent = "";
-        }, 5000);
+        }, 6000);
     }
 }
 
@@ -652,7 +842,6 @@ function showMessage(message, type = "success") {
 ===================================== */
 
 function formatClassName(name) {
-
     const value = String(name || "").trim();
 
     const mapping = {
@@ -662,7 +851,6 @@ function formatClassName(name) {
         "P4": "Primary 4",
         "P5": "Primary 5",
         "P6": "Primary 6",
-
         "S1": "Senior 1",
         "S2": "Senior 2",
         "S3": "Senior 3",
@@ -675,9 +863,48 @@ function formatClassName(name) {
 }
 
 /* =====================================
-   LOAD ALL SCHOOL CLASSES
+   STUDENT STATUS HELPERS
 ===================================== */
 
+function isActive(student) {
+    return String(student.status || "").toLowerCase() === "active";
+}
+
+function getStudentsByStatus(status, classId = null) {
+    return students
+        .filter(student => {
+            const matchesStatus = isActive(student) === (status === "active");
+
+            const matchesClass = classId === null ||
+                String(student.class_id) === String(classId);
+
+            return matchesStatus && matchesClass;
+        })
+        .sort((a, b) =>
+            String(a.full_name || "").localeCompare(
+                String(b.full_name || "")
+            )
+        );
+}
+
+/* =====================================
+   UPDATE COUNTS
+===================================== */
+
+function updateCounts() {
+    const activeCount = students.filter(isActive).length;
+    const inactiveCount = students.filter(student => !isActive(student)).length;
+
+    activeTotal.textContent = activeCount;
+    inactiveTotal.textContent = inactiveCount;
+
+    activeTabCount.textContent = activeCount;
+    inactiveTabCount.textContent = inactiveCount;
+}
+
+/* =====================================
+   LOAD CLASSES
+===================================== */
 
 async function loadClasses() {
     const result = await apiRequest("/api/classes");
@@ -687,179 +914,134 @@ async function loadClasses() {
     }
 
     classes = result.classes;
-
-    // Automatically select the first class card
-    selectedClassId = classes.length > 0
-        ? String(classes[0].id)
-        : "";
-
-    renderClassCards();
     renderFormClassCards();
 }
-
 
 /* =====================================
    LOAD STUDENTS
 ===================================== */
 
-
 async function loadStudents() {
-
     studentsContainer.replaceChildren();
 
     const loading = document.createElement("p");
     loading.className = "empty-message";
     loading.textContent = "Loading students...";
-
     studentsContainer.appendChild(loading);
 
     const result = await apiRequest("/api/students");
 
-    students = result.students || [];
+    students = Array.isArray(result.students) ? result.students : [];
 
-    // Automatically select the first class that has active students.
-    const firstClassWithStudents = classes.find(cls =>
-        getClassStudents(cls.id).length > 0
-    );
+    updateCounts();
 
-    selectedClassId = firstClassWithStudents
-        ? String(firstClassWithStudents.id)
-        : "";
-
-    // Render class cards with the selected class highlighted.
     renderClassCards();
-
-    // Display students from the automatically selected class.
     renderStudents();
 }
 
 /* =====================================
-   GET ACTIVE STUDENTS IN A CLASS
+   TAB SWITCHING
 ===================================== */
 
-function getClassStudents(classId) {
+function switchTab(tab) {
+    currentTab = tab;
+    selectedClassId = "";
 
-    return students
-        .filter(student =>
-            String(student.class_id) === String(classId) &&
-            student.status === "active"
-        )
-        .sort((a, b) =>
-            String(a.full_name || "").localeCompare(
-                String(b.full_name || "")
-            )
-        );
+    activeTab.classList.toggle("active", tab === "active");
+    inactiveTab.classList.toggle("active", tab === "inactive");
+
+    activeTab.setAttribute("aria-selected", String(tab === "active"));
+    inactiveTab.setAttribute("aria-selected", String(tab === "inactive"));
+
+    addStudentBtn.style.display = tab === "active" ? "inline-block" : "none";
+
+    sectionInstruction.textContent = tab === "active"
+        ? "Select a class to view its active students."
+        : "Select a class to view its inactive students.";
+
+    renderClassCards();
+    renderStudents();
 }
 
+activeTab.addEventListener("click", () => switchTab("active"));
+inactiveTab.addEventListener("click", () => switchTab("inactive"));
+
 /* =====================================
-   RENDER MAIN CLASS CARDS
+   RENDER CLASS CARDS
 ===================================== */
 
 function renderClassCards() {
-
     classCards.replaceChildren();
 
-    /*
-       Only show classes containing at least
-       one active registered student.
-    */
-
     const availableClasses = classes.filter(cls =>
-        getClassStudents(cls.id).length > 0
+        getStudentsByStatus(currentTab, cls.id).length > 0
     );
 
-    /*
-       If the selected class no longer has
-       active students, clear its selection.
-    */
-
-    const selectedStillAvailable = availableClasses.some(
-        cls => String(cls.id) === String(selectedClassId)
-    );
-
-    if (!selectedStillAvailable) {
+    if (!availableClasses.some(cls =>
+        String(cls.id) === String(selectedClassId)
+    )) {
         selectedClassId = "";
     }
 
     if (availableClasses.length === 0) {
-
         const message = document.createElement("p");
         message.className = "empty-message";
-        message.textContent =
-            "No students have been registered in any class yet.";
+
+        message.textContent = currentTab === "active"
+            ? "There are currently no active students."
+            : "There are currently no inactive students.";
 
         classCards.appendChild(message);
-
         return;
     }
 
     availableClasses.forEach(cls => {
-
-        const count = getClassStudents(cls.id).length;
+        const count = getStudentsByStatus(currentTab, cls.id).length;
 
         const card = document.createElement("button");
-
         card.type = "button";
         card.className = "class-card";
 
         if (String(selectedClassId) === String(cls.id)) {
             card.classList.add("active");
-            card.setAttribute("aria-pressed", "true");
-        } else {
-            card.setAttribute("aria-pressed", "false");
         }
 
         const title = document.createElement("strong");
         title.textContent = formatClassName(cls.class_name);
 
         const total = document.createElement("small");
-        total.textContent =
-            count + (count === 1
-                ? " registered student"
-                : " registered students");
+        total.textContent = count + (count === 1
+            ? " student"
+            : " students");
 
         card.append(title, total);
 
         card.addEventListener("click", () => {
-
             selectedClassId = String(cls.id);
-
             renderClassCards();
             renderStudents();
-
         });
 
         classCards.appendChild(card);
-
     });
 }
 
 /* =====================================
-   RENDER MODAL CLASS CARDS
+   RENDER FORM CLASS CARDS
 ===================================== */
 
 function renderFormClassCards() {
-
     formClassCards.replaceChildren();
 
     if (classes.length === 0) {
-
         const message = document.createElement("p");
         message.className = "empty-message";
         message.textContent = "No classes available.";
-
         formClassCards.appendChild(message);
-
         return;
     }
 
-    /*
-       Show ALL classes here, even if they
-       do not have registered students yet.
-    */
-
     classes.forEach(cls => {
-
         const card = document.createElement("button");
 
         card.type = "button";
@@ -867,45 +1049,31 @@ function renderFormClassCards() {
 
         if (String(formClassId) === String(cls.id)) {
             card.classList.add("active");
-            card.setAttribute("aria-pressed", "true");
-        } else {
-            card.setAttribute("aria-pressed", "false");
         }
 
         card.textContent = formatClassName(cls.class_name);
 
         card.addEventListener("click", () => {
-
             formClassId = String(cls.id);
-
             renderFormClassCards();
-
         });
 
         formClassCards.appendChild(card);
-
     });
 }
 
 /* =====================================
-   RENDER SELECTED CLASS STUDENTS
+   RENDER STUDENTS TABLE
 ===================================== */
 
 function renderStudents() {
-
     studentsContainer.replaceChildren();
 
     if (!selectedClassId) {
-
         const message = document.createElement("p");
-
         message.className = "empty-message";
-
-        message.textContent =
-            "Tap a class above to view its registered students.";
-
+        message.textContent = "Select a class above to view its students.";
         studentsContainer.appendChild(message);
-
         return;
     }
 
@@ -914,24 +1082,19 @@ function renderStudents() {
     );
 
     if (!selectedClass) {
-
         const message = document.createElement("p");
-
         message.className = "empty-message";
         message.textContent = "Selected class was not found.";
-
         studentsContainer.appendChild(message);
-
         return;
     }
 
-    const sectionStudents = getClassStudents(selectedClassId);
+    const sectionStudents = getStudentsByStatus(currentTab, selectedClassId);
 
     const section = document.createElement("div");
     section.className = "class-section";
 
     const heading = document.createElement("h3");
-
     heading.className = "class-title";
 
     heading.textContent =
@@ -948,14 +1111,10 @@ function renderStudents() {
     const thead = document.createElement("thead");
     const headerRow = document.createElement("tr");
 
-    ["#", "Student Name", "Student Code", "Actions"].forEach(label => {
-
+    ["#", "Student Name", "Student Code", "Status", "Actions"].forEach(label => {
         const th = document.createElement("th");
-
         th.textContent = label;
-
         headerRow.appendChild(th);
-
     });
 
     thead.appendChild(headerRow);
@@ -964,21 +1123,17 @@ function renderStudents() {
     const tbody = document.createElement("tbody");
 
     if (sectionStudents.length === 0) {
-
         const row = document.createElement("tr");
         const cell = document.createElement("td");
 
-        cell.colSpan = 4;
+        cell.colSpan = 5;
         cell.className = "empty-message";
-        cell.textContent = "No students registered in this class.";
+        cell.textContent = "No students found in this class.";
 
         row.appendChild(cell);
         tbody.appendChild(row);
-
     } else {
-
         sectionStudents.forEach((student, index) => {
-
             const row = document.createElement("tr");
 
             const numberCell = document.createElement("td");
@@ -990,36 +1145,59 @@ function renderStudents() {
             const codeCell = document.createElement("td");
             codeCell.textContent = student.student_code || "—";
 
-            const actionsCell = document.createElement("td");
+            const statusCell = document.createElement("td");
+            const statusPill = document.createElement("span");
 
+            statusPill.className = "status-pill " + currentTab;
+            statusPill.textContent = currentTab === "active" ? "Active" : "Inactive";
+
+            statusCell.appendChild(statusPill);
+
+            const actionsCell = document.createElement("td");
             const actions = document.createElement("div");
             actions.className = "action-buttons";
 
-            // EDIT BUTTON
+            if (currentTab === "active") {
+                const editButton = document.createElement("button");
+                editButton.type = "button";
+                editButton.className = "edit-btn";
+                editButton.textContent = "Edit";
 
-            const editButton = document.createElement("button");
+                editButton.addEventListener("click", () => {
+                    openEditModal(student.id);
+                });
 
-            editButton.type = "button";
-            editButton.className = "edit-btn";
-            editButton.textContent = "Edit";
+                const deactivateButton = document.createElement("button");
+                deactivateButton.type = "button";
+                deactivateButton.className = "deactivate-btn";
+                deactivateButton.textContent = "Deactivate";
 
-            editButton.addEventListener("click", () => {
-                openEditModal(student.id);
-            });
+                deactivateButton.addEventListener("click", () => {
+                    deactivateStudent(student.id);
+                });
 
-            // DELETE BUTTON
+                actions.append(editButton, deactivateButton);
+            } else {
+                const activateButton = document.createElement("button");
+                activateButton.type = "button";
+                activateButton.className = "activate-btn";
+                activateButton.textContent = "Activate";
 
-            const deleteButton = document.createElement("button");
+                activateButton.addEventListener("click", () => {
+                    activateStudent(student.id);
+                });
 
-            deleteButton.type = "button";
-            deleteButton.className = "delete-btn";
-            deleteButton.textContent = "Delete";
+                const deleteButton = document.createElement("button");
+                deleteButton.type = "button";
+                deleteButton.className = "delete-btn";
+                deleteButton.textContent = "Delete Permanently";
 
-            deleteButton.addEventListener("click", () => {
-                deactivateStudent(student.id);
-            });
+                deleteButton.addEventListener("click", () => {
+                    permanentlyDeleteStudent(student.id);
+                });
 
-            actions.append(editButton, deleteButton);
+                actions.append(activateButton, deleteButton);
+            }
 
             actionsCell.appendChild(actions);
 
@@ -1027,19 +1205,17 @@ function renderStudents() {
                 numberCell,
                 nameCell,
                 codeCell,
+                statusCell,
                 actionsCell
             );
 
             tbody.appendChild(row);
-
         });
-
     }
 
     table.appendChild(tbody);
     wrapper.appendChild(table);
     section.appendChild(wrapper);
-
     studentsContainer.appendChild(section);
 }
 
@@ -1048,25 +1224,13 @@ function renderStudents() {
 ===================================== */
 
 function openAddModal() {
-
     if (classes.length === 0) {
-
-        showMessage(
-            "No classes are available for registration.",
-            "error"
-        );
-
+        showMessage("No classes are available for registration.", "error");
         return;
     }
 
     editingStudentId = null;
-
     studentForm.reset();
-
-    /*
-       Automatically select the class currently
-       being viewed, if there is one.
-    */
 
     formClassId = selectedClassId || "";
 
@@ -1074,7 +1238,6 @@ function openAddModal() {
     saveBtn.textContent = "Save Student";
 
     renderFormClassCards();
-
     studentModal.style.display = "flex";
 }
 
@@ -1083,32 +1246,25 @@ function openAddModal() {
 ===================================== */
 
 function openEditModal(id) {
-
     const student = students.find(item =>
         String(item.id) === String(id)
     );
 
-    if (!student) {
-
-        showMessage("Student not found.", "error");
-
+    if (!student || !isActive(student)) {
+        showMessage("Active student not found.", "error");
         return;
     }
 
     editingStudentId = student.id;
-
     formClassId = String(student.class_id);
 
     studentName.value = student.full_name || "";
-
     studentGender.value = student.gender || "";
 
     modalTitle.textContent = "Edit Student";
-
     saveBtn.textContent = "Update Student";
 
     renderFormClassCards();
-
     studentModal.style.display = "flex";
 }
 
@@ -1117,26 +1273,19 @@ function openEditModal(id) {
 ===================================== */
 
 function closeModal() {
-
     studentModal.style.display = "none";
-
     studentForm.reset();
 
     editingStudentId = null;
     formClassId = "";
 }
 
-document.getElementById("cancelBtn").addEventListener(
-    "click",
-    closeModal
-);
+document.getElementById("cancelBtn").addEventListener("click", closeModal);
 
 studentModal.addEventListener("click", event => {
-
     if (event.target === studentModal) {
         closeModal();
     }
-
 });
 
 /* =====================================
@@ -1144,20 +1293,16 @@ studentModal.addEventListener("click", event => {
 ===================================== */
 
 studentForm.addEventListener("submit", async event => {
-
     event.preventDefault();
 
     const fullName = studentName.value.trim();
-
     const classId = Number(formClassId);
 
     if (!classId || !fullName) {
-
         showMessage(
             "Please select a class and enter the student's name.",
             "error"
         );
-
         return;
     }
 
@@ -1177,51 +1322,42 @@ studentForm.addEventListener("submit", async event => {
     saveBtn.textContent = "Please wait...";
 
     try {
-
         if (isEditing) {
-
             await apiRequest("/api/students/update", {
                 method: "POST",
                 body: JSON.stringify(payload)
             });
-
         } else {
-
             await apiRequest("/api/students", {
                 method: "POST",
                 body: JSON.stringify(payload)
             });
-
         }
-
-        /*
-           After registration or moving a learner,
-           display the class selected in the form.
-        */
-
-        selectedClassId = String(classId);
 
         closeModal();
 
         await loadStudents();
 
+        if (isEditing) {
+            selectedClassId = String(classId);
+            renderClassCards();
+            renderStudents();
+        }
+
         showMessage(
             isEditing
-                ? "Student updated successfully."
+                ? "Student details updated successfully."
                 : "Student registered successfully."
         );
 
     } catch (error) {
-
         showMessage(error.message, "error");
-
     } finally {
-
         saveBtn.disabled = false;
-        saveBtn.textContent = "Save Student";
-
+        saveBtn.textContent = editingStudentId === null
+            ? "Save Student"
+            : "Update Student";
     }
-
 });
 
 /* =====================================
@@ -1229,36 +1365,115 @@ studentForm.addEventListener("submit", async event => {
 ===================================== */
 
 async function deactivateStudent(id) {
-
     const confirmed = confirm(
-        "Are you sure you want to deactivate this student?"
+        "Deactivate this student?\n\n" +
+        "The student will be moved to the Inactive Students section. " +
+        "Their recorded marks will be retained."
     );
 
     if (!confirmed) return;
 
     try {
-
         await apiRequest("/api/students/delete", {
             method: "POST",
             body: JSON.stringify({ id })
         });
 
-        // Remove from the local active student list.
-        students = students.filter(student =>
-            String(student.id) !== String(id)
-        );
-
-        // A class with no remaining active learners
-        // automatically disappears from the cards.
-        renderClassCards();
-        renderStudents();
+        await loadStudents();
 
         showMessage("Student deactivated successfully.");
+    } catch (error) {
+        showMessage(error.message, "error");
+    }
+}
+
+/* =====================================
+   ACTIVATE STUDENT
+===================================== */
+
+async function activateStudent(id) {
+    const confirmed = confirm(
+        "Activate this student?\n\n" +
+        "The student will be moved back to Active Students."
+    );
+
+    if (!confirmed) return;
+
+    try {
+        await apiRequest("/api/students/activate", {
+            method: "POST",
+            body: JSON.stringify({ id })
+        });
+
+        await loadStudents();
+
+        showMessage("Student activated successfully.");
+    } catch (error) {
+        showMessage(error.message, "error");
+    }
+}
+
+/* =====================================
+   PERMANENTLY DELETE STUDENT
+===================================== */
+
+async function permanentlyDeleteStudent(id) {
+    try {
+        /*
+           First request asks the server to check
+           whether the student has recorded marks.
+           It must not delete anything yet.
+        */
+
+        const preview = await apiRequest("/api/students/permanent-delete", {
+            method: "POST",
+            body: JSON.stringify({
+                id,
+                confirm: false
+            })
+        });
+
+        const marksCount = Number(preview.marksCount || 0);
+
+        let warning;
+
+        if (marksCount > 0) {
+            warning =
+                "PERMANENT DELETION WARNING\n\n" +
+                "This student has " + marksCount +
+                " recorded mark record(s).\n\n" +
+                "If you continue:\n" +
+                "• The student's recorded marks will also be deleted.\n" +
+                "• The student will be permanently removed from the system.\n" +
+                "• This action cannot be reversed.\n\n" +
+                "Do you want to permanently delete this student and the associated marks?";
+        } else {
+            warning =
+                "PERMANENT DELETION CONFIRMATION\n\n" +
+                "This student has no recorded marks.\n\n" +
+                "The student will be permanently removed from the system. " +
+                "This action cannot be reversed.\n\n" +
+                "Do you want to continue?";
+        }
+
+        if (!confirm(warning)) return;
+
+        await apiRequest("/api/students/permanent-delete", {
+            method: "POST",
+            body: JSON.stringify({
+                id,
+                confirm: true
+            })
+        });
+
+        await loadStudents();
+
+        showMessage(
+            "The student and associated records were permanently deleted."
+        );
 
     } catch (error) {
-
         showMessage(error.message, "error");
-
     }
 }
 
@@ -1272,17 +1487,12 @@ addStudentBtn.addEventListener("click", openAddModal);
    INITIALIZE PAGE
 ===================================== */
 
-
 async function initializePage() {
     addStudentBtn.disabled = true;
 
     try {
-        // Load all school classes first.
         await loadClasses();
-
-        // Then load students belonging to those classes.
         await loadStudents();
-
     } catch (error) {
         showMessage(error.message, "error");
 
@@ -1295,15 +1505,12 @@ async function initializePage() {
         message.textContent = error.message;
 
         studentsContainer.appendChild(message);
-
     } finally {
         addStudentBtn.disabled = false;
     }
 }
 
-
 initializePage();
-
 </script>
 
 </body>
