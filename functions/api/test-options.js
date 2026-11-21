@@ -19,7 +19,7 @@ export async function onRequest(context) {
         }, 405);
     }
 
-    if (!["sector_admin", "school_admin"].includes(auth.role)) {
+    if (!["sector_admin","dos", "school_admin"].includes(auth.role)) {
         return json({
             success: false,
             message: "You are not allowed to access test creation options."
