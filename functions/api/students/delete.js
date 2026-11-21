@@ -1,12 +1,15 @@
 
 import {
     connectDB,
-    requireSchoolAdmin,
+       authenticateRole,
     json
 } from "../../_utils.js";
 
 export async function onRequestPost(context) {
-    const auth = await requireSchoolAdmin(context);
+    const auth = await authenticateRole(
+    context,
+    ["school_admin", "dos"]
+);
 
     if (auth.error) return auth.error;
 
