@@ -5,7 +5,10 @@ import {
 } from "../_utils.js";
 
 export async function onRequestGet(context) {
-    authenticateRole(context, ["school_admin", "dos"])
+    const auth = await authenticateRole(
+    context,
+    ["school_admin", "dos"]
+);
     if (auth.error) return auth.error;
 
     let client;
