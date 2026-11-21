@@ -639,7 +639,7 @@ export async function onRequestPut(context) {
              SET
                 full_name = $1,
                 phone = $2,
-                email = $3,
+                email = $3::varchar,
                 email_verified = CASE
                     WHEN LOWER(COALESCE(email, '')) <> LOWER($3)
                     THEN FALSE
