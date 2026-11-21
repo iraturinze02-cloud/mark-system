@@ -532,10 +532,10 @@
     </div>
 
     <div class="top-actions">
-        <button onclick="window.location.href='dashboard.html'">
-            <i class="fas fa-home"></i>
-            Dashboard
-        </button>
+        <button id="dashboardBtn">
+    <i class="fas fa-home"></i>
+    Dashboard
+</button>
 
         <button id="logoutBtn">
             <i class="fas fa-sign-out-alt"></i>
@@ -770,6 +770,7 @@ let tests = [];
 let subjects = [];
 let teachers = [];
 
+let currentUserRole = null;
 let selectedTest = null;
 let requestNumber = 0;
 
@@ -912,6 +913,14 @@ async function initializePage() {
                 "Access denied. This page is for school administrators only."
             );
         }
+         currentUserRole = data.user.role;
+
+document.getElementById("dashboardBtn").onclick = () => {
+    window.location.href =
+        currentUserRole === "dos"
+            ? "../dos/dos-dashboard.html"
+            : "dashboard.html";
+};
 
         tests = Array.isArray(data.tests)
             ? data.tests
