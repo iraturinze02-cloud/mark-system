@@ -402,7 +402,7 @@ tbody tr:hover {
 </head>
 
 <body>
-    <div id="schoolSidebarContainer"></div>
+    <div id="schoolSidebarContainer" style="display: none;"></div>
 <main class="school-main-content">
 
 <header>
@@ -481,7 +481,34 @@ tbody tr:hover {
 
 </div>
     </main>
-<script src="../js/school-sidebar.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", async function () {
+    try {
+        const response = await fetch("/api/auth/session", {
+            method: "GET",
+            credentials: "same-origin",
+            cache: "no-store"
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || !data.success || !data.user) {
+            return;
+        }
+
+        if (data.user.role === "school_admin") {
+            document.getElementById("schoolSidebarContainer").style.display = "block";
+
+            const script = document.createElement("script");
+            script.src = "../js/school-sidebar.js";
+            document.body.appendChild(script);
+        }
+
+    } catch (error) {
+        console.error("Sidebar loading error:", error);
+    }
+});
+</script>
 
 <script>
 
@@ -606,15 +633,10 @@ reportCardsBtn.style.display =
         : "none";
 
         if (
-            currentUserRole !== "sector_admin" &&
-            currentUserRole !== "school_admin"
-        ) {
-
-            throw new Error(
-                "You are not authorized to view school marks."
-            );
-
-        }
+    !["sector_admin", "school_admin", "dos"].includes(currentUserRole)
+) {
+    throw new Error("You are not authorized to view school marks.");
+}
 
         /* -------------------------------------
            SHOW SCHOOL SELECTOR ONLY FOR SECTOR
