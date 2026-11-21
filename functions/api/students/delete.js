@@ -1,17 +1,24 @@
 
 import {
     connectDB,
-       authenticateRole,
+    authenticateRole,
     json
 } from "../../_utils.js";
 
 export async function onRequestPost(context) {
     const auth = await authenticateRole(
-    context,
-    ["school_admin", "dos"]
-);
+        context,
+        ["school_admin", "dos"]
+    );
 
     if (auth.error) return auth.error;
+
+    if (!auth.schoolId) {
+        return json({
+            success: false,
+            message: "Your account is not linked to a school."
+        }, 403);
+    }
 
     let data;
 
