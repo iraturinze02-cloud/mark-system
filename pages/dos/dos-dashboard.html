@@ -1191,7 +1191,13 @@
 
     </script>
 
-    <script src="../js/auth-guard.js"></script>
+    <script>
+    window.FILA_PAGE_AUTH = {
+        roles: ["dos"]
+    };
+</script>
+
+<script src="../js/auth-guard.js"></script>
 
 </body>
 </html>
