@@ -119,17 +119,15 @@ export async function onRequestGet(context) {
 
             WHERE u.school_id = $1
               AND u.role IN (
-                  'school_admin',
                   'dos',
                   'teacher'
               )
 
             ORDER BY
                 CASE
-                    WHEN u.role = 'school_admin' THEN 1
-                    WHEN u.role = 'dos' THEN 2
-                    WHEN u.role = 'teacher' THEN 3
-                    ELSE 4
+                    WHEN u.role = 'dos' THEN 1
+                    WHEN u.role = 'teacher' THEN 2
+                    ELSE 3
                 END,
                 u.full_name ASC
             `,
