@@ -4,12 +4,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#123b70">
+
+    <meta name="description" content="Record and manage student marks for assigned classes and subjects in Fila Grades System.">
+
+    <meta name="theme-color" content="#173f70">
+
+    <link rel="icon" type="image/x-icon" href="/images/favicon/favicon.ico">
+    <link rel="icon" type="image/png" sizes="512x512" href="/images/favicon/favicon.png">
+
 
     <title>DOS Management | Fila Marks System</title>
 
     <link rel="stylesheet" href="../css/school-sidebar.css">
-
     <link rel="stylesheet"
           href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 
@@ -33,9 +39,7 @@
             --shadow: 0 5px 20px rgba(16, 54, 95, 0.06);
         }
 
-        * {
-            box-sizing: border-box;
-        }
+        * { box-sizing: border-box; }
 
         body {
             margin: 0;
@@ -48,7 +52,7 @@
             margin-left: 260px;
             min-height: 100vh;
             padding: 30px;
-            transition: margin-left 0.25s ease;
+            transition: margin-left .25s ease;
         }
 
         .page-container {
@@ -92,9 +96,7 @@
             white-space: nowrap;
         }
 
-        .back-link:hover {
-            background: var(--primary-light);
-        }
+        .back-link:hover { background: var(--primary-light); }
 
         .intro-card {
             display: flex;
@@ -115,7 +117,7 @@
             display: grid;
             place-items: center;
             border-radius: 15px;
-            background: rgba(255,255,255,0.15);
+            background: rgba(255,255,255,.15);
             font-size: 25px;
         }
 
@@ -126,7 +128,7 @@
 
         .intro-card p {
             margin: 0;
-            color: rgba(255,255,255,0.85);
+            color: rgba(255,255,255,.85);
             font-size: 13px;
             line-height: 1.6;
         }
@@ -174,25 +176,10 @@
             white-space: nowrap;
         }
 
-        .status-success {
-            color: var(--success);
-            background: var(--success-bg);
-        }
-
-        .status-warning {
-            color: var(--warning);
-            background: var(--warning-bg);
-        }
-
-        .status-danger {
-            color: var(--danger);
-            background: var(--danger-bg);
-        }
-
-        .status-neutral {
-            color: #475467;
-            background: #f0f2f5;
-        }
+        .status-success { color: var(--success); background: var(--success-bg); }
+        .status-warning { color: var(--warning); background: var(--warning-bg); }
+        .status-danger { color: var(--danger); background: var(--danger-bg); }
+        .status-neutral { color: #475467; background: #f0f2f5; }
 
         .dos-profile {
             display: flex;
@@ -237,14 +224,14 @@
             min-width: 0;
         }
 
-        .detail-item .detail-label {
+        .detail-label {
             display: block;
             margin-bottom: 8px;
             color: var(--muted);
             font-size: 12px;
         }
 
-        .detail-item .detail-value {
+        .detail-value {
             display: block;
             color: var(--text);
             font-size: 14px;
@@ -258,13 +245,8 @@
             gap: 19px;
         }
 
-        .form-group {
-            min-width: 0;
-        }
-
-        .form-group.full-width {
-            grid-column: 1 / -1;
-        }
+        .form-group { min-width: 0; }
+        .form-group.full-width { grid-column: 1 / -1; }
 
         .form-group label {
             display: block;
@@ -274,13 +256,9 @@
             font-weight: 700;
         }
 
-        .required {
-            color: var(--danger);
-        }
+        .required { color: var(--danger); }
 
-        .input-wrapper {
-            position: relative;
-        }
+        .input-wrapper { position: relative; }
 
         .input-wrapper i {
             position: absolute;
@@ -302,17 +280,15 @@
             background: #fff;
             color: var(--text);
             font-size: 14px;
-            transition: border 0.2s, box-shadow 0.2s;
+            transition: border .2s, box-shadow .2s;
         }
 
         .form-group input:focus {
             border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(23,74,131,0.10);
+            box-shadow: 0 0 0 3px rgba(23,74,131,.10);
         }
 
-        .form-group input::placeholder {
-            color: #a0a8b4;
-        }
+        .form-group input::placeholder { color: #a0a8b4; }
 
         .field-hint {
             margin-top: 7px;
@@ -335,9 +311,12 @@
             line-height: 1.6;
         }
 
-        .notice i {
-            margin-top: 2px;
-            font-size: 15px;
+        .notice i { margin-top: 2px; font-size: 15px; }
+
+        .notice.warning-notice {
+            border-color: #f1dfae;
+            background: var(--warning-bg);
+            color: #805600;
         }
 
         .form-actions {
@@ -362,30 +341,24 @@
             font-size: 13px;
             font-weight: 700;
             text-decoration: none;
-            transition: 0.2s;
+            transition: .2s;
         }
 
-        .btn-primary {
-            background: var(--primary);
-            color: white;
-        }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-dark); }
 
-        .btn-primary:hover {
-            background: var(--primary-dark);
-        }
+        .btn-secondary { background: #f0f2f5; color: #344054; }
+        .btn-secondary:hover { background: #e4e7ec; }
 
-        .btn-secondary {
-            background: #f0f2f5;
-            color: #344054;
-        }
+        .btn:disabled { opacity: .65; cursor: not-allowed; }
 
-        .btn-secondary:hover {
-            background: #e4e7ec;
-        }
-
-        .btn:disabled {
-            opacity: 0.65;
-            cursor: not-allowed;
+        .profile-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 22px;
+            padding-top: 18px;
+            border-top: 1px solid var(--border);
         }
 
         .empty-state {
@@ -461,68 +434,39 @@
             padding: 15px;
             border-radius: 11px;
             background: white;
-            box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+            box-shadow: 0 8px 30px rgba(0,0,0,.15);
             border-left: 4px solid var(--primary);
-            animation: slideIn 0.25s ease;
+            animation: slideIn .25s ease;
             font-size: 13px;
             line-height: 1.5;
         }
 
-        .toast.success {
-            border-left-color: var(--success);
-        }
-
-        .toast.error {
-            border-left-color: var(--danger);
-        }
-
-        .toast i {
-            margin-top: 2px;
-        }
-
-        .toast.success i {
-            color: var(--success);
-        }
-
-        .toast.error i {
-            color: var(--danger);
-        }
+        .toast.success { border-left-color: var(--success); }
+        .toast.error { border-left-color: var(--danger); }
+        .toast i { margin-top: 2px; }
+        .toast.success i { color: var(--success); }
+        .toast.error i { color: var(--danger); }
 
         @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateX(15px);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
+            from { opacity: 0; transform: translateX(15px); }
+            to { opacity: 1; transform: translateX(0); }
         }
 
-        .hidden {
-            display: none !important;
-        }
+        .hidden { display: none !important; }
 
         @media (max-width: 900px) {
-            .main-content {
-                margin-left: 0;
-                padding: 22px;
-            }
+            .main-content { margin-left: 0; padding: 22px; }
         }
 
         @media (max-width: 600px) {
-            .main-content {
-                padding: 16px 12px 30px;
-            }
+            .main-content { padding: 16px 12px 30px; }
 
             .page-header {
                 flex-direction: column;
                 gap: 13px;
             }
 
-            .page-heading h1 {
-                font-size: 23px;
-            }
+            .page-heading h1 { font-size: 23px; }
 
             .intro-card {
                 align-items: flex-start;
@@ -536,13 +480,8 @@
                 font-size: 20px;
             }
 
-            .intro-card h2 {
-                font-size: 16px;
-            }
-
-            .content-card {
-                padding: 17px;
-            }
+            .intro-card h2 { font-size: 16px; }
+            .content-card { padding: 17px; }
 
             .card-heading {
                 align-items: flex-start;
@@ -554,21 +493,17 @@
                 grid-template-columns: 1fr;
             }
 
-            .form-group.full-width {
-                grid-column: auto;
-            }
+            .form-group.full-width { grid-column: auto; }
 
-            .form-actions {
+            .form-actions,
+            .profile-actions {
                 flex-direction: column-reverse;
             }
 
-            .form-actions .btn {
-                width: 100%;
-            }
+            .form-actions .btn,
+            .profile-actions .btn { width: 100%; }
 
-            .dos-profile {
-                align-items: flex-start;
-            }
+            .dos-profile { align-items: flex-start; }
 
             .toast-container {
                 top: 12px;
@@ -581,13 +516,11 @@
 
 <body>
 
-    <!-- SCHOOL SIDEBAR -->
     <div id="schoolSidebarContainer"></div>
 
     <main class="main-content">
         <div class="page-container">
 
-            <!-- PAGE HEADER -->
             <header class="page-header">
                 <div class="page-heading">
                     <h1>DOS Management</h1>
@@ -600,7 +533,6 @@
                 </a>
             </header>
 
-            <!-- INTRODUCTION -->
             <section class="intro-card">
                 <div class="intro-icon">
                     <i class="fas fa-user-tie"></i>
@@ -616,19 +548,16 @@
                 </div>
             </section>
 
-            <!-- DOS CONTENT -->
+            <!-- DOS ACCOUNT -->
             <section class="content-card">
 
                 <div class="card-heading">
                     <div>
                         <h2>School DOS Account</h2>
-                        <p>
-                            Your school can have only one registered DOS account.
-                        </p>
+                        <p>Your school can have only one registered DOS account.</p>
                     </div>
 
                     <span id="accountStatus" class="status-label status-neutral">
-                        <i class="fas fa-spinner fa-spin"></i>
                         Checking...
                     </span>
                 </div>
@@ -640,21 +569,18 @@
 
                 <div id="errorState" class="error-state hidden">
                     <i class="fas fa-exclamation-circle"></i>
-                    <span id="errorMessage">
-                        Unable to load DOS information.
-                    </span>
+                    <span id="errorMessage">Unable to load DOS information.</span>
 
                     <div style="margin-top:15px;">
                         <button class="btn btn-secondary"
                                 type="button"
                                 onclick="loadDOS()">
-                            <i class="fas fa-rotate"></i>
-                            Try Again
+                            <i class="fas fa-rotate"></i> Try Again
                         </button>
                     </div>
                 </div>
 
-                <!-- NO DOS REGISTERED -->
+                <!-- NO DOS -->
                 <div id="emptyState" class="empty-state hidden">
                     <div class="empty-icon">
                         <i class="fas fa-user-plus"></i>
@@ -671,8 +597,7 @@
                     <button type="button"
                             class="btn btn-primary"
                             onclick="showRegistrationForm()">
-                        <i class="fas fa-plus"></i>
-                        Register DOS
+                        <i class="fas fa-plus"></i> Register DOS
                     </button>
                 </div>
 
@@ -728,21 +653,28 @@
                         <i class="fas fa-info-circle"></i>
                         <div>
                             A DOS account is already registered for this school.
-                            The system allows only one DOS per school.
+                            You can update the DOS's personal and contact details.
                         </div>
                     </div>
 
-                </div>
+                    <div class="profile-actions">
+                        <button type="button"
+                                class="btn btn-primary"
+                                onclick="showEditForm()">
+                            <i class="fas fa-pen"></i> Edit DOS Details
+                        </button>
+                    </div>
 
+                </div>
             </section>
 
-            <!-- REGISTRATION FORM -->
+            <!-- REGISTRATION / EDIT FORM -->
             <section class="content-card hidden" id="registrationCard">
 
                 <div class="card-heading">
                     <div>
-                        <h2>Register Director of Studies</h2>
-                        <p>
+                        <h2 id="formTitle">Register Director of Studies</h2>
+                        <p id="formDescription">
                             Enter the personal and contact information
                             of the person who will serve as DOS.
                         </p>
@@ -760,15 +692,14 @@
 
                             <div class="input-wrapper">
                                 <i class="fas fa-user"></i>
-                                <input
-                                    type="text"
-                                    id="fullName"
-                                    name="full_name"
-                                    placeholder="Enter DOS full name"
-                                    autocomplete="name"
-                                    required
-                                    minlength="3"
-                                    maxlength="150">
+                                <input type="text"
+                                       id="fullName"
+                                       name="full_name"
+                                       placeholder="Enter DOS full name"
+                                       autocomplete="name"
+                                       required
+                                       minlength="3"
+                                       maxlength="200">
                             </div>
                         </div>
 
@@ -779,14 +710,13 @@
 
                             <div class="input-wrapper">
                                 <i class="fas fa-phone"></i>
-                                <input
-                                    type="tel"
-                                    id="phone"
-                                    name="phone"
-                                    placeholder="Enter phone number"
-                                    autocomplete="tel"
-                                    required
-                                    maxlength="30">
+                                <input type="tel"
+                                       id="phone"
+                                       name="phone"
+                                       placeholder="Enter phone number"
+                                       autocomplete="tel"
+                                       required
+                                       maxlength="30">
                             </div>
 
                             <div class="field-hint">
@@ -801,30 +731,37 @@
 
                             <div class="input-wrapper">
                                 <i class="fas fa-envelope"></i>
-                                <input
-                                    type="email"
-                                    id="email"
-                                    name="email"
-                                    placeholder="Enter email address"
-                                    autocomplete="email"
-                                    required
-                                    maxlength="254">
+                                <input type="email"
+                                       id="email"
+                                       name="email"
+                                       placeholder="Enter email address"
+                                       autocomplete="email"
+                                       required
+                                       maxlength="254">
                             </div>
 
                             <div class="field-hint">
-                                The account setup invitation will be sent to this email.
+                                The DOS's email address is used for account access.
                             </div>
                         </div>
 
                     </div>
 
-                    <div class="notice">
+                    <div class="notice" id="registrationNotice">
                         <i class="fas fa-shield-alt"></i>
                         <div>
                             After registration, the DOS will receive an account
-                            setup invitation by email. The DOS will complete
-                            the account setup process before accessing the
-                            Fila Marks System.
+                            setup invitation by email.
+                        </div>
+                    </div>
+
+                    <div id="emailChangeNotice"
+                         class="notice warning-notice hidden">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <div>
+                            Changing the email address will reset email
+                            verification. The DOS will need to verify the
+                            new email address.
                         </div>
                     </div>
 
@@ -832,8 +769,7 @@
 
                         <button type="button"
                                 class="btn btn-secondary"
-                                id="cancelButton"
-                                onclick="hideRegistrationForm()">
+                                onclick="cancelForm()">
                             Cancel
                         </button>
 
@@ -847,7 +783,6 @@
                     </div>
 
                 </form>
-
             </section>
 
             <!-- REGISTRATION RESULT -->
@@ -865,24 +800,21 @@
                     </p>
 
                     <div id="invitationWarning"
-                         class="notice hidden"
+                         class="notice warning-notice hidden"
                          style="text-align:left;">
                         <i class="fas fa-exclamation-triangle"></i>
                         <div>
                             The account was created, but the invitation email
-                            could not be sent. The DOS may need assistance
-                            completing account setup.
+                            could not be sent.
                         </div>
                     </div>
 
                     <button type="button"
                             class="btn btn-primary"
                             onclick="loadDOS()">
-                        <i class="fas fa-check"></i>
-                        View DOS Account
+                        <i class="fas fa-check"></i> View DOS Account
                     </button>
                 </div>
-
             </section>
 
         </div>
@@ -903,7 +835,7 @@
             currentUser = JSON.parse(
                 localStorage.getItem("currentUser") || "null"
             );
-        } catch (error) {
+        } catch {
             currentUser = null;
         }
 
@@ -913,7 +845,7 @@
 
 
         /* =====================================================
-           ELEMENTS
+           ELEMENTS AND STATE
         ===================================================== */
 
         const loadingState = document.getElementById("loadingState");
@@ -927,6 +859,9 @@
         const dosForm = document.getElementById("dosForm");
         const submitButton = document.getElementById("submitButton");
 
+        let currentDOS = null;
+        let formMode = "create";
+
 
         /* =====================================================
            API HELPER
@@ -938,8 +873,10 @@
                 credentials: "same-origin",
                 ...options,
                 headers: {
-                    "Content-Type": "application/json",
-                    ...(options.headers || {})
+                    ...(options.headers || {}),
+                    ...(options.body ? {
+                        "Content-Type": "application/json"
+                    } : {})
                 }
             });
 
@@ -947,10 +884,8 @@
 
             try {
                 data = await response.json();
-            } catch (error) {
-                throw new Error(
-                    "The server returned an invalid response."
-                );
+            } catch {
+                throw new Error("The server returned an invalid response.");
             }
 
             if (!response.ok || data.success === false) {
@@ -986,12 +921,9 @@
 
             toast.appendChild(icon);
             toast.appendChild(text);
-
             container.appendChild(toast);
 
-            setTimeout(() => {
-                toast.remove();
-            }, 4500);
+            setTimeout(() => toast.remove(), 4500);
         }
 
 
@@ -1023,8 +955,7 @@
         }
 
 
-        function showRegistrationForm() {
-
+        function showForm() {
             registrationCard.classList.remove("hidden");
 
             registrationCard.scrollIntoView({
@@ -1036,12 +967,110 @@
         }
 
 
-        function hideRegistrationForm() {
-            registrationCard.classList.add("hidden");
+        function showRegistrationForm() {
+
+            formMode = "create";
+
+            dosForm.reset();
+
+            document.getElementById("formTitle").textContent =
+                "Register Director of Studies";
+
+            document.getElementById("formDescription").textContent =
+                "Enter the personal and contact information of the person who will serve as DOS.";
+
+            document.getElementById("submitButton").innerHTML =
+                '<i class="fas fa-user-plus"></i> Register DOS';
+
+            document.getElementById("registrationNotice").classList.remove("hidden");
+            document.getElementById("emailChangeNotice").classList.add("hidden");
+
+            showForm();
         }
 
 
+        function showEditForm() {
+
+            if (!currentDOS) {
+                showToast("DOS information is not available.", "error");
+                return;
+            }
+
+            formMode = "edit";
+
+            document.getElementById("fullName").value =
+                currentDOS.full_name || "";
+
+            document.getElementById("phone").value =
+                currentDOS.phone || "";
+
+            document.getElementById("email").value =
+                currentDOS.email || "";
+
+            document.getElementById("formTitle").textContent =
+                "Edit DOS Details";
+
+            document.getElementById("formDescription").textContent =
+                "Update the DOS's name, phone number or email address.";
+
+            document.getElementById("submitButton").innerHTML =
+                '<i class="fas fa-save"></i> Save Changes';
+
+            document.getElementById("registrationNotice").classList.add("hidden");
+
+            updateEmailWarning();
+
+            showForm();
+        }
+
+
+        function cancelForm() {
+
+            registrationCard.classList.add("hidden");
+
+            if (formMode === "edit") {
+                dosDetails.classList.remove("hidden");
+            } else {
+                emptyState.classList.remove("hidden");
+            }
+        }
+
+
+        /* =====================================================
+           EMAIL CHANGE WARNING
+        ===================================================== */
+
+        function updateEmailWarning() {
+
+            if (formMode !== "edit" || !currentDOS) {
+                document.getElementById("emailChangeNotice")
+                    .classList.add("hidden");
+                return;
+            }
+
+            const newEmail = document.getElementById("email")
+                .value.trim().toLowerCase();
+
+            const oldEmail = String(currentDOS.email || "")
+                .trim().toLowerCase();
+
+            document.getElementById("emailChangeNotice")
+                .classList.toggle("hidden", newEmail === oldEmail);
+        }
+
+        document.getElementById("email").addEventListener(
+            "input",
+            updateEmailWarning
+        );
+
+
+        /* =====================================================
+           DISPLAY DOS DETAILS
+        ===================================================== */
+
         function displayDOS(dos) {
+
+            currentDOS = dos;
 
             hideAllMainStates();
 
@@ -1051,7 +1080,7 @@
             dosDetails.classList.remove("hidden");
 
             document.getElementById("dosFullName").textContent =
-                dos.full_name || dos.name || "Not provided";
+                dos.full_name || "Not provided";
 
             document.getElementById("dosPhone").textContent =
                 dos.phone || "Not provided";
@@ -1059,16 +1088,13 @@
             document.getElementById("dosEmail").textContent =
                 dos.email || "Not provided";
 
-            const active =
-                dos.status === "active";
+            const active = dos.status === "active";
 
             document.getElementById("dosAccountStatus").textContent =
                 active ? "Active" : (dos.status || "Unknown");
 
             document.getElementById("dosEmailStatus").textContent =
-                dos.email_verified === true
-                    ? "Verified"
-                    : "Not verified";
+                dos.email_verified === true ? "Verified" : "Not verified";
 
             document.getElementById("dosSetupStatus").textContent =
                 dos.must_change_password === true
@@ -1088,7 +1114,7 @@
 
 
         /* =====================================================
-           LOAD EXISTING DOS
+           LOAD DOS
         ===================================================== */
 
         async function loadDOS() {
@@ -1108,14 +1134,6 @@
                     method: "GET"
                 });
 
-                /*
-                   Expected API response:
-                   { success: true, dos: {...} }
-
-                   If no DOS exists:
-                   { success: true, dos: null }
-                */
-
                 const dos = data.dos || data.user || null;
 
                 loadingState.classList.add("hidden");
@@ -1126,8 +1144,9 @@
 
                 } else {
 
-                    hideAllMainStates();
+                    currentDOS = null;
 
+                    hideAllMainStates();
                     emptyState.classList.remove("hidden");
 
                     setAccountStatus("No DOS registered", "warning");
@@ -1138,18 +1157,18 @@
                 hideAllMainStates();
 
                 errorState.classList.remove("hidden");
-
                 errorMessage.textContent = error.message;
 
                 setAccountStatus("Unable to load", "danger");
 
-                console.error("DOS loading error:", error);
+                console.error("Load DOS error:", error);
             }
         }
 
 
         /* =====================================================
-           REGISTER DOS
+           SUBMIT FORM
+           CREATE OR UPDATE
         ===================================================== */
 
         dosForm.addEventListener("submit", async function(event) {
@@ -1180,17 +1199,24 @@
                 return;
             }
 
+            const isEditing = formMode === "edit";
+
+            const originalButton = isEditing
+                ? '<i class="fas fa-save"></i> Save Changes'
+                : '<i class="fas fa-user-plus"></i> Register DOS';
+
             submitButton.disabled = true;
 
             submitButton.innerHTML = `
                 <i class="fas fa-spinner fa-spin"></i>
-                Registering...
+                ${isEditing ? "Saving Changes..." : "Registering..."}
             `;
 
             try {
 
                 const data = await api("/api/school/dos", {
-                    method: "POST",
+
+                    method: isEditing ? "PUT" : "POST",
 
                     body: JSON.stringify({
                         full_name: fullName,
@@ -1199,69 +1225,75 @@
                     })
                 });
 
-                /*
-                   Do not send school_id.
-                   The backend obtains school_id from the
-                   authenticated School Admin's session.
-                */
+                if (isEditing) {
 
-                registrationCard.classList.add("hidden");
-                emptyState.classList.add("hidden");
+                    showToast(
+                        data.message || "DOS details updated successfully.",
+                        "success"
+                    );
 
-                resultCard.classList.remove("hidden");
+                    registrationCard.classList.add("hidden");
 
-                const invitationSent =
-                    data.invitation_sent !== false;
+                    // Refresh from the database.
+                    await loadDOS();
 
-                document.getElementById("resultMessage").textContent =
-                    invitationSent
-                        ? `The DOS account for ${fullName} has been created. An account setup invitation has been sent to ${email}.`
-                        : `The DOS account for ${fullName} has been created, but the invitation email was not sent.`;
+                } else {
 
-                document.getElementById("invitationWarning")
-                    .classList.toggle("hidden", invitationSent);
+                    registrationCard.classList.add("hidden");
+                    emptyState.classList.add("hidden");
 
-                showToast(
-                    invitationSent
-                        ? "DOS registered successfully. Invitation sent."
-                        : "DOS registered, but invitation email was not sent.",
-                    invitationSent ? "success" : "error"
-                );
+                    resultCard.classList.remove("hidden");
 
-                dosForm.reset();
+                    const invitationSent =
+                        data.invitation_sent !== false;
 
-                resultCard.scrollIntoView({
-                    behavior: "smooth",
-                    block: "start"
-                });
+                    document.getElementById("resultMessage").textContent =
+                        invitationSent
+                            ? `The DOS account for ${fullName} has been created. An account setup invitation has been sent to ${email}.`
+                            : `The DOS account for ${fullName} has been created, but the invitation email was not sent.`;
 
-                setAccountStatus("DOS registered", "success");
+                    document.getElementById("invitationWarning")
+                        .classList.toggle("hidden", invitationSent);
+
+                    showToast(
+                        invitationSent
+                            ? "DOS registered successfully. Invitation sent."
+                            : "DOS registered, but invitation email was not sent.",
+                        invitationSent ? "success" : "error"
+                    );
+
+                    dosForm.reset();
+
+                    resultCard.scrollIntoView({
+                        behavior: "smooth",
+                        block: "start"
+                    });
+
+                    setAccountStatus("DOS registered", "success");
+                }
 
             } catch (error) {
 
                 showToast(error.message, "error");
 
-                console.error("DOS registration error:", error);
+                console.error(
+                    isEditing ? "Update DOS error:" : "Create DOS error:",
+                    error
+                );
 
             } finally {
 
                 submitButton.disabled = false;
-
-                submitButton.innerHTML = `
-                    <i class="fas fa-user-plus"></i>
-                    Register DOS
-                `;
+                submitButton.innerHTML = originalButton;
             }
         });
 
 
         /* =====================================================
-           INITIALIZE PAGE
+           INITIALIZE
         ===================================================== */
 
-        document.addEventListener("DOMContentLoaded", function() {
-            loadDOS();
-        });
+        document.addEventListener("DOMContentLoaded", loadDOS);
 
     </script>
 
