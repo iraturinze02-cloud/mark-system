@@ -868,7 +868,7 @@ export async function onRequestPost(context) {
                 auth.role === "sector_admin"
                     ? auth.sectorId
                     : null,
-                auth.role === "school_admin"
+               ["school_admin", "dos"].includes(auth.role)
                     ? auth.schoolId
                     : null,
                 auth.userId,
