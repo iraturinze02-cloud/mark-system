@@ -1039,7 +1039,10 @@ async function loadSelectedTest() {
 
         if (currentRequest !== requestNumber) return;
 
-        if (data.user?.role !== "school_admin") {
+        if (
+    data.user?.role !== "school_admin" &&
+    data.user?.role !== "dos"
+) {
 
             throw new Error(
                 "Access denied. This page is for school administrators only."
