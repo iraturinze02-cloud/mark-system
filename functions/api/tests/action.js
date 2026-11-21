@@ -523,7 +523,7 @@ export async function onRequestPost(context) {
 
             let validSchools;
 
-            if (auth.role === "sector_admin") {
+            if (["sector_admin", "dos"].includes(auth.role)) {
                 validSchools = await client.query(
                     `
                     SELECT id
