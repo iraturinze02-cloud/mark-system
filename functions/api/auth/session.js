@@ -8,6 +8,7 @@ export async function onRequestGet(context) {
         "owner",
         "sector_admin",
         "school_admin",
+        "dos",
         "teacher"
     ]);
 
