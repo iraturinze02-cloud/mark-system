@@ -1024,51 +1024,40 @@
 
     </div>
 
-    <script>
-        /* ==========================================
-           DOS AUTHENTICATION
-        ========================================== */
+    
+<script>
+    /* ==========================================
+       DOS AUTHENTICATION
+    ========================================== */
 
-        (function () {
+    // The server-side auth guard is the authority.
+    // Do not reject users based on localStorage.
 
-            let currentUser = null;
+    window.FILA_PAGE_AUTH = {
+        roles: ["dos"]
+    };
 
-            try {
+    document.addEventListener("fila-auth-ready", function (event) {
 
-                currentUser = JSON.parse(
-                    localStorage.getItem("currentUser") || "null"
-                );
+        const currentUser = event.detail;
 
-            } catch (error) {
+        if (!currentUser || currentUser.role !== "dos") {
+            window.location.replace("../../index.html");
+            return;
+        }
 
-                currentUser = null;
-            }
+        const fullName =
+            currentUser.fullName ||
+            currentUser.full_name ||
+            "Director of Studies";
 
-            const storedRole = localStorage.getItem("role");
+        document.getElementById("welcomeTitle").textContent =
+            "Welcome, " + fullName;
 
-            if (
-                !currentUser ||
-                !currentUser.id ||
-                storedRole !== "dos" ||
-                currentUser.role !== "dos"
-            ) {
+        document.getElementById("topbarUserName").textContent =
+            fullName;
 
-                window.location.replace("../../index.html");
-                return;
-            }
-
-            /* DISPLAY DOS NAME */
-
-            const fullName =
-                currentUser.full_name || "Director of Studies";
-
-            document.getElementById("welcomeTitle").textContent =
-                "Welcome, " + fullName;
-
-            document.getElementById("topbarUserName").textContent =
-                fullName;
-
-        })();
+    });
 
 
         /* ==========================================
