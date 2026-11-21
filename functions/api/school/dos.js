@@ -3,12 +3,12 @@ import {
     connectDB,
     requireSchoolAdmin,
     json
-} from "../_utils.js";
+} from "../../_utils.js";
 
 import {
     normalizeEmail,
     sendEmail
-} from "../_email.js";
+} from "../../_email.js";
 
 /* =====================================================
    ACCOUNT SETUP PAGE
