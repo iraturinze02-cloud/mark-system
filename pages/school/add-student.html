@@ -915,23 +915,17 @@ async function loadClasses() {
 
     classes = result.classes;
 
-    // Automatically select the first class if none is selected
-    // or if the previously selected class no longer exists.
-    const selectedClassExists = classes.some(
-        c => String(c.id) === String(selectedClassId)
-    );
-
-    if (classes.length > 0 && !selectedClassExists) {
+    // Automatically select the first available class.
+    if (classes.length > 0) {
         selectedClassId = String(classes[0].id);
-    }
-
-    if (classes.length === 0) {
-        selectedClassId = null;
+        formClassId = String(classes[0].id);
+    } else {
+        selectedClassId = "";
+        formClassId = "";
     }
 
     renderFormClassCards();
 }
-
 /* =====================================
    LOAD STUDENTS
 ===================================== */
@@ -960,7 +954,6 @@ async function loadStudents() {
 
 function switchTab(tab) {
     currentTab = tab;
-    selectedClassId = "";
 
     activeTab.classList.toggle("active", tab === "active");
     inactiveTab.classList.toggle("active", tab === "inactive");
@@ -992,13 +985,9 @@ function renderClassCards() {
         getStudentsByStatus(currentTab, cls.id).length > 0
     );
 
-    if (!availableClasses.some(cls =>
-        String(cls.id) === String(selectedClassId)
-    )) {
-        selectedClassId = "";
-    }
-
     if (availableClasses.length === 0) {
+        selectedClassId = "";
+
         const message = document.createElement("p");
         message.className = "empty-message";
 
@@ -1008,6 +997,16 @@ function renderClassCards() {
 
         classCards.appendChild(message);
         return;
+    }
+
+    // Keep the selected class if it has students in this tab.
+    // Otherwise automatically select the first available class.
+    const selectedClassExists = availableClasses.some(
+        cls => String(cls.id) === String(selectedClassId)
+    );
+
+    if (!selectedClassExists) {
+        selectedClassId = String(availableClasses[0].id);
     }
 
     availableClasses.forEach(cls => {
@@ -1040,7 +1039,6 @@ function renderClassCards() {
         classCards.appendChild(card);
     });
 }
-
 /* =====================================
    RENDER FORM CLASS CARDS
 ===================================== */
