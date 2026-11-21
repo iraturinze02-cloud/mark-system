@@ -47,6 +47,10 @@
                     <span class="sidebar-link-icon">👨‍🏫</span>
                     <span>Add Teacher</span>
                 </a>
+                <a href="add-dos.html" class="sidebar-link">
+                    <span class="sidebar-link-icon">🙍‍♂️</span>
+                    <span>Add DOS</span>
+                </a>
 
                 <a href="add-student.html" class="sidebar-link">
                     <span class="sidebar-link-icon">🎓</span>
