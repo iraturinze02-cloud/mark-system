@@ -692,6 +692,7 @@ const role = localStorage.getItem("role");
 if (!currentUser || ![
     "sector_admin",
     "school_admin",
+    "dos",
     "teacher"
 ].includes(role)) {
     window.location.href = "../../index.html";
@@ -699,7 +700,8 @@ if (!currentUser || ![
 
 const isAdmin = [
     "sector_admin",
-    "school_admin"
+    "school_admin",
+    "dos"
 ].includes(role);
 
 document.getElementById("roleDescription").textContent =
