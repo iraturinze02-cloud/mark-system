@@ -673,6 +673,7 @@
 
 <body>
 
+
     <!-- SIDEBAR OVERLAY -->
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
@@ -708,18 +709,35 @@
                 <span>Dashboard</span>
             </a>
 
+            <!-- MANAGE STUDENTS -->
+            <a href="../school/add-student.html"
+               class="nav-link">
+                <i class="fas fa-user-graduate"></i>
+                <span>Manage Students</span>
+            </a>
+
+            <!-- SCHOOL MARKS -->
             <a href="../school/school-marks.html"
                class="nav-link">
                 <i class="fas fa-chart-column"></i>
                 <span>School Marks</span>
             </a>
 
+            <!-- INSPECT SCHOOL MARKS -->
+            <a href="../school/inspect-school-marks.html"
+               class="nav-link">
+                <i class="fas fa-clipboard-check"></i>
+                <span>Inspect School Marks</span>
+            </a>
+
+            <!-- TEACHERS' PERFORMANCE -->
             <a href="../school/teachers-performance.html"
                class="nav-link">
                 <i class="fas fa-chart-line"></i>
                 <span>Teachers' Performance</span>
             </a>
 
+            <!-- TESTS -->
             <a href="../admin/tests.html"
                class="nav-link">
                 <i class="fas fa-file-pen"></i>
@@ -827,6 +845,9 @@
                 </button>
 
             </div>
+</header>
+</div>
+
 
         </header>
 
@@ -868,7 +889,7 @@
                     This is your central workspace for overseeing academic
                     activities within your school. Monitor marks, review
                     teachers' academic performance and follow assessment
-                    activities across O-Level and A-Level.
+                    activities across classes.
                 </p>
 
             </section>
@@ -887,8 +908,31 @@
                     </div>
 
                 </div>
+                
 
                 <div class="cards-grid">
+
+                    <!-- MANAGE STUDENTS -->
+<a href="../school/add-student.html"
+   class="dashboard-card">
+
+    <div class="card-icon">
+        <i class="fas fa-user-graduate"></i>
+    </div>
+
+    <h3>Manage Students</h3>
+
+    <p>
+        Register students, organize them according to
+        their respective classes and manage student records.
+    </p>
+
+    <div class="card-link">
+        Manage Students
+        <i class="fas fa-arrow-right"></i>
+    </div>
+
+</a>
 
                     <!-- SCHOOL MARKS -->
                     <a href="../school/school-marks.html"
@@ -911,6 +955,28 @@
                         </div>
 
                     </a>
+
+                    <!-- INSPECT SCHOOL MARKS -->
+<a href="../school/inspect-school-marks.html"
+   class="dashboard-card">
+
+    <div class="card-icon">
+        <i class="fas fa-clipboard-check"></i>
+    </div>
+
+    <h3>Inspect School Marks</h3>
+
+    <p>
+        Inspect recorded marks, review students' results
+        and monitor the accuracy of school assessments.
+    </p>
+
+    <div class="card-link">
+        Inspect School Marks
+        <i class="fas fa-arrow-right"></i>
+    </div>
+
+</a>
 
                     <!-- TEACHER PERFORMANCE -->
                     <a href="../school/teachers-performance.html"
