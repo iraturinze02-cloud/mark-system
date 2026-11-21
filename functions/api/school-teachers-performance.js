@@ -550,7 +550,8 @@ export async function onRequestGet(context) {
 
     const auth = await authenticateRole(
         context,
-        "school_admin"
+        "school_admin",
+        "dos"
     );
 
     if (auth.error) return auth.error;
