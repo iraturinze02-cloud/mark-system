@@ -56,7 +56,6 @@ function validateSubjectMarks(subjectIds, subjectMarks) {
         subjectIds.map(subjectId => [subjectId, 100])
     );
 
-    // No maximum marks supplied: default all to 100.
     if (
         subjectMarks === null ||
         subjectMarks === undefined ||
@@ -117,7 +116,6 @@ function validateSubjectMarks(subjectIds, subjectMarks) {
 
         const rawMarks = item.total_marks ?? item.totalMarks;
 
-        // Blank maximum mark: default to 100.
         if (
             rawMarks === null ||
             rawMarks === undefined ||
@@ -150,6 +148,10 @@ function validateSubjectMarks(subjectIds, subjectMarks) {
         }))
     };
 }
+
+/* =====================================================
+   CLOSE EXPIRED TESTS
+===================================================== */
 
 async function closeExpiredTests(client) {
     await client.query(`
@@ -198,10 +200,19 @@ export async function onRequestGet(context) {
         }
 
         /* ---------------------------------------------
-           SCHOOL ADMIN VISIBILITY
+           SCHOOL ADMIN AND DOS VISIBILITY
         --------------------------------------------- */
 
-        else if (auth.role === "school_admin") {
+        else if (
+            ["school_admin", "dos"].includes(auth.role)
+        ) {
+            if (!auth.schoolId) {
+                return json({
+                    success: false,
+                    message: "Your account is not linked to a school."
+                }, 403);
+            }
+
             visibilityCondition = `
                 (
                     t.school_id = $1
@@ -263,12 +274,21 @@ export async function onRequestGet(context) {
 
         /* ---------------------------------------------
            CAN MANAGE TESTS
+
+           Sector Admin:
+           Can manage tests created for their sector.
+
+           School Admin and DOS:
+           Can manage tests created for their school.
+
+           Teacher:
+           Cannot manage tests.
         --------------------------------------------- */
 
         const manageScopeId =
             auth.role === "sector_admin"
                 ? auth.sectorId
-                : auth.role === "school_admin"
+                : ["school_admin", "dos"].includes(auth.role)
                     ? auth.schoolId
                     : 0;
 
@@ -298,7 +318,7 @@ export async function onRequestGet(context) {
                          AND t.sector_id = $${parameters.length + 2}::bigint
                     THEN TRUE
 
-                    WHEN $${parameters.length + 1}::text = 'school_admin'
+                    WHEN $${parameters.length + 1}::text IN ('school_admin', 'dos')
                          AND t.school_id = $${parameters.length + 2}::bigint
                     THEN TRUE
 
@@ -429,7 +449,9 @@ export async function onRequestGet(context) {
             schools = result.rows;
         }
 
-        else if (auth.role === "school_admin") {
+        else if (
+            ["school_admin", "dos"].includes(auth.role)
+        ) {
             const result = await client.query(
                 `
                 SELECT
@@ -495,7 +517,9 @@ export async function onRequestGet(context) {
             classes = result.rows;
         }
 
-        else if (auth.role === "school_admin") {
+        else if (
+            ["school_admin", "dos"].includes(auth.role)
+        ) {
             const result = await client.query(
                 `
                 SELECT
@@ -620,13 +644,21 @@ export async function onRequestPost(context) {
         return auth.error;
     }
 
+    /* ---------------------------------------------
+       AUTHORIZATION
+
+       Sector Admin, School Admin and DOS
+       can create tests.
+
+       Teachers cannot create tests.
+    --------------------------------------------- */
+
     if (
-        auth.role !== "sector_admin" &&
-        auth.role !== "school_admin"
+        !["sector_admin", "school_admin", "dos"].includes(auth.role)
     ) {
         return json({
             success: false,
-            message: "Teachers cannot create tests."
+            message: "You are not authorized to create tests."
         }, 403);
     }
 
@@ -658,11 +690,26 @@ export async function onRequestPost(context) {
 
     /* ---------------------------------------------
        READ SELECTED SCHOOLS
+
+       School Admin and DOS:
+       Automatically use their own school.
+
+       Sector Admin:
+       Selects schools within their sector.
     --------------------------------------------- */
 
     let schoolIds;
 
-    if (auth.role === "school_admin") {
+    if (
+        ["school_admin", "dos"].includes(auth.role)
+    ) {
+        if (!auth.schoolId) {
+            return json({
+                success: false,
+                message: "Your account is not linked to a school."
+            }, 403);
+        }
+
         schoolIds = [String(auth.schoolId)];
     } else {
         schoolIds = uniqueIds(
@@ -865,12 +912,15 @@ export async function onRequestPost(context) {
             `,
             [
                 testName,
+
                 auth.role === "sector_admin"
                     ? auth.sectorId
                     : null,
-               ["school_admin", "dos"].includes(auth.role)
+
+                ["school_admin", "dos"].includes(auth.role)
                     ? auth.schoolId
                     : null,
+
                 auth.userId,
                 closingAt
             ]
