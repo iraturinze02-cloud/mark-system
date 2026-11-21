@@ -14,7 +14,6 @@
 
 
 <title>School Marks | Results Dashboard</title>
-    <link rel="stylesheet" href="../css/school-sidebar.css">
 
 <style>
 * {
@@ -485,7 +484,6 @@ tbody tr:hover {
 document.addEventListener("DOMContentLoaded", async function () {
     try {
         const response = await fetch("/api/auth/session", {
-            method: "GET",
             credentials: "same-origin",
             cache: "no-store"
         });
@@ -496,13 +494,20 @@ document.addEventListener("DOMContentLoaded", async function () {
             return;
         }
 
-        if (data.user.role === "school_admin") {
-            document.getElementById("schoolSidebarContainer").style.display = "block";
-
-            const script = document.createElement("script");
-            script.src = "../js/school-sidebar.js";
-            document.body.appendChild(script);
+        if (data.user.role !== "school_admin") {
+            return;
         }
+
+        // Load sidebar CSS only for school_admin
+        const css = document.createElement("link");
+        css.rel = "stylesheet";
+        css.href = "../css/school-sidebar.css";
+        document.head.appendChild(css);
+
+        // Load sidebar JavaScript only for school_admin
+        const script = document.createElement("script");
+        script.src = "../js/school-sidebar.js";
+        document.body.appendChild(script);
 
     } catch (error) {
         console.error("Sidebar loading error:", error);
