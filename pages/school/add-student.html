@@ -497,7 +497,7 @@ try {
 }
 
 if (
-    localStorage.getItem("role") !== "school_admin" ||
+    !["school_admin", "dos"].includes(localStorage.getItem("role")) ||
     !currentUser
 ) {
     window.location.replace("../../index.html");
