@@ -60,9 +60,9 @@ async function authenticateSchoolAdmin(request, env, db) {
     }
 
     if (
-        payload.role !== "school_admin" ||
-        !payload.sub
-    ) {
+    !["school_admin", "dos"].includes(payload.role) ||
+    !payload.sub
+) {
         return {
             error: json({
                 success: false,
