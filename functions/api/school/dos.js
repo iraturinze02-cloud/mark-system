@@ -706,9 +706,14 @@ export async function onRequestPut(context) {
         }
 
         return json({
-            success: false,
-            message: "Failed to update DOS details. Please try again."
-        }, 500);
+    success: false,
+    message: error.message || "Unknown database error.",
+    code: error.code || null,
+    detail: error.detail || null,
+    constraint: error.constraint || null,
+    table: error.table || null,
+    column: error.column || null
+}, 500);
 
     } finally {
 
