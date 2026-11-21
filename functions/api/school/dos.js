@@ -472,3 +472,249 @@ Fila Grades System
         }
     }
 }
+
+
+/* =====================================================
+   UPDATE SCHOOL DOS
+===================================================== */
+
+export async function onRequestPut(context) {
+
+    const auth = await requireSchoolAdmin(context);
+
+    if (auth.error) return auth.error;
+
+    if (!auth.schoolId) {
+        return json({
+            success: false,
+            message: "Your account is not assigned to a school."
+        }, 403);
+    }
+
+    let data;
+
+    try {
+        data = await context.request.json();
+    } catch {
+        return json({
+            success: false,
+            message: "Invalid JSON request."
+        }, 400);
+    }
+
+    const fullName = String(data.full_name || "").trim();
+    const phone = String(data.phone || "").trim();
+    const email = String(normalizeEmail(data.email) || "").trim();
+
+    if (!fullName || !phone || !email) {
+        return json({
+            success: false,
+            message: "Full name, phone number and email are required."
+        }, 400);
+    }
+
+    if (
+        fullName.length > 200 ||
+        phone.length > 30 ||
+        email.length > 254
+    ) {
+        return json({
+            success: false,
+            message: "One or more fields exceed the allowed length."
+        }, 400);
+    }
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        return json({
+            success: false,
+            message: "Enter a valid email address."
+        }, 400);
+    }
+
+    let client;
+    let transactionStarted = false;
+
+    try {
+
+        client = await connectDB(context);
+
+        await client.query("BEGIN");
+        transactionStarted = true;
+
+        /* =============================================
+           FIND DOS BELONGING TO THIS SCHOOL
+        ============================================= */
+
+        const existing = await client.query(
+            `SELECT
+                id,
+                email
+             FROM users
+             WHERE school_id = $1
+               AND role = 'dos'
+             LIMIT 1
+             FOR UPDATE`,
+            [auth.schoolId]
+        );
+
+        if (existing.rowCount === 0) {
+
+            await client.query("ROLLBACK");
+            transactionStarted = false;
+
+            return json({
+                success: false,
+                message: "No DOS account was found for your school."
+            }, 404);
+        }
+
+        const dosId = existing.rows[0].id;
+
+        const emailChanged =
+            String(existing.rows[0].email || "").toLowerCase() !==
+            email.toLowerCase();
+
+        /* =============================================
+           CHECK DUPLICATE PHONE
+           EXCLUDE CURRENT DOS
+        ============================================= */
+
+        const duplicatePhone = await client.query(
+            `SELECT id
+             FROM users
+             WHERE phone = $1
+               AND id <> $2
+             LIMIT 1`,
+            [phone, dosId]
+        );
+
+        if (duplicatePhone.rowCount > 0) {
+
+            await client.query("ROLLBACK");
+            transactionStarted = false;
+
+            return json({
+                success: false,
+                message: "This phone number is already registered to another user."
+            }, 409);
+        }
+
+        /* =============================================
+           CHECK DUPLICATE EMAIL
+           EXCLUDE CURRENT DOS
+        ============================================= */
+
+        const duplicateEmail = await client.query(
+            `SELECT id
+             FROM users
+             WHERE LOWER(email) = LOWER($1)
+               AND id <> $2
+             LIMIT 1`,
+            [email, dosId]
+        );
+
+        if (duplicateEmail.rowCount > 0) {
+
+            await client.query("ROLLBACK");
+            transactionStarted = false;
+
+            return json({
+                success: false,
+                message: "This email address is already registered to another user."
+            }, 409);
+        }
+
+        /* =============================================
+           UPDATE DOS DETAILS
+
+           - Keep role unchanged.
+           - Keep school_id unchanged.
+           - Keep password unchanged.
+           - Keep account setup status unchanged.
+           - Require email verification again if email changes.
+        ============================================= */
+
+        const result = await client.query(
+            `UPDATE users
+             SET
+                full_name = $1,
+                phone = $2,
+                email = $3,
+                email_verified = CASE
+                    WHEN LOWER(COALESCE(email, '')) <> LOWER($3)
+                    THEN FALSE
+                    ELSE email_verified
+                END
+             WHERE id = $4
+               AND school_id = $5
+               AND role = 'dos'
+             RETURNING
+                id,
+                full_name,
+                phone,
+                email,
+                email_verified,
+                must_change_password,
+                school_id,
+                role,
+                status`,
+            [
+                fullName,
+                phone,
+                email,
+                dosId,
+                auth.schoolId
+            ]
+        );
+
+        if (result.rowCount === 0) {
+
+            await client.query("ROLLBACK");
+            transactionStarted = false;
+
+            return json({
+                success: false,
+                message: "The DOS account could not be updated."
+            }, 404);
+        }
+
+        await client.query("COMMIT");
+        transactionStarted = false;
+
+        return json({
+            success: true,
+            message: emailChanged
+                ? "DOS details updated successfully. The new email address must be verified."
+                : "DOS details updated successfully.",
+            dos: result.rows[0],
+            email_changed: emailChanged
+        });
+
+    } catch (error) {
+
+        if (client && transactionStarted) {
+            await client.query("ROLLBACK").catch(() => {});
+        }
+
+        console.error("Update DOS error:", error);
+
+        if (error.code === "23505") {
+            return json({
+                success: false,
+                message: "The phone number or email address is already registered."
+            }, 409);
+        }
+
+        return json({
+            success: false,
+            message: "Failed to update DOS details. Please try again."
+        }, 500);
+
+    } finally {
+
+        if (client) {
+            await client.end().catch(() => {});
+        }
+    }
+}
+
