@@ -296,10 +296,15 @@ export async function requireSchoolAdmin(context) {
     return authenticateRole(context, "school_admin");
 }
 
+export async function requireDOS(context) {
+    return authenticateRole(context, "dos");
+}
+
 export async function requireTestUser(context) {
     return authenticateRole(context, [
         "sector_admin",
         "school_admin",
+        "dos",
         "teacher"
     ]);
 }
