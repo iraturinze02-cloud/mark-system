@@ -170,6 +170,7 @@ async function checkExistingSession() {
             "owner",
             "sector_admin",
             "school_admin",
+            "dos",
             "teacher"
         ].includes(role)) {
             localStorage.removeItem("role");
@@ -247,6 +248,7 @@ async function loginUser() {
             "owner",
             "sector_admin",
             "school_admin",
+            "dos",
             "teacher"
         ].includes(result.user.role)) {
             throw new Error("Invalid user role.");
