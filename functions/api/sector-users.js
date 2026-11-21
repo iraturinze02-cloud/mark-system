@@ -10,7 +10,7 @@ import { jwtVerify } from "jose";
    CONFIGURATION
 ===================================================== */
 
-const ALLOWED_ROLES = ["school_admin", "teacher"];
+const ALLOWED_ROLES = ["school_admin","dos", "teacher"];
 
 /* =====================================================
    READ HTTP-ONLY SESSION COOKIE
