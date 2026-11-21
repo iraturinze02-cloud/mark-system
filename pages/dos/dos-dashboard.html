@@ -673,7 +673,6 @@
 
 <body>
 
-
     <!-- SIDEBAR OVERLAY -->
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
@@ -845,9 +844,6 @@
                 </button>
 
             </div>
-</header>
-</div>
-
 
         </header>
 
@@ -908,31 +904,30 @@
                     </div>
 
                 </div>
-                
 
                 <div class="cards-grid">
 
                     <!-- MANAGE STUDENTS -->
-<a href="../school/add-student.html"
-   class="dashboard-card">
+                    <a href="../school/add-student.html"
+                       class="dashboard-card">
 
-    <div class="card-icon">
-        <i class="fas fa-user-graduate"></i>
-    </div>
+                        <div class="card-icon">
+                            <i class="fas fa-user-graduate"></i>
+                        </div>
 
-    <h3>Manage Students</h3>
+                        <h3>Manage Students</h3>
 
-    <p>
-        Register students, organize them according to
-        their respective classes and manage student records.
-    </p>
+                        <p>
+                            Register students, organize them according to
+                            their respective classes and manage student records.
+                        </p>
 
-    <div class="card-link">
-        Manage Students
-        <i class="fas fa-arrow-right"></i>
-    </div>
+                        <div class="card-link">
+                            Manage Students
+                            <i class="fas fa-arrow-right"></i>
+                        </div>
 
-</a>
+                    </a>
 
                     <!-- SCHOOL MARKS -->
                     <a href="../school/school-marks.html"
@@ -957,26 +952,26 @@
                     </a>
 
                     <!-- INSPECT SCHOOL MARKS -->
-<a href="../school/inspect-school-marks.html"
-   class="dashboard-card">
+                    <a href="../school/inspect-school-marks.html"
+                       class="dashboard-card">
 
-    <div class="card-icon">
-        <i class="fas fa-clipboard-check"></i>
-    </div>
+                        <div class="card-icon">
+                            <i class="fas fa-clipboard-check"></i>
+                        </div>
 
-    <h3>Inspect School Marks</h3>
+                        <h3>Inspect School Marks</h3>
 
-    <p>
-        Inspect recorded marks, review students' results
-        and monitor the accuracy of school assessments.
-    </p>
+                        <p>
+                            Inspect recorded marks, review students' results
+                            and monitor the accuracy of school assessments.
+                        </p>
 
-    <div class="card-link">
-        Inspect School Marks
-        <i class="fas fa-arrow-right"></i>
-    </div>
+                        <div class="card-link">
+                            Inspect School Marks
+                            <i class="fas fa-arrow-right"></i>
+                        </div>
 
-</a>
+                    </a>
 
                     <!-- TEACHER PERFORMANCE -->
                     <a href="../school/teachers-performance.html"
@@ -1090,40 +1085,39 @@
 
     </div>
 
-    
-<script>
-    /* ==========================================
-       DOS AUTHENTICATION
-    ========================================== */
+    <script>
+        /* ==========================================
+           DOS AUTHENTICATION
+        ========================================== */
 
-    // The server-side auth guard is the authority.
-    // Do not reject users based on localStorage.
+        // The server-side auth guard is the authority.
+        // Do not reject users based on localStorage.
 
-    window.FILA_PAGE_AUTH = {
-        roles: ["dos"]
-    };
+        window.FILA_PAGE_AUTH = {
+            roles: ["dos"]
+        };
 
-    document.addEventListener("fila-auth-ready", function (event) {
+        document.addEventListener("fila-auth-ready", function (event) {
 
-        const currentUser = event.detail;
+            const currentUser = event.detail;
 
-        if (!currentUser || currentUser.role !== "dos") {
-            window.location.replace("../../index.html");
-            return;
-        }
+            if (!currentUser || currentUser.role !== "dos") {
+                window.location.replace("../../index.html");
+                return;
+            }
 
-        const fullName =
-            currentUser.fullName ||
-            currentUser.full_name ||
-            "Director of Studies";
+            const fullName =
+                currentUser.fullName ||
+                currentUser.full_name ||
+                "Director of Studies";
 
-        document.getElementById("welcomeTitle").textContent =
-            "Welcome, " + fullName;
+            document.getElementById("welcomeTitle").textContent =
+                "Welcome, " + fullName;
 
-        document.getElementById("topbarUserName").textContent =
-            fullName;
+            document.getElementById("topbarUserName").textContent =
+                fullName;
 
-    });
+        });
 
 
         /* ==========================================
@@ -1246,13 +1240,7 @@
 
     </script>
 
-    <script>
-    window.FILA_PAGE_AUTH = {
-        roles: ["dos"]
-    };
-</script>
-
-<script src="../js/auth-guard.js"></script>
+    <script src="../js/auth-guard.js"></script>
 
 </body>
 </html>
