@@ -134,11 +134,12 @@ export async function onRequest(context) {
         ============================================= */
 
         const allowedRoles = [
-            "owner",
-            "sector_admin",
-            "school_admin",
-            "teacher"
-        ];
+    "owner",
+    "sector_admin",
+    "school_admin",
+    "dos",
+    "teacher"
+];
 
         if (!allowedRoles.includes(user.role)) {
             return Response.json({
