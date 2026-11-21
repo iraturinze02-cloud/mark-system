@@ -13,7 +13,6 @@
     <link rel="icon" type="image/png" sizes="512x512" href="../../images/favicon/favicon.png">
 <title>Students Management</title>
 <link rel="stylesheet" href="../../style.css">
-    <link rel="stylesheet" href="../css/school-sidebar.css">
 
 <style>
 :root {
@@ -477,7 +476,41 @@ th {
 
 </div>
     </main>
-<script src="../js/school-sidebar.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", async function () {
+    try {
+        const response = await fetch("/api/auth/session", {
+            credentials: "same-origin",
+            cache: "no-store"
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || !data.success || !data.user) {
+            return;
+        }
+
+        if (data.user.role !== "school_admin") {
+            return;
+        }
+
+        // Load sidebar CSS only for school_admin
+        const css = document.createElement("link");
+        css.rel = "stylesheet";
+        css.href = "../css/school-sidebar.css";
+        document.head.appendChild(css);
+
+        // Load sidebar JavaScript only for school_admin
+        const script = document.createElement("script");
+        script.src = "../js/school-sidebar.js";
+        document.body.appendChild(script);
+
+    } catch (error) {
+        console.error("Sidebar loading error:", error);
+    }
+});
+</script>
+
 
 <script>
 "use strict";
@@ -583,7 +616,7 @@ async function apiRequest(url, options = {}) {
     if (!response.ok || result.success === false) {
 
         if (response.status === 401 || response.status === 403) {
-            window.location.replace("login.html");
+            window.location.replace("../../index.html");
         }
 
         throw new Error(
