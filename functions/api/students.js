@@ -5,13 +5,25 @@ import {
     json
 } from "../_utils.js";
 
+/* =====================================================
+   GET STUDENTS
+   SCHOOL ADMIN + DOS
+===================================================== */
+
 export async function onRequestGet(context) {
     const auth = await authenticateRole(
-    context,
-    ["school_admin", "dos"]
-);
+        context,
+        ["school_admin", "dos"]
+    );
 
     if (auth.error) return auth.error;
+
+    if (!auth.schoolId) {
+        return json({
+            success: false,
+            message: "Your account is not linked to a school."
+        }, 403);
+    }
 
     let client;
 
@@ -60,14 +72,32 @@ export async function onRequestGet(context) {
         }, 500);
 
     } finally {
-        if (client) await client.end().catch(() => {});
+        if (client) {
+            await client.end().catch(() => {});
+        }
     }
 }
 
+
+/* =====================================================
+   REGISTER STUDENT
+   SCHOOL ADMIN + DOS
+===================================================== */
+
 export async function onRequestPost(context) {
-    const auth = await requireSchoolAdmin(context);
+    const auth = await authenticateRole(
+        context,
+        ["school_admin", "dos"]
+    );
 
     if (auth.error) return auth.error;
+
+    if (!auth.schoolId) {
+        return json({
+            success: false,
+            message: "Your account is not linked to a school."
+        }, 403);
+    }
 
     let data;
 
@@ -82,13 +112,19 @@ export async function onRequestPost(context) {
 
     const classId = Number(data.class_id);
     const fullName = String(data.full_name || "").trim();
+
     const gender = data.gender
         ? String(data.gender).trim()
         : null;
+
     const dateOfBirth = data.date_of_birth || null;
     const admissionDate = data.admission_date || null;
 
-    if (!Number.isSafeInteger(classId) || classId <= 0 || !fullName) {
+    if (
+        !Number.isSafeInteger(classId) ||
+        classId <= 0 ||
+        !fullName
+    ) {
         return json({
             success: false,
             message: "Please provide a valid class and student name."
@@ -117,6 +153,7 @@ export async function onRequestPost(context) {
     try {
         client = await connectDB(context);
 
+        // Confirm that the selected class belongs to this school.
         const classResult = await client.query(
             `SELECT c.id
              FROM classes c
@@ -180,6 +217,8 @@ export async function onRequestPost(context) {
         }, 500);
 
     } finally {
-        if (client) await client.end().catch(() => {});
+        if (client) {
+            await client.end().catch(() => {});
+        }
     }
 }
