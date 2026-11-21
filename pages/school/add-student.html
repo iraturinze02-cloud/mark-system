@@ -914,6 +914,21 @@ async function loadClasses() {
     }
 
     classes = result.classes;
+
+    // Automatically select the first class if none is selected
+    // or if the previously selected class no longer exists.
+    const selectedClassExists = classes.some(
+        c => String(c.id) === String(selectedClassId)
+    );
+
+    if (classes.length > 0 && !selectedClassExists) {
+        selectedClassId = String(classes[0].id);
+    }
+
+    if (classes.length === 0) {
+        selectedClassId = null;
+    }
+
     renderFormClassCards();
 }
 
