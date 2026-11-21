@@ -7,7 +7,10 @@ import {
 
 import {
     normalizeEmail,
-    sendEmail
+    sendEmail,
+    generateOtp,
+    saveOtp,
+    verificationEmail
 } from "../../_email.js";
 
 /* =====================================================
@@ -64,12 +67,9 @@ export async function onRequestGet(context) {
                 status,
                 school_id,
                 role
-
              FROM users
-
              WHERE school_id = $1
                AND role = 'dos'
-
              LIMIT 1`,
             [auth.schoolId]
         );
@@ -180,9 +180,6 @@ export async function onRequestPost(context) {
 
         /* =============================================
            LOCK SCHOOL DOS CREATION
-
-           Prevent simultaneous creation requests
-           for the same school.
         ============================================= */
 
         await client.query(
@@ -262,9 +259,6 @@ export async function onRequestPost(context) {
 
         /* =============================================
            GENERATE TEMPORARY PASSWORD VALUE
-
-           The existing account setup workflow
-           will allow the DOS to create a password.
         ============================================= */
 
         const temporaryPassword =
@@ -473,7 +467,6 @@ Fila Grades System
     }
 }
 
-
 /* =====================================================
    UPDATE SCHOOL DOS
 ===================================================== */
@@ -494,8 +487,11 @@ export async function onRequestPut(context) {
     let data;
 
     try {
+
         data = await context.request.json();
+
     } catch {
+
         return json({
             success: false,
             message: "Invalid JSON request."
@@ -504,9 +500,14 @@ export async function onRequestPut(context) {
 
     const fullName = String(data.full_name || "").trim();
     const phone = String(data.phone || "").trim();
-    const email = String(normalizeEmail(data.email) || "").trim();
+    const email = normalizeEmail(data.email);
+
+    /* =============================================
+       VALIDATION
+    ============================================= */
 
     if (!fullName || !phone || !email) {
+
         return json({
             success: false,
             message: "Full name, phone number and email are required."
@@ -518,6 +519,7 @@ export async function onRequestPut(context) {
         phone.length > 30 ||
         email.length > 254
     ) {
+
         return json({
             success: false,
             message: "One or more fields exceed the allowed length."
@@ -525,6 +527,7 @@ export async function onRequestPut(context) {
     }
 
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+
         return json({
             success: false,
             message: "Enter a valid email address."
@@ -641,7 +644,7 @@ export async function onRequestPut(context) {
                 phone = $2,
                 email = $3::varchar,
                 email_verified = CASE
-                    WHEN LOWER(COALESCE(email, '')) <> LOWER($3)
+                    WHEN LOWER(COALESCE(email, '')) <> LOWER($3::varchar)
                     THEN FALSE
                     ELSE email_verified
                 END
@@ -678,27 +681,116 @@ export async function onRequestPut(context) {
             }, 404);
         }
 
+        /* =============================================
+           GENERATE AND SAVE NEW EMAIL VERIFICATION OTP
+        ============================================= */
+
+        let verificationCode = null;
+
+        if (emailChanged) {
+
+            verificationCode = generateOtp();
+
+            await saveOtp(
+                client,
+                dosId,
+                verificationCode
+            );
+        }
+
+        /* =============================================
+           COMMIT TRANSACTION
+        ============================================= */
+
         await client.query("COMMIT");
         transactionStarted = false;
 
+        console.log(
+            "DOS details updated:",
+            dosId,
+            "School:",
+            auth.schoolId,
+            "Email changed:",
+            emailChanged
+        );
+
+        /* =============================================
+           SEND EMAIL VERIFICATION CODE
+        ============================================= */
+
+        let verificationSent = false;
+
+        if (emailChanged) {
+
+            try {
+
+                const emailContent = verificationEmail(
+                    fullName,
+                    verificationCode,
+                    email
+                );
+
+                await sendEmail(context, {
+
+                    to: email,
+
+                    subject: emailContent.subject,
+
+                    html: emailContent.html,
+
+                    text: emailContent.text
+
+                });
+
+                verificationSent = true;
+
+                console.log(
+                    "DOS email verification sent:",
+                    dosId
+                );
+
+            } catch (emailError) {
+
+                console.error(
+                    "DOS email verification error:",
+                    emailError
+                );
+            }
+        }
+
+        /* =============================================
+           RESPONSE
+        ============================================= */
+
         return json({
+
             success: true,
-            message: emailChanged
-                ? "DOS details updated successfully. The new email address must be verified."
-                : "DOS details updated successfully.",
+
+            message: !emailChanged
+                ? "DOS details updated successfully."
+                : verificationSent
+                    ? "DOS details updated successfully. A verification code has been sent to the new email address."
+                    : "DOS details updated, but the verification email could not be sent. Please try again.",
+
             dos: result.rows[0],
-            email_changed: emailChanged
+
+            email_changed: emailChanged,
+
+            verification_sent: verificationSent
+
         });
 
     } catch (error) {
 
         if (client && transactionStarted) {
+
             await client.query("ROLLBACK").catch(() => {});
         }
 
         console.error("Update DOS error:", error);
 
         if (error.code === "23505") {
+
             return json({
                 success: false,
                 message: "The phone number or email address is already registered."
@@ -706,14 +798,9 @@ export async function onRequestPut(context) {
         }
 
         return json({
-    success: false,
-    message: error.message || "Unknown database error.",
-    code: error.code || null,
-    detail: error.detail || null,
-    constraint: error.constraint || null,
-    table: error.table || null,
-    column: error.column || null
-}, 500);
+            success: false,
+            message: "Failed to update DOS details. Please try again."
+        }, 500);
 
     } finally {
 
@@ -722,4 +809,3 @@ export async function onRequestPut(context) {
         }
     }
 }
-
