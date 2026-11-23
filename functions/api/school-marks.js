@@ -7,18 +7,22 @@ import {
 
 /* =====================================================
    GET: SCHOOL MARKS — VIEW ONLY
-   Includes test creator information for report cards.
 
    ACCESS:
-   1. Sector Admin:
-      - Views tests and results across their sector.
 
-   2. School Admin / DOS:
-      - Can view results across their sector only when:
+   1. SECTOR ADMIN:
+      - Views results across their sector.
+
+   2. SCHOOL ADMIN / DOS:
+      - Without test_id:
+        Views results belonging to their own school,
+        whether the test is open or closed.
+
+      - With test_id:
+        Can view sector-wide results only when:
         a. The test was created by a Sector Admin.
         b. The test status is closed.
         c. The test belongs to their sector.
-      - Must provide test_id.
 ===================================================== */
 
 export async function onRequestGet(context) {
@@ -48,7 +52,7 @@ export async function onRequestGet(context) {
 
         /* =================================================
            SECTOR ADMIN
-           All schools and classes in their sector.
+           Preserve existing sector-wide access.
         ================================================= */
 
         if (auth.role === "sector_admin") {
@@ -79,92 +83,126 @@ export async function onRequestGet(context) {
 
         /* =================================================
            SCHOOL ADMIN / DOS
-           Closed Sector Admin-created tests only.
         ================================================= */
 
         else {
 
-            if (!auth.schoolId || !requestedTestId) {
+            if (!auth.schoolId) {
 
                 return json({
                     success: false,
-                    message: accessDeniedMessage
+                    message: "Your account is not linked to a school."
                 }, 403);
 
             }
 
-            /* ---------------------------------------------
-               VERIFY TEST ACCESS
+            /* =================================================
+               CASE 1: NORMAL SCHOOL MARKS DASHBOARD
 
-               The test must:
-               - Exist.
-               - Be closed.
-               - Have been created by a Sector Admin.
-               - Belong to the user's sector.
-            --------------------------------------------- */
+               No test_id means school-marks.html.
 
-            const accessCheck = await client.query(
-                `
-                SELECT t.id
+               Allow the user to view their own school's
+               results without requiring the test to be closed.
+            ================================================= */
 
-                FROM tests t
+            if (!requestedTestId) {
 
-                INNER JOIN users creator
-                    ON creator.id = t.created_by
+                scopeCondition = `
+                    tc.school_id = $1
+                    AND (
+                        t.school_id = $1
+                        OR EXISTS (
+                            SELECT 1
+                            FROM test_schools assigned_school
+                            WHERE assigned_school.test_id = t.id
+                              AND assigned_school.school_id = $1
+                        )
+                    )
+                `;
 
-                INNER JOIN schools user_school
-                    ON user_school.id = $2
-
-                WHERE t.id = $1
-                  AND t.status = 'closed'
-                  AND creator.role = 'sector_admin'
-                  AND t.sector_id = user_school.sector_id
-
-                LIMIT 1
-                `,
-                [requestedTestId, auth.schoolId]
-            );
-
-            if (!accessCheck.rows.length) {
-
-                return json({
-                    success: false,
-                    message: accessDeniedMessage
-                }, 403);
+                parameters = [auth.schoolId];
 
             }
 
-            /* ---------------------------------------------
-               LOAD ONLY THE SELECTED TEST AND ALL ITS
-               CLASSES IN THE USER'S SECTOR.
-            --------------------------------------------- */
+            /* =================================================
+               CASE 2: SECTOR-WIDE RESULTS PAGE
 
-            scopeCondition = `
-                t.id = $1
-                AND t.status = 'closed'
-                AND creator.role = 'sector_admin'
+               A test_id means the user is requesting results
+               across all schools in their sector.
 
-                AND t.sector_id = (
-                    SELECT sector_id
-                    FROM schools
-                    WHERE id = $2
-                )
+               Apply the sector-wide access restrictions.
+            ================================================= */
 
-                AND tc.school_id IN (
-                    SELECT id
-                    FROM schools
-                    WHERE sector_id = (
+            else {
+
+                /* ---------------------------------------------
+                   VERIFY TEST ACCESS
+                --------------------------------------------- */
+
+                const accessCheck = await client.query(
+                    `
+                    SELECT t.id
+
+                    FROM tests t
+
+                    INNER JOIN users creator
+                        ON creator.id = t.created_by
+
+                    INNER JOIN schools user_school
+                        ON user_school.id = $2
+
+                    WHERE t.id = $1
+                      AND t.status = 'closed'
+                      AND creator.role = 'sector_admin'
+                      AND t.sector_id = user_school.sector_id
+
+                    LIMIT 1
+                    `,
+                    [requestedTestId, auth.schoolId]
+                );
+
+                if (!accessCheck.rows.length) {
+
+                    return json({
+                        success: false,
+                        message: accessDeniedMessage
+                    }, 403);
+
+                }
+
+                /* ---------------------------------------------
+                   LOAD ONLY THE SELECTED TEST AND ITS CLASSES
+                   IN THE USER'S SECTOR.
+                --------------------------------------------- */
+
+                scopeCondition = `
+                    t.id = $1
+                    AND t.status = 'closed'
+                    AND creator.role = 'sector_admin'
+
+                    AND t.sector_id = (
                         SELECT sector_id
                         FROM schools
                         WHERE id = $2
                     )
-                )
-            `;
 
-            parameters = [
-                requestedTestId,
-                auth.schoolId
-            ];
+                    AND tc.school_id IN (
+                        SELECT id
+                        FROM schools
+                        WHERE sector_id = (
+                            SELECT sector_id
+                            FROM schools
+                            WHERE id = $2
+                        )
+                    )
+                `;
+
+                parameters = [
+                    requestedTestId,
+                    auth.schoolId
+                ];
+
+            }
 
         }
 
@@ -282,19 +320,11 @@ export async function onRequestGet(context) {
 
                     created_at: row.test_created_at,
 
-                    /* -------------------------------------
-                       TEST CREATOR INFORMATION
-                    ------------------------------------- */
-
                     created_by: String(row.created_by),
 
                     creator_name: row.creator_name,
 
                     creator_role: row.creator_role,
-
-                    /* -------------------------------------
-                       ORIGINAL TEST OWNERSHIP
-                    ------------------------------------- */
 
                     sector_id: row.test_sector_id === null
                         ? null
@@ -303,10 +333,6 @@ export async function onRequestGet(context) {
                     school_id: row.test_school_id === null
                         ? null
                         : String(row.test_school_id),
-
-                    /* -------------------------------------
-                       REPORT CARD TYPE
-                    ------------------------------------- */
 
                     report_card_type:
                         row.creator_role === "sector_admin"
