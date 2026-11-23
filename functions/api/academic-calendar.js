@@ -6,16 +6,22 @@ import {
 } from "../_utils.js";
 
 /* =====================================================
-   ACADEMIC CALENDAR API
+   FILA GRADES SYSTEM — SHARED ACADEMIC CALENDAR
 
-   ACCESS:
+   MANAGEMENT:
+   - owner
+   - sector_admin
+
+   VIEW ONLY:
    - school_admin
    - dos
 
-   Each user can manage only their own school's
-   academic calendar.
+   DESIGN:
+   - One shared academic calendar.
+   - Each academic year is replicated for every school.
+   - Each term is replicated for every school.
+   - Existing examination foreign keys remain valid.
 
-   ACTIONS:
    GET:
    - get
    - get_active
@@ -27,8 +33,21 @@ import {
 
 
 /* =====================================================
-   DATE VALIDATION
+   DATE HELPERS
 ===================================================== */
+
+function dateOnly(value) {
+
+    if (!value) return null;
+
+    if (typeof value === "string") {
+        return value.slice(0, 10);
+    }
+
+    return new Date(value).toISOString().slice(0, 10);
+
+}
+
 
 function isValidDate(value) {
 
@@ -50,18 +69,28 @@ function isValidDate(value) {
 
 
 /* =====================================================
-   CALCULATE PERIOD STATUS
+   CALCULATE STATUS
+
+   Status is calculated from dates.
+   No manual database status update is required.
 ===================================================== */
 
 function calculateStatus(startDate, endDate) {
 
     const today = new Date().toISOString().slice(0, 10);
 
-    if (today < startDate) {
+    const start = dateOnly(startDate);
+    const end = dateOnly(endDate);
+
+    if (!start || !end) {
         return "upcoming";
     }
 
-    if (today > endDate) {
+    if (today < start) {
+        return "upcoming";
+    }
+
+    if (today > end) {
         return "completed";
     }
 
@@ -77,6 +106,8 @@ function calculateStatus(startDate, endDate) {
 async function authenticateCalendarUser(context) {
 
     const auth = await authenticateRole(context, [
+        "owner",
+        "sector_admin",
         "school_admin",
         "dos"
     ]);
@@ -87,7 +118,10 @@ async function authenticateCalendarUser(context) {
         };
     }
 
-    if (!auth.schoolId) {
+    if (
+        ["school_admin", "dos"].includes(auth.role) &&
+        !auth.schoolId
+    ) {
 
         return {
             error: json({
@@ -106,7 +140,21 @@ async function authenticateCalendarUser(context) {
 
 
 /* =====================================================
-   GET: ACADEMIC CALENDAR
+   CHECK MANAGEMENT PERMISSION
+===================================================== */
+
+function canManageCalendar(role) {
+
+    return [
+        "owner",
+        "sector_admin"
+    ].includes(role);
+
+}
+
+
+/* =====================================================
+   GET ACADEMIC CALENDAR
 ===================================================== */
 
 export async function onRequestGet(context) {
@@ -145,45 +193,97 @@ export async function onRequestGet(context) {
 
 
         /* =================================================
-           LOAD ACADEMIC YEARS AND TERMS
+           LOAD CALENDAR
+
+           School users see their own school's replicated
+           records.
+
+           Owner and Sector Admin see the shared calendar.
         ================================================= */
 
+        let query;
+        let parameters = [];
+
+        if (
+            auth.role === "school_admin" ||
+            auth.role === "dos"
+        ) {
+
+            query = `
+                SELECT
+
+                    ay.id AS academic_year_id,
+                    ay.school_id,
+                    ay.year_name,
+                    ay.start_date AS year_start_date,
+                    ay.end_date AS year_end_date,
+
+                    t.id AS term_id,
+                    t.term_number,
+                    t.term_name,
+                    t.start_date AS term_start_date,
+                    t.end_date AS term_end_date
+
+                FROM academic_years ay
+
+                LEFT JOIN terms t
+                    ON t.academic_year_id = ay.id
+                   AND t.school_id = ay.school_id
+
+                WHERE ay.school_id = $1
+
+                ORDER BY
+                    ay.start_date DESC NULLS LAST,
+                    ay.id DESC,
+                    t.term_number ASC
+            `;
+
+            parameters = [auth.schoolId];
+
+        } else {
+
+            query = `
+                SELECT
+
+                    ay.id AS academic_year_id,
+                    ay.school_id,
+                    ay.year_name,
+                    ay.start_date AS year_start_date,
+                    ay.end_date AS year_end_date,
+
+                    t.id AS term_id,
+                    t.term_number,
+                    t.term_name,
+                    t.start_date AS term_start_date,
+                    t.end_date AS term_end_date
+
+                FROM academic_years ay
+
+                LEFT JOIN terms t
+                    ON t.academic_year_id = ay.id
+                   AND t.school_id = ay.school_id
+
+                ORDER BY
+                    ay.start_date DESC NULLS LAST,
+                    ay.year_name,
+                    ay.id,
+                    t.term_number ASC
+            `;
+
+        }
+
+
         const result = await client.query(
-            `
-            SELECT
-
-                ay.id AS academic_year_id,
-                ay.school_id,
-                ay.year_name,
-                ay.start_date AS year_start_date,
-                ay.end_date AS year_end_date,
-
-                t.id AS term_id,
-                t.term_number,
-                t.term_name,
-                t.start_date AS term_start_date,
-                t.end_date AS term_end_date
-
-            FROM academic_years ay
-
-            LEFT JOIN terms t
-                ON t.academic_year_id = ay.id
-               AND t.school_id = ay.school_id
-
-            WHERE ay.school_id = $1
-
-            ORDER BY
-                ay.start_date DESC NULLS LAST,
-                ay.id DESC,
-                t.term_number ASC
-
-            `,
-            [auth.schoolId]
+            query,
+            parameters
         );
 
 
         /* =================================================
-           ORGANIZE ACADEMIC YEARS
+           ORGANIZE YEARS
+
+           For administrators, identical replicated years
+           are grouped into one shared calendar entry.
         ================================================= */
 
         const yearsMap = new Map();
@@ -192,53 +292,98 @@ export async function onRequestGet(context) {
 
             const yearId = String(row.academic_year_id);
 
-            if (!yearsMap.has(yearId)) {
+            const yearStart = dateOnly(row.year_start_date);
+            const yearEnd = dateOnly(row.year_end_date);
 
-                yearsMap.set(yearId, {
+            const yearKey =
+                auth.role === "owner" ||
+                auth.role === "sector_admin"
+                    ? `${row.year_name}|${yearStart}|${yearEnd}`
+                    : yearId;
+
+
+            if (!yearsMap.has(yearKey)) {
+
+                yearsMap.set(yearKey, {
 
                     id: yearId,
 
-                    school_id: String(row.school_id),
-
                     year_name: row.year_name,
 
-                    start_date: row.year_start_date,
+                    start_date: yearStart,
 
-                    end_date: row.year_end_date,
+                    end_date: yearEnd,
 
                     status: calculateStatus(
-                        row.year_start_date,
-                        row.year_end_date
+                        yearStart,
+                        yearEnd
                     ),
 
-                    terms: []
+                    terms: [],
+
+                    school_count: 0
 
                 });
 
             }
 
+
+            const year = yearsMap.get(yearKey);
+
+
+            if (
+                auth.role === "owner" ||
+                auth.role === "sector_admin"
+            ) {
+
+                year.school_count += 1;
+
+            }
+
+
             if (row.term_id !== null) {
 
-                const year = yearsMap.get(yearId);
+                const termStart =
+                    dateOnly(row.term_start_date);
 
-                year.terms.push({
+                const termEnd =
+                    dateOnly(row.term_end_date);
 
-                    id: String(row.term_id),
+                const termKey =
+                    `${row.term_number}|${row.term_name}|${termStart}|${termEnd}`;
 
-                    term_number: Number(row.term_number),
 
-                    term_name: row.term_name,
+                let term = year.terms.find(
+                    item => item.key === termKey
+                );
 
-                    start_date: row.term_start_date,
 
-                    end_date: row.term_end_date,
+                if (!term) {
 
-                    status: calculateStatus(
-                        row.term_start_date,
-                        row.term_end_date
-                    )
+                    term = {
 
-                });
+                        id: String(row.term_id),
+
+                        key: termKey,
+
+                        term_number: Number(row.term_number),
+
+                        term_name: row.term_name,
+
+                        start_date: termStart,
+
+                        end_date: termEnd,
+
+                        status: calculateStatus(
+                            termStart,
+                            termEnd
+                        )
+
+                    };
+
+                    year.terms.push(term);
+
+                }
 
             }
 
@@ -246,7 +391,18 @@ export async function onRequestGet(context) {
 
 
         const academicYears =
-            Array.from(yearsMap.values());
+            Array.from(yearsMap.values()).map(year => ({
+
+                ...year,
+
+                terms: year.terms
+                    .sort(
+                        (a, b) =>
+                            a.term_number - b.term_number
+                    )
+                    .map(({ key, ...term }) => term)
+
+            }));
 
 
         /* =================================================
@@ -266,7 +422,7 @@ export async function onRequestGet(context) {
 
 
         /* =================================================
-           GET ACTIVE ACTION
+           GET ACTIVE PERIOD
         ================================================= */
 
         if (action === "get_active") {
@@ -343,7 +499,7 @@ export async function onRequestGet(context) {
 
 
 /* =====================================================
-   POST: CREATE ACADEMIC YEAR OR TERM
+   CREATE ACADEMIC YEAR OR TERM
 ===================================================== */
 
 export async function onRequestPost(context) {
@@ -357,7 +513,27 @@ export async function onRequestPost(context) {
 
     const auth = authenticated.auth;
 
+
+    /* =================================================
+       MANAGEMENT PERMISSION
+    ================================================= */
+
+    if (!canManageCalendar(auth.role)) {
+
+        return json({
+
+            success: false,
+
+            message: "You are not authorized to modify the system academic calendar."
+
+        }, 403);
+
+    }
+
+
     let client;
+
+    let transactionStarted = false;
 
     try {
 
@@ -370,20 +546,28 @@ export async function onRequestPost(context) {
         } catch {
 
             return json({
+
                 success: false,
+
                 message: "Invalid request data."
+
             }, 400);
 
         }
+
 
         if (!body || typeof body !== "object") {
 
             return json({
+
                 success: false,
+
                 message: "Invalid request data."
+
             }, 400);
 
         }
+
 
         const action = body.action;
 
@@ -393,15 +577,18 @@ export async function onRequestPost(context) {
         ) {
 
             return json({
+
                 success: false,
+
                 message: "Invalid academic calendar action."
+
             }, 400);
 
         }
 
 
         /* =================================================
-           VALIDATE COMMON DATES
+           COMMON DATE VALIDATION
         ================================================= */
 
         const startDate = body.start_date;
@@ -413,17 +600,24 @@ export async function onRequestPost(context) {
         ) {
 
             return json({
+
                 success: false,
+
                 message: "Please provide valid start and end dates."
+
             }, 400);
 
         }
 
+
         if (endDate < startDate) {
 
             return json({
+
                 success: false,
+
                 message: "The end date cannot be before the start date."
+
             }, 400);
 
         }
@@ -433,27 +627,61 @@ export async function onRequestPost(context) {
 
         await client.query("BEGIN");
 
+        transactionStarted = true;
+
 
         /* =================================================
-           LOCK SCHOOL CALENDAR OPERATIONS
+           GLOBAL CALENDAR LOCK
 
-           Prevent simultaneous requests from creating
-           overlapping academic periods for this school.
+           Prevent simultaneous calendar creation.
         ================================================= */
 
         await client.query(
             `
             SELECT pg_advisory_xact_lock(
-                hashtext('academic_calendar'),
-                hashtext($1)
+                hashtext('fila_grades_system_academic_calendar')
             )
-            `,
-            [String(auth.schoolId)]
+            `
         );
 
 
         /* =================================================
-           ACTION 1: CREATE ACADEMIC YEAR
+           LOAD ALL REGISTERED SCHOOLS
+        ================================================= */
+
+        const schoolsResult = await client.query(
+            `
+            SELECT id
+            FROM schools
+            ORDER BY id
+            `
+        );
+
+
+        if (!schoolsResult.rows.length) {
+
+            await client.query("ROLLBACK");
+
+            transactionStarted = false;
+
+            return json({
+
+                success: false,
+
+                message: "No registered schools were found."
+
+            }, 400);
+
+        }
+
+
+        const schoolIds = schoolsResult.rows.map(
+            school => String(school.id)
+        );
+
+
+        /* =================================================
+           ACTION 1: CREATE SHARED ACADEMIC YEAR
         ================================================= */
 
         if (action === "create_year") {
@@ -463,137 +691,165 @@ export async function onRequestPost(context) {
                     ? body.year_name.trim()
                     : "";
 
+
             if (!yearName || yearName.length > 100) {
 
                 await client.query("ROLLBACK");
 
+                transactionStarted = false;
+
                 return json({
+
                     success: false,
+
                     message: "Please provide a valid academic year name."
+
                 }, 400);
 
             }
 
 
             /* ---------------------------------------------
-               CHECK DUPLICATE YEAR NAME
+               CHECK EXISTING YEAR NAME
             --------------------------------------------- */
 
             const duplicate = await client.query(
                 `
-                SELECT id
+                SELECT id, school_id
                 FROM academic_years
-                WHERE school_id = $1
-                  AND LOWER(year_name) = LOWER($2)
+                WHERE LOWER(year_name) = LOWER($1)
                 LIMIT 1
                 `,
-                [auth.schoolId, yearName]
+                [yearName]
             );
+
 
             if (duplicate.rows.length) {
 
                 await client.query("ROLLBACK");
 
+                transactionStarted = false;
+
                 return json({
+
                     success: false,
-                    message: "This academic year already exists."
+
+                    message: "This academic year already exists in the system."
+
                 }, 409);
 
             }
 
 
             /* ---------------------------------------------
-               PREVENT OVERLAPPING ACADEMIC YEARS
+               PREVENT OVERLAPPING YEARS
             --------------------------------------------- */
 
             const overlap = await client.query(
                 `
-                SELECT id, year_name
+                SELECT
+                    id,
+                    year_name,
+                    school_id
+
                 FROM academic_years
-                WHERE school_id = $1
-                  AND start_date <= $2::date
-                  AND end_date >= $3::date
+
+                WHERE start_date <= $1::date
+                  AND end_date >= $2::date
+
                 LIMIT 1
                 `,
                 [
-                    auth.schoolId,
                     endDate,
                     startDate
                 ]
             );
 
+
             if (overlap.rows.length) {
 
                 await client.query("ROLLBACK");
 
+                transactionStarted = false;
+
                 return json({
+
                     success: false,
+
                     message:
-                        `These dates overlap with academic year ${overlap.rows[0].year_name}.`
+                        `These dates overlap with the existing academic year ${overlap.rows[0].year_name}.`
+
                 }, 409);
 
             }
 
 
             /* ---------------------------------------------
-               INSERT ACADEMIC YEAR
+               CREATE YEAR FOR EVERY SCHOOL
             --------------------------------------------- */
 
-            const inserted = await client.query(
-                `
-                INSERT INTO academic_years (
-                    school_id,
-                    year_name,
-                    start_date,
-                    end_date,
-                    status
-                )
-                VALUES ($1, $2, $3, $4, 'planned')
+            const createdYears = [];
 
-                RETURNING
-                    id,
-                    school_id,
-                    year_name,
-                    start_date,
-                    end_date,
-                    status
-                `,
-                [
-                    auth.schoolId,
-                    yearName,
-                    startDate,
-                    endDate
-                ]
-            );
+            for (const schoolId of schoolIds) {
+
+                const inserted = await client.query(
+                    `
+                    INSERT INTO academic_years (
+                        school_id,
+                        year_name,
+                        start_date,
+                        end_date,
+                        status
+                    )
+
+                    VALUES ($1, $2, $3, $4, 'planned')
+
+                    RETURNING
+                        id,
+                        school_id,
+                        year_name,
+                        start_date,
+                        end_date
+                    `,
+                    [
+                        schoolId,
+                        yearName,
+                        startDate,
+                        endDate
+                    ]
+                );
+
+                createdYears.push(inserted.rows[0]);
+
+            }
+
 
             await client.query("COMMIT");
 
-            const year = inserted.rows[0];
+            transactionStarted = false;
+
 
             return json({
 
                 success: true,
 
-                message: "Academic year created successfully.",
+                message:
+                    "The shared academic year was created successfully for all registered schools.",
 
                 academic_year: {
 
-                    id: String(year.id),
+                    year_name: yearName,
 
-                    school_id: String(year.school_id),
+                    start_date: startDate,
 
-                    year_name: year.year_name,
-
-                    start_date: year.start_date,
-
-                    end_date: year.end_date,
+                    end_date: endDate,
 
                     status: calculateStatus(
-                        year.start_date,
-                        year.end_date
+                        startDate,
+                        endDate
                     ),
 
-                    terms: []
+                    school_count: createdYears.length
 
                 }
 
@@ -603,7 +859,7 @@ export async function onRequestPost(context) {
 
 
         /* =================================================
-           ACTION 2: CREATE TERM
+           ACTION 2: CREATE SHARED TERM
         ================================================= */
 
         if (action === "create_term") {
@@ -632,22 +888,34 @@ export async function onRequestPost(context) {
 
                 await client.query("ROLLBACK");
 
+                transactionStarted = false;
+
                 return json({
+
                     success: false,
+
                     message: "Please provide valid term details."
+
                 }, 400);
 
             }
 
 
             /* ---------------------------------------------
-               VERIFY ACADEMIC YEAR BELONGS TO THIS SCHOOL
+               FIND THE SELECTED SHARED ACADEMIC YEAR
+
+               The supplied ID identifies one school's
+               replicated record.
+
+               We use its year name and dates to identify
+               the equivalent record for every other school.
             --------------------------------------------- */
 
             const yearResult = await client.query(
                 `
                 SELECT
                     id,
+                    school_id,
                     year_name,
                     start_date,
                     end_date
@@ -655,82 +923,158 @@ export async function onRequestPost(context) {
                 FROM academic_years
 
                 WHERE id = $1
-                  AND school_id = $2
 
                 LIMIT 1
                 `,
-                [
-                    academicYearId,
-                    auth.schoolId
-                ]
+                [academicYearId]
             );
+
 
             if (!yearResult.rows.length) {
 
                 await client.query("ROLLBACK");
 
+                transactionStarted = false;
+
                 return json({
+
                     success: false,
+
                     message: "The selected academic year was not found."
+
                 }, 404);
 
             }
 
-            const academicYear = yearResult.rows[0];
+
+            const selectedYear = yearResult.rows[0];
+
+            const yearStart = dateOnly(
+                selectedYear.start_date
+            );
+
+            const yearEnd = dateOnly(
+                selectedYear.end_date
+            );
 
 
             /* ---------------------------------------------
-               CHECK TERM FALLS WITHIN ACADEMIC YEAR
+               VERIFY TERM DATES
             --------------------------------------------- */
 
             if (
-                startDate < String(academicYear.start_date).slice(0, 10) ||
-                endDate > String(academicYear.end_date).slice(0, 10)
+                startDate < yearStart ||
+                endDate > yearEnd
             ) {
 
                 await client.query("ROLLBACK");
 
+                transactionStarted = false;
+
                 return json({
+
                     success: false,
+
                     message:
                         "The term dates must fall within the selected academic year."
+
                 }, 400);
 
             }
 
 
             /* ---------------------------------------------
-               PREVENT DUPLICATE TERM NUMBER
+               VERIFY ALL SCHOOLS HAVE THE SAME YEAR
+            --------------------------------------------- */
+
+            const equivalentYears = await client.query(
+                `
+                SELECT
+                    id,
+                    school_id
+
+                FROM academic_years
+
+                WHERE year_name = $1
+                  AND start_date = $2::date
+                  AND end_date = $3::date
+                `,
+                [
+                    selectedYear.year_name,
+                    yearStart,
+                    yearEnd
+                ]
+            );
+
+
+            if (
+                equivalentYears.rows.length !== schoolIds.length
+            ) {
+
+                await client.query("ROLLBACK");
+
+                transactionStarted = false;
+
+                return json({
+
+                    success: false,
+
+                    message:
+                        "The selected academic year is not configured consistently across all schools. Term creation was cancelled."
+
+                }, 409);
+
+            }
+
+
+            /* ---------------------------------------------
+               CHECK DUPLICATE TERM
             --------------------------------------------- */
 
             const duplicateTerm = await client.query(
                 `
                 SELECT id
+
                 FROM terms
-                WHERE school_id = $1
-                  AND academic_year_id = $2
-                  AND (
-                      term_number = $3
-                      OR LOWER(term_name) = LOWER($4)
-                  )
+
+                WHERE academic_year_id IN (
+                    SELECT id
+                    FROM academic_years
+                    WHERE year_name = $1
+                      AND start_date = $2::date
+                      AND end_date = $3::date
+                )
+
+                AND (
+                    term_number = $4
+                    OR LOWER(term_name) = LOWER($5)
+                )
+
                 LIMIT 1
                 `,
                 [
-                    auth.schoolId,
-                    academicYearId,
+                    selectedYear.year_name,
+                    yearStart,
+                    yearEnd,
                     termNumber,
                     termName
                 ]
             );
 
+
             if (duplicateTerm.rows.length) {
 
                 await client.query("ROLLBACK");
 
+                transactionStarted = false;
+
                 return json({
+
                     success: false,
+
                     message:
-                        "This term number or term name already exists in the selected academic year."
+                        "This term number or name already exists in the selected academic year."
+
                 }, 409);
 
             }
@@ -743,106 +1087,125 @@ export async function onRequestPost(context) {
             const overlappingTerm = await client.query(
                 `
                 SELECT
-                    id,
-                    term_name
+                    t.id,
+                    t.term_name
 
-                FROM terms
+                FROM terms t
 
-                WHERE school_id = $1
-                  AND academic_year_id = $2
-                  AND start_date <= $3::date
-                  AND end_date >= $4::date
+                INNER JOIN academic_years ay
+                    ON ay.id = t.academic_year_id
+                   AND ay.school_id = t.school_id
+
+                WHERE ay.year_name = $1
+                  AND ay.start_date = $2::date
+                  AND ay.end_date = $3::date
+
+                  AND t.start_date <= $4::date
+                  AND t.end_date >= $5::date
 
                 LIMIT 1
                 `,
                 [
-                    auth.schoolId,
-                    academicYearId,
+                    selectedYear.year_name,
+                    yearStart,
+                    yearEnd,
                     endDate,
                     startDate
                 ]
             );
 
+
             if (overlappingTerm.rows.length) {
 
                 await client.query("ROLLBACK");
 
+                transactionStarted = false;
+
                 return json({
+
                     success: false,
+
                     message:
                         `These dates overlap with ${overlappingTerm.rows[0].term_name}.`
+
                 }, 409);
 
             }
 
 
             /* ---------------------------------------------
-               INSERT TERM
+               CREATE TERM FOR EVERY SCHOOL
             --------------------------------------------- */
 
-            const inserted = await client.query(
-                `
-                INSERT INTO terms (
-                    school_id,
-                    academic_year_id,
-                    term_number,
-                    term_name,
-                    start_date,
-                    end_date
-                )
+            const createdTerms = [];
 
-                VALUES ($1, $2, $3, $4, $5, $6)
+            for (const year of equivalentYears.rows) {
 
-                RETURNING
-                    id,
-                    school_id,
-                    academic_year_id,
-                    term_number,
-                    term_name,
-                    start_date,
-                    end_date
-                `,
-                [
-                    auth.schoolId,
-                    academicYearId,
-                    termNumber,
-                    termName,
-                    startDate,
-                    endDate
-                ]
-            );
+                const inserted = await client.query(
+                    `
+                    INSERT INTO terms (
+                        school_id,
+                        academic_year_id,
+                        term_number,
+                        term_name,
+                        start_date,
+                        end_date
+                    )
+
+                    VALUES ($1, $2, $3, $4, $5, $6)
+
+                    RETURNING
+                        id,
+                        school_id,
+                        academic_year_id,
+                        term_number,
+                        term_name,
+                        start_date,
+                        end_date
+                    `,
+                    [
+                        String(year.school_id),
+                        String(year.id),
+                        termNumber,
+                        termName,
+                        startDate,
+                        endDate
+                    ]
+                );
+
+                createdTerms.push(inserted.rows[0]);
+
+            }
+
 
             await client.query("COMMIT");
 
-            const term = inserted.rows[0];
+            transactionStarted = false;
+
 
             return json({
 
                 success: true,
 
-                message: "Term created successfully.",
+                message:
+                    "The shared term was created successfully for all registered schools.",
 
                 term: {
 
-                    id: String(term.id),
+                    term_number: termNumber,
 
-                    school_id: String(term.school_id),
+                    term_name: termName,
 
-                    academic_year_id:
-                        String(term.academic_year_id),
+                    start_date: startDate,
 
-                    term_number: Number(term.term_number),
-
-                    term_name: term.term_name,
-
-                    start_date: term.start_date,
-
-                    end_date: term.end_date,
+                    end_date: endDate,
 
                     status: calculateStatus(
-                        term.start_date,
-                        term.end_date
-                    )
+                        startDate,
+                        endDate
+                    ),
+
+                    school_count: createdTerms.length
 
                 }
 
@@ -852,14 +1215,14 @@ export async function onRequestPost(context) {
 
     } catch (error) {
 
-        if (client) {
+        if (client && transactionStarted) {
 
             await client.query("ROLLBACK").catch(() => {});
 
         }
 
         console.error(
-            "Academic calendar creation error:",
+            "Academic calendar error:",
             error
         );
 
