@@ -1,0 +1,959 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Academic Years & Terms | Fila Grades System</title>
+
+<style>
+:root {
+    --primary: #1746a2;
+    --primary-dark: #10377f;
+    --background: #f4f6fa;
+    --white: #ffffff;
+    --text: #172033;
+    --muted: #687386;
+    --border: #e2e7ef;
+    --success: #16834a;
+    --warning: #b7791f;
+    --danger: #c0392b;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: var(--background);
+    color: var(--text);
+}
+
+header {
+    background: var(--white);
+    padding: 18px 25px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+}
+
+header h2 {
+    margin: 0;
+    color: var(--primary);
+    font-size: 20px;
+}
+
+header small {
+    color: var(--muted);
+}
+
+.container {
+    max-width: 1150px;
+    margin: 28px auto;
+    padding: 0 18px 40px;
+}
+
+.page-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    flex-wrap: wrap;
+    margin-bottom: 22px;
+}
+
+.page-heading h1 {
+    margin: 0 0 7px;
+    font-size: 25px;
+}
+
+.page-heading p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+button {
+    border: none;
+    border-radius: 7px;
+    padding: 11px 16px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+button:disabled {
+    opacity: .6;
+    cursor: not-allowed;
+}
+
+.primary-btn {
+    background: var(--primary);
+    color: white;
+}
+
+.primary-btn:hover {
+    background: var(--primary-dark);
+}
+
+.secondary-btn {
+    background: #edf1f8;
+    color: var(--text);
+}
+
+.stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+    margin-bottom: 22px;
+}
+
+.stat-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 19px;
+}
+
+.stat-card span {
+    display: block;
+    color: var(--muted);
+    font-size: 13px;
+    margin-bottom: 9px;
+}
+
+.stat-card strong {
+    font-size: 25px;
+    color: var(--primary);
+}
+
+.section {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 20px;
+    overflow: hidden;
+}
+
+.section-header {
+    padding: 18px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.section-header h3 {
+    margin: 0;
+    font-size: 17px;
+}
+
+.section-content {
+    padding: 20px;
+}
+
+.year-card {
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    margin-bottom: 17px;
+    overflow: hidden;
+}
+
+.year-card:last-child {
+    margin-bottom: 0;
+}
+
+.year-top {
+    padding: 16px;
+    background: #f9fbff;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.year-top h4 {
+    margin: 0 0 7px;
+    font-size: 17px;
+}
+
+.year-dates {
+    font-size: 13px;
+    color: var(--muted);
+}
+
+.year-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.term-list {
+    padding: 15px;
+}
+
+.term-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 13px 10px;
+    border-bottom: 1px solid var(--border);
+}
+
+.term-row:last-child {
+    border-bottom: none;
+}
+
+.term-row strong {
+    display: block;
+    margin-bottom: 5px;
+    font-size: 14px;
+}
+
+.term-row small {
+    color: var(--muted);
+}
+
+.badge {
+    display: inline-block;
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: bold;
+    text-transform: capitalize;
+}
+
+.badge.active {
+    color: var(--success);
+    background: #e5f7ed;
+}
+
+.badge.upcoming,
+.badge.planned {
+    color: var(--warning);
+    background: #fff4dc;
+}
+
+.badge.completed {
+    color: #526071;
+    background: #edf0f4;
+}
+
+.badge.unknown {
+    color: var(--muted);
+    background: #edf0f4;
+}
+
+.empty {
+    text-align: center;
+    padding: 35px 15px;
+    color: var(--muted);
+    font-size: 14px;
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.48);
+    z-index: 1000;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.modal.show {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-box {
+    background: white;
+    width: 100%;
+    max-width: 480px;
+    border-radius: 11px;
+    padding: 23px;
+    margin: auto;
+}
+
+.modal-box h3 {
+    margin: 0 0 8px;
+    font-size: 19px;
+}
+
+.modal-description {
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.5;
+    margin-bottom: 20px;
+}
+
+.form-group {
+    margin-bottom: 16px;
+}
+
+.form-group label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 7px;
+}
+
+.form-group input,
+.form-group select {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ccd4e0;
+    border-radius: 7px;
+    font-size: 14px;
+    background: white;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    outline: 2px solid #d5e3ff;
+    border-color: var(--primary);
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 9px;
+    margin-top: 22px;
+}
+
+.message {
+    display: none;
+    padding: 13px 15px;
+    margin-bottom: 18px;
+    border-radius: 7px;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.message.show {
+    display: block;
+}
+
+.message.success {
+    background: #e7f7ed;
+    color: #176c3c;
+}
+
+.message.error {
+    background: #fdeaea;
+    color: #a52c2c;
+}
+
+.message.info {
+    background: #eaf1ff;
+    color: #1746a2;
+}
+
+.loading {
+    color: var(--muted);
+    text-align: center;
+    padding: 25px;
+}
+
+.footer-note {
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.6;
+    margin-top: 18px;
+}
+
+@media(max-width: 650px) {
+    header {
+        padding: 15px;
+    }
+
+    .container {
+        margin-top: 20px;
+    }
+
+    .stats {
+        grid-template-columns: 1fr;
+    }
+
+    .year-top {
+        align-items: flex-start;
+    }
+
+    .term-row {
+        align-items: flex-start;
+    }
+
+    .term-row .badge {
+        white-space: nowrap;
+    }
+
+    .page-heading h1 {
+        font-size: 21px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <div>
+        <h2>FILA GRADES SYSTEM</h2>
+        <small>Academic Calendar Management</small>
+    </div>
+    <button class="secondary-btn" onclick="loadCalendar()">Refresh</button>
+</header>
+
+<main class="container">
+
+    <div class="page-heading">
+        <div>
+            <h1>Academic Years & Terms</h1>
+            <p>
+                Manage the shared academic calendar for all registered schools.
+            </p>
+        </div>
+
+        <button class="primary-btn" onclick="openYearModal()">
+            + Create Academic Year
+        </button>
+    </div>
+
+    <div id="message" class="message"></div>
+
+    <div class="stats">
+        <div class="stat-card">
+            <span>Registered Schools</span>
+            <strong id="schoolCount">11</strong>
+        </div>
+
+        <div class="stat-card">
+            <span>Academic Years</span>
+            <strong id="yearCount">0</strong>
+        </div>
+
+        <div class="stat-card">
+            <span>Active Academic Year</span>
+            <strong id="activeYear" style="font-size:17px;">None</strong>
+        </div>
+    </div>
+
+    <section class="section">
+        <div class="section-header">
+            <h3>Shared Academic Calendar</h3>
+            <span id="calendarStatus" style="font-size:12px;color:#687386;">
+                Loading...
+            </span>
+        </div>
+
+        <div class="section-content" id="calendarContent">
+            <div class="loading">Loading academic calendar...</div>
+        </div>
+    </section>
+
+    <p class="footer-note">
+        Important: This calendar is shared by all schools in Fila Grades System.
+        Academic year and term statuses are determined automatically from
+        their start and end dates. Changes made here apply system-wide.
+    </p>
+
+</main>
+
+<!-- CREATE ACADEMIC YEAR MODAL -->
+<div class="modal" id="yearModal">
+    <div class="modal-box">
+        <h3>Create Academic Year</h3>
+
+        <p class="modal-description">
+            The academic year will be created for all registered schools
+            using the same dates.
+        </p>
+
+        <form id="yearForm">
+
+            <div class="form-group">
+                <label for="yearName">Academic Year Name</label>
+                <input
+                    type="text"
+                    id="yearName"
+                    placeholder="Example: 2027"
+                    required
+                    maxlength="50"
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="yearStart">Start Date</label>
+                <input type="date" id="yearStart" required>
+            </div>
+
+            <div class="form-group">
+                <label for="yearEnd">End Date</label>
+                <input type="date" id="yearEnd" required>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="secondary-btn"
+                    onclick="closeModal('yearModal')">
+                    Cancel
+                </button>
+
+                <button type="submit" class="primary-btn" id="saveYearBtn">
+                    Create Year
+                </button>
+            </div>
+
+        </form>
+    </div>
+</div>
+
+<!-- CREATE TERM MODAL -->
+<div class="modal" id="termModal">
+    <div class="modal-box">
+        <h3>Add Academic Term</h3>
+
+        <p class="modal-description" id="termYearDescription">
+            Add a term to the selected academic year.
+        </p>
+
+        <form id="termForm">
+
+            <input type="hidden" id="termAcademicYearId">
+
+            <div class="form-group">
+                <label for="termNumber">Term Number</label>
+                <select id="termNumber" required>
+                    <option value="">Select term</option>
+                    <option value="1">Term 1</option>
+                    <option value="2">Term 2</option>
+                    <option value="3">Term 3</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="termName">Term Name</label>
+                <input
+                    type="text"
+                    id="termName"
+                    placeholder="Example: Term 1"
+                    required
+                    maxlength="50"
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="termStart">Start Date</label>
+                <input type="date" id="termStart" required>
+            </div>
+
+            <div class="form-group">
+                <label for="termEnd">End Date</label>
+                <input type="date" id="termEnd" required>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="secondary-btn"
+                    onclick="closeModal('termModal')">
+                    Cancel
+                </button>
+
+                <button type="submit" class="primary-btn" id="saveTermBtn">
+                    Save Term
+                </button>
+            </div>
+
+        </form>
+    </div>
+</div>
+
+<script>
+const API_URL = "/api/academic-calendar";
+
+let academicYears = [];
+let registeredSchoolCount = 11;
+
+const messageBox = document.getElementById("message");
+
+function showMessage(message, type = "info") {
+    messageBox.textContent = message;
+    messageBox.className = "message show " + type;
+
+    window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+    });
+
+    if (type === "success") {
+        setTimeout(() => {
+            messageBox.className = "message";
+        }, 6000);
+    }
+}
+
+function escapeHTML(value) {
+    return String(value ?? "").replace(/[&<>"']/g, char => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#039;"
+    })[char]);
+}
+
+function formatDate(date) {
+    if (!date) return "Not set";
+
+    const parts = String(date).slice(0, 10).split("-");
+
+    if (parts.length !== 3) return date;
+
+    return `${parts[2]}/${parts[1]}/${parts[0]}`;
+}
+
+function getStatusClass(status) {
+    const value = String(status || "unknown").toLowerCase();
+
+    if (value === "active") return "active";
+    if (value === "completed") return "completed";
+    if (value === "upcoming" || value === "planned") return "upcoming";
+
+    return "unknown";
+}
+
+function getTerms(year) {
+    return Array.isArray(year.terms) ? year.terms : [];
+}
+
+function openYearModal() {
+    document.getElementById("yearForm").reset();
+    document.getElementById("yearModal").classList.add("show");
+}
+
+function openTermModal(yearId, yearName, yearStart, yearEnd) {
+    document.getElementById("termForm").reset();
+
+    document.getElementById("termAcademicYearId").value = yearId;
+
+    document.getElementById("termYearDescription").textContent =
+        "Add a term to " + yearName +
+        ". Its dates must fall within the academic year.";
+
+    const start = document.getElementById("termStart");
+    const end = document.getElementById("termEnd");
+
+    start.min = String(yearStart).slice(0, 10);
+    start.max = String(yearEnd).slice(0, 10);
+
+    end.min = String(yearStart).slice(0, 10);
+    end.max = String(yearEnd).slice(0, 10);
+
+    document.getElementById("termModal").classList.add("show");
+}
+
+function closeModal(id) {
+    document.getElementById(id).classList.remove("show");
+}
+
+async function apiRequest(method = "GET", body = null) {
+    const options = {
+        method,
+        credentials: "same-origin",
+        headers: {
+            "Accept": "application/json"
+        }
+    };
+
+    if (body) {
+        options.headers["Content-Type"] = "application/json";
+        options.body = JSON.stringify(body);
+    }
+
+    const response = await fetch(API_URL, options);
+
+    const data = await response.json().catch(() => null);
+
+    if (!response.ok || !data || data.success === false) {
+        throw new Error(
+            data?.message ||
+            data?.error ||
+            "The request could not be completed."
+        );
+    }
+
+    return data;
+}
+
+async function loadCalendar() {
+    const content = document.getElementById("calendarContent");
+
+    content.innerHTML =
+        '<div class="loading">Loading academic calendar...</div>';
+
+    document.getElementById("calendarStatus").textContent =
+        "Loading...";
+
+    try {
+        const data = await apiRequest("GET");
+
+        academicYears = Array.isArray(data.academic_years)
+            ? data.academic_years
+            : [];
+
+        if (Number.isFinite(Number(data.school_count))) {
+            registeredSchoolCount = Number(data.school_count);
+        }
+
+        document.getElementById("schoolCount").textContent =
+            registeredSchoolCount;
+
+        document.getElementById("yearCount").textContent =
+            academicYears.length;
+
+        const activeYear = data.active_academic_year;
+
+        document.getElementById("activeYear").textContent =
+            activeYear?.year_name || "None";
+
+        document.getElementById("calendarStatus").textContent =
+            academicYears.length + " academic year(s)";
+
+        renderCalendar();
+
+    } catch (error) {
+        content.innerHTML = `
+            <div class="empty">
+                Unable to load the academic calendar.<br><br>
+                ${escapeHTML(error.message)}
+            </div>
+        `;
+
+        document.getElementById("calendarStatus").textContent =
+            "Unable to load";
+
+        showMessage(error.message, "error");
+    }
+}
+
+function renderCalendar() {
+    const content = document.getElementById("calendarContent");
+
+    if (!academicYears.length) {
+        content.innerHTML = `
+            <div class="empty">
+                <strong>No academic years created yet.</strong>
+                <p>Create an academic year to begin managing the shared calendar.</p>
+            </div>
+        `;
+        return;
+    }
+
+    content.innerHTML = academicYears.map(year => {
+        const terms = getTerms(year);
+
+        const yearStatus = String(year.status || "unknown").toLowerCase();
+
+        const termHTML = terms.length
+            ? terms.map(term => `
+                <div class="term-row">
+                    <div>
+                        <strong>
+                            ${escapeHTML(term.term_name || ("Term " + term.term_number))}
+                        </strong>
+                        <small>
+                            ${formatDate(term.start_date)}
+                            – ${formatDate(term.end_date)}
+                        </small>
+                    </div>
+
+                    <span class="badge ${getStatusClass(term.status)}">
+                        ${escapeHTML(term.status || "Unknown")}
+                    </span>
+                </div>
+            `).join("")
+            : `
+                <div class="empty">
+                    No terms have been added to this academic year yet.
+                </div>
+            `;
+
+        return `
+            <div class="year-card">
+
+                <div class="year-top">
+                    <div>
+                        <h4>${escapeHTML(year.year_name)}</h4>
+
+                        <div class="year-dates">
+                            ${formatDate(year.start_date)}
+                            – ${formatDate(year.end_date)}
+                        </div>
+
+                        <div style="margin-top:9px;">
+                            <span class="badge ${getStatusClass(yearStatus)}">
+                                ${escapeHTML(yearStatus)}
+                            </span>
+                        </div>
+
+                        <small style="display:block;margin-top:9px;color:#687386;">
+                            ${Number(year.school_count ?? registeredSchoolCount)}
+                            school(s) synchronized
+                        </small>
+                    </div>
+
+                    <div class="year-actions">
+                        <button
+                            class="primary-btn"
+                            onclick="openTermModal(
+                                '${escapeHTML(year.id)}',
+                                '${escapeHTML(year.year_name)}',
+                                '${escapeHTML(year.start_date)}',
+                                '${escapeHTML(year.end_date)}'
+                            )">
+                            + Add Term
+                        </button>
+                    </div>
+                </div>
+
+                <div class="term-list">
+                    ${termHTML}
+                </div>
+
+            </div>
+        `;
+    }).join("");
+}
+
+document.getElementById("yearForm").addEventListener("submit", async event => {
+    event.preventDefault();
+
+    const button = document.getElementById("saveYearBtn");
+
+    const yearName = document.getElementById("yearName").value.trim();
+    const startDate = document.getElementById("yearStart").value;
+    const endDate = document.getElementById("yearEnd").value;
+
+    if (!yearName || !startDate || !endDate) {
+        showMessage("Please complete all academic year fields.", "error");
+        return;
+    }
+
+    if (endDate <= startDate) {
+        showMessage("The end date must be after the start date.", "error");
+        return;
+    }
+
+    button.disabled = true;
+    button.textContent = "Creating...";
+
+    try {
+        const result = await apiRequest("POST", {
+            action: "create_year",
+            year_name: yearName,
+            start_date: startDate,
+            end_date: endDate
+        });
+
+        closeModal("yearModal");
+
+        showMessage(
+            result.message ||
+            "Academic year created successfully for all registered schools.",
+            "success"
+        );
+
+        await loadCalendar();
+
+    } catch (error) {
+        showMessage(error.message, "error");
+    } finally {
+        button.disabled = false;
+        button.textContent = "Create Year";
+    }
+});
+
+document.getElementById("termForm").addEventListener("submit", async event => {
+    event.preventDefault();
+
+    const button = document.getElementById("saveTermBtn");
+
+    const academicYearId =
+        document.getElementById("termAcademicYearId").value;
+
+    const termNumber =
+        Number(document.getElementById("termNumber").value);
+
+    const termName =
+        document.getElementById("termName").value.trim();
+
+    const startDate =
+        document.getElementById("termStart").value;
+
+    const endDate =
+        document.getElementById("termEnd").value;
+
+    if (!academicYearId || !termNumber || !termName || !startDate || !endDate) {
+        showMessage("Please complete all term fields.", "error");
+        return;
+    }
+
+    if (endDate <= startDate) {
+        showMessage("The term end date must be after its start date.", "error");
+        return;
+    }
+
+    button.disabled = true;
+    button.textContent = "Saving...";
+
+    try {
+        const result = await apiRequest("POST", {
+            action: "create_term",
+            academic_year_id: Number(academicYearId),
+            term_number: termNumber,
+            term_name: termName,
+            start_date: startDate,
+            end_date: endDate
+        });
+
+        closeModal("termModal");
+
+        showMessage(
+            result.message ||
+            "Term created successfully for all registered schools.",
+            "success"
+        );
+
+        await loadCalendar();
+
+    } catch (error) {
+        showMessage(error.message, "error");
+    } finally {
+        button.disabled = false;
+        button.textContent = "Save Term";
+    }
+});
+
+document.getElementById("termNumber").addEventListener("change", event => {
+    const number = event.target.value;
+
+    if (number) {
+        document.getElementById("termName").value =
+            "Term " + number;
+    }
+});
+
+document.addEventListener("DOMContentLoaded", loadCalendar);
+</script>
+
+</body>
+</html>
