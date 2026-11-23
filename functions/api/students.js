@@ -8,6 +8,7 @@ import {
 /* =====================================================
    GET STUDENTS
    SCHOOL ADMIN + DOS
+   ACADEMIC YEAR AND TERM BASED ON CREATED_AT
 ===================================================== */
 
 export async function onRequestGet(context) {
@@ -40,21 +41,51 @@ export async function onRequestGet(context) {
                 st.admission_date,
                 st.status,
                 st.class_id,
+                st.created_at,
+
                 c.class_name,
+
                 CASE c.level_id
                     WHEN 1 THEN 'Primary'
                     WHEN 2 THEN 'Ordinary Level'
                     WHEN 3 THEN 'Advanced Level'
                     ELSE 'Unknown'
-                END AS class_level
+                END AS class_level,
+
+                ay.id AS academic_year_id,
+                ay.year_name AS academic_year,
+
+                t.id AS term_id,
+                t.term_name AS term,
+
+                t.term_number
+
              FROM students st
+
              JOIN classes c
                ON c.id = st.class_id
+
              JOIN school_levels sl
                ON sl.school_id = st.school_id
               AND sl.level_id = c.level_id
+
+             LEFT JOIN academic_years ay
+               ON ay.school_id = st.school_id
+              AND st.created_at::date
+                  BETWEEN ay.start_date AND ay.end_date
+
+             LEFT JOIN terms t
+               ON t.school_id = st.school_id
+              AND t.academic_year_id = ay.id
+              AND st.created_at::date
+                  BETWEEN t.start_date AND t.end_date
+
              WHERE st.school_id = $1
-             ORDER BY c.class_name ASC, st.full_name ASC`,
+
+             ORDER BY
+                c.class_name ASC,
+                st.full_name ASC`,
+
             [auth.schoolId]
         );
 
@@ -82,6 +113,7 @@ export async function onRequestGet(context) {
 /* =====================================================
    REGISTER STUDENT
    SCHOOL ADMIN + DOS
+   ORIGINAL REGISTRATION LOGIC PRESERVED
 ===================================================== */
 
 export async function onRequestPost(context) {
