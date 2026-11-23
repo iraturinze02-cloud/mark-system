@@ -345,11 +345,22 @@ export async function onRequestGet(context) {
             LEFT JOIN users creator
                 ON creator.id = t.created_by
 
+            /* -----------------------------------------
+               TEST SCHOOLS AND ACADEMIC PERIODS
+            ----------------------------------------- */
+
             LEFT JOIN LATERAL (
                 SELECT json_agg(
                     json_build_object(
                         'id', s.id,
-                        'school_name', s.school_name
+                        'school_name', s.school_name,
+
+                        'academic_year_id', ts.academic_year_id,
+                        'year_name', ay.year_name,
+
+                        'term_id', ts.term_id,
+                        'term_name', tm.term_name,
+                        'term_number', tm.term_number
                     )
                     ORDER BY s.school_name
                 ) AS data
@@ -359,8 +370,21 @@ export async function onRequestGet(context) {
                 INNER JOIN schools s
                     ON s.id = ts.school_id
 
+                LEFT JOIN academic_years ay
+                    ON ay.id = ts.academic_year_id
+                   AND ay.school_id = ts.school_id
+
+                LEFT JOIN terms tm
+                    ON tm.id = ts.term_id
+                   AND tm.academic_year_id = ts.academic_year_id
+                   AND tm.school_id = ts.school_id
+
                 WHERE ts.test_id = t.id
             ) test_schools ON TRUE
+
+            /* -----------------------------------------
+               TEST CLASSES
+            ----------------------------------------- */
 
             LEFT JOIN LATERAL (
                 SELECT json_agg(
@@ -394,6 +418,10 @@ export async function onRequestGet(context) {
 
                 WHERE tc.test_id = t.id
             ) test_classes ON TRUE
+
+            /* -----------------------------------------
+               TEST SUBJECTS
+            ----------------------------------------- */
 
             LEFT JOIN LATERAL (
                 SELECT json_agg(
@@ -803,7 +831,9 @@ export async function onRequestPost(context) {
         if (auth.role === "sector_admin") {
             validSchools = await client.query(
                 `
-                SELECT id
+                SELECT
+                    id,
+                    school_name
                 FROM schools
                 WHERE id = ANY($1::bigint[])
                   AND sector_id = $2
@@ -816,7 +846,9 @@ export async function onRequestPost(context) {
         else {
             validSchools = await client.query(
                 `
-                SELECT id
+                SELECT
+                    id,
+                    school_name
                 FROM schools
                 WHERE id = $1
                   AND status = 'active'
@@ -828,6 +860,106 @@ export async function onRequestPost(context) {
         if (validSchools.rows.length !== schoolIds.length) {
             throw new Error(
                 "One or more selected schools are invalid."
+            );
+        }
+
+        /* ---------------------------------------------
+           FIND ACTIVE ACADEMIC YEAR AND TERM
+
+           Each school has its own replicated IDs.
+
+           The current Kigali date determines the
+           active academic year and term.
+
+           Exactly one matching period is required
+           for each selected school.
+        --------------------------------------------- */
+
+        const activePeriodsResult = await client.query(
+            `
+            SELECT
+                s.id AS school_id,
+                s.school_name,
+
+                ay.id AS academic_year_id,
+                ay.year_name,
+
+                tm.id AS term_id,
+                tm.term_name,
+                tm.term_number
+
+            FROM schools s
+
+            INNER JOIN academic_years ay
+                ON ay.school_id = s.id
+
+            INNER JOIN terms tm
+                ON tm.school_id = s.id
+               AND tm.academic_year_id = ay.id
+
+            WHERE s.id = ANY($1::bigint[])
+
+              AND (NOW() AT TIME ZONE 'Africa/Kigali')::date
+                  BETWEEN ay.start_date AND ay.end_date
+
+              AND (NOW() AT TIME ZONE 'Africa/Kigali')::date
+                  BETWEEN tm.start_date AND tm.end_date
+
+            ORDER BY
+                s.school_name,
+                ay.id,
+                tm.term_number
+            `,
+            [schoolIds]
+        );
+
+        /* ---------------------------------------------
+           CHECK THAT EACH SCHOOL HAS EXACTLY ONE
+           ACTIVE ACADEMIC YEAR AND TERM
+        --------------------------------------------- */
+
+        const periodsBySchool = new Map();
+
+        for (const period of activePeriodsResult.rows) {
+            const schoolId = String(period.school_id);
+
+            if (!periodsBySchool.has(schoolId)) {
+                periodsBySchool.set(schoolId, []);
+            }
+
+            periodsBySchool.get(schoolId).push(period);
+        }
+
+        const invalidPeriodSchools = [];
+
+        for (const school of validSchools.rows) {
+            const schoolId = String(school.id);
+
+            const periods = periodsBySchool.get(schoolId) || [];
+
+            if (periods.length !== 1) {
+                invalidPeriodSchools.push(school.school_name);
+            }
+        }
+
+        if (invalidPeriodSchools.length > 0) {
+            throw new Error(
+                "Cannot create this test. The following schools do not have exactly one active academic year and term: " +
+                invalidPeriodSchools.join(", ") +
+                ". Please check their academic calendar."
+            );
+        }
+
+        /* ---------------------------------------------
+           PREPARE SCHOOL ACADEMIC PERIODS
+        --------------------------------------------- */
+
+        const schoolAcademicPeriods = new Map();
+
+        for (const period of activePeriodsResult.rows) {
+            schoolAcademicPeriods.set(
+                String(period.school_id),
+                period
             );
         }
 
@@ -929,22 +1061,39 @@ export async function onRequestPost(context) {
         const test = testResult.rows[0];
 
         /* ---------------------------------------------
-           INSERT TEST SCHOOLS FIRST
+           INSERT TEST SCHOOLS AND THEIR PERIODS FIRST
 
            Required by the composite foreign key
            in test_classes.
         --------------------------------------------- */
 
         for (const schoolId of schoolIds) {
+            const period = schoolAcademicPeriods.get(
+                String(schoolId)
+            );
+
+            if (!period) {
+                throw new Error(
+                    "The active academic period could not be found for one of the selected schools."
+                );
+            }
+
             await client.query(
                 `
                 INSERT INTO test_schools (
                     test_id,
-                    school_id
+                    school_id,
+                    academic_year_id,
+                    term_id
                 )
-                VALUES ($1, $2)
+                VALUES ($1, $2, $3, $4)
                 `,
-                [test.id, schoolId]
+                [
+                    test.id,
+                    schoolId,
+                    period.academic_year_id,
+                    period.term_id
+                ]
             );
         }
 
