@@ -133,6 +133,129 @@ function validateSubjectMarks(subjectIds, subjectMarks) {
 }
 
 /* =====================================================
+   LOAD ACTIVE PERIODS FOR NEW SCHOOLS
+===================================================== */
+
+async function loadActiveSchoolPeriods(client, schoolIds) {
+    if (!schoolIds.length) {
+        return new Map();
+    }
+
+    const result = await client.query(
+        `
+        SELECT
+            ay.school_id,
+            ay.id AS academic_year_id,
+            ay.year_name,
+
+            t.id AS term_id,
+            t.term_name,
+            t.term_number
+
+        FROM academic_years ay
+
+        INNER JOIN terms t
+            ON t.academic_year_id = ay.id
+           AND t.school_id = ay.school_id
+
+        WHERE ay.school_id = ANY($1::bigint[])
+
+          AND (NOW() AT TIME ZONE 'Africa/Kigali')::date
+              BETWEEN ay.start_date AND ay.end_date
+
+          AND (NOW() AT TIME ZONE 'Africa/Kigali')::date
+              BETWEEN t.start_date AND t.end_date
+
+        ORDER BY ay.school_id
+        `,
+        [schoolIds]
+    );
+
+    const periodsBySchool = new Map();
+
+    for (const period of result.rows) {
+        const schoolId = String(period.school_id);
+
+        if (!periodsBySchool.has(schoolId)) {
+            periodsBySchool.set(schoolId, []);
+        }
+
+        periodsBySchool.get(schoolId).push(period);
+    }
+
+    return periodsBySchool;
+}
+
+/* =====================================================
+   LOAD PERIODS USING THE ORIGINAL TEST CREATION DATE
+
+   Used only for older test_schools records whose
+   academic_year_id and term_id are still NULL.
+
+   This avoids incorrectly assigning today's period
+   to an older test.
+===================================================== */
+
+async function loadPeriodsAtTestCreation(
+    client,
+    schoolIds,
+    testCreatedAt
+) {
+    if (!schoolIds.length) {
+        return new Map();
+    }
+
+    const result = await client.query(
+        `
+        SELECT
+            ay.school_id,
+            ay.id AS academic_year_id,
+            ay.year_name,
+
+            t.id AS term_id,
+            t.term_name,
+            t.term_number
+
+        FROM academic_years ay
+
+        INNER JOIN terms t
+            ON t.academic_year_id = ay.id
+           AND t.school_id = ay.school_id
+
+        WHERE ay.school_id = ANY($1::bigint[])
+
+          AND $2::timestamptz IS NOT NULL
+
+          AND ($2::timestamptz AT TIME ZONE 'Africa/Kigali')::date
+              BETWEEN ay.start_date AND ay.end_date
+
+          AND ($2::timestamptz AT TIME ZONE 'Africa/Kigali')::date
+              BETWEEN t.start_date AND t.end_date
+
+        ORDER BY ay.school_id
+        `,
+        [
+            schoolIds,
+            testCreatedAt
+        ]
+    );
+
+    const periodsBySchool = new Map();
+
+    for (const period of result.rows) {
+        const schoolId = String(period.school_id);
+
+        if (!periodsBySchool.has(schoolId)) {
+            periodsBySchool.set(schoolId, []);
+        }
+
+        periodsBySchool.get(schoolId).push(period);
+    }
+
+    return periodsBySchool;
+}
+
+/* =====================================================
    POST: TEST ACTIONS
 
    Supported actions:
@@ -144,8 +267,8 @@ function validateSubjectMarks(subjectIds, subjectMarks) {
    Sector admin:
    Manages tests belonging to their sector.
 
-   School admin:
-   Manages tests belonging to their school.
+   School admin and DOS:
+   Manage tests belonging to their school.
 ===================================================== */
 
 export async function onRequestPost(context) {
@@ -155,7 +278,9 @@ export async function onRequestPost(context) {
         return auth.error;
     }
 
-    if (!["sector_admin", "school_admin"].includes(auth.role)) {
+    if (
+        !["sector_admin", "school_admin", "dos"].includes(auth.role)
+    ) {
         return json({
             success: false,
             message: "You are not allowed to manage tests."
@@ -460,7 +585,12 @@ export async function onRequestPost(context) {
                 getValue(data, "subject_ids", "subjectIds")
             );
 
-            if (auth.role === "school_admin") {
+            // School Admin and DOS can only manage
+            // their own school's tests.
+            if (
+                auth.role === "school_admin" ||
+                auth.role === "dos"
+            ) {
                 schoolIds = [String(auth.schoolId)];
             }
 
@@ -523,7 +653,7 @@ export async function onRequestPost(context) {
 
             let validSchools;
 
-            if (["sector_admin", "dos"].includes(auth.role)) {
+            if (auth.role === "sector_admin") {
                 validSchools = await client.query(
                     `
                     SELECT id
@@ -562,14 +692,9 @@ export async function onRequestPost(context) {
             /* -----------------------------------------
                VALIDATE CLASSES USING UNIVERSAL CLASSES
 
-               classes no longer contains school_id.
-
                A school offers a class when:
                school_levels.school_id = selected school
                school_levels.level_id = classes.level_id
-
-               A selected class can therefore be offered
-               by multiple selected schools.
             ----------------------------------------- */
 
             const validClasses = await client.query(
@@ -579,11 +704,15 @@ export async function onRequestPost(context) {
                     c.class_name,
                     c.level_id,
                     sl.school_id
+
                 FROM classes c
+
                 INNER JOIN school_levels sl
                     ON sl.level_id = c.level_id
+
                 WHERE c.id = ANY($1::bigint[])
                   AND sl.school_id = ANY($2::bigint[])
+
                 ORDER BY
                     sl.school_id,
                     c.class_name
@@ -641,6 +770,166 @@ export async function onRequestPost(context) {
             }
 
             /* -----------------------------------------
+               LOAD EXISTING SCHOOL PERIOD ASSIGNMENTS
+
+               Existing mappings must be preserved.
+            ----------------------------------------- */
+
+            const existingPeriodsResult = await client.query(
+                `
+                SELECT
+                    school_id,
+                    academic_year_id,
+                    term_id
+                FROM test_schools
+                WHERE test_id = $1
+                `,
+                [testId]
+            );
+
+            const existingPeriods = new Map(
+                existingPeriodsResult.rows.map(row => [
+                    String(row.school_id),
+                    row
+                ])
+            );
+
+            /* -----------------------------------------
+               IDENTIFY SCHOOLS NEEDING A PERIOD
+
+               Existing complete mappings are preserved.
+
+               Existing NULL mappings are resolved using
+               the original test creation date.
+
+               New schools use the currently active period.
+            ----------------------------------------- */
+
+            const schoolsNeedingOriginalPeriod = [];
+            const schoolsNeedingCurrentPeriod = [];
+
+            for (const schoolId of schoolIds) {
+                const existing = existingPeriods.get(schoolId);
+
+                if (
+                    existing &&
+                    existing.academic_year_id !== null &&
+                    existing.term_id !== null
+                ) {
+                    continue;
+                }
+
+                if (existing) {
+                    schoolsNeedingOriginalPeriod.push(schoolId);
+                } else {
+                    schoolsNeedingCurrentPeriod.push(schoolId);
+                }
+            }
+
+            /* -----------------------------------------
+               LOAD ORIGINAL PERIOD FOR OLDER MAPPINGS
+            ----------------------------------------- */
+
+            const originalPeriods = await loadPeriodsAtTestCreation(
+                client,
+                schoolsNeedingOriginalPeriod,
+                test.created_at
+            );
+
+            /* -----------------------------------------
+               LOAD CURRENT PERIOD FOR NEW SCHOOLS
+            ----------------------------------------- */
+
+            const currentPeriods = await loadActiveSchoolPeriods(
+                client,
+                schoolsNeedingCurrentPeriod
+            );
+
+            /* -----------------------------------------
+               BUILD FINAL SCHOOL PERIOD MAP
+            ----------------------------------------- */
+
+            const schoolAcademicPeriods = new Map();
+            const invalidPeriodSchools = [];
+
+            for (const schoolId of schoolIds) {
+                const existing = existingPeriods.get(schoolId);
+
+                // Preserve complete existing mappings.
+                if (
+                    existing &&
+                    existing.academic_year_id !== null &&
+                    existing.term_id !== null
+                ) {
+                    schoolAcademicPeriods.set(schoolId, {
+                        academic_year_id: existing.academic_year_id,
+                        term_id: existing.term_id
+                    });
+
+                    continue;
+                }
+
+                // Older mapping with NULL period:
+                // resolve using the test creation date.
+                if (existing) {
+                    const matchingPeriods =
+                        originalPeriods.get(schoolId) || [];
+
+                    if (matchingPeriods.length === 1) {
+                        schoolAcademicPeriods.set(schoolId, {
+                            academic_year_id:
+                                matchingPeriods[0].academic_year_id,
+                            term_id:
+                                matchingPeriods[0].term_id
+                        });
+                    } else {
+                        const school = schoolsForPeriodError(
+                            schoolId,
+                            schoolIds,
+                            validSchools.rows
+                        );
+
+                        invalidPeriodSchools.push(
+                            school || `School ID ${schoolId}`
+                        );
+                    }
+
+                    continue;
+                }
+
+                // Newly added school:
+                // use its currently active academic period.
+                const matchingPeriods =
+                    currentPeriods.get(schoolId) || [];
+
+                if (matchingPeriods.length === 1) {
+                    schoolAcademicPeriods.set(schoolId, {
+                        academic_year_id:
+                            matchingPeriods[0].academic_year_id,
+                        term_id:
+                            matchingPeriods[0].term_id
+                    });
+                } else {
+                    invalidPeriodSchools.push(
+                        `School ID ${schoolId}`
+                    );
+                }
+            }
+
+            if (invalidPeriodSchools.length > 0) {
+                await client.query("ROLLBACK");
+                transactionStarted = false;
+
+                return json({
+                    success: false,
+                    message:
+                        "Unable to update the test because an exact academic year and term could not be identified for: " +
+                        invalidPeriodSchools.join(", ") +
+                        ". No changes were saved."
+                }, 409);
+            }
+
+            /* -----------------------------------------
                UPDATE MAIN TEST
             ----------------------------------------- */
 
@@ -661,10 +950,10 @@ export async function onRequestPost(context) {
             );
 
             /* -----------------------------------------
-               REMOVE OLD RELATIONSHIPS
+               REMOVE OLD CLASS RELATIONSHIPS
 
-               Delete test_classes before test_schools
-               to respect possible foreign-key references.
+               Delete test_classes before removing
+               any school mappings.
             ----------------------------------------- */
 
             await client.query(
@@ -675,40 +964,56 @@ export async function onRequestPost(context) {
                 [testId]
             );
 
+            /* -----------------------------------------
+               REMOVE ONLY SCHOOLS NO LONGER SELECTED
+
+               Retained school mappings are preserved.
+            ----------------------------------------- */
+
             await client.query(
                 `
                 DELETE FROM test_schools
                 WHERE test_id = $1
+                  AND NOT (school_id = ANY($2::bigint[]))
                 `,
-                [testId]
-            );
-
-            await client.query(
-                `
-                DELETE FROM test_subjects
-                WHERE test_id = $1
-                `,
-                [testId]
+                [
+                    testId,
+                    schoolIds
+                ]
             );
 
             /* -----------------------------------------
-               INSERT UPDATED SCHOOLS FIRST
+               INSERT OR PRESERVE SCHOOL MAPPINGS
 
-               test_classes may reference test_schools.
+               Existing schools retain their original
+               academic year and term.
+
+               New schools receive their active period.
             ----------------------------------------- */
 
             for (const schoolId of schoolIds) {
+                const period = schoolAcademicPeriods.get(schoolId);
+
                 await client.query(
                     `
                     INSERT INTO test_schools (
                         test_id,
-                        school_id
+                        school_id,
+                        academic_year_id,
+                        term_id
                     )
-                    VALUES ($1, $2)
+                    VALUES ($1, $2, $3, $4)
+
+                    ON CONFLICT (test_id, school_id)
+                    DO UPDATE SET
+                        academic_year_id = EXCLUDED.academic_year_id,
+                        term_id = EXCLUDED.term_id
                     `,
                     [
                         testId,
-                        schoolId
+                        schoolId,
+                        period.academic_year_id,
+                        period.term_id
                     ]
                 );
             }
@@ -716,9 +1021,8 @@ export async function onRequestPost(context) {
             /* -----------------------------------------
                INSERT SCHOOL/CLASS COMBINATIONS
 
-               Example:
-               If P6 is offered by School 1 and School 2,
-               two test_classes records are inserted.
+               A selected class is linked to every
+               selected school offering that class.
             ----------------------------------------- */
 
             for (const selectedClass of validClasses.rows) {
@@ -740,8 +1044,16 @@ export async function onRequestPost(context) {
             }
 
             /* -----------------------------------------
-               INSERT SUBJECTS WITH MAXIMUM MARKS
+               UPDATE SUBJECT RELATIONSHIPS
             ----------------------------------------- */
+
+            await client.query(
+                `
+                DELETE FROM test_subjects
+                WHERE test_id = $1
+                `,
+                [testId]
+            );
 
             for (const subject of subjectMarks) {
                 await client.query(
@@ -787,4 +1099,15 @@ export async function onRequestPost(context) {
             await client.end().catch(() => {});
         }
     }
+}
+
+/* =====================================================
+   HELPER: SCHOOL NAME FOR PERIOD ERROR
+===================================================== */
+
+function schoolsForPeriodError(schoolId, schoolIds, validSchools) {
+    // The validated school rows contain IDs only.
+    // Return a clear identifier when the name is not
+    // available in this endpoint.
+    return `School ID ${schoolId}`;
 }
