@@ -696,9 +696,9 @@
                 Subjects
             </a>
 
-            <a href="examinations.html" class="nav-link">
-                <span class="nav-icon">✓</span>
-                Examinations
+            <a href="academic-calendar.html" class="nav-link">
+                <span class="nav-icon">⌚</span>
+                Academic Calendar
             </a>
 
             <a href="reports.html" class="nav-link">
@@ -853,9 +853,9 @@
                             <div class="stat-icon pink">✓</div>
                         </div>
 
-                        <p>Examinations</p>
+                        <p>Academic Calendar</p>
                         <h2 id="totalExaminations" class="loading">—</h2>
-                        <div class="stat-footer">Recorded examinations</div>
+                        <div class="stat-footer">Manage Academic Years</div>
                     </div>
 
                     <div class="stat-card">
@@ -944,17 +944,17 @@
                     </div>
 
                     <div class="management-card">
-                        <div class="management-icon cyan">✓</div>
+                        <div class="management-icon cyan">⌚</div>
 
-                        <h4>Examinations</h4>
+                        <h4>Academic Year</h4>
 
                         <p>
-                            Monitor examination activities and
-                            records across registered schools.
+                            Manage academic calendar 
+                             across registered schools.
                         </p>
 
-                        <a href="examinations.html">
-                            View Examinations →
+                        <a href="academic-years.html">
+                            Manage Academic Year →
                         </a>
                     </div>
 
@@ -1027,7 +1027,7 @@ async function verifyOwnerSession() {
         const data = await response.json();
 
         if (!response.ok || !data.success || !data.user) {
-            window.location.replace("../index.html");
+            window.location.replace("../../index.html");
             return false;
         }
 
@@ -1067,7 +1067,7 @@ async function verifyOwnerSession() {
     } catch (error) {
         console.error("Session verification error:", error);
 
-        window.location.replace("../index.html");
+        window.location.replace("../../index.html");
         return false;
     }
 }
