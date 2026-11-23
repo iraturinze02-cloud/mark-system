@@ -19,7 +19,7 @@ export async function onRequest(context) {
         }, 405);
     }
 
-    if (!["sector_admin","dos", "school_admin"].includes(auth.role)) {
+    if (!["sector_admin", "dos", "school_admin"].includes(auth.role)) {
         return json({
             success: false,
             message: "You are not allowed to access test creation options."
@@ -59,15 +59,104 @@ export async function onRequest(context) {
             schools = result.rows;
         }
 
-        const schoolIds = schools.map(school => String(school.id));
+        const schoolIds = schools.map(
+            school => String(school.id)
+        );
 
         if (!schoolIds.length) {
             return json({
                 success: true,
                 schools: [],
                 classes: [],
-                subjects: []
+                subjects: [],
+                academic_periods: []
             });
+        }
+
+        // =========================================
+        // LOAD ACTIVE ACADEMIC YEAR AND TERM
+        // FOR EACH AUTHORIZED SCHOOL
+        // =========================================
+
+        const academicPeriodResult = await client.query(`
+            SELECT
+                ay.school_id,
+                ay.id AS academic_year_id,
+                ay.year_name,
+                ay.start_date AS academic_year_start,
+                ay.end_date AS academic_year_end,
+
+                t.id AS term_id,
+                t.term_number,
+                t.term_name,
+                t.start_date AS term_start,
+                t.end_date AS term_end
+
+            FROM academic_years ay
+
+            INNER JOIN terms t
+                ON t.academic_year_id = ay.id
+               AND t.school_id = ay.school_id
+
+            WHERE ay.school_id = ANY($1::bigint[])
+
+              AND (NOW() AT TIME ZONE 'Africa/Kigali')::date
+                  BETWEEN ay.start_date AND ay.end_date
+
+              AND (NOW() AT TIME ZONE 'Africa/Kigali')::date
+                  BETWEEN t.start_date AND t.end_date
+
+            ORDER BY ay.school_id
+        `, [schoolIds]);
+
+        // =========================================
+        // ENSURE EACH SCHOOL HAS EXACTLY ONE
+        // ACTIVE ACADEMIC YEAR AND TERM
+        // =========================================
+
+        const periodsBySchool = new Map();
+
+        for (const period of academicPeriodResult.rows) {
+            const schoolId = String(period.school_id);
+
+            if (!periodsBySchool.has(schoolId)) {
+                periodsBySchool.set(schoolId, []);
+            }
+
+            periodsBySchool.get(schoolId).push(period);
+        }
+
+        const academicPeriods = [];
+        const schoolsWithoutValidPeriod = [];
+
+        for (const school of schools) {
+            const periods =
+                periodsBySchool.get(String(school.id)) || [];
+
+            if (periods.length !== 1) {
+                schoolsWithoutValidPeriod.push({
+                    school_id: school.id,
+                    school_name: school.school_name,
+                    matching_periods: periods.length
+                });
+
+                continue;
+            }
+
+            academicPeriods.push({
+                school_id: school.id,
+                school_name: school.school_name,
+                ...periods[0]
+            });
+        }
+
+        if (schoolsWithoutValidPeriod.length) {
+            return json({
+                success: false,
+                message:
+                    "Every selected school must have exactly one active academic year and term before creating a test.",
+                schools: schoolsWithoutValidPeriod
+            }, 409);
         }
 
         // =========================================
@@ -144,11 +233,16 @@ export async function onRequest(context) {
                 s.subject_name
         `);
 
+        // =========================================
+        // RETURN ALL TEST CREATION OPTIONS
+        // =========================================
+
         return json({
             success: true,
             schools,
             classes: classResult.rows,
-            subjects: subjectResult.rows
+            subjects: subjectResult.rows,
+            academic_periods: academicPeriods
         });
 
     } catch (error) {
