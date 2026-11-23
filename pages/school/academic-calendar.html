@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Academic Years & Terms | Fila Grades System</title>
+
+<style>
+:root {
+    --primary: #1746a2;
+    --primary-dark: #10377f;
+    --background: #f4f6fa;
+    --white: #ffffff;
+    --text: #172033;
+    --muted: #687386;
+    --border: #e2e7ef;
+    --success: #16834a;
+    --warning: #b7791f;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: var(--background);
+    color: var(--text);
+}
+
+header {
+    background: var(--white);
+    padding: 18px 25px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+}
+
+header h2 {
+    margin: 0;
+    color: var(--primary);
+    font-size: 20px;
+}
+
+header small {
+    color: var(--muted);
+}
+
+button {
+    border: none;
+    border-radius: 7px;
+    padding: 10px 15px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.refresh-btn {
+    background: #edf1f8;
+    color: var(--text);
+}
+
+.container {
+    max-width: 1150px;
+    margin: 28px auto;
+    padding: 0 18px 40px;
+}
+
+.page-heading {
+    margin-bottom: 22px;
+}
+
+.page-heading h1 {
+    margin: 0 0 8px;
+    font-size: 25px;
+}
+
+.page-heading p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+    margin-bottom: 22px;
+}
+
+.stat-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 19px;
+}
+
+.stat-card span {
+    display: block;
+    color: var(--muted);
+    font-size: 13px;
+    margin-bottom: 9px;
+}
+
+.stat-card strong {
+    font-size: 22px;
+    color: var(--primary);
+    overflow-wrap: anywhere;
+}
+
+.section {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 20px;
+    overflow: hidden;
+}
+
+.section-header {
+    padding: 18px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.section-header h3 {
+    margin: 0;
+    font-size: 17px;
+}
+
+.section-content {
+    padding: 20px;
+}
+
+.year-card {
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    margin-bottom: 17px;
+    overflow: hidden;
+}
+
+.year-card:last-child {
+    margin-bottom: 0;
+}
+
+.year-top {
+    padding: 17px;
+    background: #f9fbff;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.year-top h4 {
+    margin: 0 0 8px;
+    font-size: 17px;
+}
+
+.year-dates {
+    color: var(--muted);
+    font-size: 13px;
+}
+
+.badge {
+    display: inline-block;
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: bold;
+    text-transform: capitalize;
+}
+
+.badge.active {
+    color: var(--success);
+    background: #e5f7ed;
+}
+
+.badge.upcoming,
+.badge.planned {
+    color: var(--warning);
+    background: #fff4dc;
+}
+
+.badge.completed {
+    color: #526071;
+    background: #edf0f4;
+}
+
+.badge.unknown {
+    color: var(--muted);
+    background: #edf0f4;
+}
+
+.term-list {
+    padding: 12px 16px;
+}
+
+.term-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 8px;
+    border-bottom: 1px solid var(--border);
+}
+
+.term-row:last-child {
+    border-bottom: none;
+}
+
+.term-row strong {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 14px;
+}
+
+.term-row small {
+    color: var(--muted);
+    font-size: 12px;
+}
+
+.empty {
+    text-align: center;
+    padding: 35px 15px;
+    color: var(--muted);
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.loading {
+    text-align: center;
+    padding: 30px;
+    color: var(--muted);
+    font-size: 14px;
+}
+
+.message {
+    display: none;
+    padding: 13px 15px;
+    margin-bottom: 18px;
+    border-radius: 7px;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.message.show {
+    display: block;
+}
+
+.message.error {
+    background: #fdeaea;
+    color: #a52c2c;
+}
+
+.message.info {
+    background: #eaf1ff;
+    color: #1746a2;
+}
+
+.active-panel {
+    background: #eef5ff;
+    border: 1px solid #d9e6ff;
+    padding: 17px;
+    border-radius: 9px;
+    margin-bottom: 20px;
+}
+
+.active-panel h3 {
+    margin: 0 0 13px;
+    font-size: 16px;
+    color: var(--primary);
+}
+
+.active-item {
+    margin-top: 10px;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.active-item strong {
+    display: block;
+    margin-bottom: 3px;
+}
+
+.footer-note {
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.6;
+    margin-top: 18px;
+}
+
+@media(max-width: 650px) {
+    header {
+        padding: 15px;
+    }
+
+    .container {
+        margin-top: 20px;
+    }
+
+    .stats {
+        grid-template-columns: 1fr;
+    }
+
+    .page-heading h1 {
+        font-size: 21px;
+    }
+
+    .year-top {
+        align-items: flex-start;
+    }
+
+    .term-row {
+        align-items: flex-start;
+    }
+
+    .term-row .badge {
+        white-space: nowrap;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <div>
+        <h2>FILA GRADES SYSTEM</h2>
+        <small>School Academic Calendar</small>
+    </div>
+
+    <button class="refresh-btn" onclick="loadCalendar()">
+        Refresh
+    </button>
+</header>
+
+<main class="container">
+
+    <div class="page-heading">
+        <h1>Academic Years & Terms</h1>
+        <p>
+            View the official academic calendar shared across all schools
+            registered in Fila Grades System.
+        </p>
+    </div>
+
+    <div id="message" class="message"></div>
+
+    <div class="stats">
+
+        <div class="stat-card">
+            <span>Academic Years</span>
+            <strong id="yearCount">0</strong>
+        </div>
+
+        <div class="stat-card">
+            <span>Active Academic Year</span>
+            <strong id="activeYear" style="font-size:17px;">None</strong>
+        </div>
+
+        <div class="stat-card">
+            <span>Active Term</span>
+            <strong id="activeTerm" style="font-size:17px;">None</strong>
+        </div>
+
+    </div>
+
+    <section class="section">
+
+        <div class="section-header">
+            <h3>Currently Active Academic Period</h3>
+            <span id="lastUpdated" style="font-size:12px;color:#687386;">
+                Loading...
+            </span>
+        </div>
+
+        <div class="section-content">
+
+            <div class="active-panel">
+
+                <h3>Current Academic Year</h3>
+
+                <div class="active-item">
+                    <strong id="currentYearName">No active academic year</strong>
+                    <span id="currentYearDates">No dates available</span>
+                </div>
+
+                <div class="active-item" style="margin-top:18px;">
+                    <strong>Current Term</strong>
+                    <span id="currentTermName">No active term</span>
+                    <br>
+                    <small id="currentTermDates"></small>
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+    <section class="section">
+
+        <div class="section-header">
+            <h3>All Academic Years & Terms</h3>
+            <span id="calendarStatus" style="font-size:12px;color:#687386;">
+                Loading...
+            </span>
+        </div>
+
+        <div class="section-content" id="calendarContent">
+            <div class="loading">
+                Loading academic calendar...
+            </div>
+        </div>
+
+    </section>
+
+    <p class="footer-note">
+        This is a read-only academic calendar. Academic years and terms are
+        centrally managed for all schools. Their statuses are determined
+        automatically according to their dates.
+    </p>
+
+</main>
+
+<script>
+const API_URL = "/api/academic-calendar";
+
+let academicYears = [];
+
+const messageBox = document.getElementById("message");
+
+function showMessage(message, type = "info") {
+    messageBox.textContent = message;
+    messageBox.className = "message show " + type;
+}
+
+function escapeHTML(value) {
+    return String(value ?? "").replace(/[&<>"']/g, char => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#039;"
+    })[char]);
+}
+
+function formatDate(date) {
+    if (!date) return "Not set";
+
+    const parts = String(date).slice(0, 10).split("-");
+
+    if (parts.length !== 3) return date;
+
+    return `${parts[2]}/${parts[1]}/${parts[0]}`;
+}
+
+function statusClass(status) {
+    const value = String(status || "unknown").toLowerCase();
+
+    if (value === "active") return "active";
+    if (value === "completed") return "completed";
+    if (value === "upcoming" || value === "planned") return "upcoming";
+
+    return "unknown";
+}
+
+function getTerms(year) {
+    return Array.isArray(year.terms) ? year.terms : [];
+}
+
+async function apiRequest() {
+    const response = await fetch(API_URL, {
+        method: "GET",
+        credentials: "same-origin",
+        headers: {
+            "Accept": "application/json"
+        }
+    });
+
+    const data = await response.json().catch(() => null);
+
+    if (!response.ok || !data || data.success === false) {
+        throw new Error(
+            data?.message ||
+            data?.error ||
+            "Unable to retrieve the academic calendar."
+        );
+    }
+
+    return data;
+}
+
+function renderActivePeriod(data) {
+    const year = data.active_academic_year;
+    const term = data.active_term;
+
+    document.getElementById("activeYear").textContent =
+        year?.year_name || "None";
+
+    document.getElementById("activeTerm").textContent =
+        term?.term_name || "None";
+
+    document.getElementById("currentYearName").textContent =
+        year?.year_name || "No active academic year";
+
+    document.getElementById("currentYearDates").textContent =
+        year
+            ? formatDate(year.start_date) + " – " + formatDate(year.end_date)
+            : "No dates available";
+
+    document.getElementById("currentTermName").textContent =
+        term?.term_name || "No active term";
+
+    document.getElementById("currentTermDates").textContent =
+        term
+            ? formatDate(term.start_date) + " – " + formatDate(term.end_date)
+            : "";
+}
+
+function renderCalendar() {
+    const content = document.getElementById("calendarContent");
+
+    if (!academicYears.length) {
+        content.innerHTML = `
+            <div class="empty">
+                <strong>No academic years are available.</strong>
+                <br>
+                The shared academic calendar has not yet been populated.
+            </div>
+        `;
+        return;
+    }
+
+    content.innerHTML = academicYears.map(year => {
+        const terms = getTerms(year);
+
+        const termHTML = terms.length
+            ? terms.map(term => `
+                <div class="term-row">
+
+                    <div>
+                        <strong>
+                            ${escapeHTML(
+                                term.term_name ||
+                                ("Term " + term.term_number)
+                            )}
+                        </strong>
+
+                        <small>
+                            ${formatDate(term.start_date)}
+                            – ${formatDate(term.end_date)}
+                        </small>
+                    </div>
+
+                    <span class="badge ${statusClass(term.status)}">
+                        ${escapeHTML(term.status || "Unknown")}
+                    </span>
+
+                </div>
+            `).join("")
+            : `
+                <div class="empty">
+                    No terms have been added to this academic year.
+                </div>
+            `;
+
+        return `
+            <div class="year-card">
+
+                <div class="year-top">
+
+                    <div>
+                        <h4>${escapeHTML(year.year_name)}</h4>
+
+                        <div class="year-dates">
+                            ${formatDate(year.start_date)}
+                            – ${formatDate(year.end_date)}
+                        </div>
+                    </div>
+
+                    <span class="badge ${statusClass(year.status)}">
+                        ${escapeHTML(year.status || "Unknown")}
+                    </span>
+
+                </div>
+
+                <div class="term-list">
+                    ${termHTML}
+                </div>
+
+            </div>
+        `;
+    }).join("");
+}
+
+async function loadCalendar() {
+    const content = document.getElementById("calendarContent");
+
+    content.innerHTML =
+        '<div class="loading">Loading academic calendar...</div>';
+
+    document.getElementById("calendarStatus").textContent =
+        "Loading...";
+
+    try {
+        const data = await apiRequest();
+
+        academicYears = Array.isArray(data.academic_years)
+            ? data.academic_years
+            : [];
+
+        document.getElementById("yearCount").textContent =
+            academicYears.length;
+
+        renderActivePeriod(data);
+        renderCalendar();
+
+        document.getElementById("calendarStatus").textContent =
+            academicYears.length + " academic year(s)";
+
+        document.getElementById("lastUpdated").textContent =
+            "Updated: " + new Date().toLocaleTimeString();
+
+        messageBox.className = "message";
+
+    } catch (error) {
+        content.innerHTML = `
+            <div class="empty">
+                ${escapeHTML(error.message)}
+            </div>
+        `;
+
+        document.getElementById("calendarStatus").textContent =
+            "Unable to load";
+
+        showMessage(error.message, "error");
+    }
+}
+
+document.addEventListener("DOMContentLoaded", loadCalendar);
+</script>
+
+</body>
+</html>
