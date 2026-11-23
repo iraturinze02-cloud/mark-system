@@ -8,9 +8,21 @@ import {
 /* =====================================================
    GET: SCHOOL MARKS — VIEW ONLY
    Includes test creator information for report cards.
+
+   ACCESS:
+   1. Sector Admin:
+      - Views tests and results across their sector.
+
+   2. School Admin / DOS:
+      - Can view results across their sector only when:
+        a. The test was created by a Sector Admin.
+        b. The test status is closed.
+        c. The test belongs to their sector.
+      - Must provide test_id.
 ===================================================== */
 
 export async function onRequestGet(context) {
+
     const auth = await authenticateRole(context, [
         "sector_admin",
         "school_admin",
@@ -22,17 +34,25 @@ export async function onRequestGet(context) {
     let client;
 
     try {
+
         client = await connectDB(context);
 
         let scopeCondition = "";
         let parameters = [];
 
-        /* ---------------------------------------------
+        const url = new URL(context.request.url);
+        const requestedTestId = url.searchParams.get("test_id");
+
+        const accessDeniedMessage =
+            "You are not yet allowed to access this page because marks recording for this test is still in progress. Please come back later.";
+
+        /* =================================================
            SECTOR ADMIN
            All schools and classes in their sector.
-        --------------------------------------------- */
+        ================================================= */
 
         if (auth.role === "sector_admin") {
+
             scopeCondition = `
                 EXISTS (
                     SELECT 1
@@ -55,33 +75,103 @@ export async function onRequestGet(context) {
 
             parameters = [auth.sectorId];
 
-        } else {
+        }
 
-            /* -----------------------------------------
-               SCHOOL ADMIN
-               Only their own school's classes and tests.
-            ----------------------------------------- */
+        /* =================================================
+           SCHOOL ADMIN / DOS
+           Closed Sector Admin-created tests only.
+        ================================================= */
+
+        else {
+
+            if (!auth.schoolId || !requestedTestId) {
+
+                return json({
+                    success: false,
+                    message: accessDeniedMessage
+                }, 403);
+
+            }
+
+            /* ---------------------------------------------
+               VERIFY TEST ACCESS
+
+               The test must:
+               - Exist.
+               - Be closed.
+               - Have been created by a Sector Admin.
+               - Belong to the user's sector.
+            --------------------------------------------- */
+
+            const accessCheck = await client.query(
+                `
+                SELECT t.id
+
+                FROM tests t
+
+                INNER JOIN users creator
+                    ON creator.id = t.created_by
+
+                INNER JOIN schools user_school
+                    ON user_school.id = $2
+
+                WHERE t.id = $1
+                  AND t.status = 'closed'
+                  AND creator.role = 'sector_admin'
+                  AND t.sector_id = user_school.sector_id
+
+                LIMIT 1
+                `,
+                [requestedTestId, auth.schoolId]
+            );
+
+            if (!accessCheck.rows.length) {
+
+                return json({
+                    success: false,
+                    message: accessDeniedMessage
+                }, 403);
+
+            }
+
+            /* ---------------------------------------------
+               LOAD ONLY THE SELECTED TEST AND ALL ITS
+               CLASSES IN THE USER'S SECTOR.
+            --------------------------------------------- */
 
             scopeCondition = `
-                tc.school_id = $1
-                AND (
-                    t.school_id = $1
-                    OR EXISTS (
-                        SELECT 1
-                        FROM test_schools assigned_school
-                        WHERE assigned_school.test_id = t.id
-                          AND assigned_school.school_id = $1
+                t.id = $1
+                AND t.status = 'closed'
+                AND creator.role = 'sector_admin'
+
+                AND t.sector_id = (
+                    SELECT sector_id
+                    FROM schools
+                    WHERE id = $2
+                )
+
+                AND tc.school_id IN (
+                    SELECT id
+                    FROM schools
+                    WHERE sector_id = (
+                        SELECT sector_id
+                        FROM schools
+                        WHERE id = $2
                     )
                 )
             `;
 
-            parameters = [auth.schoolId];
+            parameters = [
+                requestedTestId,
+                auth.schoolId
+            ];
+
         }
 
-        /* ---------------------------------------------
+        /* =================================================
            LOAD TESTS, CREATORS, CLASSES, STUDENTS,
            SUBJECTS AND MARKS
-        --------------------------------------------- */
+        ================================================= */
 
         const result = await client.query(
             `
@@ -170,9 +260,9 @@ export async function onRequestGet(context) {
             parameters
         );
 
-        /* ---------------------------------------------
+        /* =================================================
            ORGANIZE RESULTS
-        --------------------------------------------- */
+        ================================================= */
 
         const testsMap = new Map();
 
@@ -183,17 +273,29 @@ export async function onRequestGet(context) {
             if (!testsMap.has(testKey)) {
 
                 testsMap.set(testKey, {
+
                     id: testKey,
+
                     name: row.test_name,
+
                     status: row.status,
+
                     created_at: row.test_created_at,
 
-                    // Test creator information
+                    /* -------------------------------------
+                       TEST CREATOR INFORMATION
+                    ------------------------------------- */
+
                     created_by: String(row.created_by),
+
                     creator_name: row.creator_name,
+
                     creator_role: row.creator_role,
 
-                    // Original test ownership
+                    /* -------------------------------------
+                       ORIGINAL TEST OWNERSHIP
+                    ------------------------------------- */
+
                     sector_id: row.test_sector_id === null
                         ? null
                         : String(row.test_sector_id),
@@ -202,17 +304,26 @@ export async function onRequestGet(context) {
                         ? null
                         : String(row.test_school_id),
 
-                    // Used by the frontend to choose report-card sections
-                    report_card_type: row.creator_role === "sector_admin"
-                        ? "school_and_sector"
-                        : "school_only",
+                    /* -------------------------------------
+                       REPORT CARD TYPE
+                    ------------------------------------- */
+
+                    report_card_type:
+                        row.creator_role === "sector_admin"
+                            ? "school_and_sector"
+                            : "school_only",
 
                     classes: []
+
                 });
 
             }
 
             const test = testsMap.get(testKey);
+
+            /* ---------------------------------------------
+               FIND OR CREATE CLASS
+            --------------------------------------------- */
 
             let classItem = test.classes.find(
                 item =>
@@ -223,21 +334,30 @@ export async function onRequestGet(context) {
             if (!classItem) {
 
                 classItem = {
+
                     class_id: String(row.class_id),
+
                     class_name: row.class_name,
+
                     class_level: row.class_level,
+
                     school_id: String(row.school_id),
+
                     school_name: row.school_name,
+
                     subjects: [],
+
                     students: []
+
                 };
 
                 test.classes.push(classItem);
+
             }
 
-            /* -----------------------------------------
+            /* =================================================
                SUBJECTS
-            ----------------------------------------- */
+            ================================================= */
 
             const subjectId = String(row.subject_id);
 
@@ -248,17 +368,22 @@ export async function onRequestGet(context) {
             ) {
 
                 classItem.subjects.push({
+
                     id: subjectId,
+
                     name: row.subject_name,
+
                     code: row.subject_code,
+
                     maximum_mark: Number(row.maximum_mark)
+
                 });
 
             }
 
-            /* -----------------------------------------
+            /* =================================================
                ACTIVE STUDENTS
-            ----------------------------------------- */
+            ================================================= */
 
             if (row.student_id === null) continue;
 
@@ -271,13 +396,19 @@ export async function onRequestGet(context) {
             if (!student) {
 
                 student = {
+
                     id: studentId,
+
                     name: row.student_name,
+
                     student_code: row.student_code,
+
                     marks: {}
+
                 };
 
                 classItem.students.push(student);
+
             }
 
             student.marks[subjectId] =
@@ -287,30 +418,51 @@ export async function onRequestGet(context) {
 
         }
 
+        /* =================================================
+           RESPONSE
+        ================================================= */
+
         return json({
+
             success: true,
+
             tests: Array.from(testsMap.values()),
+
             user: {
+
                 role: auth.role,
+
                 schoolId: auth.schoolId,
+
                 sectorId: auth.sectorId
+
             }
+
         });
 
     } catch (error) {
 
-        console.error("School Marks loading error:", error);
+        console.error(
+            "School Marks loading error:",
+            error
+        );
 
         return json({
+
             success: false,
+
             message: "Unable to load school marks."
+
         }, 500);
 
     } finally {
 
         if (client) {
+
             await client.end().catch(() => {});
+
         }
 
     }
+
 }
