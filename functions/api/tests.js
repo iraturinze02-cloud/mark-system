@@ -41,14 +41,6 @@ function validClosingAt(value) {
 
 /* =====================================================
    VALIDATE SUBJECT MAXIMUM MARKS
-
-   DEFAULT:
-   If maximum marks are not supplied, use 100.
-
-   If an individual subject's maximum mark is blank,
-   use 100 for that subject.
-
-   Explicit positive values are preserved.
 ===================================================== */
 
 function validateSubjectMarks(subjectIds, subjectMarks) {
@@ -168,6 +160,7 @@ async function closeExpiredTests(client) {
 
 /* =====================================================
    GET: LOAD TESTS
+   SUPPORTS ACADEMIC YEAR AND TERM FILTERING
 ===================================================== */
 
 export async function onRequestGet(context) {
@@ -270,6 +263,174 @@ export async function onRequestGet(context) {
                 success: false,
                 message: "Not authorized."
             }, 403);
+        }
+
+        /* ---------------------------------------------
+           READ ACADEMIC PERIOD FILTERS
+        --------------------------------------------- */
+
+        const url = new URL(context.request.url);
+
+        const requestedSchoolId =
+            url.searchParams.get("school_id");
+
+        const academicYearId =
+            url.searchParams.get("academic_year_id");
+
+        const termId =
+            url.searchParams.get("term_id");
+
+        const filterRequested =
+            requestedSchoolId !== null ||
+            academicYearId !== null ||
+            termId !== null;
+
+        let periodFilterCondition = "";
+
+        if (filterRequested) {
+
+            /* All three IDs must be supplied */
+
+            if (
+                requestedSchoolId === null ||
+                academicYearId === null ||
+                termId === null ||
+
+                !/^\d+$/.test(requestedSchoolId) ||
+                !/^\d+$/.test(academicYearId) ||
+                !/^\d+$/.test(termId)
+            ) {
+                return json({
+                    success: false,
+                    message:
+                        "Provide a valid school, academic year and term."
+                }, 400);
+            }
+
+            let filterSchoolId = requestedSchoolId;
+
+            /* -----------------------------------------
+               SCHOOL ADMIN AND DOS
+            ----------------------------------------- */
+
+            if (
+                ["school_admin", "dos"].includes(auth.role)
+            ) {
+                if (
+                    String(auth.schoolId) !== requestedSchoolId
+                ) {
+                    return json({
+                        success: false,
+                        message:
+                            "You cannot filter tests for another school."
+                    }, 403);
+                }
+            }
+
+            /* -----------------------------------------
+               TEACHER
+
+               Verify that the teacher has an assignment
+               in the selected school.
+            ----------------------------------------- */
+
+            else if (auth.role === "teacher") {
+                const teacherSchool = await client.query(
+                    `
+                    SELECT 1
+                    FROM teachers tr
+
+                    INNER JOIN teacher_assignments ta
+                        ON ta.teacher_id = tr.id
+
+                    WHERE tr.user_id = $1
+                      AND ta.school_id = $2
+
+                    LIMIT 1
+                    `,
+                    [
+                        auth.userId,
+                        filterSchoolId
+                    ]
+                );
+
+                if (teacherSchool.rows.length === 0) {
+                    return json({
+                        success: false,
+                        message:
+                            "You are not assigned to the selected school."
+                    }, 403);
+                }
+            }
+
+            /* -----------------------------------------
+               SECTOR ADMIN
+
+               Verify that the selected school belongs
+               to the administrator's sector.
+            ----------------------------------------- */
+
+            else if (auth.role === "sector_admin") {
+                const selectedSchool = await client.query(
+                    `
+                    SELECT id
+                    FROM schools
+                    WHERE id = $1
+                      AND sector_id = $2
+                    LIMIT 1
+                    `,
+                    [
+                        filterSchoolId,
+                        auth.sectorId
+                    ]
+                );
+
+                if (selectedSchool.rows.length === 0) {
+                    return json({
+                        success: false,
+                        message:
+                            "The selected school does not belong to your sector."
+                    }, 403);
+                }
+            }
+
+            /* -----------------------------------------
+               BUILD ACADEMIC PERIOD FILTER
+
+               Every school has its own academic year
+               and term IDs.
+
+               The selected school must have a matching
+               mapping on the test.
+            ----------------------------------------- */
+
+            const schoolParameter = parameters.length + 1;
+            const yearParameter = parameters.length + 2;
+            const termParameter = parameters.length + 3;
+
+            periodFilterCondition = `
+                AND EXISTS (
+                    SELECT 1
+                    FROM test_schools period_filter
+
+                    WHERE period_filter.test_id = t.id
+
+                      AND period_filter.school_id =
+                          $${schoolParameter}::bigint
+
+                      AND period_filter.academic_year_id =
+                          $${yearParameter}::bigint
+
+                      AND period_filter.term_id =
+                          $${termParameter}::bigint
+                )
+            `;
+
+            parameters.push(
+                filterSchoolId,
+                academicYearId,
+                termId
+            );
         }
 
         /* ---------------------------------------------
@@ -443,6 +604,7 @@ export async function onRequestGet(context) {
             ) test_subjects ON TRUE
 
             WHERE ${visibilityCondition}
+            ${periodFilterCondition}
 
             ORDER BY t.created_at DESC
             `,
@@ -718,12 +880,6 @@ export async function onRequestPost(context) {
 
     /* ---------------------------------------------
        READ SELECTED SCHOOLS
-
-       School Admin and DOS:
-       Automatically use their own school.
-
-       Sector Admin:
-       Selects schools within their sector.
     --------------------------------------------- */
 
     let schoolIds;
@@ -780,8 +936,6 @@ export async function onRequestPost(context) {
 
     /* ---------------------------------------------
        VALIDATE MAXIMUM MARKS FOR EACH SUBJECT
-
-       Missing or blank values default to 100.
     --------------------------------------------- */
 
     const subjectMarksValidation = validateSubjectMarks(
@@ -868,8 +1022,8 @@ export async function onRequestPost(context) {
 
            Each school has its own replicated IDs.
 
-           The current Kigali date determines the
-           active academic year and term.
+           Kigali local date determines the active
+           academic year and term.
 
            Exactly one matching period is required
            for each selected school.
@@ -914,8 +1068,7 @@ export async function onRequestPost(context) {
         );
 
         /* ---------------------------------------------
-           CHECK THAT EACH SCHOOL HAS EXACTLY ONE
-           ACTIVE ACADEMIC YEAR AND TERM
+           CHECK EACH SCHOOL HAS EXACTLY ONE PERIOD
         --------------------------------------------- */
 
         const periodsBySchool = new Map();
@@ -965,12 +1118,6 @@ export async function onRequestPost(context) {
 
         /* ---------------------------------------------
            VALIDATE SELECTED CLASSES
-
-           A class is valid if at least one selected
-           school offers its education level.
-
-           Every valid school/class combination is
-           inserted into test_classes.
         --------------------------------------------- */
 
         const validClasses = await client.query(
@@ -1061,10 +1208,7 @@ export async function onRequestPost(context) {
         const test = testResult.rows[0];
 
         /* ---------------------------------------------
-           INSERT TEST SCHOOLS AND THEIR PERIODS FIRST
-
-           Required by the composite foreign key
-           in test_classes.
+           INSERT TEST SCHOOLS AND THEIR PERIODS
         --------------------------------------------- */
 
         for (const schoolId of schoolIds) {
@@ -1121,9 +1265,6 @@ export async function onRequestPost(context) {
 
         /* ---------------------------------------------
            INSERT TEST SUBJECTS WITH MAXIMUM MARKS
-
-           Missing or blank maximum marks are saved
-           as 100 by validateSubjectMarks().
         --------------------------------------------- */
 
         for (const subject of subjectMarks) {
