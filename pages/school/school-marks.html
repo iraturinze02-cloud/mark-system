@@ -465,7 +465,13 @@ tbody tr:hover {
 >
     GENERATE REPORT CARDS
 </button>
-
+<button
+    id="viewSectorMarksBtn"
+    class="download-btn"
+    onclick="viewSectorMarks()"
+    style="display: none;">
+    View Marks Across All Sector Schools
+</button>
 </div>
 
 <!-- =====================================================
@@ -757,6 +763,49 @@ reportCardsBtn.style.display =
     }
 
 }
+    function updateSectorMarksButton(test) {
+
+    const button = document.getElementById("viewSectorMarksBtn");
+
+    if (!button) return;
+
+    const allowedRole = [
+        "school_admin",
+        "dos"
+    ].includes(currentUserRole);
+
+    const sectorCreated =
+        test?.creator_role === "sector_admin";
+
+    const testClosed =
+        String(test?.status || "").toLowerCase() === "closed";
+
+    button.style.display =
+        allowedRole && sectorCreated && testClosed
+            ? "inline-block"
+            : "none";
+}
+
+function viewSectorMarks() {
+
+    if (!selectedTestId) return;
+
+    const test = allTests.find(
+        item => String(item.id) === String(selectedTestId)
+    );
+
+    if (
+        !test ||
+        !["school_admin", "dos"].includes(currentUserRole) ||
+        test.creator_role !== "sector_admin" ||
+        String(test.status).toLowerCase() !== "closed"
+    ) {
+        return;
+    }
+
+    window.location.href =
+        `../sector/view-all-students-marks.html?test_id=${encodeURIComponent(selectedTestId)}`;
+}
 
 
 /* =====================================================
@@ -872,6 +921,7 @@ function displaySelectedTest() {
     const schoolSelect = document.getElementById("schoolSelect");
 
     if (!testSelect || !testSelect.value) {
+        updateSectorMarksButton(null);
 
         container.innerHTML = `
             <div class="message">
