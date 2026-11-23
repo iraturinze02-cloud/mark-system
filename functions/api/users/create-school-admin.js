@@ -99,6 +99,224 @@ async function ensureSchoolLevels(client, schoolId, levelIds) {
 }
 
 /* =====================================================
+   AUTOMATIC SCHOOL ACADEMIC CALENDAR SETUP
+
+   - Uses an existing school's shared calendar.
+   - Creates school-specific academic-year IDs.
+   - Creates terms using the new academic-year IDs.
+   - Does not overwrite existing calendar records.
+   - Can complete missing records for an existing school.
+===================================================== */
+
+async function ensureSchoolAcademicCalendar(client, schoolId) {
+
+    /* =============================================
+       FIND THE MOST COMPLETE EXISTING CALENDAR
+    ============================================= */
+
+    const templateResult = await client.query(
+        `SELECT ay.school_id
+         FROM academic_years ay
+         GROUP BY ay.school_id
+         ORDER BY
+            COUNT(DISTINCT ay.id) DESC,
+            (
+                SELECT COUNT(*)
+                FROM terms t
+                WHERE t.school_id = ay.school_id
+            ) DESC,
+            ay.school_id ASC
+         LIMIT 1`
+    );
+
+    if (templateResult.rows.length === 0) {
+        throw new Error(
+            "No existing academic calendar is available to initialize this school."
+        );
+    }
+
+    const templateSchoolId = templateResult.rows[0].school_id;
+
+    /* =============================================
+       LOAD TEMPLATE ACADEMIC YEARS AND TERMS
+    ============================================= */
+
+    const calendarResult = await client.query(
+        `SELECT
+            ay.id AS source_year_id,
+            ay.year_name,
+            ay.start_date AS year_start_date,
+            ay.end_date AS year_end_date,
+            ay.status AS year_status,
+
+            t.term_number,
+            t.term_name,
+            t.start_date AS term_start_date,
+            t.end_date AS term_end_date
+
+         FROM academic_years ay
+
+         LEFT JOIN terms t
+            ON t.academic_year_id = ay.id
+           AND t.school_id = ay.school_id
+
+         WHERE ay.school_id = $1
+
+         ORDER BY
+            ay.start_date ASC NULLS LAST,
+            ay.id ASC,
+            t.term_number ASC`,
+        [templateSchoolId]
+    );
+
+    if (calendarResult.rows.length === 0) {
+        throw new Error(
+            "The existing academic calendar contains no academic years."
+        );
+    }
+
+    /* =============================================
+       CREATE ACADEMIC YEARS AND THEIR TERMS
+    ============================================= */
+
+    const yearIdMap = new Map();
+
+    for (const row of calendarResult.rows) {
+
+        const sourceYearKey = String(row.source_year_id);
+
+        let newYearId = yearIdMap.get(sourceYearKey);
+
+        /* =========================================
+           CREATE OR FIND THE SCHOOL'S ACADEMIC YEAR
+        ========================================= */
+
+        if (!newYearId) {
+
+            const existingYear = await client.query(
+                `SELECT id
+                 FROM academic_years
+                 WHERE school_id = $1
+                   AND year_name = $2
+                 LIMIT 1`,
+                [
+                    schoolId,
+                    row.year_name
+                ]
+            );
+
+            if (existingYear.rows.length > 0) {
+
+                newYearId = existingYear.rows[0].id;
+
+            } else {
+
+                const insertedYear = await client.query(
+                    `INSERT INTO academic_years (
+                        school_id,
+                        year_name,
+                        start_date,
+                        end_date,
+                        status
+                    )
+                    VALUES ($1, $2, $3, $4, $5)
+                    RETURNING id`,
+                    [
+                        schoolId,
+                        row.year_name,
+                        row.year_start_date,
+                        row.year_end_date,
+                        row.year_status
+                    ]
+                );
+
+                newYearId = insertedYear.rows[0].id;
+            }
+
+            yearIdMap.set(sourceYearKey, newYearId);
+        }
+
+        /* =========================================
+           CREATE OR FIND EACH CORRESPONDING TERM
+        ========================================= */
+
+        if (row.term_number !== null) {
+
+            const existingTerm = await client.query(
+                `SELECT id
+                 FROM terms
+                 WHERE school_id = $1
+                   AND academic_year_id = $2
+                   AND term_number = $3
+                 LIMIT 1`,
+                [
+                    schoolId,
+                    newYearId,
+                    row.term_number
+                ]
+            );
+
+            if (existingTerm.rows.length === 0) {
+
+                await client.query(
+                    `INSERT INTO terms (
+                        school_id,
+                        academic_year_id,
+                        term_number,
+                        term_name,
+                        start_date,
+                        end_date
+                    )
+                    VALUES ($1, $2, $3, $4, $5, $6)`,
+                    [
+                        schoolId,
+                        newYearId,
+                        row.term_number,
+                        row.term_name,
+                        row.term_start_date,
+                        row.term_end_date
+                    ]
+                );
+            }
+        }
+    }
+
+    /* =============================================
+       VERIFY THAT THE SCHOOL HAS A COMPLETE COPY
+    ============================================= */
+
+    const verification = await client.query(
+        `SELECT
+            COUNT(DISTINCT ay.id)::int AS academic_year_count,
+            COUNT(DISTINCT t.id)::int AS term_count
+
+         FROM academic_years ay
+
+         LEFT JOIN terms t
+            ON t.academic_year_id = ay.id
+           AND t.school_id = ay.school_id
+
+         WHERE ay.school_id = $1`,
+        [schoolId]
+    );
+
+    if (
+        Number(verification.rows[0].academic_year_count) === 0 ||
+        Number(verification.rows[0].term_count) === 0
+    ) {
+        throw new Error(
+            "Academic years and terms could not be initialized for this school."
+        );
+    }
+
+    console.log(
+        "School academic calendar initialized:",
+        schoolId,
+        verification.rows[0]
+    );
+}
+
+/* =====================================================
    CREATE SCHOOL ADMIN
 ===================================================== */
 
@@ -218,9 +436,11 @@ export async function onRequestPost(context) {
         let schoolId;
 
         if (schoolResult.rows.length > 0) {
+
             schoolId = schoolResult.rows[0].id;
 
         } else {
+
             /* =========================================
                CREATE NEW SCHOOL
             ========================================= */
@@ -247,6 +467,15 @@ export async function onRequestPost(context) {
 
             schoolId = newSchool.rows[0].id;
         }
+
+        /* =============================================
+           AUTOMATICALLY SET UP ACADEMIC YEARS AND TERMS
+        ============================================= */
+
+        await ensureSchoolAcademicCalendar(
+            client,
+            schoolId
+        );
 
         /* =============================================
            SAVE SCHOOL EDUCATION LEVELS
@@ -431,6 +660,7 @@ export async function onRequestPost(context) {
         }
 
     } catch (error) {
+
         if (client && transactionStarted) {
             await client.query("ROLLBACK").catch(() => {});
             transactionStarted = false;
