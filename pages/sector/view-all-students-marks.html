@@ -317,16 +317,25 @@ async function loadMarks() {
         </div>
     `;
 
-    try {
+try {
 
-        const response = await fetch("/api/school-marks", {
+    const testId = new URLSearchParams(
+        window.location.search
+    ).get("test_id");
+
+    const response = await fetch(
+        `/api/school-marks?test_id=${encodeURIComponent(testId || "")}`,
+        {
             method: "GET",
             credentials: "same-origin",
             headers: {
                 "Accept": "application/json"
             },
             cache: "no-store"
-        });
+        }
+    );
+
+   
 
         const data = await response.json();
 
@@ -337,10 +346,13 @@ async function loadMarks() {
         // The API authenticates the user.
         // Do not use localStorage as authorization.
 
-        if (data.user?.role !== "sector_admin") {
-            throw new Error("Access denied. Sector administrator access is required.");
-        }
-
+       if (![
+    "sector_admin",
+    "school_admin",
+    "dos"
+].includes(data.user?.role)) {
+    throw new Error("You are not authorized to view these results.");
+}
         allTests = data.tests || [];
 
         select.innerHTML = "";
