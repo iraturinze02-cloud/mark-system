@@ -15,6 +15,7 @@ import {
    VIEW ONLY:
    - school_admin
    - dos
+   - teacher
 
    DESIGN:
    - One shared academic calendar.
@@ -109,6 +110,7 @@ async function authenticateCalendarUser(context) {
         "owner",
         "sector_admin",
         "school_admin",
+        "teacher",
         "dos"
     ]);
 
@@ -118,8 +120,13 @@ async function authenticateCalendarUser(context) {
         };
     }
 
+    /*
+       School Admin, DOS and Teachers must
+       be linked to a school.
+    */
+
     if (
-        ["school_admin", "dos"].includes(auth.role) &&
+        ["school_admin", "dos", "teacher"].includes(auth.role) &&
         !auth.schoolId
     ) {
 
@@ -195,8 +202,8 @@ export async function onRequestGet(context) {
         /* =================================================
            LOAD CALENDAR
 
-           School users see their own school's replicated
-           records.
+           School Admin, DOS and Teachers see only
+           their own school's replicated records.
 
            Owner and Sector Admin see the shared calendar.
         ================================================= */
@@ -205,8 +212,7 @@ export async function onRequestGet(context) {
         let parameters = [];
 
         if (
-            auth.role === "school_admin" ||
-            auth.role === "dos"
+            ["school_admin", "dos", "teacher"].includes(auth.role)
         ) {
 
             query = `
@@ -436,10 +442,10 @@ export async function onRequestGet(context) {
                 term: activeTerm,
 
                 user: {
-    userId: auth.userId,
-    role: auth.role,
-    schoolId: auth.schoolId
-}
+                    userId: auth.userId,
+                    role: auth.role,
+                    schoolId: auth.schoolId
+                }
 
             });
 
@@ -515,6 +521,9 @@ export async function onRequestPost(context) {
 
     /* =================================================
        MANAGEMENT PERMISSION
+
+       Only Owner and Sector Admin can modify
+       the shared academic calendar.
     ================================================= */
 
     if (!canManageCalendar(auth.role)) {
