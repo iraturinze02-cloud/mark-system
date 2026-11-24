@@ -1,221 +1,165 @@
 
-/* =========================================================
+/* =====================================================
    FILA GRADES SYSTEM
    SHARED ACADEMIC PERIOD SELECTOR
-   File: /js/academic-period.js
-========================================================= */
+===================================================== */
 
 (function () {
+
     "use strict";
 
-    const API_URL = "/api/academic-calendar";
+    const API_URL = "/api/academic-calendar?action=get";
 
-    const STORAGE_PREFIX = "fila_academic_period_";
-
-    let academicYears = [];
+    let calendarData = null;
+    let currentUserId = null;
     let selectedPeriod = null;
-    let currentUser = null;
 
-    /* =====================================================
-       STORAGE
-    ===================================================== */
+    let yearSelect = null;
+    let termSelect = null;
+    let initialized = false;
 
-    function getStorageKey() {
-        const role = currentUser?.role || "user";
-        const schoolId = currentUser?.schoolId || "unknown";
-        const userId =
-            currentUser?.id ||
-            currentUser?.userId ||
-            currentUser?.user_id;
+    /* =================================================
+       USER-SPECIFIC STORAGE
+    ================================================= */
 
-        // Use the authenticated user's ID when the API provides it.
-        // Otherwise, isolate the selection to this browser tab
-        // and authenticated school/role.
-        const identity = userId
-            ? `user_${userId}`
-            : `session_${role}_${schoolId}`;
-
-        return STORAGE_PREFIX + identity;
+    function storageKey() {
+        return `fila_academic_period_${currentUserId}`;
     }
 
-    function saveSelection(period) {
+    function savePeriod(period) {
+
+        if (!currentUserId || !period) return;
+
         try {
-            sessionStorage.setItem(
-                getStorageKey(),
+            localStorage.setItem(
+                storageKey(),
                 JSON.stringify(period)
             );
         } catch (error) {
-            console.error("Could not save academic period:", error);
+            console.error("Unable to save academic period:", error);
         }
     }
 
-    function getSavedSelection() {
+    function getSavedPeriod() {
+
+        if (!currentUserId) return null;
+
         try {
-            const saved = sessionStorage.getItem(getStorageKey());
+
+            const saved = localStorage.getItem(storageKey());
 
             return saved ? JSON.parse(saved) : null;
-        } catch (error) {
+
+        } catch {
             return null;
         }
     }
 
-    /* =====================================================
-       HELPERS
-    ===================================================== */
+    /* =================================================
+       PUBLIC API
+    ================================================= */
 
-    function escapeHTML(value) {
-        return String(value ?? "").replace(/[&<>"']/g, function (char) {
-            return {
-                "&": "&amp;",
-                "<": "&lt;",
-                ">": "&gt;",
-                '"': "&quot;",
-                "'": "&#039;"
-            }[char];
-        });
+    function getCurrentPeriod() {
+
+        return selectedPeriod
+            ? { ...selectedPeriod }
+            : null;
     }
 
-    function findYear(yearId) {
-        return academicYears.find(
-            year => String(year.id) === String(yearId)
-        );
-    }
-
-    function findTerm(year, termId) {
-        return year?.terms?.find(
-            term => String(term.id) === String(termId)
-        );
-    }
-
-    function getActivePeriod(data) {
-        const activeYear = data.active_academic_year;
-        const activeTerm = data.active_term;
-
-        if (!activeYear || !activeTerm) {
-            return null;
-        }
-
-        const year = findYear(activeYear.id);
-        const term = findTerm(year, activeTerm.id);
-
-        if (!year || !term) {
-            return null;
-        }
-
-        return createPeriod(year, term);
-    }
-
-    function createPeriod(year, term) {
-        return {
-            academic_year_id: year.id,
-            academic_year: year.year_name,
-            term_id: term.id,
-            term: term.term_name,
-            term_number: term.term_number
-        };
-    }
-
-    function isSamePeriod(first, second) {
-        return first &&
-            second &&
-            String(first.academic_year_id) ===
-                String(second.academic_year_id) &&
-            String(first.term_id) === String(second.term_id);
-    }
-
-    /* =====================================================
-       USER INTERFACE
-    ===================================================== */
+    /* =================================================
+       CREATE STYLES
+    ================================================= */
 
     function addStyles() {
-        if (document.getElementById("filaAcademicPeriodStyles")) {
+
+        if (document.getElementById("fila-period-styles")) {
             return;
         }
 
         const style = document.createElement("style");
 
-        style.id = "filaAcademicPeriodStyles";
+        style.id = "fila-period-styles";
 
         style.textContent = `
-            #filaAcademicPeriodButton {
-                display: inline-flex;
+
+            #fila-period-button {
+                position: fixed;
+                top: 15px;
+                right: 18px;
+                z-index: 9998;
+                width: 43px;
+                height: 43px;
+                border: 1px solid #dbeafe;
+                border-radius: 50%;
+                background: white;
+                color: #1d4ed8;
+                display: flex;
                 align-items: center;
                 justify-content: center;
-                gap: 8px;
-                padding: 9px 13px;
-                border: 1px solid #dce2ea;
-                border-radius: 9px;
-                background: #ffffff;
-                color: #263445;
                 cursor: pointer;
-                font-size: 14px;
-                font-weight: 600;
-                z-index: 1000;
+                box-shadow: 0 3px 12px rgba(0,0,0,.15);
             }
 
-            #filaAcademicPeriodButton:hover {
-                background: #f3f6fa;
+            #fila-period-button:hover {
+                background: #eff6ff;
             }
 
-            #filaAcademicPeriodButton svg {
-                width: 19px;
-                height: 19px;
+            #fila-period-button:disabled {
+                opacity: .5;
+                cursor: not-allowed;
             }
 
-            #filaAcademicPeriodModal {
+            #fila-period-button svg {
+                width: 22px;
+                height: 22px;
+            }
+
+            #fila-period-modal {
+                display: none;
                 position: fixed;
                 inset: 0;
-                z-index: 99999;
-                display: none;
+                z-index: 9999;
+                background: rgba(15,23,42,.55);
                 align-items: center;
                 justify-content: center;
-                padding: 16px;
-                background: rgba(0, 0, 0, 0.48);
+                padding: 15px;
             }
 
-            #filaAcademicPeriodModal.show {
+            #fila-period-modal.open {
                 display: flex;
             }
 
-            .fila-period-dialog {
+            .fila-period-box {
                 width: 100%;
-                max-width: 420px;
-                max-height: 90vh;
-                overflow-y: auto;
-                padding: 24px;
+                max-width: 430px;
+                background: white;
                 border-radius: 14px;
-                background: #ffffff;
-                box-shadow: 0 15px 45px rgba(0,0,0,0.2);
-                font-family: Arial, sans-serif;
+                padding: 24px;
+                box-shadow: 0 15px 45px rgba(0,0,0,.2);
+                box-sizing: border-box;
             }
 
             .fila-period-heading {
                 display: flex;
-                justify-content: space-between;
                 align-items: center;
-                gap: 12px;
-                margin-bottom: 8px;
+                justify-content: space-between;
+                margin-bottom: 22px;
             }
 
-            .fila-period-heading h3 {
+            .fila-period-heading h2 {
                 margin: 0;
-                color: #1e293b;
-                font-size: 19px;
+                font-size: 20px;
+                color: #173f70;
             }
 
-            .fila-period-close {
+            #fila-period-close {
                 border: none;
-                background: transparent;
-                font-size: 25px;
+                background: #f1f5f9;
+                border-radius: 50%;
+                width: 34px;
+                height: 34px;
+                font-size: 20px;
                 cursor: pointer;
-                color: #64748b;
-            }
-
-            .fila-period-description {
-                margin: 0 0 22px;
-                color: #64748b;
-                font-size: 13px;
-                line-height: 1.5;
             }
 
             .fila-period-field {
@@ -224,10 +168,10 @@
 
             .fila-period-field label {
                 display: block;
-                margin-bottom: 8px;
-                color: #334155;
+                font-weight: 700;
                 font-size: 13px;
-                font-weight: 600;
+                margin-bottom: 7px;
+                color: #334155;
             }
 
             .fila-period-field select {
@@ -235,20 +179,23 @@
                 padding: 12px;
                 border: 1px solid #cbd5e1;
                 border-radius: 8px;
-                background: #ffffff;
-                color: #1e293b;
-                font-size: 14px;
-                outline: none;
+                font-size: 15px;
+                background: white;
+                box-sizing: border-box;
             }
 
-            .fila-period-field select:focus {
-                border-color: #2563eb;
+            #fila-period-current {
+                background: #eff6ff;
+                border-radius: 8px;
+                padding: 11px;
+                font-size: 13px;
+                color: #1e40af;
+                margin-bottom: 18px;
             }
 
             .fila-period-actions {
                 display: flex;
                 gap: 10px;
-                margin-top: 24px;
             }
 
             .fila-period-actions button {
@@ -256,79 +203,81 @@
                 padding: 12px;
                 border: none;
                 border-radius: 8px;
+                font-weight: 700;
                 cursor: pointer;
-                font-size: 14px;
-                font-weight: 600;
             }
 
-            #filaPeriodCancel {
-                background: #eef2f7;
+            #fila-period-apply {
+                background: #1d4ed8;
+                color: white;
+            }
+
+            #fila-period-apply:hover {
+                background: #1e40af;
+            }
+
+            #fila-period-cancel {
+                background: #e2e8f0;
                 color: #334155;
             }
 
-            #filaPeriodApply {
-                background: #1d4ed8;
-                color: #ffffff;
-            }
-
-            #filaPeriodApply:disabled {
-                opacity: 0.55;
-                cursor: not-allowed;
-            }
-
-            #filaPeriodMessage {
-                margin-top: 12px;
+            #fila-period-error {
                 color: #dc2626;
                 font-size: 13px;
+                margin-bottom: 12px;
             }
 
-            @media (max-width: 480px) {
-                .fila-period-dialog {
+            @media(max-width: 600px) {
+
+                #fila-period-button {
+                    top: 10px;
+                    right: 10px;
+                }
+
+                .fila-period-box {
                     padding: 19px;
                 }
 
-                #filaAcademicPeriodButton .fila-period-button-text {
-                    display: none;
-                }
             }
+
         `;
 
         document.head.appendChild(style);
     }
 
-    function createInterface() {
-        if (document.getElementById("filaAcademicPeriodButton")) {
+    /* =================================================
+       CREATE MODAL
+    ================================================= */
+
+    function createModal() {
+
+        if (
+            document.getElementById("fila-period-button") ||
+            document.getElementById("fila-period-modal")
+        ) {
             return;
         }
 
-        addStyles();
-
         const button = document.createElement("button");
 
-        button.id = "filaAcademicPeriodButton";
+        button.id = "fila-period-button";
         button.type = "button";
-        button.title = "Change academic year and term";
+        button.title = "Change academic period";
+        button.setAttribute("aria-label", "Change academic period");
 
         button.innerHTML = `
             <svg viewBox="0 0 24 24"
-                 fill="none"
-                 stroke="currentColor"
-                 stroke-width="2"
-                 stroke-linecap="round"
-                 stroke-linejoin="round"
-                 aria-hidden="true">
-                <rect x="3" y="5" width="18" height="16" rx="2"></rect>
-                <path d="M16 3v4M8 3v4M3 10h18"></path>
-            </svg>
-            <span class="fila-period-button-text">
-                Academic Period
-            </span>
-        `;
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round">
 
-        // Fixed top-right position.
-        button.style.position = "fixed";
-        button.style.top = "14px";
-        button.style.right = "18px";
+                <rect x="3" y="5" width="18" height="16" rx="2"/>
+                <path d="M16 3v4M8 3v4M3 10h18"/>
+
+            </svg>
+        `;
 
         button.addEventListener("click", openModal);
 
@@ -336,344 +285,640 @@
 
         const modal = document.createElement("div");
 
-        modal.id = "filaAcademicPeriodModal";
+        modal.id = "fila-period-modal";
 
         modal.innerHTML = `
-            <div class="fila-period-dialog"
-                 role="dialog"
-                 aria-modal="true"
-                 aria-labelledby="filaPeriodTitle">
+
+            <div class="fila-period-box">
 
                 <div class="fila-period-heading">
-                    <h3 id="filaPeriodTitle">
-                        Select Academic Period
-                    </h3>
 
-                    <button type="button"
-                            class="fila-period-close"
-                            id="filaPeriodClose"
-                            aria-label="Close">
+                    <h2>Academic Period</h2>
+
+                    <button
+                        type="button"
+                        id="fila-period-close"
+                        aria-label="Close">
                         &times;
                     </button>
+
                 </div>
 
-                <p class="fila-period-description">
-                    Choose the academic year and term you want
-                    to view throughout the system.
-                </p>
+                <div id="fila-period-current"></div>
 
                 <div class="fila-period-field">
-                    <label for="filaPeriodYear">
+
+                    <label for="fila-period-year">
                         Academic Year
                     </label>
 
-                    <select id="filaPeriodYear"></select>
+                    <select id="fila-period-year"></select>
+
                 </div>
 
                 <div class="fila-period-field">
-                    <label for="filaPeriodTerm">
+
+                    <label for="fila-period-term">
                         Term
                     </label>
 
-                    <select id="filaPeriodTerm"></select>
+                    <select id="fila-period-term"></select>
+
                 </div>
 
-                <div id="filaPeriodMessage"></div>
+                <div
+                    id="fila-period-error"
+                    role="alert">
+                </div>
 
                 <div class="fila-period-actions">
-                    <button type="button" id="filaPeriodCancel">
+
+                    <button
+                        type="button"
+                        id="fila-period-cancel">
                         Cancel
                     </button>
 
-                    <button type="button" id="filaPeriodApply">
-                        Apply Period
+                    <button
+                        type="button"
+                        id="fila-period-apply">
+                        Apply
                     </button>
-                </div>
-            </div>
-        `;
 
-        modal.addEventListener("click", function (event) {
-            if (event.target === modal) {
-                closeModal();
-            }
-        });
+                </div>
+
+            </div>
+
+        `;
 
         document.body.appendChild(modal);
 
-        document.getElementById("filaPeriodClose")
-            .addEventListener("click", closeModal);
-
-        document.getElementById("filaPeriodCancel")
-            .addEventListener("click", closeModal);
-
-        document.getElementById("filaPeriodYear")
-            .addEventListener("change", populateTerms);
-
-        document.getElementById("filaPeriodApply")
-            .addEventListener("click", applySelection);
-    }
-
-    /* =====================================================
-       MODAL
-    ===================================================== */
-
-    function openModal() {
-        const modal = document.getElementById(
-            "filaAcademicPeriodModal"
+        yearSelect = document.getElementById(
+            "fila-period-year"
         );
 
-        if (!modal) return;
+        termSelect = document.getElementById(
+            "fila-period-term"
+        );
 
-        document.getElementById("filaPeriodMessage").textContent = "";
-
-        populateYears();
-
-        modal.classList.add("show");
-    }
-
-    function closeModal() {
         document.getElementById(
-            "filaAcademicPeriodModal"
-        )?.classList.remove("show");
-    }
+            "fila-period-close"
+        ).addEventListener("click", closeModal);
 
-    function populateYears() {
-        const select = document.getElementById("filaPeriodYear");
+        document.getElementById(
+            "fila-period-cancel"
+        ).addEventListener("click", closeModal);
 
-        select.innerHTML = "";
+        document.getElementById(
+            "fila-period-apply"
+        ).addEventListener("click", applyPeriod);
 
-        academicYears.forEach(year => {
-            const option = document.createElement("option");
+        yearSelect.addEventListener(
+            "change",
+            populateTerms
+        );
 
-            option.value = year.id;
-            option.textContent = year.year_name;
+        modal.addEventListener("click", function (event) {
 
-            select.appendChild(option);
+            if (event.target === modal) {
+                closeModal();
+            }
+
         });
 
-        const selectedYear = findYear(
-            selectedPeriod?.academic_year_id
-        );
+        document.addEventListener("keydown", function (event) {
 
-        const activeYear = academicYears.find(year =>
-            year.terms?.some(term => term.status === "active")
-        );
+            if (event.key === "Escape") {
+                closeModal();
+            }
 
-        const defaultYear = selectedYear || activeYear || academicYears[0];
+        });
+    }
 
-        if (defaultYear) {
-            select.value = defaultYear.id;
+    /* =================================================
+       LOAD ACADEMIC CALENDAR
+    ================================================= */
+
+    async function loadCalendar() {
+
+        const response = await fetch(API_URL, {
+
+            method: "GET",
+
+            credentials: "same-origin",
+
+            headers: {
+                "Accept": "application/json"
+            },
+
+            cache: "no-store"
+
+        });
+
+        let data;
+
+        try {
+
+            data = await response.json();
+
+        } catch {
+
+            throw new Error(
+                "The academic calendar returned an invalid response."
+            );
+
         }
+
+        if (response.status === 401) {
+
+            window.location.href = "/index.html";
+
+            return false;
+        }
+
+        if (!response.ok || !data.success) {
+
+            throw new Error(
+                data.message ||
+                "Unable to load academic calendar."
+            );
+
+        }
+
+        /* ---------------------------------------------
+           VERIFIED AUTHENTICATED USER ID
+
+           authenticateRole() returns:
+           userId: String(user.id)
+
+           academic-calendar.js must expose it as:
+           data.user.userId
+        --------------------------------------------- */
+
+        if (
+            !data.user ||
+            data.user.userId === undefined ||
+            data.user.userId === null ||
+            String(data.user.userId).trim() === ""
+        ) {
+
+            throw new Error(
+                "Authenticated user ID was not returned by the academic calendar API."
+            );
+
+        }
+
+        currentUserId = String(data.user.userId);
+
+        calendarData = data;
+
+        const years = Array.isArray(data.academic_years)
+            ? data.academic_years
+            : [];
+
+        if (!years.length) {
+
+            throw new Error(
+                "No academic years are available."
+            );
+
+        }
+
+        const saved = getSavedPeriod();
+
+        const activeYear = data.active_academic_year;
+        const activeTerm = data.active_term;
+
+        let defaultYear = null;
+        let defaultTerm = null;
+
+        /* ---------------------------------------------
+           RESTORE THIS USER'S SAVED SELECTION
+        --------------------------------------------- */
+
+        if (saved && saved.academic_year) {
+
+            const savedYear = years.find(year =>
+                year.year_name === saved.academic_year
+            );
+
+            const savedTerm = savedYear?.terms?.find(term =>
+                Number(term.term_number) ===
+                Number(saved.term_number)
+            );
+
+            if (savedYear && savedTerm) {
+
+                defaultYear = savedYear;
+                defaultTerm = savedTerm;
+
+            }
+
+        }
+
+        /* ---------------------------------------------
+           OTHERWISE USE THE ACTIVE PERIOD
+        --------------------------------------------- */
+
+        if (!defaultYear && activeYear) {
+
+            defaultYear = years.find(year =>
+                year.year_name === activeYear.year_name
+            ) || null;
+
+        }
+
+        if (defaultYear && activeTerm) {
+
+            defaultTerm = defaultYear.terms?.find(term =>
+                Number(term.term_number) ===
+                Number(activeTerm.term_number)
+            ) || null;
+
+        }
+
+        /* ---------------------------------------------
+           FALLBACK TO FIRST AVAILABLE YEAR AND TERM
+        --------------------------------------------- */
+
+        if (!defaultYear) {
+
+            defaultYear = [...years].sort((a, b) =>
+                String(b.start_date || "")
+                    .localeCompare(String(a.start_date || ""))
+            )[0];
+
+        }
+
+        if (
+            !defaultTerm ||
+            !defaultYear.terms?.some(term =>
+                Number(term.term_number) ===
+                Number(defaultTerm.term_number)
+            )
+        ) {
+
+            defaultTerm =
+                defaultYear.terms?.find(term =>
+                    term.status === "active"
+                ) ||
+                [...(defaultYear.terms || [])].sort((a, b) =>
+                    Number(a.term_number) -
+                    Number(b.term_number)
+                )[0] ||
+                null;
+
+        }
+
+        if (!defaultTerm) {
+
+            throw new Error(
+                "No terms are available for the selected academic year."
+            );
+
+        }
+
+        selectedPeriod = {
+
+            academic_year: defaultYear.year_name,
+
+            term_number: Number(defaultTerm.term_number),
+
+            term_name: defaultTerm.term_name
+
+        };
+
+        savePeriod(selectedPeriod);
+
+        window.FilaAcademicPeriod = {
+
+            getCurrent: getCurrentPeriod,
+
+            open: openModal,
+
+            refresh: loadCalendar
+
+        };
+
+        document.dispatchEvent(
+            new CustomEvent("filaAcademicPeriodReady", {
+
+                detail: getCurrentPeriod()
+
+            })
+        );
+
+        return true;
+    }
+
+    /* =================================================
+       POPULATE ACADEMIC YEARS
+    ================================================= */
+
+    function populateYears() {
+
+        yearSelect.innerHTML = "";
+
+        const years = [...calendarData.academic_years];
+
+        years.sort((a, b) => {
+
+            if (a.status === "active" && b.status !== "active") {
+                return -1;
+            }
+
+            if (b.status === "active" && a.status !== "active") {
+                return 1;
+            }
+
+            return String(b.start_date || "")
+                .localeCompare(String(a.start_date || ""));
+
+        });
+
+        years.forEach(year => {
+
+            const option = document.createElement("option");
+
+            option.value = year.year_name;
+
+            option.textContent =
+                year.year_name +
+                (year.status === "active" ? " (Current)" : "");
+
+            yearSelect.appendChild(option);
+
+        });
+
+        yearSelect.value = selectedPeriod.academic_year;
 
         populateTerms();
     }
 
-    function populateTerms() {
-        const yearSelect = document.getElementById("filaPeriodYear");
-        const termSelect = document.getElementById("filaPeriodTerm");
+    /* =================================================
+       POPULATE TERMS
+    ================================================= */
 
-        const year = findYear(yearSelect.value);
+    function populateTerms() {
 
         termSelect.innerHTML = "";
 
-        if (!year || !Array.isArray(year.terms)) {
-            return;
-        }
+        const year = calendarData.academic_years.find(
+            item => item.year_name === yearSelect.value
+        );
 
-        year.terms.forEach(term => {
+        const terms = Array.isArray(year?.terms)
+            ? [...year.terms]
+            : [];
+
+        if (!terms.length) {
+
             const option = document.createElement("option");
 
-            option.value = term.id;
-            option.textContent = term.term_name;
+            option.value = "";
+            option.textContent = "No terms available";
 
             termSelect.appendChild(option);
-        });
-
-        const savedTerm = findTerm(year, selectedPeriod?.term_id);
-
-        const activeTerm = year.terms.find(
-            term => term.status === "active"
-        );
-
-        const defaultTerm = savedTerm || activeTerm || year.terms[0];
-
-        if (defaultTerm) {
-            termSelect.value = defaultTerm.id;
-        }
-    }
-
-    /* =====================================================
-       APPLY SELECTION
-    ===================================================== */
-
-    function applySelection() {
-        const yearId = document.getElementById(
-            "filaPeriodYear"
-        ).value;
-
-        const termId = document.getElementById(
-            "filaPeriodTerm"
-        ).value;
-
-        const year = findYear(yearId);
-        const term = findTerm(year, termId);
-
-        if (!year || !term) {
-            document.getElementById(
-                "filaPeriodMessage"
-            ).textContent = "Please select a valid academic period.";
 
             return;
         }
 
-        const newPeriod = createPeriod(year, term);
+        terms.sort((a, b) => {
 
-        selectedPeriod = newPeriod;
+            if (a.status === "active" && b.status !== "active") {
+                return -1;
+            }
 
-        saveSelection(newPeriod);
+            if (b.status === "active" && a.status !== "active") {
+                return 1;
+            }
 
-        updateButtonLabel();
+            return Number(a.term_number) -
+                Number(b.term_number);
 
-        window.dispatchEvent(
-            new CustomEvent("fila:academic-period-change", {
-                detail: { ...selectedPeriod }
-            })
+        });
+
+        terms.forEach(term => {
+
+            const option = document.createElement("option");
+
+            option.value = String(term.term_number);
+
+            option.textContent =
+                term.term_name +
+                (term.status === "active" ? " (Current)" : "");
+
+            termSelect.appendChild(option);
+
+        });
+
+        const isSelectedYear =
+            year.year_name === selectedPeriod.academic_year;
+
+        const preferredTerm = isSelectedYear
+            ? selectedPeriod.term_number
+            : (
+                terms.find(term => term.status === "active") ||
+                terms[0]
+            ).term_number;
+
+        const preferredExists = terms.some(term =>
+            Number(term.term_number) === Number(preferredTerm)
         );
+
+        termSelect.value = String(
+            preferredExists
+                ? preferredTerm
+                : terms[0].term_number
+        );
+    }
+
+    /* =================================================
+       OPEN / CLOSE MODAL
+    ================================================= */
+
+    function openModal() {
+
+        if (!calendarData || !selectedPeriod) return;
+
+        populateYears();
+
+        document.getElementById(
+            "fila-period-error"
+        ).textContent = "";
+
+        document.getElementById(
+            "fila-period-modal"
+        ).classList.add("open");
+
+        updateCurrentLabel();
+    }
+
+    function closeModal() {
+
+        const modal = document.getElementById(
+            "fila-period-modal"
+        );
+
+        if (modal) {
+            modal.classList.remove("open");
+        }
+    }
+
+    /* =================================================
+       CURRENT PERIOD LABEL
+    ================================================= */
+
+    function updateCurrentLabel() {
+
+        const label = document.getElementById(
+            "fila-period-current"
+        );
+
+        if (!label || !selectedPeriod) return;
+
+        label.textContent =
+            "Currently viewing: " +
+            selectedPeriod.academic_year +
+            " — " +
+            selectedPeriod.term_name;
+    }
+
+    /* =================================================
+       APPLY SELECTION
+    ================================================= */
+
+    function applyPeriod() {
+
+        const year = calendarData.academic_years.find(
+            item => item.year_name === yearSelect.value
+        );
+
+        const term = year?.terms?.find(item =>
+            Number(item.term_number) ===
+            Number(termSelect.value)
+        );
+
+        if (!year || !term) {
+
+            document.getElementById(
+                "fila-period-error"
+            ).textContent =
+                "Please select a valid academic year and term.";
+
+            return;
+        }
+
+        const previous = getCurrentPeriod();
+
+        const next = {
+
+            academic_year: year.year_name,
+
+            term_number: Number(term.term_number),
+
+            term_name: term.term_name
+
+        };
+
+        const changed =
+            !previous ||
+            previous.academic_year !== next.academic_year ||
+            Number(previous.term_number) !==
+                Number(next.term_number);
+
+        selectedPeriod = next;
+
+        savePeriod(selectedPeriod);
 
         closeModal();
-    }
 
-    function updateButtonLabel() {
-        const button = document.getElementById(
-            "filaAcademicPeriodButton"
-        );
+        updateCurrentLabel();
 
-        if (!button || !selectedPeriod) return;
+        if (changed) {
 
-        button.title =
-            `${selectedPeriod.academic_year} - ${selectedPeriod.term}`;
+            document.dispatchEvent(
+                new CustomEvent("filaAcademicPeriodChange", {
 
-        button.innerHTML = `
-            <svg viewBox="0 0 24 24"
-                 fill="none"
-                 stroke="currentColor"
-                 stroke-width="2"
-                 stroke-linecap="round"
-                 stroke-linejoin="round"
-                 aria-hidden="true">
-                <rect x="3" y="5" width="18" height="16" rx="2"></rect>
-                <path d="M16 3v4M8 3v4M3 10h18"></path>
-            </svg>
-            <span class="fila-period-button-text">
-                ${escapeHTML(selectedPeriod.academic_year)}
-                ·
-                ${escapeHTML(selectedPeriod.term)}
-            </span>
-        `;
-    }
+                    detail: {
 
-    /* =====================================================
-       LOAD ACADEMIC CALENDAR
-    ===================================================== */
+                        period: getCurrentPeriod(),
 
-    async function initialize() {
-        try {
-            createInterface();
+                        previous: previous
 
-            const response = await fetch(API_URL, {
-                method: "GET",
-                credentials: "same-origin",
-                headers: {
-                    "Accept": "application/json"
-                }
-            });
+                    }
 
-            const data = await response.json();
-
-            if (!response.ok || !data.success) {
-                throw new Error(
-                    data.message || "Could not load academic calendar."
-                );
-            }
-
-            academicYears = Array.isArray(data.academic_years)
-                ? data.academic_years
-                : [];
-
-            currentUser = data.user || {};
-
-            if (academicYears.length === 0) {
-                throw new Error("No academic years are available.");
-            }
-
-            const saved = getSavedSelection();
-
-            const savedYear = findYear(saved?.academic_year_id);
-            const savedTerm = findTerm(savedYear, saved?.term_id);
-
-            const activePeriod = getActivePeriod(data);
-
-            if (savedYear && savedTerm) {
-                selectedPeriod = createPeriod(savedYear, savedTerm);
-            } else if (activePeriod) {
-                selectedPeriod = activePeriod;
-            } else {
-                const firstYear = academicYears[0];
-                const firstTerm = firstYear.terms?.[0];
-
-                if (firstYear && firstTerm) {
-                    selectedPeriod = createPeriod(firstYear, firstTerm);
-                }
-            }
-
-            if (!selectedPeriod) {
-                throw new Error("No valid academic period is available.");
-            }
-
-            saveSelection(selectedPeriod);
-
-            updateButtonLabel();
-
-            // Notify pages that the initial period is ready.
-            window.dispatchEvent(
-                new CustomEvent("fila:academic-period-ready", {
-                    detail: { ...selectedPeriod }
                 })
             );
 
-        } catch (error) {
-            console.error("Academic period initialization failed:", error);
-
-            const button = document.getElementById(
-                "filaAcademicPeriodButton"
-            );
-
-            if (button) {
-                button.title = "Academic period could not be loaded";
-            }
         }
     }
 
-    /* =====================================================
-       PUBLIC API FOR OTHER PAGES
-    ===================================================== */
+    /* =================================================
+       INITIALIZE
+    ================================================= */
 
-    window.FilaAcademicPeriod = {
-        getSelection: function () {
-            return selectedPeriod
-                ? { ...selectedPeriod }
-                : null;
-        },
+    async function initialize() {
 
-        open: openModal,
+        if (initialized) return;
 
-        refresh: initialize
-    };
+        initialized = true;
+
+        addStyles();
+
+        createModal();
+
+        const button = document.getElementById(
+            "fila-period-button"
+        );
+
+        try {
+
+            const loaded = await loadCalendar();
+
+            if (!loaded) {
+                return;
+            }
+
+            if (button) {
+                button.disabled = false;
+                button.title = "Change academic period";
+            }
+
+        } catch (error) {
+
+            console.error(
+                "Fila academic period error:",
+                error
+            );
+
+            if (button) {
+
+                button.disabled = true;
+
+                button.title = error.message;
+
+            }
+
+        }
+    }
+
+    /* =================================================
+       START
+    ================================================= */
 
     if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", initialize);
+
+        document.addEventListener(
+            "DOMContentLoaded",
+            initialize,
+            { once: true }
+        );
+
     } else {
+
         initialize();
+
     }
 
 })();
