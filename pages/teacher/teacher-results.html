@@ -1191,21 +1191,50 @@ function renderAssignments() {
 }
 
 function onAssignmentChange() {
-    resetResults();
+    // Clear the previous test and results WITHOUT deleting assignments.
+    state.selectedAssignment = null;
+    state.selectedTest = null;
+    state.currentTest = null;
+
+    $("testSelect").innerHTML =
+        '<option value="">Select test</option>';
+
+    $("testSelect").disabled = true;
+    $("csvBtn").disabled = true;
+
+    $("resultsBody").innerHTML =
+        '<tr><td colspan="7" class="empty">Select a test to view results.</td></tr>';
+
+    clearAnalysis();
 
     const index = $("assignmentSelect").value;
 
-    if (index === "") return;
+    if (index === "") {
+        $("className").textContent = "—";
+        $("subjectName").textContent = "—";
+        return;
+    }
 
-    state.selectedAssignment = state.assignments[Number(index)];
+    // Retrieve the selected assignment from the preserved assignments.
+    const assignment = state.assignments[Number(index)];
+
+    if (!assignment) {
+        showMessage("The selected class and subject could not be found.");
+        return;
+    }
+
+    state.selectedAssignment = assignment;
 
     $("className").textContent =
-        state.selectedAssignment.class_name || "—";
+        assignment.class_name || "—";
 
     $("subjectName").textContent =
-        state.selectedAssignment.subject_name || "—";
+        assignment.subject_name || "—";
 
-    const tests = state.selectedAssignment.tests || [];
+    // Load tests returned by the API.
+    const tests = Array.isArray(assignment.tests)
+        ? assignment.tests
+        : [];
 
     setOptions(
         $("testSelect"),
@@ -1217,8 +1246,14 @@ function onAssignmentChange() {
         )
     );
 
-    $("testSelect").disabled = !tests.length;
+    $("testSelect").disabled = tests.length === 0;
+
+    if (!tests.length) {
+        $("resultsBody").innerHTML =
+            '<tr><td colspan="7" class="empty">No tests are available for this class and subject.</td></tr>';
+    }
 }
+
 
 function onTestChange() {
     const testId = $("testSelect").value;
