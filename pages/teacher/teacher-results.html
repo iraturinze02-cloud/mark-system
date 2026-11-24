@@ -1188,7 +1188,15 @@ function renderAssignments() {
     select.disabled = state.assignments.length === 0;
 
     $("testSelect").disabled = true;
+    
+
+    // Automatically select the first available class and subject.
+    if (state.assignments.length > 0) {
+        select.value = "0";
+        onAssignmentChange();
+    }
 }
+
 
 function onAssignmentChange() {
     // Clear the previous test and results WITHOUT deleting assignments.
@@ -1247,6 +1255,11 @@ function onAssignmentChange() {
     );
 
     $("testSelect").disabled = tests.length === 0;
+    // Automatically select the first available test.
+if (tests.length > 0) {
+    $("testSelect").value = String(tests[0].id);
+    onTestChange();
+}
 
     if (!tests.length) {
         $("resultsBody").innerHTML =
