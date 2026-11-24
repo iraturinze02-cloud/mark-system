@@ -436,12 +436,10 @@ export async function onRequestGet(context) {
                 term: activeTerm,
 
                 user: {
-
-                    role: auth.role,
-
-                    schoolId: auth.schoolId
-
-                }
+    userId: auth.userId,
+    role: auth.role,
+    schoolId: auth.schoolId
+}
 
             });
 
