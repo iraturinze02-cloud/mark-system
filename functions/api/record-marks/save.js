@@ -7,6 +7,7 @@ import {
 
 /* =====================================================
    POST: SAVE TEST MARKS
+   VALIDATE SELECTED ACADEMIC YEAR AND TERM
 ===================================================== */
 
 export async function onRequestPost(context) {
@@ -34,18 +35,22 @@ export async function onRequestPost(context) {
 
     const testId = Number(body.test_id || body.assessment_id);
     const assignmentId = Number(body.assignment_id);
+    const academicYearId = Number(body.academic_year_id);
+    const termId = Number(body.term_id);
     const submittedMarks = body.marks;
 
     if (
-        !Number.isInteger(testId) || testId <= 0 ||
-        !Number.isInteger(assignmentId) || assignmentId <= 0 ||
+        !Number.isSafeInteger(testId) || testId <= 0 ||
+        !Number.isSafeInteger(assignmentId) || assignmentId <= 0 ||
+        !Number.isSafeInteger(academicYearId) || academicYearId <= 0 ||
+        !Number.isSafeInteger(termId) || termId <= 0 ||
         !Array.isArray(submittedMarks) ||
         submittedMarks.length === 0 ||
         submittedMarks.length > 1000
     ) {
         return json({
             success: false,
-            message: "Please provide a valid Test, assignment and marks."
+            message: "Please provide a valid Test, assignment, academic period and marks."
         }, 400);
     }
 
@@ -62,7 +67,7 @@ export async function onRequestPost(context) {
 
         const studentId = Number(item.student_id);
 
-        if (!Number.isInteger(studentId) || studentId <= 0) {
+        if (!Number.isSafeInteger(studentId) || studentId <= 0) {
             return json({
                 success: false,
                 message: "Invalid student selected."
@@ -120,7 +125,46 @@ export async function onRequestPost(context) {
         transactionStarted = true;
 
         /* ---------------------------------------------
-           1. VERIFY TEACHER ASSIGNMENT
+           1. VERIFY SELECTED ACADEMIC PERIOD
+        --------------------------------------------- */
+
+        const periodResult = await client.query(
+            `
+            SELECT
+                ay.id AS academic_year_id,
+                ay.year_name,
+                t.id AS term_id,
+                t.term_name,
+                t.term_number
+            FROM academic_years ay
+            INNER JOIN terms t
+                ON t.academic_year_id = ay.id
+               AND t.school_id = ay.school_id
+            WHERE ay.id = $1
+              AND t.id = $2
+              AND ay.school_id = $3
+              AND t.school_id = $3
+            LIMIT 1
+            `,
+            [
+                academicYearId,
+                termId,
+                auth.schoolId
+            ]
+        );
+
+        if (periodResult.rowCount === 0) {
+            await client.query("ROLLBACK");
+            transactionStarted = false;
+
+            return json({
+                success: false,
+                message: "The selected academic year or term is invalid for your school."
+            }, 400);
+        }
+
+        /* ---------------------------------------------
+           2. VERIFY TEACHER ASSIGNMENT
         --------------------------------------------- */
 
         const assignmentResult = await client.query(
@@ -131,18 +175,30 @@ export async function onRequestPost(context) {
                 ta.class_id,
                 ta.subject_id
             FROM teacher_assignments ta
+
             INNER JOIN teachers tr
                 ON tr.id = ta.teacher_id
                AND tr.school_id = ta.school_id
+
+            INNER JOIN users u
+                ON u.id = tr.user_id
+               AND u.school_id = tr.school_id
+               AND u.role = 'teacher'
+
             WHERE ta.id = $1
               AND tr.user_id = $2
               AND tr.school_id = $3
+
             LIMIT 1
             `,
-            [assignmentId, auth.userId, auth.schoolId]
+            [
+                assignmentId,
+                auth.userId,
+                auth.schoolId
+            ]
         );
 
-        if (assignmentResult.rows.length === 0) {
+        if (assignmentResult.rowCount === 0) {
             await client.query("ROLLBACK");
             transactionStarted = false;
 
@@ -155,8 +211,8 @@ export async function onRequestPost(context) {
         const assignment = assignmentResult.rows[0];
 
         /* ---------------------------------------------
-           2. LOCK AND VERIFY TEST
-              INCLUDING SUBJECT MAXIMUM MARK
+           3. LOCK AND VERIFY TEST
+              SCHOOL + PERIOD + CLASS + SUBJECT
         --------------------------------------------- */
 
         const testResult = await client.query(
@@ -167,36 +223,53 @@ export async function onRequestPost(context) {
                 t.status,
                 t.closing_at,
                 ts.total_marks
+
             FROM tests t
+
+            INNER JOIN test_schools test_school
+                ON test_school.test_id = t.id
+               AND test_school.school_id = $2
+               AND test_school.academic_year_id = $5
+               AND test_school.term_id = $6
+
             INNER JOIN test_classes tc
                 ON tc.test_id = t.id
-               AND tc.school_id = $2
+               AND tc.school_id = test_school.school_id
                AND tc.class_id = $3
+
             INNER JOIN test_subjects ts
                 ON ts.test_id = t.id
                AND ts.subject_id = $4
+
             WHERE t.id = $1
+
             FOR UPDATE OF t
             `,
             [
                 testId,
                 assignment.school_id,
                 assignment.class_id,
-                assignment.subject_id
+                assignment.subject_id,
+                academicYearId,
+                termId
             ]
         );
 
-        if (testResult.rows.length === 0) {
+        if (testResult.rowCount === 0) {
             await client.query("ROLLBACK");
             transactionStarted = false;
 
             return json({
                 success: false,
-                message: "This Test does not match the selected class and subject."
+                message: "This Test does not match the selected school, academic period, class and subject."
             }, 403);
         }
 
         const test = testResult.rows[0];
+
+        /* ---------------------------------------------
+           4. VERIFY MAXIMUM MARK
+        --------------------------------------------- */
 
         if (
             test.total_marks === null ||
@@ -216,7 +289,7 @@ export async function onRequestPost(context) {
         const maximumMark = Number(test.total_marks);
 
         /* ---------------------------------------------
-           3. VERIFY TEST STATUS
+           5. VERIFY TEST STATUS
         --------------------------------------------- */
 
         if (test.status !== "open") {
@@ -256,7 +329,7 @@ export async function onRequestPost(context) {
         }
 
         /* ---------------------------------------------
-           4. VALIDATE MARKS AGAINST MAXIMUM
+           6. VALIDATE MARKS AGAINST MAXIMUM
         --------------------------------------------- */
 
         for (const item of marks) {
@@ -274,38 +347,56 @@ export async function onRequestPost(context) {
         }
 
         /* ---------------------------------------------
-           5. VERIFY ALL STUDENTS BELONG TO THIS CLASS
+           7. VERIFY ACTIVE STUDENT ENROLLMENTS
+
+           Enrollment determines the student's class
+           in the selected academic year and term.
+
+           Lock matching enrollment rows while saving.
         --------------------------------------------- */
 
         const studentIds = marks.map(item => item.studentId);
 
         const studentsResult = await client.query(
             `
-            SELECT id
-            FROM students
-            WHERE school_id = $1
-              AND class_id = $2
-              AND id = ANY($3::bigint[])
+            SELECT
+                se.student_id
+            FROM student_enrollments se
+
+            INNER JOIN students s
+                ON s.id = se.student_id
+               AND s.school_id = se.school_id
+
+            WHERE se.school_id = $1
+              AND se.class_id = $2
+              AND se.academic_year_id = $3
+              AND se.term_id = $4
+              AND LOWER(TRIM(se.status)) = 'active'
+              AND se.student_id = ANY($5::bigint[])
+
+            FOR UPDATE OF se
             `,
             [
                 assignment.school_id,
                 assignment.class_id,
+                academicYearId,
+                termId,
                 studentIds
             ]
         );
 
-        if (studentsResult.rows.length !== studentIds.length) {
+        if (studentsResult.rowCount !== studentIds.length) {
             await client.query("ROLLBACK");
             transactionStarted = false;
 
             return json({
                 success: false,
-                message: "One or more students do not belong to this class."
+                message: "One or more students are not actively enrolled in this class for the selected academic year and term. Refresh the student list and try again."
             }, 400);
         }
 
         /* ---------------------------------------------
-           6. SAVE OR UPDATE TEST MARKS
+           8. SAVE OR UPDATE TEST MARKS
               DO NOT OVERWRITE REMARKS
         --------------------------------------------- */
 
@@ -368,6 +459,8 @@ export async function onRequestPost(context) {
             message: "Test marks saved successfully.",
             saved_count: savedCount,
             test_id: testId,
+            academic_year_id: academicYearId,
+            term_id: termId,
             maximum_mark: maximumMark
         });
 
