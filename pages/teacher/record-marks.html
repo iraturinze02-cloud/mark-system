@@ -1394,54 +1394,69 @@ function applyAcademicPeriod(period) {
 }
 
 function initializeAcademicPeriod() {
-    if (!window.FilaAcademicPeriod) {
-        showTestMessage(
-            "The academic-period service could not be loaded. Please refresh the page.",
-            "error"
-        );
-        return;
+    function connectAcademicPeriod() {
+        const service = window.FilaAcademicPeriod;
+
+        if (!service) {
+            showTestMessage(
+                "Academic period service is unavailable. Check the academic-period.js file.",
+                "error"
+            );
+            return;
+        }
+
+        changeAcademicPeriodButton.addEventListener("click", () => {
+            service.open();
+        });
+
+        window.addEventListener("fila:academic-period-ready", event => {
+            applyAcademicPeriod(
+                event.detail || service.getSelection()
+            );
+        });
+
+        window.addEventListener("fila:academic-period-change", event => {
+            applyAcademicPeriod(
+                event.detail || service.getSelection()
+            );
+        });
+
+        window.addEventListener("fila:academic-period-error", event => {
+            console.error("Academic period error:", event.detail);
+
+            showTestMessage(
+                event.detail?.message || "Unable to load the academic period.",
+                "error"
+            );
+        });
+
+        const currentPeriod = service.getSelection();
+
+        if (
+            currentPeriod &&
+            currentPeriod.academic_year_id &&
+            currentPeriod.term_id
+        ) {
+            applyAcademicPeriod(currentPeriod);
+        } else {
+            updateAcademicPeriodDisplay(null);
+            showTestMessage(
+                "Loading your academic year and term...",
+                ""
+            );
+        }
     }
 
-    changeAcademicPeriodButton.addEventListener("click", () => {
-        window.FilaAcademicPeriod.open();
-    });
-
-    window.addEventListener("fila:academic-period-ready", event => {
-        applyAcademicPeriod(
-            event.detail || window.FilaAcademicPeriod.getSelection()
+    if (document.readyState === "loading") {
+        document.addEventListener(
+            "DOMContentLoaded",
+            connectAcademicPeriod,
+            { once: true }
         );
-    });
-
-    window.addEventListener("fila:academic-period-change", event => {
-        applyAcademicPeriod(
-            event.detail || window.FilaAcademicPeriod.getSelection()
-        );
-    });
-
-    window.addEventListener("fila:academic-period-error", event => {
-        console.error("Academic period error:", event.detail);
-        showTestMessage(
-            event.detail?.message || "Unable to load the academic period.",
-            "error"
-        );
-    });
-
-    // The academic-period script may have completed before this page
-    // registered its event listeners, so check its current selection too.
-    const currentPeriod = window.FilaAcademicPeriod.getSelection();
-
-    if (
-        currentPeriod &&
-        currentPeriod.academic_year_id &&
-        currentPeriod.term_id
-    ) {
-        applyAcademicPeriod(currentPeriod);
     } else {
-        updateAcademicPeriodDisplay(null);
-        showTestMessage("Loading your academic year and term...", "");
+        connectAcademicPeriod();
     }
 }
-
 /* =====================================================
    START
 ===================================================== */
