@@ -11,13 +11,17 @@ import {
    ACCESS:
 
    1. SECTOR ADMIN:
-      - Views results across their sector.
+      - Views results across their own sector.
 
    2. SCHOOL ADMIN / DOS:
-      - Without test_id:
+      - Normal School Marks request without test_id:
         Views their own school's results.
 
-      - With test_id:
+      - Sector-wide request with view=sector:
+        Views eligible closed tests created by a
+        Sector Admin within their own sector.
+
+      - Sector-wide request with test_id:
         Can view sector-wide results only when:
         a. The test was created by a Sector Admin.
         b. The test is closed.
@@ -57,15 +61,23 @@ export async function onRequestGet(context) {
         const url = new URL(context.request.url);
 
         /* =================================================
-           SELECTED ACADEMIC YEAR AND TERM
+           REQUEST PARAMETERS
         ================================================= */
 
-        const selectedYear = url.searchParams
-            .get("academic_year");
+        const selectedYear = url.searchParams.get(
+            "academic_year"
+        );
 
         const selectedTerm = Number(
             url.searchParams.get("term_number")
         );
+
+        const requestedTestId = url.searchParams.get(
+            "test_id"
+        );
+
+        const sectorView =
+            url.searchParams.get("view") === "sector";
 
         if (
             !selectedYear ||
@@ -80,8 +92,6 @@ export async function onRequestGet(context) {
             }, 400);
 
         }
-
-        const requestedTestId = url.searchParams.get("test_id");
 
         const accessDeniedMessage =
             "You are not yet allowed to access this page because marks recording for this test is still in progress. Please come back later.";
@@ -108,13 +118,17 @@ export async function onRequestGet(context) {
                     WHERE scope_school.id = tc.school_id
                       AND scope_school.sector_id = $1
                 )
+
                 AND (
                     t.sector_id = $1
+
                     OR EXISTS (
                         SELECT 1
                         FROM test_schools assigned_school
+
                         INNER JOIN schools assigned
                             ON assigned.id = assigned_school.school_id
+
                         WHERE assigned_school.test_id = t.id
                           AND assigned.sector_id = $1
                     )
@@ -141,18 +155,26 @@ export async function onRequestGet(context) {
             }
 
             /* ---------------------------------------------
-               CASE 1: NORMAL SCHOOL MARKS DASHBOARD
+               CASE 1:
+               NORMAL SCHOOL MARKS DASHBOARD
+
+               No test_id and no view=sector.
+
+               Only the user's own school is accessible.
             --------------------------------------------- */
 
-            if (!requestedTestId) {
+            if (!requestedTestId && !sectorView) {
 
                 scopeCondition = `
                     tc.school_id = $1
+
                     AND (
                         t.school_id = $1
+
                         OR EXISTS (
                             SELECT 1
                             FROM test_schools assigned_school
+
                             WHERE assigned_school.test_id = t.id
                               AND assigned_school.school_id = $1
                         )
@@ -164,7 +186,57 @@ export async function onRequestGet(context) {
             }
 
             /* ---------------------------------------------
-               CASE 2: SECTOR-WIDE RESULTS
+               CASE 2:
+               ALL SCHOOLS RESULTS PAGE
+
+               view=sector and no test_id.
+
+               Return all eligible closed tests created
+               by Sector Admins within the user's sector.
+
+               The test dropdown can then display these tests.
+            --------------------------------------------- */
+
+            else if (sectorView && !requestedTestId) {
+
+                scopeCondition = `
+
+                    t.status = 'closed'
+
+                    AND creator.role = 'sector_admin'
+
+                    AND t.sector_id = (
+                        SELECT sector_id
+                        FROM schools
+                        WHERE id = $1
+                    )
+
+                    AND tc.school_id IN (
+                        SELECT id
+                        FROM schools
+                        WHERE sector_id = (
+                            SELECT sector_id
+                            FROM schools
+                            WHERE id = $1
+                        )
+                    )
+
+                `;
+
+                parameters = [auth.schoolId];
+
+            }
+
+            /* ---------------------------------------------
+               CASE 3:
+               SPECIFIC SECTOR-WIDE TEST
+
+               Keep the existing authorization checks.
+
+               The selected test must:
+               a. Be closed.
+               b. Have been created by a Sector Admin.
+               c. Belong to the user's sector.
             --------------------------------------------- */
 
             else {
@@ -188,7 +260,10 @@ export async function onRequestGet(context) {
 
                     LIMIT 1
                     `,
-                    [requestedTestId, auth.schoolId]
+                    [
+                        requestedTestId,
+                        auth.schoolId
+                    ]
                 );
 
                 if (!accessCheck.rows.length) {
@@ -201,8 +276,11 @@ export async function onRequestGet(context) {
                 }
 
                 scopeCondition = `
+
                     t.id = $1
+
                     AND t.status = 'closed'
+
                     AND creator.role = 'sector_admin'
 
                     AND t.sector_id = (
@@ -220,6 +298,7 @@ export async function onRequestGet(context) {
                             WHERE id = $2
                         )
                     )
+
                 `;
 
                 parameters = [
@@ -235,7 +314,7 @@ export async function onRequestGet(context) {
            ADD SELECTED ACADEMIC PERIOD PARAMETERS
 
            Existing role parameters remain unchanged.
-           These two parameters are appended safely.
+           Academic year and term are appended safely.
         ================================================= */
 
         parameters.push(selectedYear);
