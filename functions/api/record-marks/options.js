@@ -6,6 +6,18 @@ import {
 } from "../../_utils.js";
 
 /* =====================================================
+   HELPERS
+===================================================== */
+
+function positiveId(value) {
+    const id = Number(value);
+
+    return Number.isSafeInteger(id) && id > 0
+        ? id
+        : null;
+}
+
+/* =====================================================
    GET: RECORD MARKS OPTIONS
 ===================================================== */
 
@@ -21,13 +33,74 @@ export async function onRequestGet(context) {
         }, 403);
     }
 
+    const url = new URL(context.request.url);
+
+    const academicYearId = positiveId(
+        url.searchParams.get("academic_year_id")
+    );
+
+    const termId = positiveId(
+        url.searchParams.get("term_id")
+    );
+
+    if (!academicYearId || !termId) {
+        return json({
+            success: false,
+            message: "Please select a valid academic year and term."
+        }, 400);
+    }
+
     let client;
 
     try {
         client = await connectDB(context);
 
         /* ---------------------------------------------
-           1. AUTOMATICALLY CLOSE EXPIRED TESTS
+           1. VERIFY SELECTED ACADEMIC PERIOD
+        --------------------------------------------- */
+
+        const periodResult = await client.query(
+            `
+            SELECT
+                ay.id AS academic_year_id,
+                ay.year_name AS academic_year,
+
+                tm.id AS term_id,
+                tm.term_number,
+                tm.term_name
+
+            FROM academic_years ay
+
+            INNER JOIN terms tm
+                ON tm.academic_year_id = ay.id
+               AND tm.school_id = ay.school_id
+
+            WHERE ay.id = $1
+              AND ay.school_id = $2
+              AND tm.id = $3
+
+            LIMIT 1
+            `,
+            [
+                academicYearId,
+                auth.schoolId,
+                termId
+            ]
+        );
+
+        if (periodResult.rows.length === 0) {
+            return json({
+                success: false,
+                message: "The selected academic year and term are invalid for your school."
+            }, 400);
+        }
+
+        const academicPeriod = periodResult.rows[0];
+
+        /* ---------------------------------------------
+           2. AUTOMATICALLY CLOSE EXPIRED TESTS
+
+           Preserve existing behavior.
         --------------------------------------------- */
 
         await client.query(
@@ -37,11 +110,14 @@ export async function onRequestGet(context) {
                 status = 'closed',
                 closed_at = NOW(),
                 updated_at = NOW()
+
             WHERE t.status = 'open'
               AND t.closing_at IS NOT NULL
               AND t.closing_at <= NOW()
+
               AND EXISTS (
                   SELECT 1
+
                   FROM test_classes tc
 
                   INNER JOIN test_subjects ts
@@ -61,11 +137,18 @@ export async function onRequestGet(context) {
                     AND tr.school_id = $2
               )
             `,
-            [auth.userId, auth.schoolId]
+            [
+                auth.userId,
+                auth.schoolId
+            ]
         );
 
         /* ---------------------------------------------
-           2. LOAD TEACHER ASSIGNMENTS
+           3. LOAD TEACHER ASSIGNMENTS
+
+           Do not filter by ta.academic_year_id or
+           ta.term_id because existing assignments
+           currently have NULL in those columns.
         --------------------------------------------- */
 
         const assignmentsResult = await client.query(
@@ -105,11 +188,14 @@ export async function onRequestGet(context) {
                 c.class_name,
                 sub.subject_name
             `,
-            [auth.userId, auth.schoolId]
+            [
+                auth.userId,
+                auth.schoolId
+            ]
         );
 
         /* ---------------------------------------------
-           3. LOAD TESTS MATCHING TEACHER ASSIGNMENTS
+           4. LOAD TESTS FOR SELECTED PERIOD ONLY
         --------------------------------------------- */
 
         const testsResult = await client.query(
@@ -145,6 +231,9 @@ export async function onRequestGet(context) {
 
                 ts.total_marks,
 
+                tsc.academic_year_id,
+                tsc.term_id,
+
                 CASE
                     WHEN t.status = 'open'
                      AND (
@@ -168,6 +257,12 @@ export async function onRequestGet(context) {
             INNER JOIN test_subjects ts
                 ON ts.test_id = tc.test_id
                AND ts.subject_id = ta.subject_id
+
+            INNER JOIN test_schools tsc
+                ON tsc.test_id = tc.test_id
+               AND tsc.school_id = tc.school_id
+               AND tsc.academic_year_id = $3
+               AND tsc.term_id = $4
 
             INNER JOIN tests t
                 ON t.id = tc.test_id
@@ -198,11 +293,16 @@ export async function onRequestGet(context) {
                 c.class_name,
                 sub.subject_name
             `,
-            [auth.userId, auth.schoolId]
+            [
+                auth.userId,
+                auth.schoolId,
+                academicYearId,
+                termId
+            ]
         );
 
         /* ---------------------------------------------
-           4. RETURN OPTIONS
+           5. RETURN OPTIONS
         --------------------------------------------- */
 
         return json({
@@ -212,6 +312,8 @@ export async function onRequestGet(context) {
                 id: auth.userId,
                 schoolId: auth.schoolId
             },
+
+            academic_period: academicPeriod,
 
             assignments: assignmentsResult.rows,
             tests: testsResult.rows
