@@ -461,6 +461,7 @@ export async function onRequestGet(context) {
             active_term: activeTerm,
 
             user: {
+                userId: String(auth.userId),
 
                 role: auth.role,
 
