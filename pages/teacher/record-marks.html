@@ -1393,69 +1393,82 @@ function applyAcademicPeriod(period) {
     loadOptions();
 }
 
+
 function initializeAcademicPeriod() {
-    function connectAcademicPeriod() {
+
+    // Listen for initialization before checking the service.
+    window.addEventListener("fila:academic-period-ready", event => {
         const service = window.FilaAcademicPeriod;
 
-        if (!service) {
-            showTestMessage(
-                "Academic period service is unavailable. Check the academic-period.js file.",
-                "error"
-            );
-            return;
+        const period = event.detail ||
+            service?.getSelection();
+
+        if (period) {
+            applyAcademicPeriod(period);
         }
+    });
 
-        changeAcademicPeriodButton.addEventListener("click", () => {
-            service.open();
-        });
+    // Listen for changes made by the user.
+    window.addEventListener("fila:academic-period-change", event => {
+        const service = window.FilaAcademicPeriod;
 
-        window.addEventListener("fila:academic-period-ready", event => {
-            applyAcademicPeriod(
-                event.detail || service.getSelection()
-            );
-        });
+        const period = event.detail ||
+            service?.getSelection();
 
-        window.addEventListener("fila:academic-period-change", event => {
-            applyAcademicPeriod(
-                event.detail || service.getSelection()
-            );
-        });
+        if (period) {
+            applyAcademicPeriod(period);
+        }
+    });
 
-        window.addEventListener("fila:academic-period-error", event => {
-            console.error("Academic period error:", event.detail);
+    // Handle genuine calendar loading errors.
+    window.addEventListener("fila:academic-period-error", event => {
+        console.error("Academic period error:", event.detail);
 
-            showTestMessage(
-                event.detail?.message || "Unable to load the academic period.",
-                "error"
-            );
-        });
+        showTestMessage(
+            event.detail?.message ||
+            "Unable to load the academic period.",
+            "error"
+        );
+    });
 
+    // The service may already be available.
+    const service = window.FilaAcademicPeriod;
+
+    if (service) {
         const currentPeriod = service.getSelection();
 
-        if (
-            currentPeriod &&
-            currentPeriod.academic_year_id &&
-            currentPeriod.term_id
-        ) {
+        if (currentPeriod) {
             applyAcademicPeriod(currentPeriod);
         } else {
             updateAcademicPeriodDisplay(null);
+
             showTestMessage(
                 "Loading your academic year and term...",
                 ""
             );
         }
+    } else {
+        updateAcademicPeriodDisplay(null);
+
+        showTestMessage(
+            "Loading your academic year and term...",
+            ""
+        );
     }
 
-    if (document.readyState === "loading") {
-        document.addEventListener(
-            "DOMContentLoaded",
-            connectAcademicPeriod,
-            { once: true }
-        );
-    } else {
-        connectAcademicPeriod();
-    }
+    // Check the service when the user clicks the button.
+    changeAcademicPeriodButton.addEventListener("click", () => {
+        const currentService = window.FilaAcademicPeriod;
+
+        if (currentService) {
+            currentService.open();
+        } else {
+            showTestMessage(
+                "Academic period is still loading. Please wait.",
+                "warning"
+            );
+        }
+    });
 }
 /* =====================================================
    START
