@@ -33,6 +33,21 @@ export async function onRequestGet(context) {
 
     const url = new URL(context.request.url);
 
+    const academicYearId = validId(
+        url.searchParams.get("academic_year_id")
+    );
+
+    const termId = validId(
+        url.searchParams.get("term_id")
+    );
+
+    if (!academicYearId || !termId) {
+        return json({
+            success: false,
+            message: "Please select an academic year and term."
+        }, 400);
+    }
+
     let schoolId = null;
     let teacherId = null;
     let teacherName = null;
@@ -45,7 +60,6 @@ export async function onRequestGet(context) {
 
         /* ---------------------------------------------
            1. TEACHER
-           Automatically identify the logged-in teacher.
         --------------------------------------------- */
 
         if (auth.role === "teacher") {
@@ -91,12 +105,12 @@ export async function onRequestGet(context) {
 
         /* ---------------------------------------------
            2. SCHOOL ADMIN
-           Only teachers belonging to their own school.
         --------------------------------------------- */
 
         else if (auth.role === "school_admin") {
 
             schoolId = auth.schoolId;
+
             teacherId = validId(
                 url.searchParams.get("teacher_id")
             );
@@ -142,13 +156,11 @@ export async function onRequestGet(context) {
 
             teacherName = teacherResult.rows[0].full_name;
             schoolName = teacherResult.rows[0].school_name;
-
             teacherId = String(teacherResult.rows[0].id);
         }
 
         /* ---------------------------------------------
            3. SECTOR ADMIN
-           Only teachers in schools belonging to their sector.
         --------------------------------------------- */
 
         else if (auth.role === "sector_admin") {
@@ -196,12 +208,53 @@ export async function onRequestGet(context) {
 
             teacherName = teacherResult.rows[0].full_name;
             schoolName = teacherResult.rows[0].school_name;
-
             teacherId = String(teacherResult.rows[0].id);
         }
 
         /* ---------------------------------------------
-           LOAD ASSIGNMENTS, TESTS, STUDENTS AND MARKS
+           4. VALIDATE SELECTED ACADEMIC PERIOD
+
+           Ensure the selected year and term belong
+           to the teacher's school.
+        --------------------------------------------- */
+
+        const periodResult = await client.query(
+            `SELECT
+                ay.id AS academic_year_id,
+                ay.year_name,
+                tr.id AS term_id,
+                tr.term_name,
+                tr.term_number
+             FROM academic_years ay
+             INNER JOIN terms tr
+                ON tr.school_id = ay.school_id
+               AND tr.academic_year_id = ay.id
+             WHERE ay.school_id = $1
+               AND ay.id = $2
+               AND tr.id = $3
+             LIMIT 1`,
+            [schoolId, academicYearId, termId]
+        );
+
+        if (periodResult.rowCount === 0) {
+            return json({
+                success: false,
+                message: "The selected academic year or term does not belong to this school."
+            }, 400);
+        }
+
+        const academicPeriod = periodResult.rows[0];
+
+        /* ---------------------------------------------
+           5. LOAD ASSIGNMENTS, TESTS, STUDENTS AND MARKS
+
+           Tests are filtered using test_schools.
+
+           Students are filtered using
+           student_enrollments.
+
+           Teacher assignments are NOT filtered by
+           academic year or term.
         --------------------------------------------- */
 
         const result = await client.query(
@@ -267,8 +320,15 @@ export async function onRequestGet(context) {
                 ON tc.school_id = ta.school_id
                AND tc.class_id = ta.class_id
 
+             LEFT JOIN test_schools tsc
+                ON tsc.test_id = tc.test_id
+               AND tsc.school_id = ta.school_id
+               AND tsc.academic_year_id = $3
+               AND tsc.term_id = $4
+
              LEFT JOIN tests tst
                 ON tst.id = tc.test_id
+               AND tsc.test_id IS NOT NULL
                AND EXISTS (
                     SELECT 1
                     FROM test_subjects check_subject
@@ -280,9 +340,26 @@ export async function onRequestGet(context) {
                 ON ts.test_id = tst.id
                AND ts.subject_id = ta.subject_id
 
+             LEFT JOIN LATERAL (
+                SELECT DISTINCT ON (se.student_id)
+                    se.student_id
+                FROM student_enrollments se
+                WHERE se.school_id = ta.school_id
+                  AND se.class_id = ta.class_id
+                  AND se.academic_year_id = $3
+                  AND se.term_id = $4
+                  AND LOWER(TRIM(se.status)) = 'active'
+                ORDER BY
+                    se.student_id,
+                    se.created_at DESC,
+                    se.id DESC
+             ) enrollment
+                ON TRUE
+
              LEFT JOIN students st
-                ON st.class_id = ta.class_id
+                ON st.id = enrollment.student_id
                AND st.school_id = ta.school_id
+               AND st.class_id = ta.class_id
                AND st.status = 'active'
 
              LEFT JOIN marks m
@@ -299,11 +376,16 @@ export async function onRequestGet(context) {
                 sub.subject_name,
                 tst.created_at DESC,
                 st.full_name`,
-            [teacherId, schoolId]
+            [
+                teacherId,
+                schoolId,
+                academicYearId,
+                termId
+            ]
         );
 
         /* ---------------------------------------------
-           ORGANIZE RESULTS
+           6. ORGANIZE RESULTS
         --------------------------------------------- */
 
         const assignmentsMap = new Map();
@@ -366,11 +448,19 @@ export async function onRequestGet(context) {
         }
 
         /* ---------------------------------------------
-           SUCCESS RESPONSE
+           7. SUCCESS RESPONSE
         --------------------------------------------- */
 
         return json({
             success: true,
+
+            academic_period: {
+                academic_year_id: String(academicPeriod.academic_year_id),
+                academic_year: academicPeriod.year_name,
+                term_id: String(academicPeriod.term_id),
+                term: academicPeriod.term_name,
+                term_number: Number(academicPeriod.term_number)
+            },
 
             teacher: {
                 id: String(teacherId),
