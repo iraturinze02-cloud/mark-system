@@ -316,7 +316,22 @@ td {
     <!-- SELECTION -->
 
     <section class="record-card">
-        
+
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:18px;">
+            <div>
+                <strong>Academic Period</strong>
+                <div id="academicPeriodDisplay" style="color:#64748b;font-size:13px;margin-top:4px;">
+                    Loading academic year and term...
+                </div>
+            </div>
+            <button
+                type="button"
+                id="changeAcademicPeriodButton"
+                style="border:0;border-radius:8px;padding:10px 14px;background:#173f70;color:#fff;font-weight:600;cursor:pointer;"
+            >
+                Change Academic Year &amp; Term
+            </button>
+        </div>
 
         <!-- CLASS CARDS -->
         <div id="classSection" class="selection-section selection-hidden">
@@ -376,6 +391,7 @@ td {
 
 </main>
 
+<script src="../../js/academic-period.js"></script>
 <script>
 "use strict";
 
@@ -400,6 +416,9 @@ let selectedSubjectId = null;
 let selectedAssignment = null;
 let selectedTest = null;
 
+let academicPeriod = null;
+let optionsRequestNumber = 0;
+
 let maximumMark = null;
 let pageSession = 0;
 
@@ -423,6 +442,8 @@ const studentsPlaceholder = document.getElementById("studentsPlaceholder");
 const studentsTableContainer = document.getElementById("studentsTableContainer");
 
 const maximumInformation = document.getElementById("maximumInformation");
+const academicPeriodDisplay = document.getElementById("academicPeriodDisplay");
+const changeAcademicPeriodButton = document.getElementById("changeAcademicPeriodButton");
 
 /* =====================================================
    LOGOUT
@@ -471,9 +492,29 @@ async function readResponse(response) {
 ===================================================== */
 
 async function loadOptions() {
-    try {
+    if (
+        !academicPeriod ||
+        !academicPeriod.academic_year_id ||
+        !academicPeriod.term_id
+    ) {
+        showTestMessage(
+            "Select an academic year and term to load your assignments and tests.",
+            "warning"
+        );
+        return;
+    }
 
-        const response = await fetch(API_OPTIONS, {
+    const requestNumber = ++optionsRequestNumber;
+
+    try {
+        showTestMessage("Loading assignments and tests...", "");
+
+        const params = new URLSearchParams({
+            academic_year_id: String(academicPeriod.academic_year_id),
+            term_id: String(academicPeriod.term_id)
+        });
+
+        const response = await fetch(`${API_OPTIONS}?${params.toString()}`, {
             credentials: "same-origin",
             headers: {
                 "Accept": "application/json"
@@ -482,12 +523,17 @@ async function loadOptions() {
 
         const data = await readResponse(response);
 
+        if (requestNumber !== optionsRequestNumber) return;
+
         assignments = data.assignments || [];
         tests = data.tests || [];
 
         if (assignments.length === 0) {
-
-            showTestMessage("No assignments available.");
+            classSection.classList.add("selection-hidden");
+            subjectSection.classList.add("selection-hidden");
+            resetTestUI();
+            clearStudents();
+            showTestMessage("No assignments available for your account.", "warning");
             return;
         }
 
@@ -503,10 +549,11 @@ async function loadOptions() {
         document.getElementById("teacherSchool").textContent =
             assignments[0].school_name || "Not available";
 
-
         renderClasses();
 
     } catch (error) {
+        if (requestNumber !== optionsRequestNumber) return;
+
         console.error("Load options error:", error);
         showTestMessage(error.message, "error");
     }
@@ -859,7 +906,9 @@ async function loadStudents() {
     try {
         const params = new URLSearchParams({
             test_id: String(selectedTest.test_id),
-            assignment_id: String(selectedAssignment.assignment_id)
+            assignment_id: String(selectedAssignment.assignment_id),
+            academic_year_id: String(academicPeriod.academic_year_id),
+            term_id: String(academicPeriod.term_id)
         });
 
         const response = await fetch(
@@ -1172,6 +1221,8 @@ async function saveIndividualMark(input) {
                 body: JSON.stringify({
                     test_id: String(testId),
                     assignment_id: String(assignmentId),
+                    academic_year_id: String(academicPeriod.academic_year_id),
+                    term_id: String(academicPeriod.term_id),
                     marks: [{
                         student_id: String(studentId),
                         score: Number(valueToSave)
@@ -1260,10 +1311,142 @@ testSelect.addEventListener("change", () => {
 });
 
 /* =====================================================
+   ACADEMIC PERIOD
+===================================================== */
+
+function updateAcademicPeriodDisplay(period) {
+    if (!period) {
+        academicPeriodDisplay.textContent = "No academic period selected";
+        return;
+    }
+
+    const yearName = period.academic_year || "Academic year";
+    const termName = period.term_name ||
+        (period.term_number ? `Term ${period.term_number}` : "Term");
+
+    academicPeriodDisplay.textContent = `${yearName} — ${termName}`;
+}
+
+function resetSelectionsForAcademicPeriod() {
+    pageSession++;
+    optionsRequestNumber++;
+
+    assignments = [];
+    tests = [];
+
+    selectedClassId = null;
+    selectedSubjectId = null;
+    selectedAssignment = null;
+    selectedTest = null;
+    maximumMark = null;
+
+    document.getElementById("teacherClass").textContent = "Not selected";
+    document.getElementById("teacherSubject").textContent = "Not selected";
+
+    classCards.innerHTML = "";
+    subjectCards.innerHTML = "";
+
+    classSection.classList.add("selection-hidden");
+    subjectSection.classList.add("selection-hidden");
+
+    resetTestUI();
+    clearStudents();
+}
+
+function applyAcademicPeriod(period) {
+    if (
+        !period ||
+        !period.academic_year_id ||
+        !period.term_id
+    ) {
+        academicPeriod = null;
+        updateAcademicPeriodDisplay(null);
+        resetSelectionsForAcademicPeriod();
+
+        showTestMessage(
+            "A valid academic year and term must be selected.",
+            "warning"
+        );
+        return;
+    }
+
+    const previousYearId = academicPeriod?.academic_year_id;
+    const previousTermId = academicPeriod?.term_id;
+
+    academicPeriod = {
+        ...period,
+        academic_year_id: Number(period.academic_year_id),
+        term_id: Number(period.term_id)
+    };
+
+    updateAcademicPeriodDisplay(academicPeriod);
+
+    if (
+        String(previousYearId) === String(academicPeriod.academic_year_id) &&
+        String(previousTermId) === String(academicPeriod.term_id) &&
+        assignments.length > 0
+    ) {
+        return;
+    }
+
+    resetSelectionsForAcademicPeriod();
+    loadOptions();
+}
+
+function initializeAcademicPeriod() {
+    if (!window.FilaAcademicPeriod) {
+        showTestMessage(
+            "The academic-period service could not be loaded. Please refresh the page.",
+            "error"
+        );
+        return;
+    }
+
+    changeAcademicPeriodButton.addEventListener("click", () => {
+        window.FilaAcademicPeriod.open();
+    });
+
+    window.addEventListener("fila:academic-period-ready", event => {
+        applyAcademicPeriod(
+            event.detail || window.FilaAcademicPeriod.getSelection()
+        );
+    });
+
+    window.addEventListener("fila:academic-period-change", event => {
+        applyAcademicPeriod(
+            event.detail || window.FilaAcademicPeriod.getSelection()
+        );
+    });
+
+    window.addEventListener("fila:academic-period-error", event => {
+        console.error("Academic period error:", event.detail);
+        showTestMessage(
+            event.detail?.message || "Unable to load the academic period.",
+            "error"
+        );
+    });
+
+    // The academic-period script may have completed before this page
+    // registered its event listeners, so check its current selection too.
+    const currentPeriod = window.FilaAcademicPeriod.getSelection();
+
+    if (
+        currentPeriod &&
+        currentPeriod.academic_year_id &&
+        currentPeriod.term_id
+    ) {
+        applyAcademicPeriod(currentPeriod);
+    } else {
+        updateAcademicPeriodDisplay(null);
+        showTestMessage("Loading your academic year and term...", "");
+    }
+}
+
+/* =====================================================
    START
 ===================================================== */
 
-loadOptions();
+initializeAcademicPeriod();
 
 </script>
 
