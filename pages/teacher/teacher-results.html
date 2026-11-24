@@ -1036,23 +1036,54 @@ async function loadCalendar() {
     $("termSelect").disabled = true;
 
     const activeYear = data.active_academic_year;
+const activeTerm = data.active_term;
 
-    if (activeYear &&
-        state.academicYears.some(y => String(y.id) === String(activeYear.id))) {
-        $("yearSelect").value = String(activeYear.id);
-        onYearChange();
+if (
+    activeYear &&
+    state.academicYears.some(
+        year => String(year.id) === String(activeYear.id)
+    )
+) {
+    $("yearSelect").value = String(activeYear.id);
+
+    // Load the terms belonging to the active academic year.
+    onYearChange();
+
+    // Select the active term.
+    if (
+        activeTerm &&
+        Array.from($("termSelect").options).some(
+            option => option.value === String(activeTerm.id)
+        )
+    ) {
+        $("termSelect").value = String(activeTerm.id);
+    }
+}
+
+// Teacher: load results using the logged-in teacher's identity.
+if (state.role === "teacher") {
+    if (!$("yearSelect").value || !$("termSelect").value) {
+        showMessage(
+            "The active academic year or term could not be identified. Please select them manually."
+        );
+        return;
     }
 
-    if (state.role === "teacher") {
-        // The teacher is identified by the results API.
-        await loadResults();
-    } else if (state.teacherId && $("yearSelect").value) {
-        // Wait for the user to select a term.
-        if (data.active_term) {
-            $("termSelect").value = String(data.active_term.id);
+    await loadResults();
+}
+
+// School Admin and Sector Admin.
+else if (state.teacherId) {
+    if (activeTerm && $("yearSelect").value) {
+        const termExists = Array.from($("termSelect").options)
+            .some(option => option.value === String(activeTerm.id));
+
+        if (termExists) {
+            $("termSelect").value = String(activeTerm.id);
             await loadResults();
         }
     }
+}
 }
 
 function onYearChange() {
