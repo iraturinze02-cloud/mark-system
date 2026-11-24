@@ -776,6 +776,9 @@ const sectionInstruction = document.getElementById("sectionInstruction");
 let students = [];
 let classes = [];
 
+let currentPeriod = null;
+let pageInitialized = false;
+
 let currentTab = "active";
 let selectedClassId = "";
 let formClassId = "";
@@ -786,6 +789,52 @@ let messageTimer = null;
 /* =====================================
    API REQUEST HELPER
 ===================================== */
+    /* =====================================
+   ACADEMIC PERIOD
+===================================== */
+
+function getSelectedAcademicPeriod() {
+    if (!window.FilaAcademicPeriod) {
+        throw new Error("Academic period selector is not loaded.");
+    }
+
+    const period = window.FilaAcademicPeriod.getSelection();
+
+    if (
+        !period ||
+        !period.academic_year_id ||
+        !period.term_id
+    ) {
+        throw new Error("Please select an academic year and term.");
+    }
+
+    return period;
+}
+
+function waitForAcademicPeriod() {
+    const existing = window.FilaAcademicPeriod?.getSelection();
+
+    if (
+        existing &&
+        existing.academic_year_id &&
+        existing.term_id
+    ) {
+        return Promise.resolve(existing);
+    }
+
+    return new Promise(resolve => {
+        window.addEventListener(
+            "fila:academic-period-ready",
+            event => {
+                resolve(
+                    event.detail ||
+                    window.FilaAcademicPeriod.getSelection()
+                );
+            },
+            { once: true }
+        );
+    });
+}
 
 async function apiRequest(url, options = {}) {
     const response = await fetch(url, {
@@ -930,6 +979,11 @@ async function loadClasses() {
    LOAD STUDENTS
 ===================================== */
 
+/* =====================================
+   LOAD STUDENTS
+   SELECTED ACADEMIC PERIOD
+===================================== */
+
 async function loadStudents() {
     studentsContainer.replaceChildren();
 
@@ -938,9 +992,20 @@ async function loadStudents() {
     loading.textContent = "Loading students...";
     studentsContainer.appendChild(loading);
 
-    const result = await apiRequest("/api/students");
+    currentPeriod = getSelectedAcademicPeriod();
 
-    students = Array.isArray(result.students) ? result.students : [];
+    const params = new URLSearchParams({
+        academic_year_id: currentPeriod.academic_year_id,
+        term_id: currentPeriod.term_id
+    });
+
+    const result = await apiRequest(
+        "/api/students?" + params.toString()
+    );
+
+    students = Array.isArray(result.students)
+        ? result.students
+        : [];
 
     updateCounts();
 
@@ -1321,11 +1386,16 @@ studentForm.addEventListener("submit", async event => {
 
     const isEditing = editingStudentId !== null;
 
-    const payload = {
-        class_id: classId,
-        full_name: fullName,
-        gender: studentGender.value || null
-    };
+    const period = getSelectedAcademicPeriod();
+
+const payload = {
+    class_id: classId,
+    full_name: fullName,
+    gender: studentGender.value || null,
+
+    academic_year_id: Number(period.academic_year_id),
+    term_id: Number(period.term_id)
+};
 
     if (isEditing) {
         payload.id = editingStudentId;
@@ -1495,6 +1565,32 @@ async function permanentlyDeleteStudent(id) {
 ===================================== */
 
 addStudentBtn.addEventListener("click", openAddModal);
+    /* =====================================
+   ACADEMIC PERIOD CHANGE
+===================================== */
+
+window.addEventListener(
+    "fila:academic-period-change",
+    async function (event) {
+        currentPeriod =
+            event.detail ||
+            getSelectedAcademicPeriod();
+
+        selectedClassId = "";
+
+        if (!pageInitialized) return;
+
+        try {
+            await loadStudents();
+        } catch (error) {
+            showMessage(error.message, "error");
+        }
+    }
+);
+
+/* =====================================
+   INITIALIZE PAGE
+===================================== */
 
 /* =====================================
    INITIALIZE PAGE
@@ -1504,8 +1600,13 @@ async function initializePage() {
     addStudentBtn.disabled = true;
 
     try {
+        currentPeriod = await waitForAcademicPeriod();
+
         await loadClasses();
         await loadStudents();
+
+        pageInitialized = true;
+
     } catch (error) {
         showMessage(error.message, "error");
 
@@ -1518,6 +1619,7 @@ async function initializePage() {
         message.textContent = error.message;
 
         studentsContainer.appendChild(message);
+
     } finally {
         addStudentBtn.disabled = false;
     }
@@ -1525,6 +1627,7 @@ async function initializePage() {
 
 initializePage();
 </script>
+    <script src="../js/academic-period.js"></script>
 
 </body>
 </html>
