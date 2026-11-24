@@ -15,14 +15,19 @@ import {
 
    2. SCHOOL ADMIN / DOS:
       - Without test_id:
-        Views results belonging to their own school,
-        whether the test is open or closed.
+        Views their own school's results.
 
       - With test_id:
         Can view sector-wide results only when:
         a. The test was created by a Sector Admin.
-        b. The test status is closed.
+        b. The test is closed.
         c. The test belongs to their sector.
+
+   STUDENT RETRIEVAL:
+      - Uses student_enrollments.
+      - Matches the test's school, class, academic year
+        and term.
+      - Uses the enrollment's historical class/status.
 ===================================================== */
 
 export async function onRequestGet(context) {
@@ -52,10 +57,16 @@ export async function onRequestGet(context) {
 
         /* =================================================
            SECTOR ADMIN
-           Preserve existing sector-wide access.
         ================================================= */
 
         if (auth.role === "sector_admin") {
+
+            if (!auth.sectorId) {
+                return json({
+                    success: false,
+                    message: "Your account is not linked to a sector."
+                }, 403);
+            }
 
             scopeCondition = `
                 EXISTS (
@@ -96,14 +107,9 @@ export async function onRequestGet(context) {
 
             }
 
-            /* =================================================
+            /* ---------------------------------------------
                CASE 1: NORMAL SCHOOL MARKS DASHBOARD
-
-               No test_id means school-marks.html.
-
-               Allow the user to view their own school's
-               results without requiring the test to be closed.
-            ================================================= */
+            --------------------------------------------- */
 
             if (!requestedTestId) {
 
@@ -124,20 +130,11 @@ export async function onRequestGet(context) {
 
             }
 
-            /* =================================================
-               CASE 2: SECTOR-WIDE RESULTS PAGE
-
-               A test_id means the user is requesting results
-               across all schools in their sector.
-
-               Apply the sector-wide access restrictions.
-            ================================================= */
+            /* ---------------------------------------------
+               CASE 2: SECTOR-WIDE RESULTS
+            --------------------------------------------- */
 
             else {
-
-                /* ---------------------------------------------
-                   VERIFY TEST ACCESS
-                --------------------------------------------- */
 
                 const accessCheck = await client.query(
                     `
@@ -169,11 +166,6 @@ export async function onRequestGet(context) {
                     }, 403);
 
                 }
-
-                /* ---------------------------------------------
-                   LOAD ONLY THE SELECTED TEST AND ITS CLASSES
-                   IN THE USER'S SECTOR.
-                --------------------------------------------- */
 
                 scopeCondition = `
                     t.id = $1
@@ -207,13 +199,16 @@ export async function onRequestGet(context) {
         }
 
         /* =================================================
-           LOAD TESTS, CREATORS, CLASSES, STUDENTS,
-           SUBJECTS AND MARKS
+           LOAD TESTS, SCHOOLS, CLASSES, ENROLLMENTS,
+           STUDENTS, SUBJECTS AND MARKS
         ================================================= */
 
         const result = await client.query(
             `
             SELECT
+
+                /* TEST */
+
                 t.id AS test_id,
                 t.test_name,
                 t.status,
@@ -225,9 +220,15 @@ export async function onRequestGet(context) {
                 creator.full_name AS creator_name,
                 creator.role AS creator_role,
 
+                /* TEST SCHOOL AND ACADEMIC PERIOD */
+
                 tc.school_id,
+                tsc.academic_year_id,
+                tsc.term_id,
 
                 sch.school_name,
+
+                /* CLASS */
 
                 c.id AS class_id,
                 c.class_name,
@@ -239,15 +240,23 @@ export async function onRequestGet(context) {
                     ELSE 'Unknown'
                 END AS class_level,
 
+                /* ENROLLED STUDENT */
+
                 st.id AS student_id,
                 st.full_name AS student_name,
                 st.student_code,
+
+                se.status AS enrollment_status,
+
+                /* SUBJECT */
 
                 sub.id AS subject_id,
                 sub.subject_name,
                 sub.subject_code,
 
-                ts.total_marks AS maximum_mark,
+                testSubject.total_marks AS maximum_mark,
+
+                /* RECORDED MARK */
 
                 m.score
 
@@ -259,6 +268,13 @@ export async function onRequestGet(context) {
             INNER JOIN test_classes tc
                 ON tc.test_id = t.id
 
+            /* Each test class must belong to a test school
+               with its own academic year and term. */
+
+            INNER JOIN test_schools tsc
+                ON tsc.test_id = t.id
+               AND tsc.school_id = tc.school_id
+
             INNER JOIN classes c
                 ON c.id = tc.class_id
 
@@ -269,16 +285,31 @@ export async function onRequestGet(context) {
             INNER JOIN schools sch
                 ON sch.id = tc.school_id
 
-            LEFT JOIN students st
-                ON st.class_id = c.id
-               AND st.school_id = tc.school_id
-               AND st.status = 'active'
+            /* =================================================
+               HISTORICAL STUDENT ENROLLMENT
 
-            INNER JOIN test_subjects ts
-                ON ts.test_id = t.id
+               Do not use st.class_id or st.status here.
+
+               The enrollment determines the student's class
+               and status for the test's academic period.
+            ================================================= */
+
+            LEFT JOIN student_enrollments se
+                ON se.school_id = tc.school_id
+               AND se.class_id = c.id
+               AND se.academic_year_id = tsc.academic_year_id
+               AND se.term_id = tsc.term_id
+               AND LOWER(TRIM(se.status)) = 'active'
+
+            LEFT JOIN students st
+                ON st.id = se.student_id
+               AND st.school_id = tc.school_id
+
+            INNER JOIN test_subjects testSubject
+                ON testSubject.test_id = t.id
 
             INNER JOIN subjects sub
-                ON sub.id = ts.subject_id
+                ON sub.id = testSubject.subject_id
 
             LEFT JOIN marks m
                 ON m.test_id = t.id
@@ -371,6 +402,10 @@ export async function onRequestGet(context) {
 
                     school_name: row.school_name,
 
+                    academic_year_id: String(row.academic_year_id),
+
+                    term_id: String(row.term_id),
+
                     subjects: [],
 
                     students: []
@@ -381,9 +416,9 @@ export async function onRequestGet(context) {
 
             }
 
-            /* =================================================
-               SUBJECTS
-            ================================================= */
+            /* ---------------------------------------------
+               ADD SUBJECT
+            --------------------------------------------- */
 
             const subjectId = String(row.subject_id);
 
@@ -407,9 +442,9 @@ export async function onRequestGet(context) {
 
             }
 
-            /* =================================================
-               ACTIVE STUDENTS
-            ================================================= */
+            /* ---------------------------------------------
+               ADD STUDENT
+            --------------------------------------------- */
 
             if (row.student_id === null) continue;
 
