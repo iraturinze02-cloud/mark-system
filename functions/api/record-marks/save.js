@@ -385,15 +385,19 @@ export async function onRequestPost(context) {
             ]
         );
 
-        if (studentsResult.rowCount !== studentIds.length) {
-            await client.query("ROLLBACK");
-            transactionStarted = false;
+        const enrolledStudentIds = new Set(
+    studentsResult.rows.map(row => String(row.student_id))
+);
 
-            return json({
-                success: false,
-                message: "One or more students are not actively enrolled in this class for the selected academic year and term. Refresh the student list and try again."
-            }, 400);
-        }
+if (enrolledStudentIds.size !== studentIds.length) {
+    await client.query("ROLLBACK");
+    transactionStarted = false;
+
+    return json({
+        success: false,
+        message: "One or more students are not actively enrolled in this class for the selected academic year and term. Refresh the student list and try again."
+    }, 400);
+}
 
         /* ---------------------------------------------
            8. SAVE OR UPDATE TEST MARKS
