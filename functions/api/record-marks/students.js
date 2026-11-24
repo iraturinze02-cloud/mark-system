@@ -6,7 +6,8 @@ import {
 } from "../../_utils.js";
 
 /* =====================================================
-   GET: ACTIVE STUDENTS FOR A SELECTED TEST
+   GET: ACTIVE ENROLLED STUDENTS FOR A SELECTED TEST
+   FILTERED BY SELECTED ACADEMIC YEAR AND TERM
 ===================================================== */
 
 export async function onRequestGet(context) {
@@ -32,13 +33,23 @@ export async function onRequestGet(context) {
         url.searchParams.get("assignment_id")
     );
 
+    const academicYearId = Number(
+        url.searchParams.get("academic_year_id")
+    );
+
+    const termId = Number(
+        url.searchParams.get("term_id")
+    );
+
     if (
-        !Number.isInteger(testId) || testId <= 0 ||
-        !Number.isInteger(assignmentId) || assignmentId <= 0
+        !Number.isSafeInteger(testId) || testId <= 0 ||
+        !Number.isSafeInteger(assignmentId) || assignmentId <= 0 ||
+        !Number.isSafeInteger(academicYearId) || academicYearId <= 0 ||
+        !Number.isSafeInteger(termId) || termId <= 0
     ) {
         return json({
             success: false,
-            message: "A valid Test and assignment are required."
+            message: "A valid Test, assignment and academic period are required."
         }, 400);
     }
 
@@ -48,7 +59,45 @@ export async function onRequestGet(context) {
         client = await connectDB(context);
 
         /* ---------------------------------------------
-           1. VERIFY TEACHER ASSIGNMENT
+           1. VERIFY SELECTED ACADEMIC PERIOD
+        --------------------------------------------- */
+
+        const periodResult = await client.query(
+            `
+            SELECT
+                ay.id AS academic_year_id,
+                ay.year_name AS academic_year,
+                t.id AS term_id,
+                t.term_name AS term,
+                t.term_number
+            FROM academic_years ay
+            INNER JOIN terms t
+                ON t.academic_year_id = ay.id
+               AND t.school_id = ay.school_id
+            WHERE ay.id = $1
+              AND t.id = $2
+              AND ay.school_id = $3
+              AND t.school_id = $3
+            LIMIT 1
+            `,
+            [
+                academicYearId,
+                termId,
+                auth.schoolId
+            ]
+        );
+
+        if (periodResult.rowCount === 0) {
+            return json({
+                success: false,
+                message: "The selected academic year or term is invalid for your school."
+            }, 400);
+        }
+
+        const period = periodResult.rows[0];
+
+        /* ---------------------------------------------
+           2. VERIFY TEACHER ASSIGNMENT
         --------------------------------------------- */
 
         const assignmentResult = await client.query(
@@ -96,10 +145,14 @@ export async function onRequestGet(context) {
 
             LIMIT 1
             `,
-            [assignmentId, auth.userId, auth.schoolId]
+            [
+                assignmentId,
+                auth.userId,
+                auth.schoolId
+            ]
         );
 
-        if (assignmentResult.rows.length === 0) {
+        if (assignmentResult.rowCount === 0) {
             return json({
                 success: false,
                 message: "This class and subject are not assigned to you."
@@ -109,8 +162,8 @@ export async function onRequestGet(context) {
         const assignment = assignmentResult.rows[0];
 
         /* ---------------------------------------------
-           2. VERIFY TEST MATCHES ASSIGNMENT
-              AND GET MAXIMUM MARK
+           3. VERIFY TEST, SCHOOL, PERIOD, CLASS
+              AND SUBJECT
         --------------------------------------------- */
 
         const testResult = await client.query(
@@ -137,9 +190,15 @@ export async function onRequestGet(context) {
 
             FROM tests t
 
+            INNER JOIN test_schools test_school
+                ON test_school.test_id = t.id
+               AND test_school.school_id = $2
+               AND test_school.academic_year_id = $5
+               AND test_school.term_id = $6
+
             INNER JOIN test_classes tc
                 ON tc.test_id = t.id
-               AND tc.school_id = $2
+               AND tc.school_id = test_school.school_id
                AND tc.class_id = $3
 
             INNER JOIN test_subjects ts
@@ -163,21 +222,23 @@ export async function onRequestGet(context) {
                 testId,
                 assignment.school_id,
                 assignment.class_id,
-                assignment.subject_id
+                assignment.subject_id,
+                academicYearId,
+                termId
             ]
         );
 
-        if (testResult.rows.length === 0) {
+        if (testResult.rowCount === 0) {
             return json({
                 success: false,
-                message: "This Test does not belong to the selected class and subject."
+                message: "This Test does not belong to the selected school, academic period, class and subject."
             }, 403);
         }
 
         const test = testResult.rows[0];
 
         /* ---------------------------------------------
-           3. VERIFY MAXIMUM MARK
+           4. VERIFY MAXIMUM MARK
         --------------------------------------------- */
 
         if (
@@ -193,7 +254,7 @@ export async function onRequestGet(context) {
         }
 
         /* ---------------------------------------------
-           4. AUTOMATIC CLOSING TIME CHECK
+           5. AUTOMATIC CLOSING TIME CHECK
         --------------------------------------------- */
 
         if (
@@ -222,7 +283,7 @@ export async function onRequestGet(context) {
         }
 
         /* ---------------------------------------------
-           5. VERIFY TEST IS OPEN
+           6. VERIFY TEST IS OPEN
         --------------------------------------------- */
 
         if (test.status !== "open") {
@@ -234,7 +295,11 @@ export async function onRequestGet(context) {
         }
 
         /* ---------------------------------------------
-           6. LOAD ACTIVE STUDENTS AND EXISTING MARKS
+           7. LOAD ACTIVE ENROLLMENTS AND EXISTING MARKS
+
+           IMPORTANT:
+           The enrollment determines the student's class
+           for the selected academic year and term.
         --------------------------------------------- */
 
         const studentsResult = await client.query(
@@ -245,38 +310,51 @@ export async function onRequestGet(context) {
                 s.full_name,
                 s.gender,
 
+                se.id AS enrollment_id,
+                se.class_id AS enrollment_class_id,
+
                 m.id AS mark_id,
                 m.score AS mark,
                 m.remarks
 
-            FROM students s
+            FROM student_enrollments se
+
+            INNER JOIN students s
+                ON s.id = se.student_id
+               AND s.school_id = se.school_id
 
             LEFT JOIN marks m
                 ON m.test_id = $1
                AND m.student_id = s.id
-               AND m.class_id = s.class_id
+               AND m.class_id = se.class_id
                AND m.subject_id = $4
 
-            WHERE s.school_id = $2
-              AND s.class_id = $3
-              AND s.status = 'active'
+            WHERE se.school_id = $2
+              AND se.class_id = $3
+              AND se.academic_year_id = $5
+              AND se.term_id = $6
+              AND LOWER(TRIM(se.status)) = 'active'
 
-            ORDER BY s.full_name
+            ORDER BY s.full_name ASC
             `,
             [
                 testId,
                 assignment.school_id,
                 assignment.class_id,
-                assignment.subject_id
+                assignment.subject_id,
+                academicYearId,
+                termId
             ]
         );
 
         /* ---------------------------------------------
-           7. RETURN DATA
+           8. RETURN DATA
         --------------------------------------------- */
 
         return json({
             success: true,
+
+            academic_period: period,
 
             test: {
                 ...test,
