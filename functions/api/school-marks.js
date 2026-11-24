@@ -1,1734 +1,597 @@
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<meta name="description" content="Record and manage student marks for assigned classes and subjects in Fila Grades System.">
-<meta name="theme-color" content="#173f70">
-
-<link rel="icon" type="image/x-icon" href="../../images/favicon/favicon.ico">
-<link rel="icon" type="image/png" sizes="512x512" href="../../images/favicon/favicon.png">
-
-<title>School Marks | Results Dashboard</title>
-
-<style>
-* {
-    box-sizing: border-box;
-}
-
-:root {
-    --primary: #1d4ed8;
-    --primary-dark: #1e40af;
-    --background: #f3f6fb;
-    --text: #1e293b;
-    --muted: #64748b;
-    --border: #e2e8f0;
-    --white: #ffffff;
-}
-
-body {
-    margin: 0;
-    font-family: 'Segoe UI', Arial, sans-serif;
-    background: var(--background);
-    color: var(--text);
-}
-
-/* HEADER */
-
-header {
-    background: linear-gradient(135deg, #1d4ed8, #2563eb);
-    color: white;
-    text-align: center;
-    padding: 30px 15px;
-}
-
-header h1 {
-    margin: 0;
-    font-size: 27px;
-    letter-spacing: .5px;
-}
-
-header p {
-    margin: 8px 0 0;
-    opacity: .9;
-}
-
-/* TOOLBAR */
-
-.toolbar {
-    width: 95%;
-    max-width: 1400px;
-    margin: 20px auto;
-    padding: 16px;
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0,0,0,.05);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 15px;
-    flex-wrap: wrap;
-}
-
-button {
-    padding: 11px 17px;
-    border: none;
-    cursor: pointer;
-    border-radius: 7px;
-    font-weight: 600;
-    font-size: 14px;
-    transition: .2s;
-}
-
-button:hover {
-    opacity: .9;
-    transform: translateY(-1px);
-}
-
-button:disabled {
-    opacity: .6;
-    cursor: not-allowed;
-    transform: none;
-}
-
-.logout-btn {
-    background: #ef4444;
-    color: white;
-}
-
-.download-btn {
-    background: var(--primary);
-    color: white;
-}
-
-/* PROFESSIONAL ACADEMIC PERIOD BUTTON */
-
-.academic-period-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    min-height: 43px;
-    padding: 11px 18px;
-    color: #ffffff;
-    background: linear-gradient(135deg, #173f70, #2563eb);
-    border: 1px solid #1d4ed8;
-    border-radius: 9px;
-    font-size: 14px;
-    font-weight: 650;
-    letter-spacing: .1px;
-    box-shadow: 0 3px 8px rgba(29, 78, 216, .18);
-    transition: background .2s ease, box-shadow .2s ease,
-                transform .2s ease;
-}
-
-.academic-period-btn:hover {
-    background: linear-gradient(135deg, #12345d, #1d4ed8);
-    box-shadow: 0 5px 12px rgba(29, 78, 216, .24);
-}
-
-.academic-period-btn:focus-visible {
-    outline: 3px solid rgba(37, 99, 235, .25);
-    outline-offset: 3px;
-}
-
-.academic-period-btn svg {
-    width: 18px;
-    height: 18px;
-    flex-shrink: 0;
-}
-
-/* SELECTORS */
-
-.selectors {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    flex-wrap: wrap;
-    flex: 1;
-}
-
-.selector-group {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-}
-
-.selector-group label {
-    font-size: 13px;
-    font-weight: 700;
-    color: #475569;
-}
-
-.selector-group select {
-    min-width: 220px;
-    max-width: 100%;
-    padding: 11px 13px;
-    border: 1px solid #cbd5e1;
-    border-radius: 7px;
-    background: white;
-    color: var(--text);
-    font-size: 14px;
-    outline: none;
-}
-
-.selector-group select:focus {
-    border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(37,99,235,.12);
-}
-
-.school-selector[hidden] {
-    display: none;
-}
-
-/* MAIN CONTAINER */
-
-.container {
-    width: 95%;
-    max-width: 1400px;
-    margin: 20px auto 40px;
-}
-
-/* TEST CARD */
-
-.test-card {
-    background: white;
-    padding: 22px;
-    margin-bottom: 25px;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0,0,0,.05);
-}
-
-.test-heading {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 15px;
-    flex-wrap: wrap;
-    border-bottom: 1px solid var(--border);
-    padding-bottom: 16px;
-    margin-bottom: 20px;
-}
-
-.test-heading h2 {
-    margin: 0 0 10px;
-    color: var(--primary-dark);
-    font-size: 22px;
-}
-
-.status {
-    display: inline-block;
-    padding: 5px 11px;
-    border-radius: 20px;
-    background: #e2e8f0;
-    color: #334155;
-    font-size: 11px;
-    text-transform: uppercase;
-    font-weight: bold;
-}
-
-/* CLASS CARD */
-
-.class-card {
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 17px;
-    margin-top: 20px;
-    background: #fff;
-}
-
-.class-heading {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 10px;
-}
-
-.class-heading h3 {
-    margin: 5px 0 8px;
-    color: #1e293b;
-    font-size: 19px;
-}
-
-.school-name {
-    color: var(--muted);
-    font-size: 13px;
-    margin-bottom: 10px;
-}
-
-/* TABLES */
-
-.table-wrapper {
-    overflow-x: auto;
-    margin-top: 12px;
-    border-radius: 7px;
-}
-
-table {
-    width: 100%;
-    border-collapse: collapse;
-    min-width: 700px;
-    background: white;
-}
-
-th, td {
-    border: 1px solid #e2e8f0;
-    padding: 10px;
-    text-align: center;
-    white-space: nowrap;
-    font-size: 13px;
-}
-
-thead {
-    background: var(--primary);
-    color: white;
-}
-
-thead th {
-    font-weight: 600;
-}
-
-tbody tr:nth-child(even) {
-    background: #f8fafc;
-}
-
-tbody tr:hover {
-    background: #eff6ff;
-}
-
-/* ANALYSIS */
-
-.analysis-box {
-    margin-top: 25px;
-}
-
-.analysis-box h4 {
-    margin: 0 0 10px;
-    color: var(--primary-dark);
-    font-size: 16px;
-}
-
-/* MESSAGES */
-
-.message {
-    text-align: center;
-    background: white;
-    padding: 35px 20px;
-    border-radius: 10px;
-    margin: 25px auto;
-    color: var(--muted);
-    box-shadow: 0 2px 8px rgba(0,0,0,.04);
-}
-
-.no-marks {
-    color: var(--muted);
-    text-align: center;
-    padding: 25px;
-    background: #f8fafc;
-    border-radius: 7px;
-}
-
-/* RESPONSIVE */
-
-@media(max-width: 700px) {
-    header {
-        padding: 23px 12px;
-    }
-
-    header h1 {
-        font-size: 22px;
-    }
-
-    .toolbar {
-        padding: 13px;
-        align-items: stretch;
-    }
-
-    .selectors {
-        width: 100%;
-        flex-direction: column;
-        align-items: stretch;
-    }
-
-    .selector-group {
-        width: 100%;
-    }
-
-    .selector-group select {
-        width: 100%;
-        min-width: 0;
-    }
-
-    .toolbar > button {
-        width: 100%;
-    }
-
-    .academic-period-btn {
-        width: 100%;
-    }
-
-    .test-card {
-        padding: 13px;
-    }
-
-    .class-card {
-        padding: 10px;
-    }
-
-    .test-heading h2 {
-        font-size: 19px;
-    }
-
-    .class-heading h3 {
-        font-size: 17px;
-    }
-}
-
-/* PRINT */
-
-@media print {
-    body {
-        background: white;
-        color: black;
-    }
-
-    header {
-        background: white !important;
-        color: black !important;
-        border-bottom: 2px solid black;
-    }
-
-    .toolbar,
-    .download-btn,
-    .logout-btn {
-        display: none !important;
-    }
-
-    .container {
-        width: 100%;
-        max-width: none;
-        margin: 0;
-    }
-
-    .test-card,
-    .class-card {
-        box-shadow: none;
-        border: 1px solid #aaa;
-    }
-
-    .class-card {
-        break-inside: avoid;
-    }
-
-    table {
-        min-width: 0;
-    }
-
-    th, td {
-        font-size: 10px;
-        padding: 5px;
-    }
-
-    thead {
-        background: #ddd !important;
-        color: black !important;
-        print-color-adjust: exact;
-        -webkit-print-color-adjust: exact;
-    }
-}
-</style>
-</head>
-
-<body>
-
-<main class="school-main-content">
-
-<header>
-    <h1>VIEW SCHOOL MARKS</h1>
-    <p>Tests Results Dashboard</p>
-</header>
-
-<!-- TOOLBAR -->
-
-<div class="toolbar">
-
-    <button class="logout-btn" onclick="logout()">
-        Logout
-    </button>
-
-    <!-- ACADEMIC PERIOD BUTTON -->
-
-    <button
-        type="button"
-        id="academicPeriodBtn"
-        class="academic-period-btn"
-        onclick="openAcademicPeriodSelector()"
-        title="Change the academic year and term"
-    >
-        <svg viewBox="0 0 24 24"
-             fill="none"
-             stroke="currentColor"
-             stroke-width="2"
-             stroke-linecap="round"
-             stroke-linejoin="round"
-             aria-hidden="true">
-            <rect x="3" y="5" width="18" height="16" rx="2"></rect>
-            <path d="M16 3v4M8 3v4M3 10h18"></path>
-            <path d="m9 16 2 2 4-4"></path>
-        </svg>
-
-        <span id="academicPeriodBtnText">
-            Academic Year &amp; Term
-        </span>
-    </button>
-
-    <div class="selectors">
-
-        <!-- TEST SELECTOR -->
-
-        <div class="selector-group">
-            <label for="testSelect">Select Test</label>
-
-            <select id="testSelect" onchange="handleTestChange()">
-                <option value="">Loading tests...</option>
-            </select>
-        </div>
-
-        <!-- SCHOOL SELECTOR: SECTOR ADMIN ONLY -->
-
-        <div class="selector-group school-selector"
-             id="schoolSelector"
-             hidden>
-
-            <label for="schoolSelect">Select School</label>
-
-            <select id="schoolSelect" onchange="displaySelectedTest()">
-                <option value="all">All Schools</option>
-            </select>
-
-        </div>
-
-    </div>
-
-    <button class="download-btn" onclick="window.print()">
-        Download / Print Results
-    </button>
-
-    <button
-        id="generateReportCardsBtn"
-        class="download-btn"
-        onclick="openReportCards()"
-        style="display:none;"
-    >
-        GENERATE REPORT CARDS
-    </button>
-
-    <button
-        id="viewSectorMarksBtn"
-        class="download-btn"
-        onclick="viewSectorMarks()"
-        style="display:none;"
-    >
-        View Marks Across All Sector Schools
-    </button>
-
-</div>
-
-<!-- RESULTS -->
-
-<div class="container" id="results">
-    <div class="message">
-        Loading school marks...
-    </div>
-</div>
-
-</main>
-
-<!-- LOAD SHARED ACADEMIC PERIOD SELECTOR FIRST -->
-
-<script src="../js/academic-period.js"></script>
-
-<script>
+import {
+    connectDB,
+    authenticateRole,
+    json
+} from "../_utils.js";
 
 /* =====================================================
-   HTML SECURITY
+   GET: SCHOOL MARKS — VIEW ONLY
+
+   ACCESS:
+
+   1. SECTOR ADMIN:
+      - Views results across their sector.
+
+   2. SCHOOL ADMIN / DOS:
+      - Without test_id:
+        Views their own school's results.
+
+      - With test_id:
+        Can view sector-wide results only when:
+        a. The test was created by a Sector Admin.
+        b. The test is closed.
+        c. The test belongs to their sector.
+
+   ACADEMIC PERIOD:
+      - Uses the selected academic year and term.
+      - Gets period-specific IDs from test_schools.
+      - Matches each school's own academic year and term IDs.
+
+   STUDENT RETRIEVAL:
+      - Uses student_enrollments.
+      - Matches the test's school, class, academic year
+        and term.
+      - Uses the enrollment's historical class/status.
 ===================================================== */
 
-function escapeHTML(value) {
+export async function onRequestGet(context) {
 
-    return String(value ?? "").replace(/[&<>"']/g, char => ({
-        "&": "&amp;",
-        "<": "&lt;",
-        ">": "&gt;",
-        '"': "&quot;",
-        "'": "&#039;"
-    })[char]);
-
-}
-
-/* =====================================================
-   CATEGORY
-===================================================== */
-
-function getCategory(percentage) {
-
-    if (percentage >= 80) return "A (Excellent)";
-    if (percentage >= 75) return "B (Very Good)";
-    if (percentage >= 70) return "C (Good)";
-    if (percentage >= 65) return "D (Satisfactory)";
-    if (percentage >= 60) return "E (Adequate)";
-    if (percentage >= 50) return "S (Pass)";
-
-    return "F (Fail)";
-
-}
-
-/* =====================================================
-   FORMAT NUMBER
-===================================================== */
-
-function formatNumber(value) {
-
-    return Number(value).toFixed(2).replace(/\.00$/, "");
-
-}
-
-/* =====================================================
-   GLOBAL VARIABLES
-===================================================== */
-
-let allTests = [];
-
-let selectedTestId = null;
-
-let currentUserRole = null;
-
-let selectedSchoolId = "all";
-
-let currentAcademicPeriod = null;
-
-let marksLoading = false;
-
-
-/* =====================================================
-   ACADEMIC YEAR AND TERM
-===================================================== */
-
-function openAcademicPeriodSelector() {
-
-    if (!window.FilaAcademicPeriod) {
-
-        alert("Academic period selector is not available.");
-
-        return;
-
-    }
-
-    window.FilaAcademicPeriod.open();
-
-}
-
-function updateAcademicPeriodButton(period) {
-
-    const buttonText = document.getElementById(
-        "academicPeriodBtnText"
-    );
-
-    if (!buttonText || !period) return;
-
-    const year = period.academic_year || "";
-
-    const term = period.term_name || period.term || "";
-
-    buttonText.textContent =
-        `${year} • ${term}`;
-
-}
-
-function waitForAcademicPeriod() {
-
-    return new Promise((resolve, reject) => {
-
-        if (window.FilaAcademicPeriod?.getSelection()) {
-
-            currentAcademicPeriod =
-                window.FilaAcademicPeriod.getSelection();
-
-            updateAcademicPeriodButton(currentAcademicPeriod);
-
-            resolve(currentAcademicPeriod);
-
-            return;
-
-        }
-
-        window.addEventListener(
-            "fila:academic-period-ready",
-            function(event) {
-
-                currentAcademicPeriod = event.detail;
-
-                updateAcademicPeriodButton(currentAcademicPeriod);
-
-                resolve(currentAcademicPeriod);
-
-            },
-            { once: true }
-        );
-
-        window.addEventListener(
-            "fila:academic-period-error",
-            function(event) {
-
-                reject(
-                    new Error("Unable to load the academic calendar.")
-                );
-
-            },
-            { once: true }
-        );
-
-    });
-
-}
-
-/* =====================================================
-   ACADEMIC PERIOD CHANGE
-===================================================== */
-
-window.addEventListener(
-    "fila:academic-period-change",
-    function(event) {
-
-        currentAcademicPeriod = event.detail;
-
-        updateAcademicPeriodButton(currentAcademicPeriod);
-
-        selectedTestId = null;
-
-        selectedSchoolId = "all";
-
-        loadMarks();
-
-    }
-);
-
-
-/* =====================================================
-   LOAD SCHOOL MARKS
-===================================================== */
-
-async function loadMarks() {
-
-    if (marksLoading) return;
-
-    marksLoading = true;
-
-    const container = document.getElementById("results");
-
-    const testSelect = document.getElementById("testSelect");
-
-    const schoolSelector = document.getElementById("schoolSelector");
-
-    const reportCardsBtn = document.getElementById(
-        "generateReportCardsBtn"
-    );
-
-    const sectorMarksBtn = document.getElementById(
-        "viewSectorMarksBtn"
-    );
-
-    container.innerHTML = `
-        <div class="message">
-            Loading school marks...
-        </div>
-    `;
-
-    try {
-
-        if (!currentAcademicPeriod) {
-
-            throw new Error(
-                "Please select an academic year and term."
-            );
-
-        }
-
-        const params = new URLSearchParams({
-
-            academic_year: currentAcademicPeriod.academic_year,
-
-            term_number: String(currentAcademicPeriod.term_number)
-
-        });
-
-        const response = await fetch(
-            `/api/school-marks?${params.toString()}`,
-            {
-                method: "GET",
-                credentials: "same-origin",
-                headers: {
-                    "Accept": "application/json"
-                },
-                cache: "no-store"
-            }
-        );
-
-        const data = await response.json();
-
-        if (response.status === 401) {
-
-            location.href = "../../index.html";
-
-            return;
-
-        }
-
-        if (!response.ok || !data.success) {
-
-            throw new Error(
-                data.message || "Failed to load school marks."
-            );
-
-        }
-
-        /* GET AUTHENTICATED ROLE */
-
-        currentUserRole = data.role || data.user?.role || null;
-
-        reportCardsBtn.style.display =
-            currentUserRole === "school_admin"
-                ? "inline-block"
-                : "none";
-
-        if (
-            !["sector_admin", "school_admin", "dos"].includes(
-                currentUserRole
-            )
-        ) {
-
-            throw new Error(
-                "You are not authorized to view school marks."
-            );
-
-        }
-
-        /* SHOW SCHOOL SELECTOR ONLY FOR SECTOR ADMIN */
-
-        if (currentUserRole === "sector_admin") {
-
-            schoolSelector.hidden = false;
-
-        } else {
-
-            schoolSelector.hidden = true;
-
-        }
-
-        allTests = Array.isArray(data.tests)
-            ? data.tests
-            : [];
-
-        /* NO TESTS */
-
-        if (allTests.length === 0) {
-
-            testSelect.innerHTML = `
-                <option value="">No tests available</option>
-            `;
-
-            sectorMarksBtn.style.display = "none";
-
-            reportCardsBtn.style.display = "none";
-
-            container.innerHTML = `
-                <div class="message">
-                    No tests are available for
-                    ${escapeHTML(currentAcademicPeriod.academic_year)}
-                    •
-                    ${escapeHTML(
-                        currentAcademicPeriod.term_name ||
-                        currentAcademicPeriod.term
-                    )}.
-                </div>
-            `;
-
-            return;
-
-        }
-
-        /* SORT TESTS BY CREATION DATE */
-
-        allTests.sort((a, b) => {
-
-            return new Date(b.created_at || 0) -
-                   new Date(a.created_at || 0);
-
-        });
-
-        /* POPULATE TEST DROPDOWN */
-
-        testSelect.innerHTML = `
-            <option value="">Select a test</option>
-        `;
-
-        allTests.forEach(test => {
-
-            const option = document.createElement("option");
-
-            option.value = String(test.id);
-
-            option.textContent =
-                `${test.name} (${test.status})`;
-
-            testSelect.appendChild(option);
-
-        });
-
-        /* FIND LATEST OPEN OR CLOSED TEST */
-
-        const preferredTest = allTests.find(test => {
-
-            const status = String(test.status || "")
-                .toLowerCase();
-
-            return status === "open" || status === "closed";
-
-        });
-
-        const testToSelect = preferredTest || allTests[0];
-
-        testSelect.value = String(testToSelect.id);
-
-        selectedTestId = String(testToSelect.id);
-
-        /* POPULATE SCHOOL DROPDOWN */
-
-        populateSchoolDropdown(testToSelect);
-
-        /* DISPLAY SELECTED TEST */
-
-        displaySelectedTest();
-
-    } catch (error) {
-
-        console.error("School Marks error:", error);
-
-        container.innerHTML = `
-            <div class="message">
-                ${escapeHTML(error.message)}
-            </div>
-        `;
-
-    } finally {
-
-        marksLoading = false;
-
-    }
-
-}
-
-
-/* =====================================================
-   SECTOR MARKS BUTTON
-===================================================== */
-
-function updateSectorMarksButton(test) {
-
-    const button = document.getElementById("viewSectorMarksBtn");
-
-    if (!button) return;
-
-    const allowedRole = [
+    const auth = await authenticateRole(context, [
+        "sector_admin",
         "school_admin",
         "dos"
-    ].includes(currentUserRole);
+    ]);
 
-    const sectorCreated =
-        test?.creator_role === "sector_admin";
+    if (auth.error) return auth.error;
 
-    const testClosed =
-        String(test?.status || "").toLowerCase() === "closed";
-
-    button.style.display =
-        allowedRole && sectorCreated && testClosed
-            ? "inline-block"
-            : "none";
-
-}
-
-function viewSectorMarks() {
-
-    if (!selectedTestId) return;
-
-    const test = allTests.find(
-        item => String(item.id) === String(selectedTestId)
-    );
-
-    if (
-        !test ||
-        !["school_admin", "dos"].includes(currentUserRole) ||
-        test.creator_role !== "sector_admin" ||
-        String(test.status).toLowerCase() !== "closed"
-    ) {
-
-        return;
-
-    }
-
-    window.location.href =
-        `../sector/view-all-students-marks.html?test_id=${encodeURIComponent(selectedTestId)}`;
-
-}
-
-
-/* =====================================================
-   HANDLE TEST CHANGE
-===================================================== */
-
-function handleTestChange() {
-
-    const testSelect = document.getElementById("testSelect");
-
-    selectedTestId = String(testSelect.value);
-
-    const test = allTests.find(item =>
-        String(item.id) === selectedTestId
-    );
-
-    if (!test) {
-
-        updateSectorMarksButton(null);
-
-        displaySelectedTest();
-
-        return;
-
-    }
-
-    /* RESET SCHOOL FILTER WHEN CHANGING TEST */
-
-    populateSchoolDropdown(test);
-
-    displaySelectedTest();
-
-}
-
-
-/* =====================================================
-   POPULATE SCHOOL DROPDOWN
-===================================================== */
-
-function populateSchoolDropdown(test) {
-
-    const schoolSelect = document.getElementById("schoolSelect");
-
-    if (!schoolSelect) return;
-
-    schoolSelect.innerHTML = `
-        <option value="all">All Schools</option>
-    `;
-
-    const schools = new Map();
-
-    (test.classes || []).forEach(classItem => {
-
-        if (
-            classItem.school_id !== null &&
-            classItem.school_id !== undefined &&
-            classItem.school_name
-        ) {
-
-            schools.set(
-                String(classItem.school_id),
-                classItem.school_name
-            );
-
-        }
-
-    });
-
-    /* SORT SCHOOL NAMES ALPHABETICALLY */
-
-    const sortedSchools = [...schools.entries()]
-        .sort((a, b) =>
-            String(a[1]).localeCompare(String(b[1]))
-        );
-
-    sortedSchools.forEach(([schoolId, schoolName]) => {
-
-        const option = document.createElement("option");
-
-        option.value = schoolId;
-
-        option.textContent = schoolName;
-
-        schoolSelect.appendChild(option);
-
-    });
-
-    /* AUTOMATICALLY SELECT THE FIRST SCHOOL */
-
-    if (sortedSchools.length > 0) {
-
-        schoolSelect.value = sortedSchools[0][0];
-
-        selectedSchoolId = sortedSchools[0][0];
-
-    } else {
-
-        schoolSelect.value = "all";
-
-        selectedSchoolId = "all";
-
-    }
-
-}
-
-
-/* =====================================================
-   DISPLAY SELECTED TEST
-===================================================== */
-
-function displaySelectedTest() {
-
-    const container = document.getElementById("results");
-
-    const testSelect = document.getElementById("testSelect");
-
-    const schoolSelect = document.getElementById("schoolSelect");
-
-    if (!testSelect || !testSelect.value) {
-
-        updateSectorMarksButton(null);
-
-        container.innerHTML = `
-            <div class="message">
-                Please select a test.
-            </div>
-        `;
-
-        return;
-
-    }
-
-    selectedTestId = String(testSelect.value);
-
-    const test = allTests.find(item =>
-        String(item.id) === selectedTestId
-    );
-
-    if (!test) {
-
-        updateSectorMarksButton(null);
-
-        container.innerHTML = `
-            <div class="message">
-                Selected test could not be found.
-            </div>
-        `;
-
-        return;
-
-    }
-
-    updateSectorMarksButton(test);
-
-    /* FILTER CLASSES BY SCHOOL */
-
-    let classes = test.classes || [];
-
-    if (currentUserRole === "sector_admin") {
-
-        selectedSchoolId = schoolSelect
-            ? schoolSelect.value
-            : "all";
-
-        if (selectedSchoolId !== "all") {
-
-            classes = classes.filter(classItem =>
-                String(classItem.school_id) === selectedSchoolId
-            );
-
-        }
-
-    }
-
-    /* TEST HEADING */
-
-    let html = `
-        <section class="test-card">
-
-            <div class="test-heading">
-
-                <div>
-
-                    <h2>${escapeHTML(test.name)}</h2>
-
-                    <span class="status">
-                        ${escapeHTML(test.status)}
-                    </span>
-
-                </div>
-
-                <button class="download-btn"
-                    onclick="downloadTest()">
-                    Download
-                </button>
-
-            </div>
-    `;
-
-    /* NO CLASSES */
-
-    if (classes.length === 0) {
-
-        html += `
-            <div class="message">
-                No classes are available for this test and school selection.
-            </div>
-        `;
-
-        html += `</section>`;
-
-        container.innerHTML = html;
-
-        return;
-
-    }
-
-    /* DISPLAY EACH CLASS */
-
-    classes.forEach((classItem, classIndex) => {
-
-        const subjects = classItem.subjects || [];
-
-        const students = [...(classItem.students || [])];
-
-        /* CALCULATE TOTALS AND PERCENTAGES */
-
-        students.forEach(student => {
-
-            let total = 0;
-
-            let maximum = 0;
-
-            let recorded = 0;
-
-            subjects.forEach(subject => {
-
-                const score = student.marks
-                    ? student.marks[subject.id]
-                    : null;
-
-                maximum += Number(subject.maximum_mark || 0);
-
-                if (score !== null && score !== undefined) {
-
-                    total += Number(score);
-
-                    recorded++;
-
-                }
-
-            });
-
-            student.total = total;
-
-            student.maximum = maximum;
-
-            student.recorded = recorded;
-
-            student.percentage =
-                recorded > 0 && maximum > 0
-                    ? (total / maximum) * 100
-                    : null;
-
-        });
-
-        /* SORT STUDENTS BY PERCENTAGE */
-
-        students.sort((a, b) => {
-
-            if (a.percentage === null) return 1;
-
-            if (b.percentage === null) return -1;
-
-            return b.percentage - a.percentage;
-
-        });
-
-        /* CLASS HEADING */
-
-        html += `
-            <div class="class-card">
-
-                <div class="class-heading">
-
-                    <div>
-
-                        <h3>
-                            ${escapeHTML(classItem.class_name)}
-                        </h3>
-
-                        <div class="school-name">
-                            ${escapeHTML(classItem.school_name || "")}
-                        </div>
-
-                    </div>
-
-                </div>
-        `;
-
-        /* NO SUBJECTS */
-
-        if (subjects.length === 0) {
-
-            html += `
-                <p class="no-marks">
-                    No subjects configured for this test.
-                </p>
-            `;
-
-            html += `</div>`;
-
-            return;
-
-        }
-
-        /* RESULTS TABLE */
-
-        html += `
-            <div class="table-wrapper">
-
-                <table>
-
-                    <thead>
-
-                        <tr>
-
-                            <th>Position</th>
-
-                            <th>Student</th>
-
-                            ${subjects.map(subject => `
-                                <th>${escapeHTML(subject.name)}</th>
-                            `).join("")}
-
-                            <th>Total</th>
-
-                            <th>%</th>
-
-                            <th>Category</th>
-
-                        </tr>
-
-                    </thead>
-
-                    <tbody>
-        `;
-
-        students.forEach((student, index) => {
-
-            html += `
-                <tr>
-
-                    <td>
-                        ${student.percentage === null
-                            ? "—"
-                            : index + 1}
-                    </td>
-
-                    <td>
-                        ${escapeHTML(student.name)}
-                    </td>
-
-                    ${subjects.map(subject => {
-
-                        const score = student.marks
-                            ? student.marks[subject.id]
-                            : null;
-
-                        return `
-                            <td>
-                                ${score === null || score === undefined
-                                    ? "—"
-                                    : formatNumber(score)}
-                            </td>
-                        `;
-
-                    }).join("")}
-
-                    <td>
-                        ${student.recorded
-                            ? formatNumber(student.total) + " / " +
-                              formatNumber(student.maximum)
-                            : "—"}
-                    </td>
-
-                    <td>
-                        ${student.percentage === null
-                            ? "—"
-                            : student.percentage.toFixed(2) + "%"}
-                    </td>
-
-                    <td>
-                        ${student.percentage === null
-                            ? "No marks"
-                            : getCategory(student.percentage)}
-                    </td>
-
-                </tr>
-            `;
-
-        });
-
-        if (students.length === 0) {
-
-            html += `
-                <tr>
-
-                    <td colspan="${subjects.length + 5}">
-                        No students registered in this class.
-                    </td>
-
-                </tr>
-            `;
-
-        }
-
-        html += `
-                    </tbody>
-
-                </table>
-
-            </div>
-        `;
-
-        /* SUBJECT ANALYSIS */
-
-        html += `
-            <div class="analysis-box">
-
-                <h4>Subject Analysis</h4>
-
-                <div class="table-wrapper">
-
-                    <table>
-
-                        <thead>
-
-                            <tr>
-                                <th>Subject</th>
-                                <th>Average (%)</th>
-                                <th>Passed</th>
-                                <th>Failed</th>
-                                <th>Pass Rate</th>
-                            </tr>
-
-                        </thead>
-
-                        <tbody>
-        `;
-
-        subjects.forEach(subject => {
-
-            const recordedMarks = students
-
-                .map(student =>
-                    student.marks
-                        ? student.marks[subject.id]
-                        : null
-                )
-
-                .filter(score =>
-                    score !== null && score !== undefined
-                )
-
-                .map(Number);
-
-            if (recordedMarks.length === 0) return;
-
-            const percentages = recordedMarks.map(score => {
-
-                return Number(subject.maximum_mark) > 0
-                    ? (score / Number(subject.maximum_mark)) * 100
-                    : 0;
-
-            });
-
-            const average = percentages.reduce(
-                (a, b) => a + b, 0
-            ) / percentages.length;
-
-            const passed = percentages.filter(
-                percentage => percentage >= 50
-            ).length;
-
-            const failed = percentages.length - passed;
-
-            const passRate =
-                (passed / percentages.length) * 100;
-
-            html += `
-                <tr>
-
-                    <td>
-                        ${escapeHTML(subject.name)}
-                    </td>
-
-                    <td>
-                        ${average.toFixed(2)}%
-                    </td>
-
-                    <td>
-                        ${passed}
-                    </td>
-
-                    <td>
-                        ${failed}
-                    </td>
-
-                    <td>
-                        ${passRate.toFixed(2)}%
-                    </td>
-
-                </tr>
-            `;
-
-        });
-
-        html += `
-                        </tbody>
-
-                    </table>
-
-                </div>
-
-            </div>
-
-            </div>
-        `;
-
-    });
-
-    html += `
-        </section>
-    `;
-
-    container.innerHTML = html;
-
-}
-
-
-/* =====================================================
-   DOWNLOAD CURRENTLY DISPLAYED RESULTS
-===================================================== */
-
-function downloadTest() {
-
-    const container = document.getElementById("results");
-
-    const testCard = container.querySelector(".test-card");
-
-    if (!testCard) return;
-
-    const test = allTests.find(item =>
-        String(item.id) === String(selectedTestId)
-    );
-
-    if (!test) return;
-
-    const content = testCard.cloneNode(true);
-
-    /* REMOVE BUTTONS FROM PRINTED DOCUMENT */
-
-    content.querySelectorAll("button").forEach(button => {
-        button.remove();
-    });
-
-    const printWindow = window.open("", "_blank");
-
-    if (!printWindow) {
-
-        alert("Please allow pop-ups to download results.");
-
-        return;
-
-    }
-
-    const schoolSelect = document.getElementById("schoolSelect");
-
-    const selectedSchoolName =
-        currentUserRole === "sector_admin" &&
-        schoolSelect &&
-        schoolSelect.value !== "all"
-            ? schoolSelect.options[schoolSelect.selectedIndex].text
-            : "All Schools";
-
-    const printTitle =
-        currentUserRole === "sector_admin"
-            ? `${test.name} - ${selectedSchoolName}`
-            : test.name;
-
-    printWindow.document.write(`
-        <!DOCTYPE html>
-        <html>
-        <head>
-
-            <title>${escapeHTML(printTitle)} - School Marks</title>
-
-            <style>
-
-                body {
-                    font-family: Arial, sans-serif;
-                    padding: 20px;
-                    color: #000;
-                }
-
-                h2, h3, h4 {
-                    margin-top: 15px;
-                }
-
-                .status {
-                    display: inline-block;
-                    margin: 10px 0;
-                }
-
-                .school-name {
-                    margin: 5px 0 15px;
-                }
-
-                .class-card {
-                    margin-bottom: 30px;
-                    page-break-inside: avoid;
-                    break-inside: avoid;
-                }
-
-                table {
-                    width: 100%;
-                    border-collapse: collapse;
-                    margin-bottom: 20px;
-                }
-
-                th, td {
-                    border: 1px solid #000;
-                    padding: 6px;
-                    text-align: center;
-                }
-
-                th {
-                    background: #eee;
-                }
-
-                @media print {
-
-                    body {
-                        padding: 0;
-                    }
-
-                    .class-card {
-                        page-break-inside: avoid;
-                    }
-
-                }
-
-            </style>
-
-        </head>
-
-        <body>
-
-            ${content.innerHTML}
-
-        </body>
-
-        </html>
-    `);
-
-    printWindow.document.close();
-
-    printWindow.focus();
-
-    printWindow.onload = () => {
-        printWindow.print();
-    };
-
-}
-
-
-/* =====================================================
-   GENERATE REPORT CARDS
-===================================================== */
-
-function openReportCards() {
-
-    const testSelect = document.getElementById("testSelect");
-
-    const testId = testSelect.value;
-
-    if (!testId) {
-
-        alert("Please select a test first.");
-
-        return;
-
-    }
-
-    window.location.href =
-        `report-cards.html?test_id=${encodeURIComponent(testId)}`;
-
-}
-
-
-/* =====================================================
-   LOGOUT
-===================================================== */
-
-function logout() {
-
-    localStorage.clear();
-
-    location.href = "../../index.html";
-
-}
-
-
-/* =====================================================
-   START
-===================================================== */
-
-async function initializeSchoolMarksPage() {
+    let client;
 
     try {
 
-        await waitForAcademicPeriod();
+        client = await connectDB(context);
 
-        await loadMarks();
+        let scopeCondition = "";
+        let parameters = [];
+
+        const url = new URL(context.request.url);
+
+        /* =================================================
+           SELECTED ACADEMIC YEAR AND TERM
+        ================================================= */
+
+        const selectedYear = url.searchParams
+            .get("academic_year");
+
+        const selectedTerm = Number(
+            url.searchParams.get("term_number")
+        );
+
+        if (
+            !selectedYear ||
+            !Number.isInteger(selectedTerm) ||
+            selectedTerm < 1 ||
+            selectedTerm > 3
+        ) {
+
+            return json({
+                success: false,
+                message: "Please select a valid academic year and term."
+            }, 400);
+
+        }
+
+        const requestedTestId = url.searchParams.get("test_id");
+
+        const accessDeniedMessage =
+            "You are not yet allowed to access this page because marks recording for this test is still in progress. Please come back later.";
+
+        /* =================================================
+           SECTOR ADMIN
+        ================================================= */
+
+        if (auth.role === "sector_admin") {
+
+            if (!auth.sectorId) {
+
+                return json({
+                    success: false,
+                    message: "Your account is not linked to a sector."
+                }, 403);
+
+            }
+
+            scopeCondition = `
+                EXISTS (
+                    SELECT 1
+                    FROM schools scope_school
+                    WHERE scope_school.id = tc.school_id
+                      AND scope_school.sector_id = $1
+                )
+                AND (
+                    t.sector_id = $1
+                    OR EXISTS (
+                        SELECT 1
+                        FROM test_schools assigned_school
+                        INNER JOIN schools assigned
+                            ON assigned.id = assigned_school.school_id
+                        WHERE assigned_school.test_id = t.id
+                          AND assigned.sector_id = $1
+                    )
+                )
+            `;
+
+            parameters = [auth.sectorId];
+
+        }
+
+        /* =================================================
+           SCHOOL ADMIN / DOS
+        ================================================= */
+
+        else {
+
+            if (!auth.schoolId) {
+
+                return json({
+                    success: false,
+                    message: "Your account is not linked to a school."
+                }, 403);
+
+            }
+
+            /* ---------------------------------------------
+               CASE 1: NORMAL SCHOOL MARKS DASHBOARD
+            --------------------------------------------- */
+
+            if (!requestedTestId) {
+
+                scopeCondition = `
+                    tc.school_id = $1
+                    AND (
+                        t.school_id = $1
+                        OR EXISTS (
+                            SELECT 1
+                            FROM test_schools assigned_school
+                            WHERE assigned_school.test_id = t.id
+                              AND assigned_school.school_id = $1
+                        )
+                    )
+                `;
+
+                parameters = [auth.schoolId];
+
+            }
+
+            /* ---------------------------------------------
+               CASE 2: SECTOR-WIDE RESULTS
+            --------------------------------------------- */
+
+            else {
+
+                const accessCheck = await client.query(
+                    `
+                    SELECT t.id
+
+                    FROM tests t
+
+                    INNER JOIN users creator
+                        ON creator.id = t.created_by
+
+                    INNER JOIN schools user_school
+                        ON user_school.id = $2
+
+                    WHERE t.id = $1
+                      AND t.status = 'closed'
+                      AND creator.role = 'sector_admin'
+                      AND t.sector_id = user_school.sector_id
+
+                    LIMIT 1
+                    `,
+                    [requestedTestId, auth.schoolId]
+                );
+
+                if (!accessCheck.rows.length) {
+
+                    return json({
+                        success: false,
+                        message: accessDeniedMessage
+                    }, 403);
+
+                }
+
+                scopeCondition = `
+                    t.id = $1
+                    AND t.status = 'closed'
+                    AND creator.role = 'sector_admin'
+
+                    AND t.sector_id = (
+                        SELECT sector_id
+                        FROM schools
+                        WHERE id = $2
+                    )
+
+                    AND tc.school_id IN (
+                        SELECT id
+                        FROM schools
+                        WHERE sector_id = (
+                            SELECT sector_id
+                            FROM schools
+                            WHERE id = $2
+                        )
+                    )
+                `;
+
+                parameters = [
+                    requestedTestId,
+                    auth.schoolId
+                ];
+
+            }
+
+        }
+
+        /* =================================================
+           ADD SELECTED ACADEMIC PERIOD PARAMETERS
+
+           Existing role parameters remain unchanged.
+           These two parameters are appended safely.
+        ================================================= */
+
+        parameters.push(selectedYear);
+
+        const yearParameter = `$${parameters.length}`;
+
+        parameters.push(selectedTerm);
+
+        const termParameter = `$${parameters.length}`;
+
+        scopeCondition += `
+            AND ay.year_name = ${yearParameter}
+            AND tm.term_number = ${termParameter}
+        `;
+
+        /* =================================================
+           LOAD TESTS, SCHOOLS, CLASSES, ENROLLMENTS,
+           STUDENTS, SUBJECTS AND MARKS
+        ================================================= */
+
+        const result = await client.query(
+            `
+            SELECT
+
+                /* TEST */
+
+                t.id AS test_id,
+                t.test_name,
+                t.status,
+                t.created_at AS test_created_at,
+                t.created_by,
+                t.sector_id AS test_sector_id,
+                t.school_id AS test_school_id,
+
+                creator.full_name AS creator_name,
+                creator.role AS creator_role,
+
+                /* TEST SCHOOL AND ACADEMIC PERIOD */
+
+                tc.school_id,
+                tsc.academic_year_id,
+                tsc.term_id,
+
+                sch.school_name,
+
+                /* CLASS */
+
+                c.id AS class_id,
+                c.class_name,
+
+                CASE c.level_id
+                    WHEN 1 THEN 'Primary'
+                    WHEN 2 THEN 'Lower Secondary'
+                    WHEN 3 THEN 'Upper Secondary'
+                    ELSE 'Unknown'
+                END AS class_level,
+
+                /* ENROLLED STUDENT */
+
+                st.id AS student_id,
+                st.full_name AS student_name,
+                st.student_code,
+
+                se.status AS enrollment_status,
+
+                /* SUBJECT */
+
+                sub.id AS subject_id,
+                sub.subject_name,
+                sub.subject_code,
+
+                testSubject.total_marks AS maximum_mark,
+
+                /* RECORDED MARK */
+
+                m.score
+
+            FROM tests t
+
+            INNER JOIN users creator
+                ON creator.id = t.created_by
+
+            INNER JOIN test_classes tc
+                ON tc.test_id = t.id
+
+            /* Each test class must belong to a test school
+               with its own academic year and term. */
+
+            INNER JOIN test_schools tsc
+                ON tsc.test_id = t.id
+               AND tsc.school_id = tc.school_id
+
+            /* Match the school's academic year. */
+
+            INNER JOIN academic_years ay
+                ON ay.id = tsc.academic_year_id
+               AND ay.school_id = tsc.school_id
+
+            /* Match the school's term. */
+
+            INNER JOIN terms tm
+                ON tm.id = tsc.term_id
+               AND tm.academic_year_id = tsc.academic_year_id
+               AND tm.school_id = tsc.school_id
+
+            INNER JOIN classes c
+                ON c.id = tc.class_id
+
+            INNER JOIN school_levels sl
+                ON sl.school_id = tc.school_id
+               AND sl.level_id = c.level_id
+
+            INNER JOIN schools sch
+                ON sch.id = tc.school_id
+
+            /* =================================================
+               HISTORICAL STUDENT ENROLLMENT
+
+               Do not use st.class_id or st.status here.
+
+               The enrollment determines the student's class
+               and status for the test's academic period.
+            ================================================= */
+
+            LEFT JOIN student_enrollments se
+                ON se.school_id = tc.school_id
+               AND se.class_id = c.id
+               AND se.academic_year_id = tsc.academic_year_id
+               AND se.term_id = tsc.term_id
+               AND LOWER(TRIM(se.status)) = 'active'
+
+            LEFT JOIN students st
+                ON st.id = se.student_id
+               AND st.school_id = tc.school_id
+
+            INNER JOIN test_subjects testSubject
+                ON testSubject.test_id = t.id
+
+            INNER JOIN subjects sub
+                ON sub.id = testSubject.subject_id
+
+            LEFT JOIN marks m
+                ON m.test_id = t.id
+               AND m.student_id = st.id
+               AND m.class_id = c.id
+               AND m.subject_id = sub.id
+
+            WHERE ${scopeCondition}
+
+            ORDER BY
+                t.created_at DESC,
+                sch.school_name,
+                c.class_name,
+                st.full_name,
+                sub.subject_name
+            `,
+            parameters
+        );
+
+        /* =================================================
+           ORGANIZE RESULTS
+        ================================================= */
+
+        const testsMap = new Map();
+
+        for (const row of result.rows) {
+
+            const testKey = String(row.test_id);
+
+            if (!testsMap.has(testKey)) {
+
+                testsMap.set(testKey, {
+
+                    id: testKey,
+
+                    name: row.test_name,
+
+                    status: row.status,
+
+                    created_at: row.test_created_at,
+
+                    created_by: String(row.created_by),
+
+                    creator_name: row.creator_name,
+
+                    creator_role: row.creator_role,
+
+                    sector_id: row.test_sector_id === null
+                        ? null
+                        : String(row.test_sector_id),
+
+                    school_id: row.test_school_id === null
+                        ? null
+                        : String(row.test_school_id),
+
+                    report_card_type:
+                        row.creator_role === "sector_admin"
+                            ? "school_and_sector"
+                            : "school_only",
+
+                    classes: []
+
+                });
+
+            }
+
+            const test = testsMap.get(testKey);
+
+            /* ---------------------------------------------
+               FIND OR CREATE CLASS
+            --------------------------------------------- */
+
+            let classItem = test.classes.find(
+                item =>
+                    String(item.class_id) === String(row.class_id) &&
+                    String(item.school_id) === String(row.school_id)
+            );
+
+            if (!classItem) {
+
+                classItem = {
+
+                    class_id: String(row.class_id),
+
+                    class_name: row.class_name,
+
+                    class_level: row.class_level,
+
+                    school_id: String(row.school_id),
+
+                    school_name: row.school_name,
+
+                    academic_year_id: String(row.academic_year_id),
+
+                    term_id: String(row.term_id),
+
+                    subjects: [],
+
+                    students: []
+
+                };
+
+                test.classes.push(classItem);
+
+            }
+
+            /* ---------------------------------------------
+               ADD SUBJECT
+            --------------------------------------------- */
+
+            const subjectId = String(row.subject_id);
+
+            if (
+                !classItem.subjects.some(
+                    subject => subject.id === subjectId
+                )
+            ) {
+
+                classItem.subjects.push({
+
+                    id: subjectId,
+
+                    name: row.subject_name,
+
+                    code: row.subject_code,
+
+                    maximum_mark: Number(row.maximum_mark)
+
+                });
+
+            }
+
+            /* ---------------------------------------------
+               ADD STUDENT
+            --------------------------------------------- */
+
+            if (row.student_id === null) continue;
+
+            const studentId = String(row.student_id);
+
+            let student = classItem.students.find(
+                item => item.id === studentId
+            );
+
+            if (!student) {
+
+                student = {
+
+                    id: studentId,
+
+                    name: row.student_name,
+
+                    student_code: row.student_code,
+
+                    marks: {}
+
+                };
+
+                classItem.students.push(student);
+
+            }
+
+            student.marks[subjectId] =
+                row.score === null
+                    ? null
+                    : Number(row.score);
+
+        }
+
+        /* =================================================
+           RESPONSE
+
+           Existing response structure preserved.
+        ================================================= */
+
+        return json({
+
+            success: true,
+
+            tests: Array.from(testsMap.values()),
+
+            user: {
+
+                role: auth.role,
+
+                schoolId: auth.schoolId,
+
+                sectorId: auth.sectorId
+
+            }
+
+        });
 
     } catch (error) {
 
         console.error(
-            "Academic period initialization error:",
+            "School Marks loading error:",
             error
         );
 
-        document.getElementById("results").innerHTML = `
-            <div class="message">
-                ${escapeHTML(error.message)}
-            </div>
-        `;
+        return json({
+
+            success: false,
+
+            message: "Unable to load school marks."
+
+        }, 500);
+
+    } finally {
+
+        if (client) {
+
+            await client.end().catch(() => {});
+
+        }
 
     }
 
 }
-
-initializeSchoolMarksPage();
-
-</script>
-
-</body>
-</html>
