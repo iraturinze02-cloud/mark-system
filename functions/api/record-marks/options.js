@@ -9,11 +9,11 @@ import {
    HELPERS
 ===================================================== */
 
-function positiveId(value) {
-    const id = Number(value);
+function validId(value) {
+    const number = Number(value);
 
-    return Number.isSafeInteger(id) && id > 0
-        ? id
+    return Number.isSafeInteger(number) && number > 0
+        ? number
         : null;
 }
 
@@ -35,18 +35,18 @@ export async function onRequestGet(context) {
 
     const url = new URL(context.request.url);
 
-    const academicYearId = positiveId(
+    const academicYearId = validId(
         url.searchParams.get("academic_year_id")
     );
 
-    const termId = positiveId(
+    const termId = validId(
         url.searchParams.get("term_id")
     );
 
     if (!academicYearId || !termId) {
         return json({
             success: false,
-            message: "Please select a valid academic year and term."
+            message: "Please select an academic year and term first."
         }, 400);
     }
 
@@ -56,7 +56,7 @@ export async function onRequestGet(context) {
         client = await connectDB(context);
 
         /* ---------------------------------------------
-           1. VERIFY SELECTED ACADEMIC PERIOD
+           1. VALIDATE SELECTED ACADEMIC PERIOD
         --------------------------------------------- */
 
         const periodResult = await client.query(
@@ -64,10 +64,14 @@ export async function onRequestGet(context) {
             SELECT
                 ay.id AS academic_year_id,
                 ay.year_name AS academic_year,
+                ay.start_date AS academic_year_start,
+                ay.end_date AS academic_year_end,
 
                 tm.id AS term_id,
                 tm.term_number,
-                tm.term_name
+                tm.term_name,
+                tm.start_date AS term_start,
+                tm.end_date AS term_end
 
             FROM academic_years ay
 
@@ -76,31 +80,30 @@ export async function onRequestGet(context) {
                AND tm.school_id = ay.school_id
 
             WHERE ay.id = $1
-              AND ay.school_id = $2
-              AND tm.id = $3
+              AND tm.id = $2
+              AND ay.school_id = $3
 
             LIMIT 1
             `,
             [
                 academicYearId,
-                auth.schoolId,
-                termId
+                termId,
+                auth.schoolId
             ]
         );
 
-        if (periodResult.rows.length === 0) {
+        if (!periodResult.rows.length) {
             return json({
                 success: false,
-                message: "The selected academic year and term are invalid for your school."
+                message: "The selected academic year or term is invalid."
             }, 400);
         }
 
-        const academicPeriod = periodResult.rows[0];
+        const selectedPeriod = periodResult.rows[0];
 
         /* ---------------------------------------------
            2. AUTOMATICALLY CLOSE EXPIRED TESTS
-
-           Preserve existing behavior.
+              IN THE SELECTED PERIOD
         --------------------------------------------- */
 
         await client.query(
@@ -117,8 +120,11 @@ export async function onRequestGet(context) {
 
               AND EXISTS (
                   SELECT 1
+                  FROM test_schools tsc
 
-                  FROM test_classes tc
+                  INNER JOIN test_classes tc
+                      ON tc.test_id = tsc.test_id
+                     AND tc.school_id = tsc.school_id
 
                   INNER JOIN test_subjects ts
                       ON ts.test_id = tc.test_id
@@ -132,23 +138,26 @@ export async function onRequestGet(context) {
                      AND ta.class_id = tc.class_id
                      AND ta.subject_id = ts.subject_id
 
-                  WHERE tc.test_id = t.id
-                    AND tr.user_id = $1
-                    AND tr.school_id = $2
+                  WHERE tsc.test_id = t.id
+                    AND tsc.school_id = $1
+                    AND tsc.academic_year_id = $2
+                    AND tsc.term_id = $3
+
+                    AND tr.user_id = $4
+                    AND tr.school_id = $1
               )
             `,
             [
-                auth.userId,
-                auth.schoolId
+                auth.schoolId,
+                academicYearId,
+                termId,
+                auth.userId
             ]
         );
 
         /* ---------------------------------------------
            3. LOAD TEACHER ASSIGNMENTS
-
-           Do not filter by ta.academic_year_id or
-           ta.term_id because existing assignments
-           currently have NULL in those columns.
+              KEEP ALL EXISTING ASSIGNMENTS
         --------------------------------------------- */
 
         const assignmentsResult = await client.query(
@@ -195,7 +204,7 @@ export async function onRequestGet(context) {
         );
 
         /* ---------------------------------------------
-           4. LOAD TESTS FOR SELECTED PERIOD ONLY
+           4. LOAD TESTS FOR SELECTED PERIOD
         --------------------------------------------- */
 
         const testsResult = await client.query(
@@ -261,8 +270,6 @@ export async function onRequestGet(context) {
             INNER JOIN test_schools tsc
                 ON tsc.test_id = tc.test_id
                AND tsc.school_id = tc.school_id
-               AND tsc.academic_year_id = $3
-               AND tsc.term_id = $4
 
             INNER JOIN tests t
                 ON t.id = tc.test_id
@@ -287,6 +294,9 @@ export async function onRequestGet(context) {
 
             WHERE tr.user_id = $1
               AND tr.school_id = $2
+
+              AND tsc.academic_year_id = $3
+              AND tsc.term_id = $4
 
             ORDER BY
                 t.created_at DESC,
@@ -313,7 +323,7 @@ export async function onRequestGet(context) {
                 schoolId: auth.schoolId
             },
 
-            academic_period: academicPeriod,
+            academic_period: selectedPeriod,
 
             assignments: assignmentsResult.rows,
             tests: testsResult.rows
