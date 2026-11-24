@@ -8,7 +8,7 @@ import {
 /* =====================================================
    GET STUDENTS
    SCHOOL ADMIN + DOS
-   ACADEMIC YEAR AND TERM BASED ON CREATED_AT
+   FILTER BY SELECTED ACADEMIC YEAR AND TERM
 ===================================================== */
 
 export async function onRequestGet(context) {
@@ -26,10 +26,97 @@ export async function onRequestGet(context) {
         }, 403);
     }
 
+    const url = new URL(context.request.url);
+
+    const academicYearId = Number(
+        url.searchParams.get("academic_year_id")
+    );
+
+    const termId = Number(
+        url.searchParams.get("term_id")
+    );
+
     let client;
 
     try {
         client = await connectDB(context);
+
+        let period;
+
+        if (
+            Number.isSafeInteger(academicYearId) &&
+            academicYearId > 0 &&
+            Number.isSafeInteger(termId) &&
+            termId > 0
+        ) {
+            const periodResult = await client.query(
+                `SELECT
+                    ay.id AS academic_year_id,
+                    ay.year_name,
+                    ay.start_date AS year_start,
+                    ay.end_date AS year_end,
+                    t.id AS term_id,
+                    t.term_name,
+                    t.term_number,
+                    t.start_date AS term_start,
+                    t.end_date AS term_end
+                 FROM academic_years ay
+                 JOIN terms t
+                   ON t.academic_year_id = ay.id
+                  AND t.school_id = ay.school_id
+                 WHERE ay.id = $1
+                   AND t.id = $2
+                   AND ay.school_id = $3
+                   AND t.school_id = $3`,
+                [
+                    academicYearId,
+                    termId,
+                    auth.schoolId
+                ]
+            );
+
+            if (periodResult.rowCount === 0) {
+                return json({
+                    success: false,
+                    message: "The selected academic year or term is invalid for your school."
+                }, 400);
+            }
+
+            period = periodResult.rows[0];
+
+        } else {
+            // Fallback for older requests without period parameters.
+            const periodResult = await client.query(
+                `SELECT
+                    ay.id AS academic_year_id,
+                    ay.year_name,
+                    ay.start_date AS year_start,
+                    ay.end_date AS year_end,
+                    t.id AS term_id,
+                    t.term_name,
+                    t.term_number,
+                    t.start_date AS term_start,
+                    t.end_date AS term_end
+                 FROM academic_years ay
+                 JOIN terms t
+                   ON t.academic_year_id = ay.id
+                  AND t.school_id = ay.school_id
+                 WHERE ay.school_id = $1
+                   AND CURRENT_DATE BETWEEN ay.start_date AND ay.end_date
+                   AND CURRENT_DATE BETWEEN t.start_date AND t.end_date
+                 LIMIT 1`,
+                [auth.schoolId]
+            );
+
+            if (periodResult.rowCount === 0) {
+                return json({
+                    success: false,
+                    message: "No academic term is currently available. Select an academic period first."
+                }, 400);
+            }
+
+            period = periodResult.rows[0];
+        }
 
         const result = await client.query(
             `SELECT
@@ -40,8 +127,13 @@ export async function onRequestGet(context) {
                 st.date_of_birth,
                 st.admission_date,
                 st.status,
-                st.class_id,
                 st.created_at,
+
+                se.id AS enrollment_id,
+                se.class_id,
+                se.start_date AS enrollment_start_date,
+                se.end_date AS enrollment_end_date,
+                se.status AS enrollment_status,
 
                 c.class_name,
 
@@ -52,45 +144,45 @@ export async function onRequestGet(context) {
                     ELSE 'Unknown'
                 END AS class_level,
 
-                ay.id AS academic_year_id,
-                ay.year_name AS academic_year,
+                $2::bigint AS academic_year_id,
+                $3::bigint AS term_id,
+                $4::varchar AS academic_year,
+                $5::varchar AS term,
+                $6::smallint AS term_number
 
-                t.id AS term_id,
-                t.term_name AS term,
+             FROM student_enrollments se
 
-                t.term_number
-
-             FROM students st
+             JOIN students st
+               ON st.id = se.student_id
+              AND st.school_id = se.school_id
 
              JOIN classes c
-               ON c.id = st.class_id
+               ON c.id = se.class_id
 
              JOIN school_levels sl
-               ON sl.school_id = st.school_id
+               ON sl.school_id = se.school_id
               AND sl.level_id = c.level_id
 
-             LEFT JOIN academic_years ay
-               ON ay.school_id = st.school_id
-              AND st.created_at::date
-                  BETWEEN ay.start_date AND ay.end_date
-
-             LEFT JOIN terms t
-               ON t.school_id = st.school_id
-              AND t.academic_year_id = ay.id
-              AND st.created_at::date
-                  BETWEEN t.start_date AND t.end_date
-
-             WHERE st.school_id = $1
+             WHERE se.school_id = $1
+               AND se.academic_year_id = $2
+               AND se.term_id = $3
 
              ORDER BY
                 c.class_name ASC,
                 st.full_name ASC`,
-
-            [auth.schoolId]
+            [
+                auth.schoolId,
+                period.academic_year_id,
+                period.term_id,
+                period.year_name,
+                period.term_name,
+                period.term_number
+            ]
         );
 
         return json({
             success: true,
+            period,
             students: result.rows
         });
 
@@ -113,7 +205,8 @@ export async function onRequestGet(context) {
 /* =====================================================
    REGISTER STUDENT
    SCHOOL ADMIN + DOS
-   ORIGINAL REGISTRATION LOGIC PRESERVED
+
+   CREATE STUDENT AND ENROLLMENT TOGETHER
 ===================================================== */
 
 export async function onRequestPost(context) {
@@ -143,6 +236,9 @@ export async function onRequestPost(context) {
     }
 
     const classId = Number(data.class_id);
+    const academicYearId = Number(data.academic_year_id);
+    const termId = Number(data.term_id);
+
     const fullName = String(data.full_name || "").trim();
 
     const gender = data.gender
@@ -155,11 +251,15 @@ export async function onRequestPost(context) {
     if (
         !Number.isSafeInteger(classId) ||
         classId <= 0 ||
+        !Number.isSafeInteger(academicYearId) ||
+        academicYearId <= 0 ||
+        !Number.isSafeInteger(termId) ||
+        termId <= 0 ||
         !fullName
     ) {
         return json({
             success: false,
-            message: "Please provide a valid class and student name."
+            message: "Please provide a valid class, academic period and student name."
         }, 400);
     }
 
@@ -181,9 +281,47 @@ export async function onRequestPost(context) {
         `STU-${Date.now()}-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
 
     let client;
+    let transactionStarted = false;
 
     try {
         client = await connectDB(context);
+
+        await client.query("BEGIN");
+        transactionStarted = true;
+
+        // Validate the selected academic year and term.
+        const periodResult = await client.query(
+            `SELECT
+                ay.id AS academic_year_id,
+                t.id AS term_id,
+                t.start_date AS term_start,
+                t.end_date AS term_end
+             FROM academic_years ay
+             JOIN terms t
+               ON t.academic_year_id = ay.id
+              AND t.school_id = ay.school_id
+             WHERE ay.id = $1
+               AND t.id = $2
+               AND ay.school_id = $3
+               AND t.school_id = $3`,
+            [
+                academicYearId,
+                termId,
+                auth.schoolId
+            ]
+        );
+
+        if (periodResult.rowCount === 0) {
+            await client.query("ROLLBACK");
+            transactionStarted = false;
+
+            return json({
+                success: false,
+                message: "The selected academic year or term is invalid for your school."
+            }, 400);
+        }
+
+        const period = periodResult.rows[0];
 
         // Confirm that the selected class belongs to this school.
         const classResult = await client.query(
@@ -193,17 +331,24 @@ export async function onRequestPost(context) {
                ON sl.level_id = c.level_id
              WHERE c.id = $1
                AND sl.school_id = $2`,
-            [classId, auth.schoolId]
+            [
+                classId,
+                auth.schoolId
+            ]
         );
 
         if (classResult.rowCount === 0) {
+            await client.query("ROLLBACK");
+            transactionStarted = false;
+
             return json({
                 success: false,
                 message: "The selected class is not available to your school."
             }, 403);
         }
 
-        const result = await client.query(
+        // Create the student.
+        const studentResult = await client.query(
             `INSERT INTO students (
                 school_id,
                 class_id,
@@ -234,13 +379,46 @@ export async function onRequestPost(context) {
             ]
         );
 
+        const student = studentResult.rows[0];
+
+        // Create enrollment for the selected academic period.
+        await client.query(
+            `INSERT INTO student_enrollments (
+                student_id,
+                school_id,
+                class_id,
+                academic_year_id,
+                term_id,
+                start_date,
+                end_date,
+                status
+             )
+             VALUES ($1, $2, $3, $4, $5, $6, $7, 'active')`,
+            [
+                student.id,
+                auth.schoolId,
+                classId,
+                period.academic_year_id,
+                period.term_id,
+                period.term_start,
+                period.term_end
+            ]
+        );
+
+        await client.query("COMMIT");
+        transactionStarted = false;
+
         return json({
             success: true,
             message: "Student registered successfully.",
-            student: result.rows[0]
+            student
         }, 201);
 
     } catch (error) {
+        if (client && transactionStarted) {
+            await client.query("ROLLBACK").catch(() => {});
+        }
+
         console.error("Create student error:", error);
 
         return json({
