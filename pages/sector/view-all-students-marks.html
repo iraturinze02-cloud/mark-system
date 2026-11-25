@@ -570,7 +570,13 @@ tbody tr:hover {
         </select>
     </div>
 
+    <div class="selector-box">
+    <button class="download-btn" onclick="downloadFullReportPDF()">
+        Download Full Report PDF
+    </button>
+
     <button class="logout-btn" onclick="logout()">Logout</button>
+</div>
 </div>
 
 <div id="message" class="message"></div>
@@ -588,10 +594,17 @@ tbody tr:hover {
             </p>
         </div>
 
-        <button class="download-btn"
-                onclick="downloadTable('analysisTable','School Performance Analysis')">
-            Print / Download
-        </button>
+        <div class="selector-box">
+    <button class="download-btn"
+            onclick="downloadTable('analysisTable','School Performance Analysis')">
+        Print / Download
+    </button>
+
+    <button class="primary-btn"
+            onclick="downloadAnalysisPDF()">
+        Download PDF
+    </button>
+</div>
     </div>
 
     <div class="table-scroll">
@@ -612,7 +625,8 @@ tbody tr:hover {
 </div>
 
 <script src="../js/academic-period.js"></script>
-
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.4/jspdf.plugin.autotable.min.js"></script>
 <script>
 "use strict";
 
@@ -1434,10 +1448,17 @@ function renderClassResults(test) {
                     </p>
                 </div>
 
-                <button class="download-btn"
-                    onclick="downloadClassResults('${classKey}')">
-                    Print / Download Class
-                </button>
+                <div class="selector-box">
+    <button class="download-btn"
+        onclick="downloadClassResults('${classKey}')">
+        Print / Download Class
+    </button>
+
+    <button class="primary-btn"
+        onclick="downloadClassPDF('${classKey}')">
+        Download Class PDF
+    </button>
+</div>
             </div>
 
             <div class="class-tools">
@@ -1877,7 +1898,6 @@ function downloadClassResults(classKey) {
     const headers = [
         "Position",
         "Student",
-        "Student Code",
         "Gender",
         "School",
         ...subjects.map(subject => subject.name),
@@ -1898,7 +1918,6 @@ function downloadClassResults(classKey) {
         return [
             index + 1,
             student.name,
-            student.student_code || "",
             student.gender || "",
             student.school_name,
             ...marks,
@@ -1961,6 +1980,632 @@ function downloadClassResults(classKey) {
 
     win.document.close();
     win.onload = () => win.print();
+}
+
+    /* =====================================================
+   PDF DOWNLOADS
+===================================================== */
+
+function createPDFDocument() {
+    if (!window.jspdf || !window.jspdf.jsPDF) {
+        alert("PDF library is not available. Please refresh the page and try again.");
+        return null;
+    }
+
+    const doc = new window.jspdf.jsPDF({
+        orientation: "landscape",
+        unit: "mm",
+        format: "a4"
+    });
+
+    if (typeof doc.autoTable !== "function") {
+        alert("PDF table library is not available. Please refresh the page and try again.");
+        return null;
+    }
+
+    return doc;
+}
+
+function getSelectedTest() {
+    const selectedId = document.getElementById("testSelect").value;
+
+    return allTests.find(
+        test => String(test.id) === String(selectedId)
+    );
+}
+
+function getPDFFileName(name) {
+    return String(name || "Fila_Grades_Report")
+        .trim()
+        .replace(/[^a-zA-Z0-9_-]+/g, "_")
+        .replace(/^_+|_+$/g, "");
+}
+
+function addPDFHeader(doc, title, subtitle = "") {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(17);
+    doc.text(title, 148.5, 13, { align: "center" });
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+
+    if (subtitle) {
+        doc.text(subtitle, 148.5, 20, { align: "center" });
+    }
+
+    doc.setFontSize(8);
+    doc.text(
+        `Generated: ${new Date().toLocaleString()}`,
+        285,
+        27,
+        { align: "right" }
+    );
+}
+
+function addPDFSectionTitle(doc, title, y) {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+    doc.text(title, 14, y);
+
+    return y + 5;
+}
+
+function getPDFAcademicPeriod() {
+    if (!currentAcademicPeriod) return "";
+
+    return `${currentAcademicPeriod.academic_year} - ${
+        currentAcademicPeriod.term_name ||
+        currentAcademicPeriod.term ||
+        `Term ${currentAcademicPeriod.term_number}`
+    }`;
+}
+
+/* =====================================================
+   DOWNLOAD INDIVIDUAL CLASS PDF
+===================================================== */
+
+function downloadClassPDF(classKey) {
+    const data = classResultsStore.get(classKey);
+
+    if (!data) {
+        alert("Class results are not available.");
+        return;
+    }
+
+    const doc = createPDFDocument();
+    if (!doc) return;
+
+    const className = data.classGroup.class_name;
+    const testName = data.testName;
+    const subjects = data.subjects;
+
+    // IMPORTANT:
+    // Use data.students, not the currently displayed page.
+    // This includes all learners in the class.
+
+    const headers = [
+        "No.",
+        "Student Name",
+        "Gender",
+        "School",
+        ...subjects.map(subject =>
+            `${subject.name} (${formatNumber(subject.maximum_mark)})`
+        ),
+        "Total",
+        "Percentage",
+        "Category"
+    ];
+
+    const rows = data.students.map((student, index) => {
+        const subjectMarks = subjects.map(subject => {
+            const mark = student.marks?.[String(subject.id)];
+
+            return mark === null || mark === undefined
+                ? "Pending"
+                : formatNumber(mark);
+        });
+
+        return [
+            index + 1,
+            student.name || "",
+            student.gender || "",
+            student.school_name || "",
+            ...subjectMarks,
+            formatNumber(student.total),
+            `${formatNumber(student.percentage)}%`,
+            student.complete
+                ? getCategory(student.percentage)
+                : "Pending"
+        ];
+    });
+
+    addPDFHeader(
+        doc,
+        `${className} RESULTS`,
+        `${testName} | ${getPDFAcademicPeriod()}`
+    );
+
+    doc.autoTable({
+        startY: 32,
+        head: [headers],
+        body: rows,
+        theme: "grid",
+
+        margin: {
+            left: 8,
+            right: 8
+        },
+
+        styles: {
+            font: "helvetica",
+            fontSize: 7,
+            cellPadding: 2,
+            overflow: "linebreak",
+            valign: "middle"
+        },
+
+        headStyles: {
+            fillColor: [23, 63, 112],
+            textColor: 255,
+            fontStyle: "bold",
+            halign: "center"
+        },
+
+        alternateRowStyles: {
+            fillColor: [245, 248, 252]
+        },
+
+        columnStyles: {
+            0: { cellWidth: 9 },
+            1: { cellWidth: 35 },
+            2: { cellWidth: 23 },
+            3: { cellWidth: 15 },
+            4: { cellWidth: 30 }
+        },
+
+        didDrawPage: function () {
+            const pageHeight = doc.internal.pageSize.height;
+
+            doc.setFontSize(8);
+            doc.setFont("helvetica", "normal");
+
+            doc.text(
+                `Fila Grades System | ${className}`,
+                10,
+                pageHeight - 7
+            );
+
+            doc.text(
+                `Page ${doc.internal.getNumberOfPages()}`,
+                285,
+                pageHeight - 7,
+                { align: "right" }
+            );
+        }
+    });
+
+    doc.save(
+        `${getPDFFileName(className)}_Results.pdf`
+    );
+}
+
+/* =====================================================
+   DOWNLOAD SCHOOL PERFORMANCE ANALYSIS PDF
+===================================================== */
+
+function downloadAnalysisPDF() {
+    const test = getSelectedTest();
+
+    if (!test) {
+        alert("Please select a test first.");
+        return;
+    }
+
+    const doc = createPDFDocument();
+    if (!doc) return;
+
+    addPDFHeader(
+        doc,
+        "SCHOOL AND CLASS PERFORMANCE ANALYSIS",
+        `${test.name} | ${getPDFAcademicPeriod()}`
+    );
+
+    const table = document.getElementById("analysisTable");
+
+    if (!table) {
+        alert("Performance analysis table is not available.");
+        return;
+    }
+
+    doc.autoTable({
+        html: table,
+        startY: 33,
+        theme: "grid",
+
+        margin: {
+            left: 12,
+            right: 12
+        },
+
+        styles: {
+            fontSize: 8,
+            cellPadding: 2
+        },
+
+        headStyles: {
+            fillColor: [23, 63, 112],
+            textColor: 255,
+            fontStyle: "bold"
+        },
+
+        didDrawPage: function () {
+            const pageHeight = doc.internal.pageSize.height;
+
+            doc.setFontSize(8);
+            doc.text(
+                "Fila Grades System",
+                12,
+                pageHeight - 7
+            );
+
+            doc.text(
+                `Page ${doc.internal.getNumberOfPages()}`,
+                285,
+                pageHeight - 7,
+                { align: "right" }
+            );
+        }
+    });
+
+    doc.save("Fila_Grades_School_Performance_Analysis.pdf");
+}
+
+/* =====================================================
+   DOWNLOAD COMPLETE SELECTED TEST REPORT PDF
+===================================================== */
+
+function downloadFullReportPDF() {
+    const test = getSelectedTest();
+
+    if (!test) {
+        alert("Please select a test first.");
+        return;
+    }
+
+    if (!classResultsStore.size) {
+        alert("There are no results available to download.");
+        return;
+    }
+
+    const doc = createPDFDocument();
+
+    if (!doc) return;
+
+    const groups = Array.from(classResultsStore.values()).map(data => ({
+        ...data.classGroup,
+        subjects: data.subjects,
+        students: data.students
+    }));
+
+    const stats = buildOverallStatistics(groups);
+
+    const period = getPDFAcademicPeriod();
+
+    // -------------------------------------------------
+    // PAGE 1: OVERALL DASHBOARD
+    // -------------------------------------------------
+
+    addPDFHeader(
+        doc,
+        "FILA GRADES - COMPLETE RESULTS REPORT",
+        `${test.name} | ${period}`
+    );
+
+    let y = 37;
+
+    y = addPDFSectionTitle(doc, "OVERALL PERFORMANCE SUMMARY", y);
+
+    const summaryRows = [
+        ["Total learners", stats.total],
+        ["Boys", stats.boys],
+        ["Girls", stats.girls],
+        ["Unknown gender", stats.unknownGender],
+        ["Complete results", stats.complete],
+        ["Incomplete results", stats.incomplete],
+        ["Passed (50% and above)", stats.passed],
+        ["Failed (below 50%)", stats.failed],
+        ["Overall average", `${formatNumber(stats.average)}%`],
+        ["Winning percentage / pass rate", `${formatNumber(stats.passRate)}%`],
+        ["Failure rate", `${formatNumber(stats.failureRate)}%`]
+    ];
+
+    doc.autoTable({
+        startY: y,
+        head: [["Performance Indicator", "Result"]],
+        body: summaryRows,
+        theme: "grid",
+
+        margin: {
+            left: 14,
+            right: 14
+        },
+
+        tableWidth: 135,
+
+        styles: {
+            fontSize: 9,
+            cellPadding: 3
+        },
+
+        headStyles: {
+            fillColor: [23, 63, 112],
+            textColor: 255
+        }
+    });
+
+    y = doc.lastAutoTable.finalY + 10;
+
+    y = addPDFSectionTitle(doc, "GENDER PERFORMANCE", y);
+
+    const genderRows = [
+        [
+            "Boys",
+            stats.boys,
+            stats.boysPassed,
+            stats.boysFailed,
+            `${formatNumber(stats.boysPassRate)}%`,
+            `${formatNumber(stats.boysFailureRate)}%`
+        ],
+        [
+            "Girls",
+            stats.girls,
+            stats.girlsPassed,
+            stats.girlsFailed,
+            `${formatNumber(stats.girlsPassRate)}%`,
+            `${formatNumber(stats.girlsFailureRate)}%`
+        ],
+        [
+            "Not recorded",
+            stats.unknownGender,
+            stats.unknownPassed,
+            stats.unknownFailed,
+            `${formatNumber(percentage(stats.unknownPassed, stats.unknownComplete))}%`,
+            `${formatNumber(percentage(stats.unknownFailed, stats.unknownComplete))}%`
+        ]
+    ];
+
+    doc.autoTable({
+        startY: y,
+        head: [[
+            "Gender",
+            "Total",
+            "Passed",
+            "Failed",
+            "Pass Rate",
+            "Failure Rate"
+        ]],
+        body: genderRows,
+        theme: "grid",
+
+        margin: {
+            left: 14,
+            right: 14
+        },
+
+        styles: {
+            fontSize: 8,
+            cellPadding: 3
+        },
+
+        headStyles: {
+            fillColor: [23, 63, 112],
+            textColor: 255
+        }
+    });
+
+    // -------------------------------------------------
+    // MARKS DISTRIBUTION
+    // -------------------------------------------------
+
+    y = doc.lastAutoTable.finalY + 10;
+
+    y = addPDFSectionTitle(doc, "MARKS DISTRIBUTION", y);
+
+    doc.autoTable({
+        startY: y,
+        head: [["Percentage Band", "Number of Learners"]],
+        body: stats.bands.map(band => [
+            `${band.label}%`,
+            band.count
+        ]),
+        theme: "grid",
+
+        margin: {
+            left: 14,
+            right: 14
+        },
+
+        tableWidth: 110,
+
+        styles: {
+            fontSize: 8,
+            cellPadding: 2
+        },
+
+        headStyles: {
+            fillColor: [23, 63, 112],
+            textColor: 255
+        }
+    });
+
+    // -------------------------------------------------
+    // CLASS RESULTS
+    // -------------------------------------------------
+
+    groups.forEach(group => {
+        doc.addPage("a4", "landscape");
+
+        addPDFHeader(
+            doc,
+            `${group.class_name} RESULTS`,
+            `${test.name} | ${period}`
+        );
+
+        const subjects = group.subjects;
+
+        const headers = [
+            "No.",
+            "Student Name",
+            "Gender",
+            "School",
+            ...subjects.map(subject =>
+                `${subject.name} (${formatNumber(subject.maximum_mark)})`
+            ),
+            "Total",
+            "%",
+            "Category"
+        ];
+
+        const rows = group.students.map((student, index) => {
+            const subjectMarks = subjects.map(subject => {
+                const mark = student.marks?.[String(subject.id)];
+
+                return mark === null || mark === undefined
+                    ? "Pending"
+                    : formatNumber(mark);
+            });
+
+            return [
+                index + 1,
+                student.name || "",
+                student.gender || "",
+                student.school_name || "",
+                ...subjectMarks,
+                formatNumber(student.total),
+                `${formatNumber(student.percentage)}%`,
+                student.complete
+                    ? getCategory(student.percentage)
+                    : "Pending"
+            ];
+        });
+
+        doc.autoTable({
+            startY: 32,
+            head: [headers],
+            body: rows,
+            theme: "grid",
+
+            margin: {
+                left: 8,
+                right: 8,
+                bottom: 12
+            },
+
+            styles: {
+                fontSize: 7,
+                cellPadding: 2,
+                overflow: "linebreak"
+            },
+
+            headStyles: {
+                fillColor: [23, 63, 112],
+                textColor: 255
+            },
+
+            alternateRowStyles: {
+                fillColor: [245, 248, 252]
+            },
+
+            columnStyles: {
+                0: { cellWidth: 9 },
+                1: { cellWidth: 35 },
+                2: { cellWidth: 23 },
+                3: { cellWidth: 15 },
+                4: { cellWidth: 30 }
+            },
+
+            didDrawPage: function () {
+                const pageHeight = doc.internal.pageSize.height;
+
+                doc.setFontSize(8);
+
+                doc.text(
+                    `Fila Grades System | ${group.class_name}`,
+                    10,
+                    pageHeight - 7
+                );
+
+                doc.text(
+                    `Page ${doc.internal.getNumberOfPages()}`,
+                    285,
+                    pageHeight - 7,
+                    { align: "right" }
+                );
+            }
+        });
+    });
+
+    // -------------------------------------------------
+    // SCHOOL PERFORMANCE ANALYSIS
+    // -------------------------------------------------
+
+    doc.addPage("a4", "landscape");
+
+    addPDFHeader(
+        doc,
+        "SCHOOL AND CLASS PERFORMANCE ANALYSIS",
+        `${test.name} | ${period}`
+    );
+
+    const analysisTable = document.getElementById("analysisTable");
+
+    if (analysisTable) {
+        doc.autoTable({
+            html: analysisTable,
+            startY: 33,
+            theme: "grid",
+
+            margin: {
+                left: 12,
+                right: 12,
+                bottom: 12
+            },
+
+            styles: {
+                fontSize: 8,
+                cellPadding: 2
+            },
+
+            headStyles: {
+                fillColor: [23, 63, 112],
+                textColor: 255
+            },
+
+            didDrawPage: function () {
+                const pageHeight = doc.internal.pageSize.height;
+
+                doc.setFontSize(8);
+
+                doc.text(
+                    "Fila Grades System",
+                    12,
+                    pageHeight - 7
+                );
+
+                doc.text(
+                    `Page ${doc.internal.getNumberOfPages()}`,
+                    285,
+                    pageHeight - 7,
+                    { align: "right" }
+                );
+            }
+        });
+    }
+
+    // Download directly
+    doc.save(
+        `${getPDFFileName(test.name)}_Complete_Results_Report.pdf`
+    );
 }
 
 /* =====================================================
