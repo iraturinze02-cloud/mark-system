@@ -1,10 +1,8 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <meta name="description" content="View and analyze student results across schools in Fila Grades System.">
 <meta name="theme-color" content="#173f70">
 
@@ -14,40 +12,56 @@
 <title>Fila Grades - All Schools Results</title>
 
 <style>
+:root {
+    --primary: #1d4ed8;
+    --primary-dark: #173f70;
+    --blue-light: #eff6ff;
+    --border: #e2e8f0;
+    --text: #1e293b;
+    --muted: #64748b;
+    --green: #15803d;
+    --red: #dc2626;
+    --orange: #c2410c;
+    --surface: #ffffff;
+    --background: #f3f6fb;
+}
+
 * {
     box-sizing: border-box;
 }
 
 body {
     margin: 0;
-    font-family: 'Segoe UI', Arial, sans-serif;
-    background: #f3f6fb;
-    color: #1e293b;
+    font-family: "Segoe UI", Arial, sans-serif;
+    background: var(--background);
+    color: var(--text);
 }
 
 header {
-    background: linear-gradient(135deg, #1d4ed8, #2563eb);
+    background: linear-gradient(135deg, #173f70, #2563eb);
     color: white;
+    padding: 28px 16px;
     text-align: center;
-    padding: 25px 15px;
 }
 
 header h1 {
-    margin: 0 0 8px;
+    margin: 0 0 7px;
+    font-size: clamp(22px, 4vw, 30px);
 }
 
 header p {
     margin: 0;
+    opacity: .9;
 }
 
 .toolbar {
     width: 95%;
-    max-width: 1450px;
+    max-width: 1500px;
     margin: 20px auto;
     display: flex;
-    align-items: center;
     justify-content: space-between;
-    gap: 15px;
+    align-items: center;
+    gap: 14px;
     flex-wrap: wrap;
 }
 
@@ -58,68 +72,80 @@ header p {
     flex-wrap: wrap;
 }
 
-select {
-    padding: 11px;
-    min-width: 230px;
+select,
+input {
+    min-height: 42px;
+    padding: 10px 12px;
     border: 1px solid #cbd5e1;
-    border-radius: 7px;
+    border-radius: 8px;
     background: white;
-    font-size: 15px;
-}
-
-button {
-    padding: 10px 15px;
-    border: none;
-    cursor: pointer;
-    border-radius: 6px;
+    color: var(--text);
     font-size: 14px;
 }
 
-.download-btn {
-    background: #2563eb;
-    color: white;
+select {
+    min-width: 230px;
 }
 
-.logout-btn {
-    background: #ef4444;
-    color: white;
+input {
+    min-width: 180px;
+}
+
+button {
+    border: 0;
+    border-radius: 8px;
+    padding: 10px 15px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: .2s ease;
+}
+
+button:disabled {
+    opacity: .5;
+    cursor: not-allowed;
+}
+
+button:hover:not(:disabled) {
+    filter: brightness(.95);
 }
 
 .academic-period-btn {
     display: inline-flex;
     align-items: center;
-    justify-content: center;
     gap: 9px;
     min-height: 42px;
     padding: 10px 15px;
     border: 1px solid #bfdbfe;
-    border-radius: 8px;
-    background: linear-gradient(135deg, #eff6ff, #dbeafe);
+    background: #eff6ff;
     color: #1e40af;
-    font-weight: 600;
-    box-shadow: 0 2px 5px rgba(30, 64, 175, .08);
-    transition: .2s ease;
-}
-
-.academic-period-btn:hover {
-    background: #dbeafe;
-    border-color: #60a5fa;
 }
 
 .academic-period-btn svg {
     width: 19px;
     height: 19px;
-    flex-shrink: 0;
 }
 
-.table-container {
+.primary-btn,
+.download-btn {
+    background: var(--primary);
+    color: white;
+}
+
+.logout-btn {
+    background: #dc2626;
+    color: white;
+}
+
+.table-container,
+.panel {
     width: 95%;
-    max-width: 1450px;
-    margin: 20px auto;
-    background: white;
+    max-width: 1500px;
+    margin: 18px auto;
     padding: 20px;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0,0,0,.05);
+    border-radius: 13px;
+    background: var(--surface);
+    box-shadow: 0 3px 12px rgba(15, 23, 42, .045);
 }
 
 .section-header {
@@ -128,12 +154,112 @@ button {
     align-items: center;
     gap: 12px;
     flex-wrap: wrap;
-    margin-bottom: 15px;
+    margin-bottom: 16px;
 }
 
 .section-header h2 {
     margin: 0;
-    color: #1d4ed8;
+    color: var(--primary-dark);
+    font-size: 19px;
+}
+
+.section-description {
+    color: var(--muted);
+    font-size: 13px;
+    margin: 5px 0 0;
+}
+
+.message {
+    display: none;
+    width: 95%;
+    max-width: 1500px;
+    margin: 14px auto;
+    padding: 13px 15px;
+    border-radius: 8px;
+}
+
+.message.error {
+    display: block;
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.message.info {
+    display: block;
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.empty {
+    padding: 35px 15px;
+    text-align: center;
+    color: var(--muted);
+}
+
+.dashboard-grid {
+    width: 95%;
+    max-width: 1500px;
+    margin: 18px auto;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.stat-card {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 17px;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, .035);
+}
+
+.stat-label {
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .35px;
+}
+
+.stat-value {
+    font-size: 27px;
+    font-weight: 750;
+    margin-top: 8px;
+    color: var(--primary-dark);
+}
+
+.stat-note {
+    color: var(--muted);
+    font-size: 12px;
+    margin-top: 5px;
+}
+
+.stat-card.green .stat-value {
+    color: var(--green);
+}
+
+.stat-card.red .stat-value {
+    color: var(--red);
+}
+
+.stat-card.orange .stat-value {
+    color: var(--orange);
+}
+
+.two-column {
+    width: 95%;
+    max-width: 1500px;
+    margin: 18px auto;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+    align-items: start;
+}
+
+.two-column .panel {
+    width: 100%;
+    margin: 0;
+    min-width: 0;
 }
 
 .table-scroll {
@@ -144,86 +270,266 @@ button {
 table {
     width: 100%;
     border-collapse: collapse;
-    min-width: 750px;
+    min-width: 700px;
 }
 
 th, td {
-    border: 1px solid #ddd;
-    padding: 9px;
+    border: 1px solid var(--border);
+    padding: 10px 9px;
     text-align: center;
     font-size: 13px;
     white-space: nowrap;
 }
 
 thead {
-    background: #1d4ed8;
+    background: #1e40af;
     color: white;
 }
 
+tbody tr:nth-child(even) {
+    background: #f8fafc;
+}
+
+tbody tr:hover {
+    background: #eff6ff;
+}
+
 .school-name {
-    font-weight: bold;
-    color: #1d4ed8;
+    font-weight: 700;
+    color: var(--primary);
 }
 
 .class-heading {
-    color: #1d4ed8;
-    margin-bottom: 15px;
+    color: var(--primary-dark);
+    margin: 0;
 }
 
 .analysis-school {
-    background: #dbeafe;
-    font-weight: bold;
+    background: #dbeafe !important;
+    font-weight: 700;
 }
 
 .analysis-subject td:nth-child(2) {
     text-align: left;
-    padding-left: 30px;
+    padding-left: 25px;
 }
 
-.message {
-    width: 95%;
-    max-width: 1450px;
-    margin: 15px auto;
-    padding: 12px;
-    border-radius: 7px;
-    display: none;
+.gender-table th:first-child,
+.gender-table td:first-child {
+    text-align: left;
 }
 
-.error {
-    background: #fee2e2;
-    color: #991b1b;
+.rate {
+    font-weight: 700;
 }
 
-.info {
-    background: #dbeafe;
+.rate.good {
+    color: var(--green);
+}
+
+.rate.bad {
+    color: var(--red);
+}
+
+.band-list {
+    display: grid;
+    gap: 12px;
+}
+
+.band-row {
+    display: grid;
+    grid-template-columns: 65px 1fr 48px;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+}
+
+.band-track {
+    height: 12px;
+    border-radius: 20px;
+    background: #e2e8f0;
+    overflow: hidden;
+}
+
+.band-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #2563eb, #60a5fa);
+    border-radius: 20px;
+    min-width: 0;
+}
+
+.band-count {
+    text-align: right;
+    font-weight: 700;
+}
+
+.category-guide {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 14px;
+}
+
+.category-chip {
+    background: #eff6ff;
     color: #1e40af;
+    border: 1px solid #dbeafe;
+    border-radius: 20px;
+    padding: 6px 10px;
+    font-size: 12px;
+    font-weight: 700;
 }
 
-.empty {
-    padding: 25px;
-    text-align: center;
-    color: #64748b;
+.class-section {
+    width: 95%;
+    max-width: 1500px;
+    margin: 18px auto;
+    padding: 20px;
+    background: white;
+    border-radius: 13px;
+    box-shadow: 0 3px 12px rgba(15, 23, 42, .045);
 }
 
-@media(max-width:600px) {
-    .table-container {
-        padding: 12px;
+.class-tools {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin: 14px 0;
+}
+
+.class-tools input {
+    flex: 1;
+    min-width: 200px;
+    max-width: 350px;
+}
+
+.pagination {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 14px;
+}
+
+.pagination-info {
+    color: var(--muted);
+    font-size: 13px;
+}
+
+.pagination-buttons {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+}
+
+.pagination-buttons button {
+    border: 1px solid var(--border);
+    background: white;
+    color: var(--text);
+    min-width: 40px;
+}
+
+.pagination-buttons button.active {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: white;
+}
+
+.pending {
+    color: var(--orange);
+    font-weight: 700;
+}
+
+.pass {
+    color: var(--green);
+    font-weight: 700;
+}
+
+.fail {
+    color: var(--red);
+    font-weight: 700;
+}
+
+.small-note {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 10px;
+}
+
+@media(max-width: 1000px) {
+    .dashboard-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
-    .toolbar {
+    .two-column {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media(max-width: 600px) {
+    .toolbar,
+    .selector-box {
         align-items: stretch;
+        width: 95%;
     }
 
     .selector-box {
-        width: 100%;
+        flex-direction: column;
     }
 
-    select {
-        width: 100%;
-    }
-
+    .selector-box select,
     .academic-period-btn {
         width: 100%;
+    }
+
+    .dashboard-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 9px;
+    }
+
+    .stat-card {
+        padding: 13px;
+    }
+
+    .stat-value {
+        font-size: 22px;
+    }
+
+    .table-container,
+    .panel,
+    .class-section {
+        padding: 13px;
+    }
+
+    .class-tools input {
+        max-width: none;
+        width: 100%;
+    }
+}
+
+@media print {
+    .toolbar,
+    .message,
+    .class-tools,
+    .pagination,
+    .download-btn,
+    .logout-btn,
+    .academic-period-btn {
+        display: none !important;
+    }
+
+    body {
+        background: white;
+    }
+
+    .table-container,
+    .panel,
+    .class-section,
+    .stat-card {
+        box-shadow: none;
+        break-inside: avoid;
     }
 }
 </style>
@@ -233,38 +539,28 @@ thead {
 
 <header>
     <h1>ALL SCHOOLS RESULTS</h1>
-    <p>Fila Grades Results Dashboard</p>
+    <p>Fila Grades | Sector-wide academic performance dashboard</p>
 </header>
 
 <div class="toolbar">
-
     <div class="selector-box">
-
         <button
             type="button"
             id="academicPeriodBtn"
             class="academic-period-btn"
             onclick="openAcademicPeriodSelector()"
-            title="Change the academic year and term">
+            title="Change academic year and term">
 
-            <svg viewBox="0 0 24 24"
-                 fill="none"
-                 stroke="currentColor"
-                 stroke-width="2"
-                 stroke-linecap="round"
-                 stroke-linejoin="round"
+            <svg viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round"
                  aria-hidden="true">
-
                 <rect x="3" y="5" width="18" height="16" rx="2"></rect>
                 <path d="M16 3v4M8 3v4M3 10h18"></path>
                 <path d="m9 16 2 2 4-4"></path>
-
             </svg>
 
-            <span id="academicPeriodBtnText">
-                Academic Year &amp; Term
-            </span>
-
+            <span id="academicPeriodBtnText">Academic Year &amp; Term</span>
         </button>
 
         <label for="testSelect"><strong>Select Test:</strong></label>
@@ -272,32 +568,34 @@ thead {
         <select id="testSelect" onchange="displaySelectedTest()">
             <option value="">Loading tests...</option>
         </select>
-
     </div>
 
     <button class="logout-btn" onclick="logout()">Logout</button>
-
 </div>
 
 <div id="message" class="message"></div>
 
+<div id="dashboardContainer"></div>
 <div id="resultsContainer"></div>
 
 <div class="table-container">
-
     <div class="section-header">
-        <h2>School and Class Performance Analysis</h2>
+        <div>
+            <h2>School and Class Performance Analysis</h2>
+            <p class="section-description">
+                Rankings are based on the average percentage of learners
+                with complete marks.
+            </p>
+        </div>
 
         <button class="download-btn"
                 onclick="downloadTable('analysisTable','School Performance Analysis')">
-            Download
+            Print / Download
         </button>
     </div>
 
     <div class="table-scroll">
-
         <table id="analysisTable">
-
             <thead>
                 <tr>
                     <th>Position</th>
@@ -308,31 +606,31 @@ thead {
                     <th>Pass Rate</th>
                 </tr>
             </thead>
-
             <tbody id="analysisBody"></tbody>
-
         </table>
-
     </div>
-
 </div>
 
-<!-- Load the shared academic period selector before the main script. -->
 <script src="../js/academic-period.js"></script>
 
 <script>
+"use strict";
+
+const PAGE_SIZE = 100;
 
 let allTests = [];
 let currentAcademicPeriod = null;
 let loadingMarks = false;
 let loadRequestNumber = 0;
 
+let classResultsStore = new Map();
+let classPagination = new Map();
+
 /* =====================================================
    ACADEMIC PERIOD SELECTOR
 ===================================================== */
 
 function openAcademicPeriodSelector() {
-
     if (!window.FilaAcademicPeriod) {
         showMessage(
             "The academic period selector is not available.",
@@ -345,7 +643,6 @@ function openAcademicPeriodSelector() {
 }
 
 function updateAcademicPeriodButton(period) {
-
     const buttonText = document.getElementById(
         "academicPeriodBtnText"
     );
@@ -357,37 +654,27 @@ function updateAcademicPeriodButton(period) {
 }
 
 function waitForAcademicPeriod() {
-
     return new Promise((resolve, reject) => {
-
         if (
             window.FilaAcademicPeriod &&
             window.FilaAcademicPeriod.getSelection()
         ) {
-
             currentAcademicPeriod =
                 window.FilaAcademicPeriod.getSelection();
 
             updateAcademicPeriodButton(currentAcademicPeriod);
-
             resolve(currentAcademicPeriod);
             return;
         }
 
         const readyHandler = event => {
-
             currentAcademicPeriod = event.detail;
-
             updateAcademicPeriodButton(currentAcademicPeriod);
-
             resolve(currentAcademicPeriod);
         };
 
         const errorHandler = () => {
-
-            reject(
-                new Error("Unable to load the academic calendar.")
-            );
+            reject(new Error("Unable to load the academic calendar."));
         };
 
         window.addEventListener(
@@ -401,21 +688,15 @@ function waitForAcademicPeriod() {
             errorHandler,
             { once: true }
         );
-
     });
 }
 
 window.addEventListener(
     "fila:academic-period-change",
-    function(event) {
-
+    event => {
         currentAcademicPeriod = event.detail;
-
         updateAcademicPeriodButton(currentAcademicPeriod);
-
-        // A test from the previous period must not remain selected.
         loadMarks(null);
-
     }
 );
 
@@ -424,7 +705,6 @@ window.addEventListener(
 ===================================================== */
 
 function escapeHTML(value) {
-
     return String(value ?? "").replace(/[&<>"']/g, character => ({
         "&": "&amp;",
         "<": "&lt;",
@@ -432,45 +712,59 @@ function escapeHTML(value) {
         '"': "&quot;",
         "'": "&#039;"
     })[character]);
-
 }
 
 function number(value) {
-
     const result = Number(value);
-
     return Number.isFinite(result) ? result : 0;
 }
 
 function formatNumber(value) {
-
-    return Number(value).toFixed(2).replace(/\.00$/, "");
+    return number(value).toFixed(2).replace(/\.00$/, "");
 }
 
-function getCategory(percentage) {
+function percentage(part, total) {
+    return total > 0 ? (part / total) * 100 : 0;
+}
 
-    if (percentage >= 80) return "A (Excellent)";
-    if (percentage >= 75) return "B (Very Good)";
-    if (percentage >= 70) return "C (Good)";
-    if (percentage >= 65) return "D (Satisfactory)";
-    if (percentage >= 60) return "E (Adequate)";
-    if (percentage >= 50) return "S (Pass)";
-
+/*
+ * Keep the existing success categories and boundaries.
+ */
+function getCategory(value) {
+    if (value >= 80) return "A (Excellent)";
+    if (value >= 75) return "B (Very Good)";
+    if (value >= 70) return "C (Good)";
+    if (value >= 65) return "D (Satisfactory)";
+    if (value >= 60) return "E (Adequate)";
+    if (value >= 50) return "S (Pass)";
     return "F (Fail)";
 }
 
+function normalizeGender(value) {
+    const gender = String(value ?? "")
+        .trim()
+        .toLowerCase();
+
+    if (["male", "m", "boy"].includes(gender)) return "boys";
+    if (["female", "f", "girl"].includes(gender)) return "girls";
+
+    return "unknown";
+}
+
 function showMessage(message, type = "info") {
-
     const box = document.getElementById("message");
-
     box.textContent = message;
     box.className = "message " + type;
-    box.style.display = "block";
 }
 
 function clearMessage() {
+    const box = document.getElementById("message");
+    box.style.display = "none";
+    box.textContent = "";
+}
 
-    document.getElementById("message").style.display = "none";
+function safeId(value) {
+    return String(value).replace(/[^a-zA-Z0-9_-]/g, "_");
 }
 
 /* =====================================================
@@ -478,25 +772,15 @@ function clearMessage() {
 ===================================================== */
 
 async function loadMarks(preferredTestId = null) {
-
-    if (loadingMarks) {
-        // The request number ensures older responses cannot
-        // overwrite the results for a more recently selected period.
-    }
-
     const requestNumber = ++loadRequestNumber;
 
     const container = document.getElementById("resultsContainer");
+    const dashboard = document.getElementById("dashboardContainer");
     const select = document.getElementById("testSelect");
     const analysisBody = document.getElementById("analysisBody");
 
     if (!currentAcademicPeriod) {
-
-        showMessage(
-            "Please select an academic year and term.",
-            "error"
-        );
-
+        showMessage("Please select an academic year and term.", "error");
         return;
     }
 
@@ -504,109 +788,70 @@ async function loadMarks(preferredTestId = null) {
     const termNumber = currentAcademicPeriod.term_number;
 
     if (!academicYear || !termNumber) {
-
         showMessage(
             "The selected academic period is incomplete.",
             "error"
         );
-
         return;
     }
 
     loadingMarks = true;
-
     clearMessage();
 
     select.disabled = true;
+    select.innerHTML = `<option value="">Loading tests...</option>`;
 
-    select.innerHTML = `
-        <option value="">Loading tests...</option>
-    `;
-
+    dashboard.innerHTML = "";
     container.innerHTML = `
         <div class="table-container empty">
             Loading sector results...
         </div>
     `;
-
     analysisBody.innerHTML = "";
 
     try {
-
-        /*
-         * view=sector tells the API this is the
-         * All Schools Results page.
-         *
-         * The API must still enforce the existing
-         * role and sector authorization restrictions.
-         *
-         * Do not send the old test_id when changing periods.
-         * The API must return all eligible tests for the
-         * newly selected period.
-         */
-
         const params = new URLSearchParams({
-
             view: "sector",
-
             academic_year: String(academicYear),
-
             term_number: String(termNumber)
-
         });
 
         const response = await fetch(
             `/api/school-marks?${params.toString()}`,
             {
                 method: "GET",
-
                 credentials: "same-origin",
-
                 headers: {
                     "Accept": "application/json"
                 },
-
                 cache: "no-store"
             }
         );
 
         const data = await response.json();
 
-        // Ignore responses from previous period selections.
-        if (requestNumber !== loadRequestNumber) {
-            return;
-        }
+        if (requestNumber !== loadRequestNumber) return;
 
         if (!response.ok || !data.success) {
-
             throw new Error(
                 data.message || "Failed to load results."
             );
         }
-
-        /*
-         * Authorization is performed by the API.
-         * This is an additional interface-level role check,
-         * not a replacement for backend authorization.
-         */
 
         if (![
             "sector_admin",
             "school_admin",
             "dos"
         ].includes(data.user?.role)) {
-
             throw new Error(
                 "You are not authorized to view these results."
             );
         }
 
         allTests = data.tests || [];
-
         select.innerHTML = "";
 
         if (!allTests.length) {
-
             select.innerHTML = `
                 <option value="">No tests available</option>
             `;
@@ -619,60 +864,37 @@ async function loadMarks(preferredTestId = null) {
                 </div>
             `;
 
+            dashboard.innerHTML = "";
             analysisBody.innerHTML = "";
-
             return;
         }
 
         allTests.forEach(test => {
-
             const option = document.createElement("option");
-
             option.value = String(test.id);
             option.textContent = test.name;
-
             select.appendChild(option);
-
         });
-
-        /*
-         * On the first page load, use the test_id from the
-         * URL if that test is available in the selected period.
-         *
-         * If it is not available, select the first available test.
-         *
-         * When the academic period changes, preferredTestId is null,
-         * so the first test in the newly selected period is selected.
-         */
 
         let selectedTest = null;
 
         if (preferredTestId) {
-
             selectedTest = allTests.find(
                 test => String(test.id) === String(preferredTestId)
             );
-
         }
 
-        if (!selectedTest) {
-            selectedTest = allTests[0];
-        }
+        if (!selectedTest) selectedTest = allTests[0];
 
         select.value = String(selectedTest.id);
-
         displaySelectedTest();
 
     } catch (error) {
-
-        if (requestNumber !== loadRequestNumber) {
-            return;
-        }
+        if (requestNumber !== loadRequestNumber) return;
 
         allTests = [];
-
+        dashboard.innerHTML = "";
         container.innerHTML = "";
-
         analysisBody.innerHTML = "";
 
         showMessage(
@@ -685,14 +907,10 @@ async function loadMarks(preferredTestId = null) {
         `;
 
     } finally {
-
         if (requestNumber === loadRequestNumber) {
-
             loadingMarks = false;
             select.disabled = false;
-
         }
-
     }
 }
 
@@ -701,42 +919,35 @@ async function loadMarks(preferredTestId = null) {
 ===================================================== */
 
 function displaySelectedTest() {
-
     clearMessage();
 
-    const selectedId = document.getElementById(
-        "testSelect"
-    ).value;
+    const selectedId = document.getElementById("testSelect").value;
 
     const test = allTests.find(
         item => String(item.id) === String(selectedId)
     );
 
     if (!test) {
-
         document.getElementById("resultsContainer").innerHTML = `
             <div class="table-container empty">
                 Please select a test.
             </div>
         `;
 
+        document.getElementById("dashboardContainer").innerHTML = "";
         document.getElementById("analysisBody").innerHTML = "";
-
         return;
     }
 
-    const classes = test.classes || [];
-
-    if (!classes.length) {
-
+    if (!(test.classes || []).length) {
         document.getElementById("resultsContainer").innerHTML = `
             <div class="table-container empty">
                 No classes or students are available for this test.
             </div>
         `;
 
+        document.getElementById("dashboardContainer").innerHTML = "";
         document.getElementById("analysisBody").innerHTML = "";
-
         return;
     }
 
@@ -744,65 +955,43 @@ function displaySelectedTest() {
 }
 
 /* =====================================================
-   COMBINE SAME CLASS ACROSS ALL SCHOOLS
+   GROUP SAME CLASS ACROSS SCHOOLS
 ===================================================== */
 
 function groupClassesAcrossSchools(classes) {
-
     const grouped = {};
 
     classes.forEach(classItem => {
-
         const classId = String(classItem.class_id);
 
         if (!grouped[classId]) {
-
             grouped[classId] = {
-
                 class_id: classItem.class_id,
-
                 class_name: classItem.class_name,
-
                 class_level: classItem.class_level,
-
                 subjects: [],
-
                 students: []
-
             };
-
         }
 
         const group = grouped[classId];
 
         (classItem.subjects || []).forEach(subject => {
-
             const exists = group.subjects.some(
                 item => String(item.id) === String(subject.id)
             );
 
-            if (!exists) {
-                group.subjects.push(subject);
-            }
-
+            if (!exists) group.subjects.push(subject);
         });
 
         (classItem.students || []).forEach(student => {
-
             group.students.push({
-
                 ...student,
-
                 school_id: classItem.school_id,
-
                 school_name: classItem.school_name,
-
                 class_name: classItem.class_name
-
             });
-
         });
-
     });
 
     return Object.values(grouped).sort((a, b) =>
@@ -811,208 +1000,655 @@ function groupClassesAcrossSchools(classes) {
 }
 
 /* =====================================================
-   CALCULATE STUDENT RESULTS
+   CALCULATE STUDENT RESULT
 ===================================================== */
 
 function calculateStudentResult(student, subjects) {
-
     let total = 0;
     let maximum = 0;
+    let recordedSubjects = 0;
 
     subjects.forEach(subject => {
-
         const maxMark = number(subject.maximum_mark);
+        const mark = student.marks?.[String(subject.id)];
 
         maximum += maxMark;
 
-        const mark = student.marks?.[String(subject.id)];
-
-        total += mark === null || mark === undefined
-            ? 0
-            : number(mark);
-
+        if (
+            mark !== null &&
+            mark !== undefined &&
+            mark !== ""
+        ) {
+            total += number(mark);
+            recordedSubjects++;
+        }
     });
 
-    const percentage = maximum > 0
+    const complete =
+        subjects.length > 0 &&
+        recordedSubjects === subjects.length &&
+        maximum > 0;
+
+    const percentageValue = maximum > 0
         ? (total / maximum) * 100
         : 0;
 
     return {
         total,
         maximum,
-        percentage
+        percentage: percentageValue,
+        complete,
+        recordedSubjects,
+        expectedSubjects: subjects.length
     };
 }
 
 /* =====================================================
-   DISPLAY CLASS RESULTS
+   ANALYSIS DATA
+===================================================== */
+
+function buildOverallStatistics(classGroups) {
+    const students = classGroups.flatMap(group => group.students);
+
+    const stats = {
+        total: students.length,
+        boys: 0,
+        girls: 0,
+        unknownGender: 0,
+
+        complete: 0,
+        incomplete: 0,
+
+        passed: 0,
+        failed: 0,
+
+        boysPassed: 0,
+        boysFailed: 0,
+        girlsPassed: 0,
+        girlsFailed: 0,
+
+        boysComplete: 0,
+        girlsComplete: 0,
+
+        totalPercentage: 0,
+        bands: Array.from({ length: 10 }, (_, index) => ({
+            label: `${index * 10}–${(index + 1) * 10}`,
+            count: 0
+        }))
+    };
+
+    students.forEach(student => {
+        const gender = normalizeGender(student.gender);
+
+        if (gender === "boys") stats.boys++;
+        else if (gender === "girls") stats.girls++;
+        else stats.unknownGender++;
+
+        if (!student.complete) {
+            stats.incomplete++;
+            return;
+        }
+
+        stats.complete++;
+        stats.totalPercentage += student.percentage;
+
+        if (gender === "boys") stats.boysComplete++;
+        if (gender === "girls") stats.girlsComplete++;
+
+        if (student.percentage >= 50) {
+            stats.passed++;
+
+            if (gender === "boys") stats.boysPassed++;
+            if (gender === "girls") stats.girlsPassed++;
+        } else {
+            stats.failed++;
+
+            if (gender === "boys") stats.boysFailed++;
+            if (gender === "girls") stats.girlsFailed++;
+        }
+
+        // Ten non-overlapping score bands:
+        // 0–<10, 10–<20, ..., 90–100.
+        let bandIndex = Math.floor(student.percentage / 10);
+        bandIndex = Math.max(0, Math.min(9, bandIndex));
+
+        stats.bands[bandIndex].count++;
+    });
+
+    stats.average = stats.complete > 0
+        ? stats.totalPercentage / stats.complete
+        : 0;
+
+    stats.passRate = percentage(stats.passed, stats.complete);
+    stats.failureRate = percentage(stats.failed, stats.complete);
+
+    stats.boysPassRate = percentage(
+        stats.boysPassed,
+        stats.boysComplete
+    );
+
+    stats.boysFailureRate = percentage(
+        stats.boysFailed,
+        stats.boysComplete
+    );
+
+    stats.girlsPassRate = percentage(
+        stats.girlsPassed,
+        stats.girlsComplete
+    );
+
+    stats.girlsFailureRate = percentage(
+        stats.girlsFailed,
+        stats.girlsComplete
+    );
+
+    return stats;
+}
+
+/* =====================================================
+   OVERALL DASHBOARD
+===================================================== */
+
+function renderDashboard(stats) {
+    const container = document.getElementById("dashboardContainer");
+
+    const cards = [
+        {
+            label: "Total learners",
+            value: stats.total,
+            note: "All enrolled learners in this test"
+        },
+        {
+            label: "Boys",
+            value: stats.boys,
+            note: "Including learners with pending marks"
+        },
+        {
+            label: "Girls",
+            value: stats.girls,
+            note: "Including learners with pending marks"
+        },
+        {
+            label: "Complete results",
+            value: stats.complete,
+            note: "All subjects have recorded marks"
+        },
+        {
+            label: "Passed",
+            value: stats.passed,
+            note: "50% and above",
+            className: "green"
+        },
+        {
+            label: "Failed",
+            value: stats.failed,
+            note: "Below 50%",
+            className: "red"
+        },
+        {
+            label: "Overall average",
+            value: `${formatNumber(stats.average)}%`,
+            note: "Complete results only"
+        },
+        {
+            label: "Winning percentage",
+            value: `${formatNumber(stats.passRate)}%`,
+            note: "Pass rate among complete results",
+            className: "green"
+        }
+    ];
+
+    container.innerHTML = `
+        <div class="dashboard-grid">
+            ${cards.map(card => `
+                <div class="stat-card ${card.className || ""}">
+                    <div class="stat-label">${escapeHTML(card.label)}</div>
+                    <div class="stat-value">${escapeHTML(card.value)}</div>
+                    <div class="stat-note">${escapeHTML(card.note)}</div>
+                </div>
+            `).join("")}
+        </div>
+
+        <div class="panel">
+            <div class="section-header">
+                <div>
+                    <h2>Pass and Failure Overview</h2>
+                    <p class="section-description">
+                        Pass means 50% or above. Failure means below 50%.
+                    </p>
+                </div>
+            </div>
+
+            <div class="dashboard-grid" style="width:100%;max-width:none;margin:0;">
+                <div class="stat-card green">
+                    <div class="stat-label">Pass rate</div>
+                    <div class="stat-value">${formatNumber(stats.passRate)}%</div>
+                    <div class="stat-note">${stats.passed} passed out of ${stats.complete} complete results</div>
+                </div>
+
+                <div class="stat-card red">
+                    <div class="stat-label">Failure rate</div>
+                    <div class="stat-value">${formatNumber(stats.failureRate)}%</div>
+                    <div class="stat-note">${stats.failed} failed out of ${stats.complete} complete results</div>
+                </div>
+
+                <div class="stat-card orange">
+                    <div class="stat-label">Incomplete results</div>
+                    <div class="stat-value">${stats.incomplete}</div>
+                    <div class="stat-note">Not included in pass/failure rates</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-label">Unknown gender</div>
+                    <div class="stat-value">${stats.unknownGender}</div>
+                    <div class="stat-note">Gender not recognized or not recorded</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="two-column">
+            <div class="panel">
+                <div class="section-header">
+                    <div>
+                        <h2>Gender Performance Analysis</h2>
+                        <p class="section-description">
+                            Pass/failure rates use complete results for each gender.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="table-scroll">
+                    <table class="gender-table" id="genderTable">
+                        <thead>
+                            <tr>
+                                <th>Gender</th>
+                                <th>Total</th>
+                                <th>Passed</th>
+                                <th>Failed</th>
+                                <th>Pass rate</th>
+                                <th>Failure rate</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Boys</strong></td>
+                                <td>${stats.boys}</td>
+                                <td>${stats.boysPassed}</td>
+                                <td>${stats.boysFailed}</td>
+                                <td class="rate good">${formatNumber(stats.boysPassRate)}%</td>
+                                <td class="rate bad">${formatNumber(stats.boysFailureRate)}%</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Girls</strong></td>
+                                <td>${stats.girls}</td>
+                                <td>${stats.girlsPassed}</td>
+                                <td>${stats.girlsFailed}</td>
+                                <td class="rate good">${formatNumber(stats.girlsPassRate)}%</td>
+                                <td class="rate bad">${formatNumber(stats.girlsFailureRate)}%</td>
+                            </tr>
+                            <tr class="analysis-school">
+                                <td>Total</td>
+                                <td>${stats.total}</td>
+                                <td>${stats.passed}</td>
+                                <td>${stats.failed}</td>
+                                <td>${formatNumber(stats.passRate)}%</td>
+                                <td>${formatNumber(stats.failureRate)}%</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <p class="small-note">
+                    The total row's passed and failed figures include learners
+                    of recognized genders. Learners with incomplete results
+                    are excluded from these figures.
+                </p>
+            </div>
+
+            <div class="panel">
+                <div class="section-header">
+                    <div>
+                        <h2>Marks Distribution</h2>
+                        <p class="section-description">
+                            Percentage bands. Each complete learner is counted once.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="band-list">
+                    ${stats.bands.map((band, index) => {
+                        const maxCount = Math.max(
+                            1,
+                            ...stats.bands.map(item => item.count)
+                        );
+
+                        const width = (band.count / maxCount) * 100;
+
+                        return `
+                            <div class="band-row">
+                                <strong>${band.label}%</strong>
+                                <div class="band-track">
+                                    <div class="band-fill" style="width:${width}%"></div>
+                                </div>
+                                <span class="band-count">${band.count}</span>
+                            </div>
+                        `;
+                    }).join("")}
+                </div>
+
+                <p class="small-note">
+                    Bands are 0–less than 10, 10–less than 20, and so on.
+                    The final band includes 100%.
+                </p>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="section-header">
+                <div>
+                    <h2>Success Categories</h2>
+                    <p class="section-description">
+                        Existing Fila Grades categories and thresholds.
+                    </p>
+                </div>
+            </div>
+
+            <div class="category-guide">
+                <span class="category-chip">A: 80–100 Excellent</span>
+                <span class="category-chip">B: 75–less than 80 Very Good</span>
+                <span class="category-chip">C: 70–less than 75 Good</span>
+                <span class="category-chip">D: 65–less than 70 Satisfactory</span>
+                <span class="category-chip">E: 60–less than 65 Adequate</span>
+                <span class="category-chip">S: 50–less than 60 Pass</span>
+                <span class="category-chip">F: Below 50 Fail</span>
+            </div>
+        </div>
+    `;
+}
+
+/* =====================================================
+   RENDER ALL CLASS RESULTS
 ===================================================== */
 
 function renderClassResults(test) {
-
-    const container = document.getElementById(
-        "resultsContainer"
-    );
-
+    const container = document.getElementById("resultsContainer");
     container.innerHTML = "";
 
-    const groupedClasses = groupClassesAcrossSchools(
-        test.classes || []
-    );
+    classResultsStore.clear();
+    classPagination.clear();
 
+    const groupedClasses = groupClassesAcrossSchools(test.classes || []);
     const analysisGroups = [];
 
-    groupedClasses.forEach(classGroup => {
-
-        const subjects = classGroup.subjects;
+    groupedClasses.forEach((classGroup, groupIndex) => {
+        const subjects = classGroup.subjects || [];
 
         const students = classGroup.students.map(student => {
-
-            const result = calculateStudentResult(
-                student,
-                subjects
-            );
+            const result = calculateStudentResult(student, subjects);
 
             return {
                 ...student,
                 ...result
             };
-
-        });
-
-        analysisGroups.push({
-            ...classGroup,
-            students
         });
 
         students.sort((a, b) =>
             b.percentage - a.percentage ||
-            a.name.localeCompare(b.name)
+            String(a.name).localeCompare(String(b.name))
         );
 
-        let rows = "";
+        const classKey = `${safeId(classGroup.class_id)}_${groupIndex}`;
 
-        students.forEach((student, index) => {
-
-            const subjectCells = subjects.map(subject => {
-
-                const mark = student.marks?.[String(subject.id)];
-
-                return `<td>${
-                    mark === null || mark === undefined
-                        ? "—"
-                        : formatNumber(mark)
-                }</td>`;
-
-            }).join("");
-
-            rows += `
-                <tr>
-                    <td>${index + 1}</td>
-
-                    <td>${escapeHTML(student.name)}</td>
-
-                    <td class="school-name">
-                        ${escapeHTML(student.school_name)}
-                    </td>
-
-                    ${subjectCells}
-
-                    <td>
-                        <strong>${formatNumber(student.total)}</strong>
-                    </td>
-
-                    <td>${formatNumber(student.percentage)}%</td>
-
-                    <td>${getCategory(student.percentage)}</td>
-                </tr>
-            `;
-
+        classResultsStore.set(classKey, {
+            classGroup,
+            subjects,
+            students,
+            testName: test.name
         });
 
-        if (!students.length) {
+        classPagination.set(classKey, {
+            page: 1,
+            search: ""
+        });
 
-            rows = `
-                <tr>
-                    <td colspan="${subjects.length + 6}">
-                        No active students found in this class.
-                    </td>
-                </tr>
-            `;
+        analysisGroups.push({
+            ...classGroup,
+            subjects,
+            students
+        });
 
-        }
-
-        const subjectHeaders = subjects.map(subject => `
-
-            <th>
-                ${escapeHTML(subject.name)}
-                <br>
-                <small>
-                    Out of ${formatNumber(subject.maximum_mark)}
-                </small>
-            </th>
-
-        `).join("");
-
-        const section = document.createElement("div");
-
-        section.className = "table-container";
-
-        const tableId = `classTable_${String(classGroup.class_id).replace(/[^a-zA-Z0-9_-]/g, "_")}`;
+        const section = document.createElement("section");
+        section.className = "class-section";
+        section.id = `section_${classKey}`;
 
         section.innerHTML = `
-
             <div class="section-header">
-
-                <h2 class="class-heading">
-                    ${escapeHTML(classGroup.class_name)} Results
-                </h2>
+                <div>
+                    <h2 class="class-heading">
+                        ${escapeHTML(classGroup.class_name)} Results
+                    </h2>
+                    <p class="section-description">
+                        ${escapeHTML(classGroup.class_level || "")}
+                        · ${students.length} learners
+                        · ${subjects.length} subjects
+                    </p>
+                </div>
 
                 <button class="download-btn"
-                    onclick="downloadTable(
-                        '${tableId}',
-                        '${escapeHTML(test.name)} - ${escapeHTML(classGroup.class_name)}'
-                    )">
-
-                    Download
-
+                    onclick="downloadClassResults('${classKey}')">
+                    Print / Download Class
                 </button>
-
             </div>
 
-            <div class="table-scroll">
+            <div class="class-tools">
+                <input
+                    type="search"
+                    placeholder="Search learner name or student code..."
+                    oninput="searchClassStudents('${classKey}', this.value)">
 
-                <table id="${tableId}">
-
-                    <thead>
-
-                        <tr>
-                            <th>Position</th>
-                            <th>Student</th>
-                            <th>School</th>
-                            ${subjectHeaders}
-                            <th>Total</th>
-                            <th>%</th>
-                            <th>Category</th>
-                        </tr>
-
-                    </thead>
-
-                    <tbody>
-                        ${rows}
-                    </tbody>
-
-                </table>
-
+                <span class="small-note">
+                    Showing a maximum of ${PAGE_SIZE} learners per page.
+                </span>
             </div>
 
+            <div class="table-scroll" id="tableWrap_${classKey}"></div>
+
+            <div class="pagination" id="pagination_${classKey}"></div>
         `;
 
         container.appendChild(section);
 
+        renderClassPage(classKey);
     });
 
+    const stats = buildOverallStatistics(analysisGroups);
+    renderDashboard(stats);
     createSchoolAnalysis(analysisGroups);
+}
+
+/* =====================================================
+   CLASS SEARCH AND PAGINATION
+===================================================== */
+
+function getFilteredStudents(classKey) {
+    const data = classResultsStore.get(classKey);
+    const state = classPagination.get(classKey);
+
+    if (!data || !state) return [];
+
+    const query = state.search.trim().toLowerCase();
+
+    if (!query) return data.students;
+
+    return data.students.filter(student =>
+        String(student.name || "").toLowerCase().includes(query) ||
+        String(student.student_code || "").toLowerCase().includes(query) ||
+        String(student.school_name || "").toLowerCase().includes(query)
+    );
+}
+
+function searchClassStudents(classKey, query) {
+    const state = classPagination.get(classKey);
+    if (!state) return;
+
+    state.search = query;
+    state.page = 1;
+
+    renderClassPage(classKey);
+}
+
+function changeClassPage(classKey, page) {
+    const state = classPagination.get(classKey);
+    if (!state) return;
+
+    state.page = page;
+    renderClassPage(classKey);
+}
+
+function renderClassPage(classKey) {
+    const data = classResultsStore.get(classKey);
+    const state = classPagination.get(classKey);
+
+    if (!data || !state) return;
+
+    const students = getFilteredStudents(classKey);
+    const total = students.length;
+    const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+
+    state.page = Math.max(1, Math.min(state.page, totalPages));
+
+    const startIndex = (state.page - 1) * PAGE_SIZE;
+    const pageStudents = students.slice(
+        startIndex,
+        startIndex + PAGE_SIZE
+    );
+
+    const subjects = data.subjects;
+
+    const subjectHeaders = subjects.map(subject => `
+        <th>
+            ${escapeHTML(subject.name)}
+            <br>
+            <small>Out of ${formatNumber(subject.maximum_mark)}</small>
+        </th>
+    `).join("");
+
+    const rows = pageStudents.map((student, index) => {
+        const position = startIndex + index + 1;
+
+        const subjectCells = subjects.map(subject => {
+            const mark = student.marks?.[String(subject.id)];
+
+            return `
+                <td>
+                    ${
+                        mark === null || mark === undefined
+                            ? "—"
+                            : formatNumber(mark)
+                    }
+                </td>
+            `;
+        }).join("");
+
+        const category = student.complete
+            ? getCategory(student.percentage)
+            : "Pending";
+
+        const categoryClass = !student.complete
+            ? "pending"
+            : student.percentage >= 50
+                ? "pass"
+                : "fail";
+
+        return `
+            <tr>
+                <td>${position}</td>
+                <td>${escapeHTML(student.name)}</td>
+                <td>${escapeHTML(student.student_code || "—")}</td>
+                <td>${escapeHTML(student.gender || "—")}</td>
+                <td class="school-name">${escapeHTML(student.school_name)}</td>
+                ${subjectCells}
+                <td><strong>${formatNumber(student.total)}</strong></td>
+                <td>${formatNumber(student.percentage)}%</td>
+                <td class="${categoryClass}">${category}</td>
+            </tr>
+        `;
+    }).join("");
+
+    const table = `
+        <table id="classTable_${classKey}">
+            <thead>
+                <tr>
+                    <th>Position</th>
+                    <th>Student</th>
+                    <th>Student Code</th>
+                    <th>Gender</th>
+                    <th>School</th>
+                    ${subjectHeaders}
+                    <th>Total</th>
+                    <th>%</th>
+                    <th>Category</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${
+                    rows || `
+                        <tr>
+                            <td colspan="${subjects.length + 9}">
+                                No learners found.
+                            </td>
+                        </tr>
+                    `
+                }
+            </tbody>
+        </table>
+    `;
+
+    document.getElementById(`tableWrap_${classKey}`).innerHTML = table;
+
+    const from = total ? startIndex + 1 : 0;
+    const to = Math.min(startIndex + PAGE_SIZE, total);
+
+    const pagination = document.getElementById(
+        `pagination_${classKey}`
+    );
+
+    pagination.innerHTML = `
+        <div class="pagination-info">
+            Showing ${from}–${to} of ${total} learners
+            · Page ${state.page} of ${totalPages}
+        </div>
+
+        <div class="pagination-buttons">
+            <button
+                onclick="changeClassPage('${classKey}', 1)"
+                ${state.page === 1 ? "disabled" : ""}>
+                First
+            </button>
+
+            <button
+                onclick="changeClassPage('${classKey}', ${state.page - 1})"
+                ${state.page === 1 ? "disabled" : ""}>
+                Previous
+            </button>
+
+            <button class="active" disabled>
+                ${state.page}
+            </button>
+
+            <button
+                onclick="changeClassPage('${classKey}', ${state.page + 1})"
+                ${state.page >= totalPages ? "disabled" : ""}>
+                Next
+            </button>
+
+            <button
+                onclick="changeClassPage('${classKey}', ${totalPages})"
+                ${state.page >= totalPages ? "disabled" : ""}>
+                Last
+            </button>
+        </div>
+    `;
 }
 
 /* =====================================================
@@ -1020,55 +1656,30 @@ function renderClassResults(test) {
 ===================================================== */
 
 function createSchoolAnalysis(classGroups) {
-
     const body = document.getElementById("analysisBody");
-
     body.innerHTML = "";
 
-    let results = [];
+    const results = [];
 
     classGroups.forEach(classGroup => {
-
         const schoolGroups = {};
 
         classGroup.students.forEach(student => {
-
             const schoolId = String(student.school_id);
 
             if (!schoolGroups[schoolId]) {
-
                 schoolGroups[schoolId] = {
-
                     school_name: student.school_name,
-
                     students: []
-
                 };
-
             }
 
             schoolGroups[schoolId].students.push(student);
-
         });
 
         Object.values(schoolGroups).forEach(schoolGroup => {
-
-            const students = schoolGroup.students.filter(student =>
-
-                student.maximum > 0 &&
-
-                student.marks &&
-
-                classGroup.subjects.every(subject => {
-
-                    const mark = student.marks[String(subject.id)];
-
-                    return mark !== null &&
-                           mark !== undefined &&
-                           mark !== "";
-
-                })
-
+            const students = schoolGroup.students.filter(
+                student => student.complete
             );
 
             if (!students.length) return;
@@ -1084,10 +1695,9 @@ function createSchoolAnalysis(classGroups) {
 
             const failed = students.length - passed;
 
-            const passRate = (passed / students.length) * 100;
+            const passRate = percentage(passed, students.length);
 
             const subjectAnalysis = classGroup.subjects.map(subject => {
-
                 const maximum = number(subject.maximum_mark);
 
                 const marks = students.map(student =>
@@ -1104,32 +1714,20 @@ function createSchoolAnalysis(classGroups) {
                     : 0;
 
                 const subjectPassed = marks.filter(
-                    mark => mark >= maximum * 0.5
+                    mark => maximum > 0 && mark >= maximum * 0.5
                 ).length;
 
                 const subjectFailed = marks.length - subjectPassed;
 
-                const subjectPassRate =
-                    (subjectPassed / marks.length) * 100;
-
                 return {
-
                     name: subject.name,
-
                     averageMark,
-
                     maximum,
-
                     subjectPercentage,
-
                     passed: subjectPassed,
-
                     failed: subjectFailed,
-
-                    passRate: subjectPassRate
-
+                    passRate: percentage(subjectPassed, marks.length)
                 };
-
             });
 
             subjectAnalysis.sort(
@@ -1137,133 +1735,96 @@ function createSchoolAnalysis(classGroups) {
             );
 
             results.push({
-
                 school: schoolGroup.school_name,
-
                 class_name: classGroup.class_name,
-
                 average,
-
                 passed,
-
                 failed,
-
                 passRate,
-
+                completeCount: students.length,
                 subjectAnalysis
-
             });
-
         });
-
     });
 
     results.sort((a, b) => b.average - a.average);
 
     results.forEach((result, index) => {
+        const mainRow = document.createElement("tr");
+        mainRow.className = "analysis-school";
 
-        body.innerHTML += `
-
-            <tr class="analysis-school">
-
-                <td>${index + 1}</td>
-
-                <td>
-                    ${escapeHTML(result.school)}
-                    <br>
-                    <small>${escapeHTML(result.class_name)}</small>
-                </td>
-
-                <td>${formatNumber(result.average)}%</td>
-
-                <td>${result.passed}</td>
-
-                <td>${result.failed}</td>
-
-                <td>${formatNumber(result.passRate)}%</td>
-
-            </tr>
-
+        mainRow.innerHTML = `
+            <td>${index + 1}</td>
+            <td>
+                ${escapeHTML(result.school)}
+                <br>
+                <small>${escapeHTML(result.class_name)}</small>
+            </td>
+            <td>${formatNumber(result.average)}%</td>
+            <td>${result.passed}</td>
+            <td>${result.failed}</td>
+            <td>${formatNumber(result.passRate)}%</td>
         `;
 
+        body.appendChild(mainRow);
+
         result.subjectAnalysis.forEach(subject => {
+            const row = document.createElement("tr");
+            row.className = "analysis-subject";
 
-            body.innerHTML += `
-
-                <tr class="analysis-subject">
-
-                    <td></td>
-
-                    <td>${escapeHTML(subject.name)}</td>
-
-                    <td>
-                        ${formatNumber(subject.averageMark)}
-                        / ${formatNumber(subject.maximum)}
-                        (${formatNumber(subject.subjectPercentage)}%)
-                    </td>
-
-                    <td>${subject.passed}</td>
-
-                    <td>${subject.failed}</td>
-
-                    <td>${formatNumber(subject.passRate)}%</td>
-
-                </tr>
-
+            row.innerHTML = `
+                <td></td>
+                <td>${escapeHTML(subject.name)}</td>
+                <td>
+                    ${formatNumber(subject.averageMark)}
+                    / ${formatNumber(subject.maximum)}
+                    (${formatNumber(subject.subjectPercentage)}%)
+                </td>
+                <td>${subject.passed}</td>
+                <td>${subject.failed}</td>
+                <td>${formatNumber(subject.passRate)}%</td>
             `;
 
+            body.appendChild(row);
         });
-
     });
 
     if (!results.length) {
-
         body.innerHTML = `
             <tr>
                 <td colspan="6">
-                    No performance data available.
+                    No complete performance data available.
                 </td>
             </tr>
         `;
-
     }
 }
 
 /* =====================================================
-   DOWNLOAD / PRINT TABLE
+   PRINT / DOWNLOAD
 ===================================================== */
 
 function downloadTable(tableId, title) {
-
     const table = document.getElementById(tableId);
 
     if (!table) {
-
         alert("Table not found.");
         return;
-
     }
 
     const win = window.open("", "_blank");
 
     if (!win) {
-
-        alert("Please allow pop-ups to download or print results.");
+        alert("Please allow pop-ups to print or download results.");
         return;
-
     }
 
-    const html = `
-
+    win.document.write(`
         <!DOCTYPE html>
         <html>
-
         <head>
-
             <title>${escapeHTML(title)}</title>
-
             <style>
-
                 body {
                     font-family: Arial, sans-serif;
                     padding: 20px;
@@ -1282,7 +1843,7 @@ function downloadTable(tableId, title) {
                     border: 1px solid #000;
                     padding: 6px;
                     text-align: center;
-                    font-size: 11px;
+                    font-size: 10px;
                 }
 
                 th {
@@ -1294,29 +1855,114 @@ function downloadTable(tableId, title) {
                         padding: 5px;
                     }
                 }
-
             </style>
-
         </head>
-
         <body>
-
             <h2>${escapeHTML(title)}</h2>
-
             ${table.outerHTML}
-
         </body>
-
         </html>
+    `);
 
+    win.document.close();
+    win.onload = () => win.print();
+}
+
+function downloadClassResults(classKey) {
+    const data = classResultsStore.get(classKey);
+
+    if (!data) return;
+
+    const subjects = data.subjects;
+    const students = data.students;
+
+    const headers = [
+        "Position",
+        "Student",
+        "Student Code",
+        "Gender",
+        "School",
+        ...subjects.map(subject => subject.name),
+        "Total",
+        "Percentage",
+        "Category"
+    ];
+
+    const rows = students.map((student, index) => {
+        const marks = subjects.map(subject => {
+            const mark = student.marks?.[String(subject.id)];
+
+            return mark === null || mark === undefined
+                ? "—"
+                : formatNumber(mark);
+        });
+
+        return [
+            index + 1,
+            student.name,
+            student.student_code || "",
+            student.gender || "",
+            student.school_name,
+            ...marks,
+            formatNumber(student.total),
+            `${formatNumber(student.percentage)}%`,
+            student.complete
+                ? getCategory(student.percentage)
+                : "Pending"
+        ];
+    });
+
+    const tableHTML = `
+        <table>
+            <thead>
+                <tr>
+                    ${headers.map(header => `<th>${escapeHTML(header)}</th>`).join("")}
+                </tr>
+            </thead>
+            <tbody>
+                ${rows.map(row => `
+                    <tr>
+                        ${row.map(cell => `<td>${escapeHTML(cell)}</td>`).join("")}
+                    </tr>
+                `).join("")}
+            </tbody>
+        </table>
     `;
 
-    win.document.write(html);
-    win.document.close();
+    const win = window.open("", "_blank");
 
-    win.onload = function() {
-        win.print();
-    };
+    if (!win) {
+        alert("Please allow pop-ups to print or download results.");
+        return;
+    }
+
+    win.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>${escapeHTML(data.testName)} - ${escapeHTML(data.classGroup.class_name)}</title>
+            <style>
+                body { font-family: Arial, sans-serif; padding: 20px; }
+                h2 { text-align: center; }
+                table { width: 100%; border-collapse: collapse; }
+                th, td {
+                    border: 1px solid #000;
+                    padding: 5px;
+                    font-size: 10px;
+                    text-align: center;
+                }
+                th { background: #eee; }
+            </style>
+        </head>
+        <body>
+            <h2>${escapeHTML(data.testName)} - ${escapeHTML(data.classGroup.class_name)}</h2>
+            ${tableHTML}
+        </body>
+        </html>
+    `);
+
+    win.document.close();
+    win.onload = () => win.print();
 }
 
 /* =====================================================
@@ -1324,9 +1970,7 @@ function downloadTable(tableId, title) {
 ===================================================== */
 
 function logout() {
-
     localStorage.clear();
-
     location.href = "../../index.html";
 }
 
@@ -1335,14 +1979,8 @@ function logout() {
 ===================================================== */
 
 async function initializePage() {
-
     try {
-
         await waitForAcademicPeriod();
-
-        // Use the original URL test only as the initial
-        // preferred selection. The API returns all eligible
-        // tests for the selected period.
 
         const preferredTestId = new URLSearchParams(
             window.location.search
@@ -1351,7 +1989,6 @@ async function initializePage() {
         await loadMarks(preferredTestId);
 
     } catch (error) {
-
         showMessage(
             error.message || "Unable to initialize the results page.",
             "error"
@@ -1360,12 +1997,10 @@ async function initializePage() {
         document.getElementById("testSelect").innerHTML = `
             <option value="">Unable to load tests</option>
         `;
-
     }
 }
 
 initializePage();
-
 </script>
 
 </body>
