@@ -1,46 +1,10 @@
-
 import {
     connectDB,
     authenticateRole,
     json
 } from "../_utils.js";
 
-/* =====================================================
-   GET: SCHOOL MARKS — VIEW ONLY
-
-   ACCESS:
-
-   1. SECTOR ADMIN:
-      - Views results across their own sector.
-
-   2. SCHOOL ADMIN / DOS:
-      - Normal School Marks request without test_id:
-        Views their own school's results.
-
-      - Sector-wide request with view=sector:
-        Views eligible closed tests created by a
-        Sector Admin within their own sector.
-
-      - Sector-wide request with test_id:
-        Can view sector-wide results only when:
-        a. The test was created by a Sector Admin.
-        b. The test is closed.
-        c. The test belongs to their sector.
-
-   ACADEMIC PERIOD:
-      - Uses the selected academic year and term.
-      - Gets period-specific IDs from test_schools.
-      - Matches each school's own academic year and term IDs.
-
-   STUDENT RETRIEVAL:
-      - Uses student_enrollments.
-      - Matches the test's school, class, academic year
-        and term.
-      - Uses the enrollment's historical class/status.
-===================================================== */
-
 export async function onRequestGet(context) {
-
     const auth = await authenticateRole(context, [
         "sector_admin",
         "school_admin",
@@ -52,32 +16,16 @@ export async function onRequestGet(context) {
     let client;
 
     try {
-
         client = await connectDB(context);
 
         let scopeCondition = "";
         let parameters = [];
 
         const url = new URL(context.request.url);
-
-        /* =================================================
-           REQUEST PARAMETERS
-        ================================================= */
-
-        const selectedYear = url.searchParams.get(
-            "academic_year"
-        );
-
-        const selectedTerm = Number(
-            url.searchParams.get("term_number")
-        );
-
-        const requestedTestId = url.searchParams.get(
-            "test_id"
-        );
-
-        const sectorView =
-            url.searchParams.get("view") === "sector";
+        const selectedYear = url.searchParams.get("academic_year");
+        const selectedTerm = Number(url.searchParams.get("term_number"));
+        const requestedTestId = url.searchParams.get("test_id");
+        const sectorView = url.searchParams.get("view") === "sector";
 
         if (
             !selectedYear ||
@@ -85,30 +33,22 @@ export async function onRequestGet(context) {
             selectedTerm < 1 ||
             selectedTerm > 3
         ) {
-
             return json({
                 success: false,
                 message: "Please select a valid academic year and term."
             }, 400);
-
         }
 
         const accessDeniedMessage =
             "You are not yet allowed to access this page because marks recording for this test is still in progress. Please come back later.";
 
-        /* =================================================
-           SECTOR ADMIN
-        ================================================= */
-
+        // SECTOR ADMIN
         if (auth.role === "sector_admin") {
-
             if (!auth.sectorId) {
-
                 return json({
                     success: false,
                     message: "Your account is not linked to a sector."
                 }, 403);
-
             }
 
             scopeCondition = `
@@ -118,17 +58,13 @@ export async function onRequestGet(context) {
                     WHERE scope_school.id = tc.school_id
                       AND scope_school.sector_id = $1
                 )
-
                 AND (
                     t.sector_id = $1
-
                     OR EXISTS (
                         SELECT 1
                         FROM test_schools assigned_school
-
                         INNER JOIN schools assigned
                             ON assigned.id = assigned_school.school_id
-
                         WHERE assigned_school.test_id = t.id
                           AND assigned.sector_id = $1
                     )
@@ -136,45 +72,26 @@ export async function onRequestGet(context) {
             `;
 
             parameters = [auth.sectorId];
-
         }
 
-        /* =================================================
-           SCHOOL ADMIN / DOS
-        ================================================= */
-
+        // SCHOOL ADMIN / DOS
         else {
-
             if (!auth.schoolId) {
-
                 return json({
                     success: false,
                     message: "Your account is not linked to a school."
                 }, 403);
-
             }
 
-            /* ---------------------------------------------
-               CASE 1:
-               NORMAL SCHOOL MARKS DASHBOARD
-
-               No test_id and no view=sector.
-
-               Only the user's own school is accessible.
-            --------------------------------------------- */
-
+            // Normal school results
             if (!requestedTestId && !sectorView) {
-
                 scopeCondition = `
                     tc.school_id = $1
-
                     AND (
                         t.school_id = $1
-
                         OR EXISTS (
                             SELECT 1
                             FROM test_schools assigned_school
-
                             WHERE assigned_school.test_id = t.id
                               AND assigned_school.school_id = $1
                         )
@@ -182,35 +99,18 @@ export async function onRequestGet(context) {
                 `;
 
                 parameters = [auth.schoolId];
-
             }
 
-            /* ---------------------------------------------
-               CASE 2:
-               ALL SCHOOLS RESULTS PAGE
-
-               view=sector and no test_id.
-
-               Return all eligible closed tests created
-               by Sector Admins within the user's sector.
-
-               The test dropdown can then display these tests.
-            --------------------------------------------- */
-
+            // All schools results
             else if (sectorView && !requestedTestId) {
-
                 scopeCondition = `
-
                     t.status = 'closed'
-
                     AND creator.role = 'sector_admin'
-
                     AND t.sector_id = (
                         SELECT sector_id
                         FROM schools
                         WHERE id = $1
                     )
-
                     AND tc.school_id IN (
                         SELECT id
                         FROM schools
@@ -220,75 +120,46 @@ export async function onRequestGet(context) {
                             WHERE id = $1
                         )
                     )
-
                 `;
 
                 parameters = [auth.schoolId];
-
             }
 
-            /* ---------------------------------------------
-               CASE 3:
-               SPECIFIC SECTOR-WIDE TEST
-
-               Keep the existing authorization checks.
-
-               The selected test must:
-               a. Be closed.
-               b. Have been created by a Sector Admin.
-               c. Belong to the user's sector.
-            --------------------------------------------- */
-
+            // Specific sector-wide test
             else {
-
                 const accessCheck = await client.query(
                     `
                     SELECT t.id
-
                     FROM tests t
-
                     INNER JOIN users creator
                         ON creator.id = t.created_by
-
                     INNER JOIN schools user_school
                         ON user_school.id = $2
-
                     WHERE t.id = $1
                       AND t.status = 'closed'
                       AND creator.role = 'sector_admin'
                       AND t.sector_id = user_school.sector_id
-
                     LIMIT 1
                     `,
-                    [
-                        requestedTestId,
-                        auth.schoolId
-                    ]
+                    [requestedTestId, auth.schoolId]
                 );
 
                 if (!accessCheck.rows.length) {
-
                     return json({
                         success: false,
                         message: accessDeniedMessage
                     }, 403);
-
                 }
 
                 scopeCondition = `
-
                     t.id = $1
-
                     AND t.status = 'closed'
-
                     AND creator.role = 'sector_admin'
-
                     AND t.sector_id = (
                         SELECT sector_id
                         FROM schools
                         WHERE id = $2
                     )
-
                     AND tc.school_id IN (
                         SELECT id
                         FROM schools
@@ -298,31 +169,20 @@ export async function onRequestGet(context) {
                             WHERE id = $2
                         )
                     )
-
                 `;
 
                 parameters = [
                     requestedTestId,
                     auth.schoolId
                 ];
-
             }
-
         }
 
-        /* =================================================
-           ADD SELECTED ACADEMIC PERIOD PARAMETERS
-
-           Existing role parameters remain unchanged.
-           Academic year and term are appended safely.
-        ================================================= */
-
+        // Academic period parameters
         parameters.push(selectedYear);
-
         const yearParameter = `$${parameters.length}`;
 
         parameters.push(selectedTerm);
-
         const termParameter = `$${parameters.length}`;
 
         scopeCondition += `
@@ -330,17 +190,10 @@ export async function onRequestGet(context) {
             AND tm.term_number = ${termParameter}
         `;
 
-        /* =================================================
-           LOAD TESTS, SCHOOLS, CLASSES, ENROLLMENTS,
-           STUDENTS, SUBJECTS AND MARKS
-        ================================================= */
-
+        // Load results
         const result = await client.query(
             `
             SELECT
-
-                /* TEST */
-
                 t.id AS test_id,
                 t.test_name,
                 t.status,
@@ -352,15 +205,11 @@ export async function onRequestGet(context) {
                 creator.full_name AS creator_name,
                 creator.role AS creator_role,
 
-                /* TEST SCHOOL AND ACADEMIC PERIOD */
-
                 tc.school_id,
                 tsc.academic_year_id,
                 tsc.term_id,
 
                 sch.school_name,
-
-                /* CLASS */
 
                 c.id AS class_id,
                 c.class_name,
@@ -372,23 +221,18 @@ export async function onRequestGet(context) {
                     ELSE 'Unknown'
                 END AS class_level,
 
-                /* ENROLLED STUDENT */
-
                 st.id AS student_id,
                 st.full_name AS student_name,
                 st.student_code,
+                st.gender AS student_gender,
 
                 se.status AS enrollment_status,
-
-                /* SUBJECT */
 
                 sub.id AS subject_id,
                 sub.subject_name,
                 sub.subject_code,
 
                 testSubject.total_marks AS maximum_mark,
-
-                /* RECORDED MARK */
 
                 m.score
 
@@ -400,20 +244,13 @@ export async function onRequestGet(context) {
             INNER JOIN test_classes tc
                 ON tc.test_id = t.id
 
-            /* Each test class must belong to a test school
-               with its own academic year and term. */
-
             INNER JOIN test_schools tsc
                 ON tsc.test_id = t.id
                AND tsc.school_id = tc.school_id
 
-            /* Match the school's academic year. */
-
             INNER JOIN academic_years ay
                 ON ay.id = tsc.academic_year_id
                AND ay.school_id = tsc.school_id
-
-            /* Match the school's term. */
 
             INNER JOIN terms tm
                 ON tm.id = tsc.term_id
@@ -429,15 +266,6 @@ export async function onRequestGet(context) {
 
             INNER JOIN schools sch
                 ON sch.id = tc.school_id
-
-            /* =================================================
-               HISTORICAL STUDENT ENROLLMENT
-
-               Do not use st.class_id or st.status here.
-
-               The enrollment determines the student's class
-               and status for the test's academic period.
-            ================================================= */
 
             LEFT JOIN student_enrollments se
                 ON se.school_id = tc.school_id
@@ -474,32 +302,19 @@ export async function onRequestGet(context) {
             parameters
         );
 
-        /* =================================================
-           ORGANIZE RESULTS
-        ================================================= */
-
         const testsMap = new Map();
 
         for (const row of result.rows) {
-
             const testKey = String(row.test_id);
 
             if (!testsMap.has(testKey)) {
-
                 testsMap.set(testKey, {
-
                     id: testKey,
-
                     name: row.test_name,
-
                     status: row.status,
-
                     created_at: row.test_created_at,
-
                     created_by: String(row.created_by),
-
                     creator_name: row.creator_name,
-
                     creator_role: row.creator_role,
 
                     sector_id: row.test_sector_id === null
@@ -516,80 +331,44 @@ export async function onRequestGet(context) {
                             : "school_only",
 
                     classes: []
-
                 });
-
             }
 
             const test = testsMap.get(testKey);
 
-            /* ---------------------------------------------
-               FIND OR CREATE CLASS
-            --------------------------------------------- */
-
-            let classItem = test.classes.find(
-                item =>
-                    String(item.class_id) === String(row.class_id) &&
-                    String(item.school_id) === String(row.school_id)
+            let classItem = test.classes.find(item =>
+                String(item.class_id) === String(row.class_id) &&
+                String(item.school_id) === String(row.school_id)
             );
 
             if (!classItem) {
-
                 classItem = {
-
                     class_id: String(row.class_id),
-
                     class_name: row.class_name,
-
                     class_level: row.class_level,
-
                     school_id: String(row.school_id),
-
                     school_name: row.school_name,
-
                     academic_year_id: String(row.academic_year_id),
-
                     term_id: String(row.term_id),
-
                     subjects: [],
-
                     students: []
-
                 };
 
                 test.classes.push(classItem);
-
             }
-
-            /* ---------------------------------------------
-               ADD SUBJECT
-            --------------------------------------------- */
 
             const subjectId = String(row.subject_id);
 
-            if (
-                !classItem.subjects.some(
-                    subject => subject.id === subjectId
-                )
-            ) {
-
+            if (!classItem.subjects.some(
+                subject => subject.id === subjectId
+            )) {
                 classItem.subjects.push({
-
                     id: subjectId,
-
                     name: row.subject_name,
-
                     code: row.subject_code,
-
                     maximum_mark: Number(row.maximum_mark)
-
                 });
-
             }
-
-            /* ---------------------------------------------
-               ADD STUDENT
-            --------------------------------------------- */
 
             if (row.student_id === null) continue;
 
@@ -600,77 +379,44 @@ export async function onRequestGet(context) {
             );
 
             if (!student) {
-
                 student = {
-
                     id: studentId,
-
                     name: row.student_name,
-
                     student_code: row.student_code,
-
+                    gender: row.student_gender,
                     marks: {}
-
                 };
 
                 classItem.students.push(student);
-
             }
 
             student.marks[subjectId] =
                 row.score === null
                     ? null
                     : Number(row.score);
-
         }
 
-        /* =================================================
-           RESPONSE
-
-           Existing response structure preserved.
-        ================================================= */
-
         return json({
-
             success: true,
-
             tests: Array.from(testsMap.values()),
-
             user: {
-
                 role: auth.role,
-
                 schoolId: auth.schoolId,
-
                 sectorId: auth.sectorId
-
             }
-
         });
 
     } catch (error) {
-
-        console.error(
-            "School Marks loading error:",
-            error
-        );
+        console.error("School Marks loading error:", error);
 
         return json({
-
             success: false,
-
             message: "Unable to load school marks."
-
         }, 500);
 
     } finally {
-
         if (client) {
-
             await client.end().catch(() => {});
-
         }
-
     }
-
 }
