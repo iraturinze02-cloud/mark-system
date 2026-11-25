@@ -1564,7 +1564,6 @@ function renderClassPage(classKey) {
             <tr>
                 <td>${position}</td>
                 <td>${escapeHTML(student.name)}</td>
-                <td>${escapeHTML(student.student_code || "—")}</td>
                 <td>${escapeHTML(student.gender || "—")}</td>
                 <td class="school-name">${escapeHTML(student.school_name)}</td>
                 ${subjectCells}
@@ -1581,7 +1580,6 @@ function renderClassPage(classKey) {
                 <tr>
                     <th>Position</th>
                     <th>Student</th>
-                    <th>Student Code</th>
                     <th>Gender</th>
                     <th>School</th>
                     ${subjectHeaders}
