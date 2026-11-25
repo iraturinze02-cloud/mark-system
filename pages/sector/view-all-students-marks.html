@@ -627,6 +627,24 @@ tbody tr:hover {
 <script src="../js/academic-period.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.4/jspdf.plugin.autotable.min.js"></script>
+
+<script>
+window.addEventListener("load", function () {
+    console.log("jsPDF:", typeof window.jspdf);
+    console.log(
+        "jsPDF constructor:",
+        typeof window.jspdf?.jsPDF
+    );
+
+    const PDF = window.jspdf?.jsPDF;
+    const testPDF = PDF ? new PDF() : null;
+
+    console.log(
+        "AutoTable:",
+        typeof testPDF?.autoTable
+    );
+});
+</script>
 <script>
 "use strict";
 
