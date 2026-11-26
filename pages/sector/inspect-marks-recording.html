@@ -2167,29 +2167,31 @@ function getSafeFileName(value) {
 }
 function getReportPeriodText() {
     if (currentRecordType === "tests") {
-        const testSelect = document.getElementById("testSelect");
+        const test = openTests.find(
+            item => String(item.test_id) === String(selectedTestId)
+        );
 
-        if (!testSelect || !testSelect.value) {
+        if (!test) {
             return "No open test selected";
         }
 
-        const selectedOption =
-            testSelect.options[testSelect.selectedIndex];
-
-        return selectedOption?.textContent?.trim() || "Selected Test";
+        return `${test.test_name || "Selected Test"} — Open`;
     }
 
-    const yearSelect = document.getElementById("academicYearFilter");
-    const termSelect = document.getElementById("termFilter");
+    const yearSelect = document.getElementById("examYearSelect");
+    const termSelect = document.getElementById("examTermSelect");
 
     const year = yearSelect?.value || "All Academic Years";
+
     const term = termSelect?.value
-        ? `Term ${termSelect.value}`
+        ? (
+            termSelect.selectedOptions[0]?.textContent.trim() ||
+            `Term ${termSelect.value}`
+        )
         : "All Terms";
 
-    return `${year} - ${term}`;
+    return `${year} — ${term}`;
 }
-
 /* =====================================================
    DOWNLOAD ALL SCHOOLS PDF
 ===================================================== */
