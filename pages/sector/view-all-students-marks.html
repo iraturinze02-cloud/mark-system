@@ -589,9 +589,9 @@ tbody tr:hover {
         <div>
             <h2>School and Class Performance Analysis</h2>
             <p class="section-description">
-                Rankings are based on the average percentage of learners
-                with complete marks.
-            </p>
+    Rankings are based on pass rate (highest to lowest).
+    Average is used only to break ties.
+</p>
         </div>
 
         <div class="selector-box">
@@ -1818,7 +1818,10 @@ function createSchoolAnalysis(classGroups) {
         });
     });
 
-    results.sort((a, b) => b.average - a.average);
+    results.sort((a, b) =>
+    b.passRate - a.passRate ||
+    b.average - a.average
+);
 
     results.forEach((result, index) => {
         const mainRow = document.createElement("tr");
