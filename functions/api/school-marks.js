@@ -274,9 +274,10 @@ export async function onRequestGet(context) {
                AND se.term_id = tsc.term_id
                AND LOWER(TRIM(se.status)) = 'active'
 
-            LEFT JOIN students st
-                ON st.id = se.student_id
-               AND st.school_id = tc.school_id
+LEFT JOIN students st
+    ON st.id = se.student_id
+   AND st.school_id = tc.school_id
+   AND LOWER(TRIM(st.status)) = 'active'
 
             INNER JOIN test_subjects testSubject
                 ON testSubject.test_id = t.id
