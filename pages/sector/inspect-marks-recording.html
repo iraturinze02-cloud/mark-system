@@ -2165,7 +2165,30 @@ function getSafeFileName(value) {
         .replace(/[^a-z0-9-_]+/gi, "_")
         .replace(/^_+|_+$/g, "");
 }
+function getReportPeriodText() {
+    if (currentRecordType === "tests") {
+        const testSelect = document.getElementById("testSelect");
 
+        if (!testSelect || !testSelect.value) {
+            return "No open test selected";
+        }
+
+        const selectedOption =
+            testSelect.options[testSelect.selectedIndex];
+
+        return selectedOption?.textContent?.trim() || "Selected Test";
+    }
+
+    const yearSelect = document.getElementById("academicYearFilter");
+    const termSelect = document.getElementById("termFilter");
+
+    const year = yearSelect?.value || "All Academic Years";
+    const term = termSelect?.value
+        ? `Term ${termSelect.value}`
+        : "All Terms";
+
+    return `${year} - ${term}`;
+}
 
 /* =====================================================
    DOWNLOAD ALL SCHOOLS PDF
