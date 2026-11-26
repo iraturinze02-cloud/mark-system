@@ -742,8 +742,37 @@ function escapeHTML(value) {
         "<": "&lt;",
         ">": "&gt;",
         '"': "&quot;",
-        "'": "&#039;"
+        "'": "&#39;"
     })[character]);
+}
+
+/* Return the subject code, never the subject title. */
+function getSubjectCode(subject) {
+    return String(
+        subject.code ||
+        subject.subject_code ||
+        subject.subjectCode ||
+        "CODE MISSING"
+    ).trim();
+}
+
+/* Check whether the selected test is closed. */
+function isTestClosed(testOrData) {
+    return String(
+        testOrData?.testStatus ||
+        testOrData?.status ||
+        ""
+    ).trim().toLowerCase() === "closed";
+}
+
+/* Display missing marks according to test status. */
+function getMissingMarkLabel(testOrData) {
+    return isTestClosed(testOrData) ? "_" : "—";
+}
+
+/* Display incomplete overall results according to test status. */
+function getIncompleteCategory(testOrData) {
+    return isTestClosed(testOrData) ? "_" : "Pending";
 }
 
 function number(value) {
@@ -1435,7 +1464,8 @@ function renderClassResults(test) {
             classGroup,
             subjects,
             students,
-            testName: test.name
+             testName: test.name,
+             testStatus: test.status
         });
 
         classPagination.set(classKey, {
@@ -1564,14 +1594,34 @@ function renderClassPage(classKey) {
 
     const subjects = data.subjects;
 
-    const subjectHeaders = subjects.map(subject => `
-        <th>
-            ${escapeHTML(subject.name)}
-            <br>
-            <small>Out of ${formatNumber(subject.maximum_mark)}</small>
-        </th>
-    `).join("");
+    const subjectCells = subjects.map(subject => {
+    const mark = student.marks?.[String(subject.id)];
 
+    const missing =
+        mark === null ||
+        mark === undefined ||
+        mark === "";
+
+    return `
+        <td class="${missing ? "pending" : ""}">
+            ${missing
+                ? escapeHTML(getMissingMarkLabel(data))
+                : formatNumber(mark)
+            }
+        </td>
+    `;
+}).join("");
+
+const category = student.complete
+    ? getCategory(student.percentage)
+    : getIncompleteCategory(data);
+
+const categoryClass = !student.complete
+    ? "pending"
+    : student.percentage >= 50
+        ? "pass"
+        : "fail";
+    
     const rows = pageStudents.map((student, index) => {
         const position = startIndex + index + 1;
 
@@ -1756,9 +1806,9 @@ function createSchoolAnalysis(classGroups) {
 
                 const subjectFailed = marks.length - subjectPassed;
 
-                return {
-                    name: subject.name,
-                    averageMark,
+               return {
+                     name: getSubjectCode(subject),
+                 averageMark,
                     maximum,
                     subjectPercentage,
                     passed: subjectPassed,
@@ -1918,7 +1968,7 @@ function downloadClassResults(classKey) {
         "Student",
         "Gender",
         "School",
-        ...subjects.map(subject => subject.name),
+        ...subjects.map(subject => getSubjectCode(subject)),
         "Total",
         "Percentage",
         "Category"
@@ -1928,8 +1978,8 @@ function downloadClassResults(classKey) {
         const marks = subjects.map(subject => {
             const mark = student.marks?.[String(subject.id)];
 
-            return mark === null || mark === undefined
-                ? "—"
+            return mark === null || mark === undefined || mark === ""
+                ? getMissingMarkLabel(data)
                 : formatNumber(mark);
         });
 
@@ -1943,7 +1993,7 @@ function downloadClassResults(classKey) {
             `${formatNumber(student.percentage)}%`,
             student.complete
                 ? getCategory(student.percentage)
-                : "Pending"
+                : getIncompleteCategory(data)
         ];
     });
 
@@ -1951,13 +2001,17 @@ function downloadClassResults(classKey) {
         <table>
             <thead>
                 <tr>
-                    ${headers.map(header => `<th>${escapeHTML(header)}</th>`).join("")}
+                    ${headers.map(header =>
+                        `<th>${escapeHTML(header)}</th>`
+                    ).join("")}
                 </tr>
             </thead>
             <tbody>
                 ${rows.map(row => `
                     <tr>
-                        ${row.map(cell => `<td>${escapeHTML(cell)}</td>`).join("")}
+                        ${row.map(cell =>
+                            `<td>${escapeHTML(cell)}</td>`
+                        ).join("")}
                     </tr>
                 `).join("")}
             </tbody>
@@ -1975,22 +2029,84 @@ function downloadClassResults(classKey) {
         <!DOCTYPE html>
         <html>
         <head>
-            <title>${escapeHTML(data.testName)} - ${escapeHTML(data.classGroup.class_name)}</title>
+            <title>
+                ${escapeHTML(data.testName)} -
+                ${escapeHTML(data.classGroup.class_name)}
+            </title>
+
             <style>
-                body { font-family: Arial, sans-serif; padding: 20px; }
-                h2 { text-align: center; }
-                table { width: 100%; border-collapse: collapse; }
-                th, td {
-                    border: 1px solid #000;
-                    padding: 5px;
-                    font-size: 10px;
-                    text-align: center;
+                @page {
+                    size: A4 landscape;
+                    margin: 8mm;
                 }
-                th { background: #eee; }
+
+                body {
+                    font-family: Arial, sans-serif;
+                    color: #1e293b;
+                    padding: 5px;
+                }
+
+                h2 {
+                    text-align: center;
+                    color: #173f70;
+                    font-size: 16px;
+                    margin-bottom: 4px;
+                }
+
+                .subtitle {
+                    text-align: center;
+                    font-size: 10px;
+                    color: #64748b;
+                    margin-bottom: 12px;
+                }
+
+                table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    table-layout: auto;
+                }
+
+                th, td {
+                    border: 1px solid #cbd5e1;
+                    padding: 3px 4px;
+                    font-size: 8px;
+                    text-align: center;
+                    white-space: nowrap;
+                }
+
+                th {
+                    background: #173f70;
+                    color: white;
+                    font-weight: bold;
+                }
+
+                tbody tr:nth-child(even) {
+                    background: #f1f5f9;
+                }
+
+                @media print {
+                    thead {
+                        display: table-header-group;
+                    }
+
+                    tr {
+                        break-inside: avoid;
+                    }
+                }
             </style>
         </head>
+
         <body>
-            <h2>${escapeHTML(data.testName)} - ${escapeHTML(data.classGroup.class_name)}</h2>
+            <h2>
+                ${escapeHTML(data.classGroup.class_name)} RESULTS
+            </h2>
+
+            <div class="subtitle">
+                ${escapeHTML(data.testName)}
+                | ${escapeHTML(getPDFAcademicPeriod())}
+                | ${escapeHTML(data.testStatus || "")}
+            </div>
+
             ${tableHTML}
         </body>
         </html>
@@ -1999,7 +2115,6 @@ function downloadClassResults(classKey) {
     win.document.close();
     win.onload = () => win.print();
 }
-
     /* =====================================================
    PDF DOWNLOADS
 ===================================================== */
@@ -2097,20 +2212,16 @@ function downloadClassPDF(classKey) {
     const testName = data.testName;
     const subjects = data.subjects;
 
-    // IMPORTANT:
-    // Use data.students, not the currently displayed page.
-    // This includes all learners in the class.
-
     const headers = [
         "No.",
         "Student Name",
         "Gender",
         "School",
         ...subjects.map(subject =>
-            `${subject.name} (${formatNumber(subject.maximum_mark)})`
+            `${getSubjectCode(subject)}\n(${formatNumber(subject.maximum_mark)})`
         ),
         "Total",
-        "Percentage",
+        "%",
         "Category"
     ];
 
@@ -2118,8 +2229,8 @@ function downloadClassPDF(classKey) {
         const subjectMarks = subjects.map(subject => {
             const mark = student.marks?.[String(subject.id)];
 
-            return mark === null || mark === undefined
-                ? "Pending"
+            return mark === null || mark === undefined || mark === ""
+                ? getMissingMarkLabel(data)
                 : formatNumber(mark);
         });
 
@@ -2133,40 +2244,53 @@ function downloadClassPDF(classKey) {
             `${formatNumber(student.percentage)}%`,
             student.complete
                 ? getCategory(student.percentage)
-                : "Pending"
+                : getIncompleteCategory(data)
         ];
     });
 
     addPDFHeader(
         doc,
         `${className} RESULTS`,
-        `${testName} | ${getPDFAcademicPeriod()}`
+        `${testName} | ${getPDFAcademicPeriod()} | ${data.testStatus || ""}`
     );
 
     doc.autoTable({
-        startY: 32,
+        startY: 31,
+
         head: [headers],
         body: rows,
+
         theme: "grid",
 
         margin: {
-            left: 8,
-            right: 8
+            top: 31,
+            left: 7,
+            right: 7,
+            bottom: 11
         },
+
+        tableWidth: "auto",
 
         styles: {
             font: "helvetica",
-            fontSize: 7,
-            cellPadding: 2,
+            fontSize: 6,
+            cellPadding: 1,
             overflow: "linebreak",
-            valign: "middle"
+            valign: "middle",
+            halign: "center",
+            lineWidth: 0.15,
+            lineColor: [203, 213, 225],
+            minCellHeight: 4
         },
 
         headStyles: {
             fillColor: [23, 63, 112],
             textColor: 255,
             fontStyle: "bold",
-            halign: "center"
+            fontSize: 6,
+            halign: "center",
+            valign: "middle",
+            cellPadding: 1.2
         },
 
         alternateRowStyles: {
@@ -2174,29 +2298,38 @@ function downloadClassPDF(classKey) {
         },
 
         columnStyles: {
-            0: { cellWidth: 9 },
-            1: { cellWidth: 35 },
-            2: { cellWidth: 23 },
-            3: { cellWidth: 15 },
-            4: { cellWidth: 30 }
+            0: { cellWidth: 7 },
+            1: { cellWidth: 29, halign: "left" },
+            2: { cellWidth: 11 },
+            3: { cellWidth: 25, halign: "left" }
         },
+
+        // If there are many subjects, split wide tables
+        // across horizontal pages while repeating learner details.
+        horizontalPageBreak: true,
+        horizontalPageBreakRepeat: [0, 1, 2, 3],
+        horizontalPageBreakBehaviour: "immediately",
+
+        rowPageBreak: "avoid",
 
         didDrawPage: function () {
             const pageHeight = doc.internal.pageSize.height;
+            const pageWidth = doc.internal.pageSize.width;
 
-            doc.setFontSize(8);
+            doc.setFontSize(7);
             doc.setFont("helvetica", "normal");
+            doc.setTextColor(100, 116, 139);
 
             doc.text(
                 `Fila Grades System | ${className}`,
-                10,
-                pageHeight - 7
+                7,
+                pageHeight - 5
             );
 
             doc.text(
                 `Page ${doc.internal.getNumberOfPages()}`,
-                285,
-                pageHeight - 7,
+                pageWidth - 7,
+                pageHeight - 5,
                 { align: "right" }
             );
         }
@@ -2206,7 +2339,6 @@ function downloadClassPDF(classKey) {
         `${getPDFFileName(className)}_Results.pdf`
     );
 }
-
 /* =====================================================
    DOWNLOAD SCHOOL PERFORMANCE ANALYSIS PDF
 ===================================================== */
@@ -2477,8 +2609,8 @@ function downloadFullReportPDF() {
             "Gender",
             "School",
             ...subjects.map(subject =>
-                `${subject.name} (${formatNumber(subject.maximum_mark)})`
-            ),
+    `${getSubjectCode(subject)} (${formatNumber(subject.maximum_mark)})`
+),
             "Total",
             "%",
             "Category"
@@ -2488,9 +2620,9 @@ function downloadFullReportPDF() {
             const subjectMarks = subjects.map(subject => {
                 const mark = student.marks?.[String(subject.id)];
 
-                return mark === null || mark === undefined
-                    ? "Pending"
-                    : formatNumber(mark);
+                return mark === null || mark === undefined || mark === ""
+    ? getMissingMarkLabel(test)
+    : formatNumber(mark);
             });
 
             return [
