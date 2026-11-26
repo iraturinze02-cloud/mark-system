@@ -1168,10 +1168,6 @@ if (sortedSchools.length > 0) {
 
 
 
-/* =====================================================
-   DISPLAY SELECTED TEST - RESULTS AND ANALYSIS
-===================================================== */
-
    
 /* =====================================================
    DISPLAY SELECTED TEST - RESULTS AND ANALYSIS
@@ -1685,8 +1681,8 @@ function displaySelectedTest() {
                             <th>Gender</th>
 
                             ${subjects.map(subject => `
-                                <th>${escapeHTML(subject.name)}</th>
-                            `).join("")}
+    <th>${escapeHTML(subject.subject_code || subject.code || subject.name)}</th>
+`).join("")}
 
                             <th>Total</th>
                             <th>Percentage</th>
