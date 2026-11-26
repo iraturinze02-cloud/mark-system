@@ -16,424 +16,567 @@
 <title>School Marks | Results Dashboard</title>
 
 <style>
-* {
-    box-sizing: border-box;
+*{box-sizing:border-box}
+
+:root{
+    --primary:#173f70;
+    --primary2:#2563eb;
+    --primary-light:#eff6ff;
+    --background:#f1f5f9;
+    --text:#172b4d;
+    --muted:#64748b;
+    --border:#e2e8f0;
+    --white:#fff;
+    --green:#15803d;
+    --red:#dc2626;
+    --amber:#b45309;
 }
 
-:root {
-    --primary: #1d4ed8;
-    --primary-dark: #1e40af;
-    --background: #f3f6fb;
-    --text: #1e293b;
-    --muted: #64748b;
-    --border: #e2e8f0;
-    --white: #ffffff;
+body{
+    margin:0;
+    font-family:"Segoe UI",Arial,sans-serif;
+    background:var(--background);
+    color:var(--text);
 }
 
-body {
-    margin: 0;
-    font-family: 'Segoe UI', Arial, sans-serif;
-    background: var(--background);
-    color: var(--text);
+header{
+    background:linear-gradient(120deg,#12345d,#1d4ed8);
+    color:#fff;
+    text-align:center;
+    padding:28px 15px;
 }
 
-/* HEADER */
-
-header {
-    background: linear-gradient(135deg, #1d4ed8, #2563eb);
-    color: white;
-    text-align: center;
-    padding: 30px 15px;
+header h1{
+    margin:0;
+    font-size:27px;
+    letter-spacing:.8px;
+    font-weight:800;
 }
 
-header h1 {
-    margin: 0;
-    font-size: 27px;
-    letter-spacing: .5px;
+header p{
+    margin:7px 0 0;
+    font-size:14px;
+    opacity:.9;
 }
 
-header p {
-    margin: 8px 0 0;
-    opacity: .9;
+.toolbar{
+    width:95%;
+    max-width:1500px;
+    margin:18px auto;
+    padding:15px;
+    background:#fff;
+    border:1px solid var(--border);
+    border-radius:13px;
+    box-shadow:0 4px 15px rgba(15,23,42,.05);
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:13px;
+    flex-wrap:wrap;
 }
 
-/* TOOLBAR */
-
-.toolbar {
-    width: 95%;
-    max-width: 1400px;
-    margin: 20px auto;
-    padding: 16px;
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0,0,0,.05);
-
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 15px;
-    flex-wrap: wrap;
+button{
+    border:0;
+    border-radius:8px;
+    padding:11px 16px;
+    font-size:13px;
+    font-weight:700;
+    cursor:pointer;
+    transition:.2s;
 }
 
-button {
-    padding: 11px 17px;
-    border: none;
-    cursor: pointer;
-    border-radius: 7px;
-    font-weight: 600;
-    font-size: 14px;
-    transition: .2s;
+button:hover{
+    filter:brightness(.95);
+    transform:translateY(-1px);
 }
 
-button:hover {
-    opacity: .9;
-    transform: translateY(-1px);
+.logout-btn{background:#dc2626;color:#fff}
+.download-btn{background:var(--primary);color:#fff}
+
+.academic-period-btn{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:9px;
+    min-height:42px;
+    padding:10px 16px;
+    color:#fff;
+    background:linear-gradient(135deg,#173f70,#2563eb);
+    border:1px solid #1d4ed8;
+    border-radius:9px;
+    font-size:13px;
+    font-weight:700;
+    box-shadow:0 3px 8px rgba(29,78,216,.16);
 }
 
-.logout-btn {
-    background: #ef4444;
-    color: white;
+.academic-period-btn svg{width:18px;height:18px}
+
+.selectors{
+    display:flex;
+    align-items:end;
+    gap:13px;
+    flex:1;
+    flex-wrap:wrap;
 }
 
-.download-btn {
-    background: var(--primary);
-    color: white;
+.selector-group{
+    display:flex;
+    flex-direction:column;
+    gap:6px;
 }
 
-    /* ACADEMIC PERIOD BUTTON */
-
-.academic-period-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    min-height: 43px;
-    padding: 11px 18px;
-    color: #ffffff;
-    background: linear-gradient(135deg, #173f70, #2563eb);
-    border: 1px solid #1d4ed8;
-    border-radius: 9px;
-    font-size: 14px;
-    font-weight: 650;
-    letter-spacing: .1px;
-    box-shadow: 0 3px 8px rgba(29, 78, 216, .18);
-    transition: background .2s ease, box-shadow .2s ease,
-                transform .2s ease;
+.selector-group label{
+    font-size:12px;
+    color:#475569;
+    font-weight:750;
 }
 
-.academic-period-btn:hover {
-    background: linear-gradient(135deg, #12345d, #1d4ed8);
-    box-shadow: 0 5px 12px rgba(29, 78, 216, .24);
-    transform: translateY(-1px);
+.selector-group select{
+    min-width:210px;
+    max-width:100%;
+    padding:11px 12px;
+    border:1px solid #cbd5e1;
+    border-radius:8px;
+    background:#fff;
+    color:var(--text);
+    font-size:13px;
+    outline:none;
 }
 
-.academic-period-btn:focus-visible {
-    outline: 3px solid rgba(37, 99, 235, .25);
-    outline-offset: 3px;
+.selector-group select:focus{
+    border-color:var(--primary2);
+    box-shadow:0 0 0 3px rgba(37,99,235,.12);
 }
 
-.academic-period-btn svg {
-    width: 18px;
-    height: 18px;
-    flex-shrink: 0;
+.school-selector[hidden]{display:none}
+
+.container{
+    width:95%;
+    max-width:1500px;
+    margin:20px auto 45px;
 }
 
-/* SELECTORS */
-
-.selectors {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    flex-wrap: wrap;
-    flex: 1;
+.message{
+    padding:35px 20px;
+    text-align:center;
+    background:#fff;
+    border:1px solid var(--border);
+    border-radius:12px;
+    color:var(--muted);
+    box-shadow:0 3px 12px rgba(15,23,42,.04);
 }
 
-.selector-group {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
+.test-card{
+    background:#fff;
+    border:1px solid var(--border);
+    border-radius:15px;
+    padding:22px;
+    box-shadow:0 5px 20px rgba(15,23,42,.045);
 }
 
-.selector-group label {
-    font-size: 13px;
-    font-weight: 700;
-    color: #475569;
+.test-heading{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:15px;
+    flex-wrap:wrap;
+    padding-bottom:17px;
+    margin-bottom:20px;
+    border-bottom:1px solid var(--border);
 }
 
-.selector-group select {
-    min-width: 220px;
-    max-width: 100%;
-    padding: 11px 13px;
-    border: 1px solid #cbd5e1;
-    border-radius: 7px;
-    background: white;
-    color: var(--text);
-    font-size: 14px;
-    outline: none;
+.test-heading h2{
+    margin:0 0 9px;
+    color:var(--primary);
+    font-size:22px;
+    font-weight:800;
 }
 
-.selector-group select:focus {
-    border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(37,99,235,.12);
+.status{
+    display:inline-block;
+    padding:5px 10px;
+    border-radius:20px;
+    background:#e0edff;
+    color:#1e40af;
+    font-size:10px;
+    font-weight:800;
+    text-transform:uppercase;
+    letter-spacing:.5px;
 }
 
-.school-selector[hidden] {
-    display: none;
+.class-card{
+    margin-top:22px;
+    padding:19px;
+    border:1px solid var(--border);
+    border-radius:12px;
+    background:#fff;
 }
 
-/* MAIN CONTAINER */
-
-.container {
-    width: 95%;
-    max-width: 1400px;
-    margin: 20px auto 40px;
+.class-heading{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:12px;
+    flex-wrap:wrap;
+    margin-bottom:15px;
 }
 
-/* TEST CARD */
-
-.test-card {
-    background: white;
-    padding: 22px;
-    margin-bottom: 25px;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0,0,0,.05);
+.class-heading h3{
+    margin:0 0 5px;
+    color:#173f70;
+    font-size:19px;
+    font-weight:800;
 }
 
-.test-heading {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 15px;
-    flex-wrap: wrap;
-    border-bottom: 1px solid var(--border);
-    padding-bottom: 16px;
-    margin-bottom: 20px;
+.school-name{
+    color:var(--muted);
+    font-size:12px;
+    font-weight:600;
 }
 
-.test-heading h2 {
-    margin: 0 0 10px;
-    color: var(--primary-dark);
-    font-size: 22px;
+.section-title{
+    display:flex;
+    align-items:center;
+    gap:9px;
+    margin:22px 0 12px;
+    color:#173f70;
+    font-size:15px;
+    font-weight:800;
 }
 
-.status {
-    display: inline-block;
-    padding: 5px 11px;
-    border-radius: 20px;
-    background: #e2e8f0;
-    color: #334155;
-    font-size: 11px;
-    text-transform: uppercase;
-    font-weight: bold;
+.section-title:before{
+    content:"";
+    width:4px;
+    height:18px;
+    border-radius:5px;
+    background:#2563eb;
 }
 
-/* CLASS CARD */
-
-.class-card {
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 17px;
-    margin-top: 20px;
-    background: #fff;
+.metrics-grid{
+    display:grid;
+    grid-template-columns:repeat(5,minmax(0,1fr));
+    gap:11px;
+    margin:15px 0 20px;
 }
 
-.class-heading {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 10px;
+.metric-card{
+    min-width:0;
+    padding:14px;
+    background:#f8fafc;
+    border:1px solid var(--border);
+    border-radius:10px;
 }
 
-.class-heading h3 {
-    margin: 5px 0 8px;
-    color: #1e293b;
-    font-size: 19px;
+.metric-label{
+    display:block;
+    color:var(--muted);
+    font-size:11px;
+    font-weight:750;
+    text-transform:uppercase;
+    letter-spacing:.35px;
+    margin-bottom:7px;
 }
 
-.school-name {
-    color: var(--muted);
-    font-size: 13px;
-    margin-bottom: 10px;
+.metric-value{
+    display:block;
+    color:#173f70;
+    font-size:23px;
+    font-weight:850;
+    line-height:1.1;
 }
 
-/* TABLES */
+.metric-card.pass .metric-value{color:var(--green)}
+.metric-card.fail .metric-value{color:var(--red)}
+.metric-card.pending .metric-value{color:var(--amber)}
 
-.table-wrapper {
-    overflow-x: auto;
-    margin-top: 12px;
-    border-radius: 7px;
+.analysis-grid{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:15px;
+    margin-top:12px;
 }
 
-table {
-    width: 100%;
-    border-collapse: collapse;
-    min-width: 700px;
-    background: white;
+.analysis-panel{
+    min-width:0;
+    padding:15px;
+    border:1px solid var(--border);
+    border-radius:11px;
+    background:#fff;
 }
 
-th, td {
-    border: 1px solid #e2e8f0;
-    padding: 10px;
-    text-align: center;
-    white-space: nowrap;
-    font-size: 13px;
+.analysis-panel h4{
+    margin:0 0 12px;
+    color:#173f70;
+    font-size:14px;
+    font-weight:800;
 }
 
-thead {
-    background: var(--primary);
-    color: white;
+.table-wrapper{
+    width:100%;
+    overflow-x:auto;
+    margin-top:10px;
+    border:1px solid var(--border);
+    border-radius:8px;
 }
 
-thead th {
-    font-weight: 600;
+table{
+    width:100%;
+    border-collapse:collapse;
+    background:#fff;
+    min-width:650px;
 }
 
-tbody tr:nth-child(even) {
-    background: #f8fafc;
+th,td{
+    border-bottom:1px solid #e8edf4;
+    padding:9px 10px;
+    text-align:center;
+    white-space:nowrap;
+    font-size:12px;
 }
 
-tbody tr:hover {
-    background: #eff6ff;
+thead{background:#173f70;color:#fff}
+
+thead th{
+    padding:10px 8px;
+    font-weight:750;
+    letter-spacing:.1px;
 }
 
-/* ANALYSIS */
+tbody tr:nth-child(even){background:#f8fafc}
+tbody tr:hover{background:#eff6ff}
+tbody tr:last-child td{border-bottom:0}
 
-.analysis-box {
-    margin-top: 25px;
+td.student-name{
+    text-align:left;
+    font-weight:650;
+    color:#243b5a;
 }
 
-.analysis-box h4 {
-    margin: 0 0 10px;
-    color: var(--primary-dark);
-    font-size: 16px;
+.category{
+    display:inline-block;
+    padding:4px 7px;
+    border-radius:5px;
+    font-size:10px;
+    font-weight:800;
 }
 
-/* MESSAGES */
+.category-a,.category-b{background:#dcfce7;color:#166534}
+.category-c,.category-d{background:#dbeafe;color:#1e40af}
+.category-e,.category-s{background:#fef3c7;color:#92400e}
+.category-f{background:#fee2e2;color:#991b1b}
+.category-pending{background:#f1f5f9;color:#64748b}
 
-.message {
-    text-align: center;
-    background: white;
-    padding: 35px 20px;
-    border-radius: 10px;
-    margin: 25px auto;
-    color: var(--muted);
-    box-shadow: 0 2px 8px rgba(0,0,0,.04);
+.gender-label{
+    font-weight:800;
+    color:#173f70;
 }
 
-.no-marks {
-    color: var(--muted);
-    text-align: center;
-    padding: 25px;
-    background: #f8fafc;
-    border-radius: 7px;
+.range-cell{
+    font-weight:750;
+    color:#334155;
 }
 
-/* RESPONSIVE */
+.no-marks{
+    padding:18px;
+    text-align:center;
+    background:#f8fafc;
+    border-radius:8px;
+    color:var(--muted);
+    font-size:13px;
+}
 
-@media(max-width: 700px) {
+.download-note{
+    margin:12px 0 0;
+    color:var(--muted);
+    font-size:11px;
+}
 
-    header {
-        padding: 23px 12px;
+@media(max-width:900px){
+    .metrics-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+
+@media(max-width:700px){
+    header{padding:22px 12px}
+    header h1{font-size:22px}
+    .toolbar{align-items:stretch;padding:12px}
+    .selectors{width:100%;flex-direction:column;align-items:stretch}
+    .selector-group,.selector-group select{width:100%;min-width:0}
+    .toolbar>button{width:100%}
+    .container{width:96%}
+    .test-card{padding:13px}
+    .class-card{padding:12px}
+    .test-heading h2{font-size:18px}
+    .class-heading h3{font-size:17px}
+    .metrics-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .analysis-grid{grid-template-columns:1fr}
+}
+
+/* COMPACT DOWNLOAD / PRINT */
+@media print{
+    @page{
+        size:landscape;
+        margin:7mm;
     }
 
-    header h1 {
-        font-size: 22px;
+    body{
+        background:#fff!important;
+        color:#111827;
+        font-family:Arial,sans-serif;
     }
 
-    .toolbar {
-        padding: 13px;
-        align-items: stretch;
+    header,.toolbar{display:none!important}
+
+    .container{
+        width:100%;
+        max-width:none;
+        margin:0;
     }
 
-    .selectors {
-        width: 100%;
-        flex-direction: column;
-        align-items: stretch;
+    .test-card{
+        padding:0;
+        border:0;
+        border-radius:0;
+        box-shadow:none;
     }
 
-    .selector-group {
-        width: 100%;
+    .test-heading{
+        padding:0 0 7px;
+        margin:0 0 8px;
     }
 
-    .selector-group select {
-        width: 100%;
-        min-width: 0;
+    .test-heading h2{
+        font-size:15px;
+        margin:0 0 4px;
     }
 
-    .toolbar > button {
-        width: 100%;
+    .status{
+        font-size:8px;
+        padding:3px 6px;
     }
 
-    .test-card {
-        padding: 13px;
+    .class-card{
+        margin:0 0 12px;
+        padding:8px;
+        border:1px solid #b8c4d3;
+        border-radius:4px;
+        break-inside:auto;
+        page-break-inside:auto;
     }
 
-    .class-card {
-        padding: 10px;
+    .class-heading{
+        margin:0 0 6px;
     }
 
-    .test-heading h2 {
-        font-size: 19px;
+    .class-heading h3{
+        font-size:12px;
+        margin:0 0 2px;
     }
 
-    .class-heading h3 {
-        font-size: 17px;
-    }
-}
-
-/* PRINT */
-
-@media print {
-
-    body {
-        background: white;
-        color: black;
+    .school-name{
+        font-size:9px;
     }
 
-    header {
-        background: white !important;
-        color: black !important;
-        border-bottom: 2px solid black;
+    .section-title{
+        font-size:10px;
+        margin:9px 0 5px;
     }
 
-    .toolbar,
-    .download-btn,
-    .logout-btn {
-        display: none !important;
+    .section-title:before{
+        height:11px;
+        width:3px;
     }
 
-    .container {
-        width: 100%;
-        max-width: none;
-        margin: 0;
+    .metrics-grid{
+        grid-template-columns:repeat(5,minmax(0,1fr));
+        gap:5px;
+        margin:6px 0 8px;
     }
 
-    .test-card,
-    .class-card {
-        box-shadow: none;
-        border: 1px solid #aaa;
+    .metric-card{
+        padding:6px;
+        border-radius:3px;
     }
 
-    .class-card {
-        break-inside: avoid;
+    .metric-label{
+        font-size:7px;
+        margin-bottom:3px;
     }
 
-    table {
-        min-width: 0;
+    .metric-value{
+        font-size:13px;
     }
 
-    th, td {
-        font-size: 10px;
-        padding: 5px;
+    .analysis-grid{
+        grid-template-columns:repeat(2,minmax(0,1fr));
+        gap:7px;
+        margin-top:5px;
     }
 
-    thead {
-        background: #ddd !important;
-        color: black !important;
-        print-color-adjust: exact;
-        -webkit-print-color-adjust: exact;
+    .analysis-panel{
+        padding:6px;
+        border-radius:3px;
     }
+
+    .analysis-panel h4{
+        font-size:9px;
+        margin:0 0 4px;
+    }
+
+    .table-wrapper{
+        overflow:visible;
+        margin-top:5px;
+        border-radius:0;
+        border:0;
+    }
+
+    table{
+        width:100%;
+        min-width:0;
+        table-layout:auto;
+        border-collapse:collapse;
+    }
+
+    th,td{
+        font-size:7px;
+        padding:3px 4px;
+        white-space:normal;
+        border:1px solid #cbd5e1;
+        color:#111827;
+    }
+
+    thead{
+        display:table-header-group;
+        background:#dbeafe!important;
+        color:#173f70!important;
+        print-color-adjust:exact;
+        -webkit-print-color-adjust:exact;
+    }
+
+    thead th{
+        font-size:7px;
+        padding:4px 3px;
+        color:#173f70!important;
+    }
+
+    tr{
+        break-inside:avoid;
+        page-break-inside:avoid;
+    }
+
+    tbody tr:nth-child(even){
+        background:#f8fafc!important;
+        print-color-adjust:exact;
+        -webkit-print-color-adjust:exact;
+    }
+
+    .category{
+        padding:2px 3px;
+        font-size:6px;
+        border:0;
+    }
+
+    .download-note{display:none}
+    button{display:none!important}
 }
 </style>
 </head>
@@ -1027,26 +1170,23 @@ if (sortedSchools.length > 0) {
 /* =====================================================
    DISPLAY SELECTED TEST
 ===================================================== */
+/* =====================================================
+   DISPLAY SELECTED TEST - RESULTS AND ANALYSIS
+===================================================== */
 
 function displaySelectedTest() {
 
     const container = document.getElementById("results");
-
     const testSelect = document.getElementById("testSelect");
-
     const schoolSelect = document.getElementById("schoolSelect");
 
     if (!testSelect || !testSelect.value) {
         updateSectorMarksButton(null);
 
         container.innerHTML = `
-            <div class="message">
-                Please select a test.
-            </div>
+            <div class="message">Please select a test.</div>
         `;
-
         return;
-
     }
 
     selectedTestId = String(testSelect.value);
@@ -1056,22 +1196,16 @@ function displaySelectedTest() {
     );
 
     if (!test) {
-
         container.innerHTML = `
-            <div class="message">
-                Selected test could not be found.
-            </div>
+            <div class="message">Selected test could not be found.</div>
         `;
-
+        updateSectorMarksButton(null);
         return;
-
     }
 
-    /* -------------------------------------
-       FILTER CLASSES BY SCHOOL
-    ------------------------------------- */
+    updateSectorMarksButton(test);
 
-    let classes = test.classes || [];
+    let classes = [...(test.classes || [])];
 
     if (currentUserRole === "sector_admin") {
 
@@ -1080,82 +1214,71 @@ function displaySelectedTest() {
             : "all";
 
         if (selectedSchoolId !== "all") {
-
             classes = classes.filter(classItem =>
                 String(classItem.school_id) === selectedSchoolId
             );
-
         }
-
     }
 
-    /* -------------------------------------
-       TEST HEADING
-    ------------------------------------- */
+    const selectedSchoolName =
+        currentUserRole === "sector_admin" &&
+        schoolSelect &&
+        schoolSelect.value !== "all"
+            ? schoolSelect.options[schoolSelect.selectedIndex]?.text || ""
+            : "";
 
     let html = `
         <section class="test-card">
 
             <div class="test-heading">
-
                 <div>
-
                     <h2>${escapeHTML(test.name)}</h2>
-
-                    <span class="status">
-                        ${escapeHTML(test.status)}
-                    </span>
-
+                    <span class="status">${escapeHTML(test.status)}</span>
+                    ${selectedSchoolName
+                        ? `<div class="school-name">${escapeHTML(selectedSchoolName)}</div>`
+                        : ""}
                 </div>
 
-                <button class="download-btn"
-                    onclick="downloadTest()">
-                    Download
+                <button class="download-btn" onclick="downloadTest()">
+                    Download Results
                 </button>
-
             </div>
     `;
 
-    /* -------------------------------------
-       NO CLASSES
-    ------------------------------------- */
-
     if (classes.length === 0) {
-
         html += `
             <div class="message">
                 No classes are available for this test and school selection.
             </div>
+        </section>
         `;
 
-        html += `</section>`;
-
         container.innerHTML = html;
-
         return;
-
     }
-
-    /* =================================================
-       DISPLAY EACH CLASS
-    ================================================= */
 
     classes.forEach((classItem, classIndex) => {
 
         const subjects = classItem.subjects || [];
 
-        const students = [...(classItem.students || [])];
+        // The API also filters inactive students. This is an
+        // additional defensive check when status is supplied.
+        const students = [...(classItem.students || [])].filter(student => {
+            if (student.status === undefined || student.status === null) {
+                return true;
+            }
+
+            return String(student.status).trim().toLowerCase() === "active";
+        });
 
         /* -------------------------------------
-           CALCULATE TOTALS AND PERCENTAGES
+           CALCULATE EACH LEARNER'S RESULT
         ------------------------------------- */
 
         students.forEach(student => {
 
             let total = 0;
-
             let maximum = 0;
-
             let recorded = 0;
 
             subjects.forEach(subject => {
@@ -1167,131 +1290,372 @@ function displaySelectedTest() {
                 maximum += Number(subject.maximum_mark || 0);
 
                 if (score !== null && score !== undefined) {
-
                     total += Number(score);
-
                     recorded++;
-
                 }
-
             });
 
             student.total = total;
-
             student.maximum = maximum;
-
             student.recorded = recorded;
 
-            student.percentage =
-                recorded > 0 && maximum > 0
-                    ? (total / maximum) * 100
-                    : null;
+            // A learner is complete only when every test subject
+            // has a recorded mark.
+            student.complete =
+                subjects.length > 0 &&
+                recorded === subjects.length &&
+                maximum > 0;
 
+            student.percentage = student.complete
+                ? (total / maximum) * 100
+                : null;
+
+            student.category = student.complete
+                ? getCategory(student.percentage)
+                : "Pending";
         });
 
         /* -------------------------------------
-           SORT STUDENTS BY PERCENTAGE
+           SORT: COMPLETED RESULTS FIRST
         ------------------------------------- */
 
         students.sort((a, b) => {
 
             if (a.percentage === null) return 1;
-
             if (b.percentage === null) return -1;
 
             return b.percentage - a.percentage;
+        });
 
+        const completed = students.filter(
+            student => student.complete
+        );
+
+        const pending = students.filter(
+            student => !student.complete
+        );
+
+        const passed = completed.filter(
+            student => student.percentage >= 50
+        );
+
+        const failed = completed.filter(
+            student => student.percentage < 50
+        );
+
+        const average = completed.length
+            ? completed.reduce(
+                (sum, student) => sum + student.percentage, 0
+            ) / completed.length
+            : 0;
+
+        const passRate = completed.length
+            ? (passed.length / completed.length) * 100
+            : 0;
+
+        /* -------------------------------------
+           GENDER ANALYSIS
+        ------------------------------------- */
+
+        const genderGroups = [
+            { name: "Male", key: "male" },
+            { name: "Female", key: "female" },
+            { name: "Not recorded", key: "other" }
+        ];
+
+        const genderStats = genderGroups.map(group => {
+
+            const groupStudents = students.filter(student => {
+
+                const gender = String(student.gender || "")
+                    .trim()
+                    .toLowerCase();
+
+                if (group.key === "male") return gender === "male";
+                if (group.key === "female") return gender === "female";
+
+                return gender !== "male" && gender !== "female";
+            });
+
+            const groupCompleted = groupStudents.filter(
+                student => student.complete
+            );
+
+            const groupPassed = groupCompleted.filter(
+                student => student.percentage >= 50
+            );
+
+            const groupFailed = groupCompleted.filter(
+                student => student.percentage < 50
+            );
+
+            const groupAverage = groupCompleted.length
+                ? groupCompleted.reduce(
+                    (sum, student) => sum + student.percentage, 0
+                ) / groupCompleted.length
+                : 0;
+
+            const groupPassRate = groupCompleted.length
+                ? (groupPassed.length / groupCompleted.length) * 100
+                : 0;
+
+            return {
+                name: group.name,
+                total: groupStudents.length,
+                completed: groupCompleted.length,
+                pending: groupStudents.length - groupCompleted.length,
+                passed: groupPassed.length,
+                failed: groupFailed.length,
+                average: groupAverage,
+                passRate: groupPassRate
+            };
         });
 
         /* -------------------------------------
-           CLASS HEADING
+           SCORE DISTRIBUTION: 10% RANGES
+           Pending learners are excluded.
+        ------------------------------------- */
+
+        const scoreRanges = [];
+
+        for (let start = 0; start < 100; start += 10) {
+
+            const end = start + 10;
+
+            const count = completed.filter(student => {
+
+                const percentage = student.percentage;
+
+                if (start === 90) {
+                    return percentage >= 90 && percentage <= 100;
+                }
+
+                return percentage >= start && percentage < end;
+            }).length;
+
+            scoreRanges.push({
+                label: start === 90
+                    ? "90–100%"
+                    : `${start}–${end - 0.01}%`,
+                count
+            });
+        }
+
+        /* -------------------------------------
+           CLASS HEADING AND SUMMARY
         ------------------------------------- */
 
         html += `
             <div class="class-card">
 
                 <div class="class-heading">
-
                     <div>
-
-                        <h3>
-                            ${escapeHTML(classItem.class_name)}
-                        </h3>
-
+                        <h3>${escapeHTML(classItem.class_name)}</h3>
                         <div class="school-name">
                             ${escapeHTML(classItem.school_name || "")}
+                            &nbsp; | &nbsp;
+                            ${students.length} learners
                         </div>
-
                     </div>
-
                 </div>
         `;
 
-        /* -------------------------------------
-           NO SUBJECTS
-        ------------------------------------- */
-
         if (subjects.length === 0) {
-
             html += `
-                <p class="no-marks">
+                <div class="no-marks">
                     No subjects configured for this test.
-                </p>
+                </div>
+            </div>
             `;
-
-            html += `</div>`;
-
             return;
-
         }
 
-        /* =================================================
-           RESULTS TABLE
-        ================================================= */
+        /* -------------------------------------
+           OVERALL CLASS SUMMARY
+        ------------------------------------- */
 
         html += `
+            <div class="section-title">Class Performance Overview</div>
+
+            <div class="metrics-grid">
+
+                <div class="metric-card">
+                    <span class="metric-label">Total Learners</span>
+                    <span class="metric-value">${students.length}</span>
+                </div>
+
+                <div class="metric-card">
+                    <span class="metric-label">Completed Results</span>
+                    <span class="metric-value">${completed.length}</span>
+                </div>
+
+                <div class="metric-card pass">
+                    <span class="metric-label">Passed</span>
+                    <span class="metric-value">${passed.length}</span>
+                </div>
+
+                <div class="metric-card fail">
+                    <span class="metric-label">Failed</span>
+                    <span class="metric-value">${failed.length}</span>
+                </div>
+
+                <div class="metric-card pending">
+                    <span class="metric-label">Pending</span>
+                    <span class="metric-value">${pending.length}</span>
+                </div>
+
+                <div class="metric-card">
+                    <span class="metric-label">Class Average</span>
+                    <span class="metric-value">${completed.length ? average.toFixed(1) + "%" : "—"}</span>
+                </div>
+
+                <div class="metric-card pass">
+                    <span class="metric-label">Pass Rate</span>
+                    <span class="metric-value">${completed.length ? passRate.toFixed(1) + "%" : "—"}</span>
+                </div>
+            </div>
+        `;
+
+        /* -------------------------------------
+           GENDER ANALYSIS
+        ------------------------------------- */
+
+        html += `
+            <div class="section-title">Gender Performance Analysis</div>
+
             <div class="table-wrapper">
-
                 <table>
-
                     <thead>
-
                         <tr>
+                            <th>Gender</th>
+                            <th>Total Learners</th>
+                            <th>Completed</th>
+                            <th>Pending</th>
+                            <th>Passed</th>
+                            <th>Failed</th>
+                            <th>Average</th>
+                            <th>Pass Rate</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+        `;
 
+        genderStats.forEach(group => {
+
+            // Avoid displaying an empty "Not recorded" row.
+            if (group.total === 0) return;
+
+            html += `
+                <tr>
+                    <td class="gender-label">${escapeHTML(group.name)}</td>
+                    <td>${group.total}</td>
+                    <td>${group.completed}</td>
+                    <td>${group.pending}</td>
+                    <td>${group.passed}</td>
+                    <td>${group.failed}</td>
+                    <td>${group.completed ? group.average.toFixed(2) + "%" : "—"}</td>
+                    <td>${group.completed ? group.passRate.toFixed(2) + "%" : "—"}</td>
+                </tr>
+            `;
+        });
+
+        html += `
+                    </tbody>
+                </table>
+            </div>
+        `;
+
+        /* -------------------------------------
+           SCORE DISTRIBUTION
+        ------------------------------------- */
+
+        html += `
+            <div class="section-title">Learners by Score Range</div>
+
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Score Range</th>
+                            <th>Number of Learners</th>
+                            <th>Percentage of Completed Learners</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+        `;
+
+        scoreRanges.forEach(range => {
+
+            const distributionRate = completed.length
+                ? (range.count / completed.length) * 100
+                : 0;
+
+            html += `
+                <tr>
+                    <td class="range-cell">${range.label}</td>
+                    <td><strong>${range.count}</strong></td>
+                    <td>${completed.length ? distributionRate.toFixed(1) + "%" : "—"}</td>
+                </tr>
+            `;
+        });
+
+        html += `
+                    </tbody>
+                </table>
+            </div>
+        `;
+
+        /* -------------------------------------
+           LEARNER RESULTS TABLE
+        ------------------------------------- */
+
+        html += `
+            <div class="section-title">Detailed Learner Results</div>
+
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
                             <th>Position</th>
-
-                            <th>Student</th>
+                            <th>Student Name</th>
+                            <th>Gender</th>
 
                             ${subjects.map(subject => `
                                 <th>${escapeHTML(subject.name)}</th>
                             `).join("")}
 
                             <th>Total</th>
-
-                            <th>%</th>
-
+                            <th>Percentage</th>
                             <th>Category</th>
-
                         </tr>
-
                     </thead>
-
                     <tbody>
         `;
 
         students.forEach((student, index) => {
 
+            const categoryClass = student.percentage === null
+                ? "category-pending"
+                : student.percentage >= 80
+                    ? "category-a"
+                    : student.percentage >= 70
+                        ? "category-c"
+                        : student.percentage >= 60
+                            ? "category-e"
+                            : student.percentage >= 50
+                                ? "category-s"
+                                : "category-f";
+
             html += `
                 <tr>
+                    <td>${student.complete ? index + 1 : "—"}</td>
 
-                    <td>
-                        ${student.percentage === null
-                            ? "—"
-                            : index + 1}
+                    <td class="student-name">
+                        ${escapeHTML(student.name)}
                     </td>
 
                     <td>
-                        ${escapeHTML(student.name)}
+                        ${escapeHTML(student.gender || "Not recorded")}
                     </td>
 
                     ${subjects.map(subject => {
@@ -1307,97 +1671,79 @@ function displaySelectedTest() {
                                     : formatNumber(score)}
                             </td>
                         `;
-
                     }).join("")}
 
                     <td>
-                        ${student.recorded
+                        ${student.complete
                             ? formatNumber(student.total) + " / " +
                               formatNumber(student.maximum)
                             : "—"}
                     </td>
 
                     <td>
-                        ${student.percentage === null
-                            ? "—"
-                            : student.percentage.toFixed(2) + "%"}
+                        ${student.complete
+                            ? student.percentage.toFixed(2) + "%"
+                            : "—"}
                     </td>
 
                     <td>
-                        ${student.percentage === null
-                            ? "No marks"
-                            : getCategory(student.percentage)}
+                        <span class="category ${categoryClass}">
+                            ${escapeHTML(student.category)}
+                        </span>
                     </td>
-
                 </tr>
             `;
-
         });
 
         if (students.length === 0) {
-
             html += `
                 <tr>
-
-                    <td colspan="${subjects.length + 5}">
-                        No students registered in this class.
+                    <td colspan="${subjects.length + 6}">
+                        No active learners registered in this class.
                     </td>
-
                 </tr>
             `;
-
         }
 
         html += `
                     </tbody>
-
                 </table>
-
             </div>
         `;
 
-        /* =================================================
+        /* -------------------------------------
            SUBJECT ANALYSIS
-        ================================================= */
+        ------------------------------------- */
 
         html += `
-            <div class="analysis-box">
+            <div class="section-title">Subject Performance Analysis</div>
 
-                <h4>Subject Analysis</h4>
-
-                <div class="table-wrapper">
-
-                    <table>
-
-                        <thead>
-
-                            <tr>
-                                <th>Subject</th>
-                                <th>Average (%)</th>
-                                <th>Passed</th>
-                                <th>Failed</th>
-                                <th>Pass Rate</th>
-                            </tr>
-
-                        </thead>
-
-                        <tbody>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Subject</th>
+                            <th>Average (%)</th>
+                            <th>Passed</th>
+                            <th>Failed</th>
+                            <th>Pass Rate</th>
+                            <th>Recorded Marks</th>
+                        </tr>
+                    </thead>
+                    <tbody>
         `;
 
         subjects.forEach(subject => {
 
             const recordedMarks = students
-
                 .map(student =>
                     student.marks
                         ? student.marks[subject.id]
                         : null
                 )
-
                 .filter(score =>
                     score !== null && score !== undefined
                 )
-
                 .map(Number);
 
             if (recordedMarks.length === 0) return;
@@ -1407,81 +1753,65 @@ function displaySelectedTest() {
                 return Number(subject.maximum_mark) > 0
                     ? (score / Number(subject.maximum_mark)) * 100
                     : 0;
-
             });
 
-            const average = percentages.reduce(
+            const subjectAverage = percentages.reduce(
                 (a, b) => a + b, 0
             ) / percentages.length;
 
-            const passed = percentages.filter(
+            const subjectPassed = percentages.filter(
                 percentage => percentage >= 50
             ).length;
 
-            const failed = percentages.length - passed;
+            const subjectFailed =
+                percentages.length - subjectPassed;
 
-            const passRate =
-                (passed / percentages.length) * 100;
+            const subjectPassRate =
+                (subjectPassed / percentages.length) * 100;
 
             html += `
                 <tr>
-
-                    <td>
-                        ${escapeHTML(subject.name)}
-                    </td>
-
-                    <td>
-                        ${average.toFixed(2)}%
-                    </td>
-
-                    <td>
-                        ${passed}
-                    </td>
-
-                    <td>
-                        ${failed}
-                    </td>
-
-                    <td>
-                        ${passRate.toFixed(2)}%
-                    </td>
-
+                    <td>${escapeHTML(subject.name)}</td>
+                    <td>${subjectAverage.toFixed(2)}%</td>
+                    <td>${subjectPassed}</td>
+                    <td>${subjectFailed}</td>
+                    <td>${subjectPassRate.toFixed(2)}%</td>
+                    <td>${recordedMarks.length}</td>
                 </tr>
             `;
-
         });
 
         html += `
-                        </tbody>
-
-                    </table>
-
-                </div>
-
+                    </tbody>
+                </table>
             </div>
+
+            <p class="download-note">
+                Pending learners have incomplete subject marks and are excluded
+                from overall pass/fail rates, class averages and score distribution.
+            </p>
 
             </div>
         `;
-
     });
 
-    html += `
-        </section>
-    `;
+    html += `</section>`;
 
     container.innerHTML = html;
-
 }
-
 
 /* =====================================================
    DOWNLOAD CURRENTLY DISPLAYED RESULTS
 ===================================================== */
 
+/* =====================================================
+   DOWNLOAD CURRENTLY DISPLAYED TEST RESULTS
+   PROFESSIONAL COMPACT PRINT VERSION
+===================================================== */
+
 function downloadTest() {
 
     const container = document.getElementById("results");
-
     const testCard = container.querySelector(".test-card");
 
     if (!testCard) return;
@@ -1494,21 +1824,10 @@ function downloadTest() {
 
     const content = testCard.cloneNode(true);
 
-    /* Remove buttons from printed document */
-
+    // Remove download and other buttons from the exported document.
     content.querySelectorAll("button").forEach(button => {
         button.remove();
     });
-
-    const printWindow = window.open("", "_blank");
-
-    if (!printWindow) {
-
-        alert("Please allow pop-ups to download results.");
-
-        return;
-
-    }
 
     const schoolSelect = document.getElementById("schoolSelect");
 
@@ -1519,112 +1838,276 @@ function downloadTest() {
             ? schoolSelect.options[schoolSelect.selectedIndex].text
             : "All Schools";
 
+    const periodName = currentAcademicPeriod
+        ? `${currentAcademicPeriod.academic_year} - ${currentAcademicPeriod.term_name || currentAcademicPeriod.term}`
+        : "Academic Period";
+
     const printTitle =
         currentUserRole === "sector_admin"
             ? `${test.name} - ${selectedSchoolName}`
             : test.name;
 
+    const exportedAt = new Date().toLocaleDateString();
+
+    const printWindow = window.open("", "_blank");
+
+    if (!printWindow) {
+        alert("Please allow pop-ups to download results.");
+        return;
+    }
+
+    // Reuse the page styling and add export-specific compact styling.
+    const existingStyles = Array.from(
+        document.querySelectorAll("style")
+    ).map(style => style.innerHTML).join("\n");
+
+    printWindow.document.open();
+
     printWindow.document.write(`
         <!DOCTYPE html>
-        <html>
+        <html lang="en">
         <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-            <title>${escapeHTML(printTitle)} - School Marks</title>
+            <title>${escapeHTML(printTitle)} - Fila Grades System</title>
 
             <style>
+                ${existingStyles}
+
+                @page {
+                    size: landscape;
+                    margin: 7mm;
+                }
 
                 body {
+                    margin: 0;
+                    padding: 14px;
+                    background: #fff;
+                    color: #172b4d;
                     font-family: Arial, sans-serif;
-                    padding: 20px;
-                    color: #000;
                 }
 
-                h2, h3, h4 {
-                    margin-top: 15px;
+                .export-header {
+                    border-bottom: 2px solid #173f70;
+                    padding-bottom: 9px;
+                    margin-bottom: 12px;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: end;
+                    gap: 15px;
                 }
 
-                .status {
-                    display: inline-block;
-                    margin: 10px 0;
+                .export-brand {
+                    color: #173f70;
+                    font-size: 17px;
+                    font-weight: 800;
+                    letter-spacing: .6px;
                 }
 
-                .school-name {
-                    margin: 5px 0 15px;
+                .export-subtitle {
+                    color: #64748b;
+                    font-size: 9px;
+                    margin-top: 3px;
                 }
 
-                .class-card {
-                    margin-bottom: 30px;
-                    page-break-inside: avoid;
-                    break-inside: avoid;
+                .export-details {
+                    text-align: right;
+                    color: #334155;
+                    font-size: 9px;
+                    line-height: 1.6;
                 }
 
-                table {
-                    width: 100%;
-                    border-collapse: collapse;
-                    margin-bottom: 20px;
+                .export-content .test-card {
+                    border: 0;
+                    box-shadow: none;
+                    padding: 0;
                 }
 
-                th, td {
-                    border: 1px solid #000;
+                .export-content .test-heading {
+                    margin: 0 0 8px;
+                    padding: 0 0 7px;
+                }
+
+                .export-content .test-heading h2 {
+                    font-size: 14px;
+                }
+
+                .export-content .class-card {
+                    margin: 0 0 12px;
+                    padding: 8px;
+                    border: 1px solid #b8c4d3;
+                    border-radius: 4px;
+                    break-inside: auto;
+                    page-break-inside: auto;
+                }
+
+                .export-content .class-heading {
+                    margin-bottom: 6px;
+                }
+
+                .export-content .class-heading h3 {
+                    font-size: 12px;
+                    margin: 0 0 2px;
+                }
+
+                .export-content .school-name {
+                    font-size: 9px;
+                }
+
+                .export-content .section-title {
+                    font-size: 10px;
+                    margin: 9px 0 5px;
+                }
+
+                .export-content .section-title:before {
+                    height: 11px;
+                    width: 3px;
+                }
+
+                .export-content .metrics-grid {
+                    grid-template-columns: repeat(5, minmax(0, 1fr));
+                    gap: 5px;
+                    margin: 6px 0 8px;
+                }
+
+                .export-content .metric-card {
                     padding: 6px;
-                    text-align: center;
+                    border-radius: 3px;
                 }
 
-                th {
-                    background: #eee;
+                .export-content .metric-label {
+                    font-size: 7px;
+                    margin-bottom: 3px;
+                }
+
+                .export-content .metric-value {
+                    font-size: 13px;
+                }
+
+                .export-content .analysis-grid {
+                    grid-template-columns: repeat(2, minmax(0, 1fr));
+                    gap: 7px;
+                }
+
+                .export-content .analysis-panel {
+                    padding: 6px;
+                }
+
+                .export-content .analysis-panel h4 {
+                    font-size: 9px;
+                    margin-bottom: 4px;
+                }
+
+                .export-content .table-wrapper {
+                    overflow: visible;
+                    margin-top: 5px;
+                    border: 0;
+                }
+
+                .export-content table {
+                    width: 100%;
+                    min-width: 0;
+                    border-collapse: collapse;
+                    table-layout: auto;
+                }
+
+                .export-content th,
+                .export-content td {
+                    padding: 3px 4px;
+                    font-size: 7px;
+                    white-space: normal;
+                    border: 1px solid #cbd5e1;
+                    color: #111827;
+                }
+
+                .export-content thead {
+                    display: table-header-group;
+                    background: #dbeafe !important;
+                    color: #173f70 !important;
+                    print-color-adjust: exact;
+                    -webkit-print-color-adjust: exact;
+                }
+
+                .export-content thead th {
+                    color: #173f70 !important;
+                    font-size: 7px;
+                    padding: 4px 3px;
+                }
+
+                .export-content tr {
+                    break-inside: avoid;
+                    page-break-inside: avoid;
+                }
+
+                .export-content .category {
+                    font-size: 6px;
+                    padding: 2px 3px;
+                }
+
+                .export-content .download-note {
+                    display: none;
                 }
 
                 @media print {
-
                     body {
                         padding: 0;
                     }
 
-                    .class-card {
-                        page-break-inside: avoid;
+                    .export-header {
+                        break-after: avoid;
                     }
 
+                    .export-content .class-card {
+                        break-inside: auto;
+                        page-break-inside: auto;
+                    }
                 }
 
+                @media screen {
+                    body {
+                        max-width: 1400px;
+                        margin: 0 auto;
+                    }
+                }
             </style>
-
         </head>
 
         <body>
 
-            ${content.innerHTML}
+            <div class="export-header">
+                <div>
+                    <div class="export-brand">FILA GRADES SYSTEM</div>
+                    <div class="export-subtitle">
+                        OFFICIAL STUDENT PERFORMANCE REPORT
+                    </div>
+                </div>
+
+                <div class="export-details">
+                    <strong>${escapeHTML(periodName)}</strong><br>
+                    ${escapeHTML(selectedSchoolName)}<br>
+                    Generated: ${escapeHTML(exportedAt)}
+                </div>
+            </div>
+
+            <main class="export-content">
+                ${content.innerHTML}
+            </main>
 
         </body>
-
         </html>
     `);
 
     printWindow.document.close();
 
-    printWindow.focus();
-
     printWindow.onload = () => {
-        printWindow.print();
+        printWindow.focus();
+
+        setTimeout(() => {
+            printWindow.print();
+        }, 400);
     };
-
 }
-
-
-    function openReportCards() {
-
-    const testSelect = document.getElementById("testSelect");
-    const testId = testSelect.value;
-
-    if (!testId) {
-        alert("Please select a test first.");
-        return;
-    }
-
-    window.location.href =
-        `report-cards.html?test_id=${encodeURIComponent(testId)}`;
-
-}
-
 /* =====================================================
    LOGOUT
 ===================================================== */
