@@ -1500,21 +1500,33 @@ async function activateStudent(id) {
    PERMANENTLY DELETE STUDENT
 ===================================== */
 
+
+/* =====================================
+   PERMANENTLY DELETE STUDENT
+===================================== */
+
 async function permanentlyDeleteStudent(id) {
     try {
-        /*
-           First request asks the server to check
-           whether the student has recorded marks.
-           It must not delete anything yet.
-        */
+        // STEP 1: Ask the server to check the student.
+        // This request does not delete anything.
 
-        const preview = await apiRequest("/api/students/permanent-delete", {
-            method: "POST",
-            body: JSON.stringify({
-                id,
-                confirm: false
-            })
-        });
+        const preview = await apiRequest(
+            "/api/students/permanent-delete",
+            {
+                method: "POST",
+                body: JSON.stringify({
+                    id: Number(id),
+                    confirmed: false
+                })
+            }
+        );
+
+        // The server must explicitly request confirmation.
+        if (!preview.requiresConfirmation) {
+            throw new Error(
+                "Unable to verify this student before deletion."
+            );
+        }
 
         const marksCount = Number(preview.marksCount || 0);
 
@@ -1523,40 +1535,61 @@ async function permanentlyDeleteStudent(id) {
         if (marksCount > 0) {
             warning =
                 "PERMANENT DELETION WARNING\n\n" +
-                "This student has " + marksCount +
-                " recorded mark record(s).\n\n" +
+                preview.studentName + " has " +
+                marksCount + " recorded mark record(s).\n\n" +
                 "If you continue:\n" +
                 "• The student's recorded marks will also be deleted.\n" +
                 "• The student will be permanently removed from the system.\n" +
                 "• This action cannot be reversed.\n\n" +
-                "Do you want to permanently delete this student and the associated marks?";
+                "Do you want to continue?";
         } else {
             warning =
                 "PERMANENT DELETION CONFIRMATION\n\n" +
-                "This student has no recorded marks.\n\n" +
-                "The student will be permanently removed from the system. " +
+                preview.studentName +
+                " has no recorded marks.\n\n" +
+                "The student will be permanently removed from the system.\n" +
                 "This action cannot be reversed.\n\n" +
                 "Do you want to continue?";
         }
 
         if (!confirm(warning)) return;
 
-        await apiRequest("/api/students/permanent-delete", {
-            method: "POST",
-            body: JSON.stringify({
-                id,
-                confirm: true
-            })
-        });
+        // STEP 2: Send the correct confirmation property.
+        // This is the request that actually deletes the student.
 
+        const deletion = await apiRequest(
+            "/api/students/permanent-delete",
+            {
+                method: "POST",
+                body: JSON.stringify({
+                    id: Number(id),
+                    confirmed: true
+                })
+            }
+        );
+
+        if (!deletion.success) {
+            throw new Error(
+                deletion.message || "Student deletion failed."
+            );
+        }
+
+        // STEP 3: Reload the students from the database.
         await loadStudents();
 
         showMessage(
-            "The student and associated records were permanently deleted."
+            deletion.message ||
+            "Student permanently deleted successfully.",
+            "success"
         );
 
     } catch (error) {
-        showMessage(error.message, "error");
+        console.error("Permanent student deletion error:", error);
+
+        showMessage(
+            error.message || "Unable to permanently delete student.",
+            "error"
+        );
     }
 }
 
