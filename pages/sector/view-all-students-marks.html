@@ -1574,6 +1574,7 @@ function changeClassPage(classKey, page) {
     renderClassPage(classKey);
 }
 
+
 function renderClassPage(classKey) {
     const data = classResultsStore.get(classKey);
     const state = classPagination.get(classKey);
@@ -1592,48 +1593,30 @@ function renderClassPage(classKey) {
         startIndex + PAGE_SIZE
     );
 
-    const subjects = data.subjects;
+    const subjects = data.subjects || [];
 
-    const subjectCells = subjects.map(subject => {
-    const mark = student.marks?.[String(subject.id)];
+    // Use subject codes instead of subject titles.
+    const subjectHeaders = subjects.map(subject => `
+        <th>${escapeHTML(getSubjectCode(subject))}</th>
+    `).join("");
 
-    const missing =
-        mark === null ||
-        mark === undefined ||
-        mark === "";
-
-    return `
-        <td class="${missing ? "pending" : ""}">
-            ${missing
-                ? escapeHTML(getMissingMarkLabel(data))
-                : formatNumber(mark)
-            }
-        </td>
-    `;
-}).join("");
-
-const category = student.complete
-    ? getCategory(student.percentage)
-    : getIncompleteCategory(data);
-
-const categoryClass = !student.complete
-    ? "pending"
-    : student.percentage >= 50
-        ? "pass"
-        : "fail";
-    
+    // Build each learner's row.
     const rows = pageStudents.map((student, index) => {
         const position = startIndex + index + 1;
 
         const subjectCells = subjects.map(subject => {
             const mark = student.marks?.[String(subject.id)];
 
+            const missing =
+                mark === null ||
+                mark === undefined ||
+                mark === "";
+
             return `
-                <td>
-                    ${
-                        mark === null || mark === undefined
-                            ? "—"
-                            : formatNumber(mark)
+                <td class="${missing ? "pending" : ""}">
+                    ${missing
+                        ? escapeHTML(getMissingMarkLabel(data))
+                        : formatNumber(mark)
                     }
                 </td>
             `;
@@ -1641,7 +1624,7 @@ const categoryClass = !student.complete
 
         const category = student.complete
             ? getCategory(student.percentage)
-            : "Pending";
+            : getIncompleteCategory(data);
 
         const categoryClass = !student.complete
             ? "pending"
@@ -1652,13 +1635,17 @@ const categoryClass = !student.complete
         return `
             <tr>
                 <td>${position}</td>
-                <td>${escapeHTML(student.name)}</td>
+                <td>${escapeHTML(student.name || "")}</td>
                 <td>${escapeHTML(student.gender || "—")}</td>
-                <td class="school-name">${escapeHTML(student.school_name)}</td>
+                <td class="school-name">
+                    ${escapeHTML(student.school_name || "")}
+                </td>
                 ${subjectCells}
                 <td><strong>${formatNumber(student.total)}</strong></td>
                 <td>${formatNumber(student.percentage)}%</td>
-                <td class="${categoryClass}">${category}</td>
+                <td class="${categoryClass}">
+                    ${escapeHTML(category)}
+                </td>
             </tr>
         `;
     }).join("");
@@ -1678,15 +1665,13 @@ const categoryClass = !student.complete
                 </tr>
             </thead>
             <tbody>
-                ${
-                    rows || `
-                        <tr>
-                            <td colspan="${subjects.length + 9}">
-                                No learners found.
-                            </td>
-                        </tr>
-                    `
-                }
+                ${rows || `
+                    <tr>
+                        <td colspan="${subjects.length + 7}">
+                            No learners found.
+                        </td>
+                    </tr>
+                `}
             </tbody>
         </table>
     `;
@@ -1737,7 +1722,6 @@ const categoryClass = !student.complete
         </div>
     `;
 }
-
 /* =====================================================
    SCHOOL AND SUBJECT PERFORMANCE ANALYSIS
 ===================================================== */
@@ -2515,12 +2499,15 @@ function downloadFullReportPDF() {
             `${formatNumber(stats.girlsFailureRate)}%`
         ],
         [
-            "Not recorded",
-            stats.unknownGender,
-            stats.unknownPassed,
-            stats.unknownFailed,
-            `${formatNumber(percentage(stats.unknownPassed, stats.unknownComplete))}%`,
-            `${formatNumber(percentage(stats.unknownFailed, stats.unknownComplete))}%`
+            
+           
+    "Not recorded",
+    stats.unknownGender,
+    "—",
+    "—",
+    "—",
+    "—"
+
         ]
     ];
 
@@ -2635,7 +2622,7 @@ function downloadFullReportPDF() {
                 `${formatNumber(student.percentage)}%`,
                 student.complete
                     ? getCategory(student.percentage)
-                    : "Pending"
+                       : getIncompleteCategory(test)
             ];
         });
 
