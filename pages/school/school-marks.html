@@ -1243,9 +1243,6 @@ function displaySelectedTest() {
                         : ""}
                 </div>
 
-                <button class="download-btn" onclick="downloadTest()">
-                    Download Results
-                </button>
             </div>
     `;
 
@@ -1260,7 +1257,8 @@ function displaySelectedTest() {
         container.innerHTML = html;
         return;
     }
-
+// Store class results for individual PDF downloads.
+window.filaClassResultsForDownload = {};
     classes.forEach((classItem, classIndex) => {
 
         const subjects = classItem.subjects || [];
@@ -1368,6 +1366,15 @@ function displaySelectedTest() {
 
             return b.percentage - a.percentage;
         });
+        // Save this class's calculated results for its PDF download.
+window.filaClassResultsForDownload[classIndex] = {
+    testName: test.name,
+    testStatus: test.status,
+    className: classItem.class_name,
+    schoolName: classItem.school_name || "",
+    subjects: subjects,
+    students: students
+};
 
         const completed = students.filter(
             student => student.complete
@@ -1493,16 +1500,24 @@ function displaySelectedTest() {
             <div class="class-card">
 
                 <div class="class-heading">
-                    <div>
-                        <h3>${escapeHTML(classItem.class_name)}</h3>
 
-                        <div class="school-name">
-                            ${escapeHTML(classItem.school_name || "")}
-                            &nbsp; | &nbsp;
-                            ${students.length} learners
-                        </div>
-                    </div>
-                </div>
+    <div>
+        <h3>${escapeHTML(classItem.class_name)}</h3>
+
+        <div class="school-name">
+            ${escapeHTML(classItem.school_name || "")}
+            &nbsp; | &nbsp;
+            ${students.length} learners
+        </div>
+    </div>
+
+    <button
+        class="download-btn"
+        onclick="downloadClassResults(${classIndex})">
+        Download Class PDF
+    </button>
+
+</div>
         `;
 
         if (subjects.length === 0) {
@@ -2185,6 +2200,338 @@ function downloadTest() {
         }, 400);
     };
 }
+
+    
+/* =====================================================
+   DOWNLOAD INDIVIDUAL CLASS LEARNER RESULTS AS PDF
+===================================================== */
+
+window.downloadClassResults = function(classIndex) {
+
+    const data =
+        window.filaClassResultsForDownload?.[classIndex];
+
+    if (!data) {
+        alert("Class results are not available. Please reload the results.");
+        return;
+    }
+
+    const printWindow = window.open("", "_blank");
+
+    if (!printWindow) {
+        alert("Please allow pop-ups to download the class PDF.");
+        return;
+    }
+
+    const subjects = data.subjects || [];
+    const students = data.students || [];
+
+    const subjectHeaders = subjects.map(subject => {
+
+        const code =
+            subject.subject_code ||
+            subject.code ||
+            subject.name ||
+            "Subject";
+
+        return `<th>${escapeHTML(code)}</th>`;
+
+    }).join("");
+
+    const learnerRows = students.map((student, index) => {
+
+        const subjectMarks = subjects.map(subject => {
+
+            const score = student.marks
+                ? student.marks[subject.id]
+                : null;
+
+            const missing =
+                score === null ||
+                score === undefined ||
+                (
+                    typeof score === "string" &&
+                    score.trim() === ""
+                );
+
+            return `
+                <td>
+                    ${missing ? "_" : formatNumber(score)}
+                </td>
+            `;
+
+        }).join("");
+
+        const position = student.complete
+            ? index + 1
+            : "—";
+
+        const total = student.complete
+            ? `${formatNumber(student.total)} / ${formatNumber(student.maximum)}`
+            : "—";
+
+        const percentage = student.complete
+            ? `${student.percentage.toFixed(2)}%`
+            : "—";
+
+        const category = student.category || "Pending";
+
+        return `
+            <tr>
+                <td>${position}</td>
+
+                <td class="student-name">
+                    ${escapeHTML(student.name || "")}
+                </td>
+
+                <td>
+                    ${escapeHTML(student.gender || "Not recorded")}
+                </td>
+
+                ${subjectMarks}
+
+                <td>${total}</td>
+
+                <td>${percentage}</td>
+
+                <td>${escapeHTML(category)}</td>
+            </tr>
+        `;
+
+    }).join("");
+
+    const emptyMessage = students.length === 0
+        ? `
+            <tr>
+                <td colspan="${subjects.length + 6}">
+                    No active learners registered in this class.
+                </td>
+            </tr>
+        `
+        : "";
+
+    const pdfHTML = `
+        <!DOCTYPE html>
+        <html lang="en">
+
+        <head>
+
+            <meta charset="UTF-8">
+
+            <meta name="viewport"
+                  content="width=device-width, initial-scale=1.0">
+
+            <title>
+                ${escapeHTML(data.className)} - Learner Results
+            </title>
+
+            <style>
+
+                @page {
+                    size: A4 landscape;
+                    margin: 10mm;
+                }
+
+                * {
+                    box-sizing: border-box;
+                }
+
+                body {
+                    font-family: Arial, Helvetica, sans-serif;
+                    color: #24364b;
+                    margin: 0;
+                    padding: 0;
+                    font-size: 10px;
+                }
+
+                .report-header {
+                    text-align: center;
+                    border-bottom: 2px solid #173f70;
+                    padding-bottom: 12px;
+                    margin-bottom: 16px;
+                }
+
+                .system-name {
+                    font-size: 19px;
+                    font-weight: 800;
+                    color: #173f70;
+                    letter-spacing: 1px;
+                    margin-bottom: 5px;
+                }
+
+                .report-title {
+                    font-size: 14px;
+                    font-weight: 700;
+                    margin-bottom: 7px;
+                }
+
+                .report-details {
+                    font-size: 10px;
+                    color: #526579;
+                    line-height: 1.7;
+                }
+
+                .table-title {
+                    font-size: 12px;
+                    font-weight: 700;
+                    margin: 15px 0 8px;
+                    color: #173f70;
+                }
+
+                table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    table-layout: auto;
+                }
+
+                thead {
+                    display: table-header-group;
+                }
+
+                tr {
+                    page-break-inside: avoid;
+                }
+
+                th {
+                    background: #173f70 !important;
+                    color: white !important;
+                    font-weight: 700;
+                    padding: 7px 5px;
+                    border: 1px solid #d3dce7;
+                    text-align: center;
+                    font-size: 9px;
+                    -webkit-print-color-adjust: exact;
+                    print-color-adjust: exact;
+                }
+
+                td {
+                    padding: 6px 5px;
+                    border: 1px solid #dce3eb;
+                    text-align: center;
+                    font-size: 9px;
+                }
+
+                tbody tr:nth-child(even) {
+                    background: #f3f7fb !important;
+                    -webkit-print-color-adjust: exact;
+                    print-color-adjust: exact;
+                }
+
+                .student-name {
+                    text-align: left;
+                    font-weight: 600;
+                    min-width: 120px;
+                }
+
+                .footer {
+                    margin-top: 14px;
+                    padding-top: 7px;
+                    border-top: 1px solid #dce3eb;
+                    font-size: 9px;
+                    color: #65758a;
+                    text-align: center;
+                }
+
+                @media screen {
+                    body {
+                        padding: 20px;
+                    }
+                }
+
+            </style>
+
+        </head>
+
+        <body>
+
+            <div class="report-header">
+
+                <div class="system-name">
+                    FILA GRADES SYSTEM
+                </div>
+
+                <div class="report-title">
+                    DETAILED LEARNER RESULTS
+                </div>
+
+                <div class="report-details">
+                    <strong>Test:</strong>
+                    ${escapeHTML(data.testName)}
+                    <br>
+
+                    <strong>School:</strong>
+                    ${escapeHTML(data.schoolName)}
+                    <br>
+
+                    <strong>Class:</strong>
+                    ${escapeHTML(data.className)}
+                    <br>
+
+                    <strong>Test Status:</strong>
+                    ${escapeHTML(data.testStatus)}
+                    <br>
+
+                    <strong>Total Learners:</strong>
+                    ${students.length}
+                </div>
+
+            </div>
+
+            <div class="table-title">
+                Learner Marks and Performance
+            </div>
+
+            <table>
+
+                <thead>
+                    <tr>
+                        <th>Position</th>
+                        <th>Student Name</th>
+                        <th>Gender</th>
+
+                        ${subjectHeaders}
+
+                        <th>Total</th>
+                        <th>Percentage</th>
+                        <th>Category</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                    ${learnerRows}
+                    ${emptyMessage}
+
+                </tbody>
+
+            </table>
+
+            <div class="footer">
+                FILA GRADES SYSTEM | Detailed Class Results
+            </div>
+
+            <script>
+
+                window.onload = function() {
+                    window.focus();
+                    window.print();
+                };
+
+                window.onafterprint = function() {
+                    window.close();
+                };
+
+            <\/script>
+
+        </body>
+        </html>
+    `;
+
+    printWindow.document.open();
+    printWindow.document.write(pdfHTML);
+    printWindow.document.close();
+};
+
 /* =====================================================
    LOGOUT
 ===================================================== */
