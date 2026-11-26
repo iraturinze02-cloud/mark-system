@@ -4,9 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <meta name="description" content="Record and manage student marks for assigned classes and subjects in Fila Grades System.">
-
+    <meta name="description" content="Inspect marks-recording performance across schools in Fila Grades System.">
     <meta name="theme-color" content="#173f70">
 
     <link rel="icon" type="image/x-icon" href="/images/favicon/favicon.ico">
@@ -19,642 +17,672 @@
 
     <style>
         :root {
-            --primary: #174ea6;
-            --primary-dark: #123b80;
-            --primary-light: #eaf2ff;
-            --background: #f4f7fb;
-            --white: #ffffff;
-            --text: #172b4d;
-            --muted: #718096;
-            --border: #e3e9f2;
-            --success: #16834a;
-            --success-bg: #e8f7ee;
-            --warning: #b7791f;
-            --warning-bg: #fff7e5;
-            --danger: #c53030;
-            --danger-bg: #fff0f0;
-            --shadow: 0 4px 18px rgba(20, 45, 90, .07);
+            --primary:#174ea6;
+            --primary-dark:#123b80;
+            --primary-light:#eaf2ff;
+            --background:#f4f7fb;
+            --white:#fff;
+            --text:#172b4d;
+            --muted:#718096;
+            --border:#e3e9f2;
+            --success:#16834a;
+            --success-bg:#e8f7ee;
+            --warning:#b7791f;
+            --warning-bg:#fff7e5;
+            --danger:#c53030;
+            --danger-bg:#fff0f0;
+            --shadow:0 4px 18px rgba(20,45,90,.07);
         }
 
         * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
+            box-sizing:border-box;
+            margin:0;
+            padding:0;
         }
 
         body {
-            font-family: Arial, Helvetica, sans-serif;
-            background: var(--background);
-            color: var(--text);
-            min-height: 100vh;
+            font-family:Arial,Helvetica,sans-serif;
+            background:var(--background);
+            color:var(--text);
+            min-height:100vh;
         }
 
-        button, input, select {
-            font: inherit;
-        }
-
-        button {
-            cursor: pointer;
-        }
+        button,input,select { font:inherit; }
+        button { cursor:pointer; }
 
         .topbar {
-            background: var(--white);
-            padding: 17px 25px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 15px;
-            border-bottom: 1px solid var(--border);
-            position: sticky;
-            top: 0;
-            z-index: 20;
+            background:var(--white);
+            padding:17px 25px;
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            gap:15px;
+            border-bottom:1px solid var(--border);
+            position:sticky;
+            top:0;
+            z-index:20;
         }
 
         .brand {
-            display: flex;
-            align-items: center;
-            gap: 12px;
+            display:flex;
+            align-items:center;
+            gap:12px;
         }
 
         .brand-icon {
-            width: 43px;
-            height: 43px;
-            border-radius: 12px;
-            background: var(--primary);
-            color: white;
-            display: grid;
-            place-items: center;
-            font-size: 19px;
+            width:43px;
+            height:43px;
+            border-radius:12px;
+            background:var(--primary);
+            color:white;
+            display:grid;
+            place-items:center;
+            font-size:19px;
         }
 
         .brand h1 {
-            font-size: 17px;
-            color: var(--primary-dark);
+            font-size:17px;
+            color:var(--primary-dark);
         }
 
         .brand p {
-            color: var(--muted);
-            font-size: 12px;
-            margin-top: 4px;
-        }
-
-        .topbar-right {
-            display: flex;
-            align-items: center;
-            gap: 12px;
+            color:var(--muted);
+            font-size:12px;
+            margin-top:4px;
         }
 
         .role-label {
-            background: var(--primary-light);
-            color: var(--primary);
-            padding: 8px 13px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 700;
+            background:var(--primary-light);
+            color:var(--primary);
+            padding:8px 13px;
+            border-radius:20px;
+            font-size:12px;
+            font-weight:700;
         }
 
         .main {
-            max-width: 1450px;
-            margin: auto;
-            padding: 28px 25px 50px;
+            max-width:1450px;
+            margin:auto;
+            padding:28px 25px 50px;
         }
 
         .page-heading {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            gap: 15px;
-            margin-bottom: 23px;
+            display:flex;
+            justify-content:space-between;
+            align-items:flex-start;
+            gap:15px;
+            margin-bottom:23px;
         }
 
         .page-heading h2 {
-            font-size: 25px;
-            margin-bottom: 8px;
+            font-size:25px;
+            margin-bottom:8px;
         }
 
         .page-heading p {
-            color: var(--muted);
-            font-size: 14px;
-            line-height: 1.6;
+            color:var(--muted);
+            font-size:14px;
+            line-height:1.6;
         }
 
         .btn {
-            border: 0;
-            border-radius: 8px;
-            padding: 10px 15px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            font-weight: 700;
-            font-size: 13px;
-            transition: .2s;
+            border:0;
+            border-radius:8px;
+            padding:10px 15px;
+            display:inline-flex;
+            align-items:center;
+            justify-content:center;
+            gap:8px;
+            font-weight:700;
+            font-size:13px;
+            transition:.2s;
         }
 
         .btn-primary {
-            background: var(--primary);
-            color: white;
+            background:var(--primary);
+            color:white;
         }
 
-        .btn-primary:hover {
-            background: var(--primary-dark);
-        }
+        .btn-primary:hover { background:var(--primary-dark); }
 
         .btn-light {
-            background: #edf2f7;
-            color: var(--text);
+            background:#edf2f7;
+            color:var(--text);
         }
 
-        .btn-light:hover {
-            background: #dfe7f1;
+        .btn-light:hover { background:#dfe7f1; }
+
+        .btn-success {
+            background:#16834a;
+            color:white;
         }
+
+        .btn-success:hover { background:#116638; }
 
         .btn:disabled {
-            opacity: .55;
-            cursor: not-allowed;
+            opacity:.55;
+            cursor:not-allowed;
         }
 
         .type-panel {
-            background: white;
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 17px;
-            margin-bottom: 22px;
-            box-shadow: var(--shadow);
+            background:white;
+            border:1px solid var(--border);
+            border-radius:12px;
+            padding:17px;
+            margin-bottom:22px;
+            box-shadow:var(--shadow);
         }
 
-        .type-panel label {
-            display: block;
-            font-size: 12px;
-            font-weight: 700;
-            color: var(--muted);
-            margin-bottom: 10px;
+        .type-panel > label {
+            display:block;
+            font-size:12px;
+            font-weight:700;
+            color:var(--muted);
+            margin-bottom:10px;
         }
 
         .type-tabs {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 9px;
+            display:flex;
+            flex-wrap:wrap;
+            gap:9px;
         }
 
         .type-tab {
-            border: 1px solid var(--border);
-            background: white;
-            color: #52627a;
-            border-radius: 8px;
-            padding: 11px 17px;
-            font-size: 13px;
-            font-weight: 700;
+            border:1px solid var(--border);
+            background:white;
+            color:#52627a;
+            border-radius:8px;
+            padding:11px 17px;
+            font-size:13px;
+            font-weight:700;
         }
 
         .type-tab.active {
-            background: var(--primary);
-            color: white;
-            border-color: var(--primary);
+            background:var(--primary);
+            color:white;
+            border-color:var(--primary);
+        }
+
+        .period-controls {
+            display:flex;
+            flex-wrap:wrap;
+            align-items:flex-end;
+            gap:14px;
+            margin-top:17px;
+            padding-top:16px;
+            border-top:1px solid var(--border);
+        }
+
+        .control-group {
+            display:flex;
+            flex-direction:column;
+            gap:7px;
+            min-width:220px;
+        }
+
+        .control-group label {
+            font-size:11px;
+            font-weight:700;
+            color:var(--muted);
+        }
+
+        .control-group select {
+            min-width:220px;
+            max-width:100%;
+            padding:11px 35px 11px 12px;
+            border:1px solid var(--border);
+            border-radius:8px;
+            outline:none;
+            background:white;
+            color:var(--text);
+            font-size:13px;
+        }
+
+        .control-group select:focus {
+            border-color:var(--primary);
+        }
+
+        .period-info {
+            width:100%;
+            color:var(--muted);
+            font-size:12px;
+            line-height:1.6;
+        }
+
+        .period-info strong { color:var(--text); }
+
+        .notice {
+            display:none;
+            padding:13px 15px;
+            margin-top:14px;
+            border-radius:8px;
+            font-size:13px;
+            line-height:1.5;
+        }
+
+        .notice.show { display:block; }
+
+        .notice.warning {
+            background:var(--warning-bg);
+            color:#805b16;
+            border:1px solid #f2dfb4;
+        }
+
+        .notice.info {
+            background:var(--primary-light);
+            color:var(--primary-dark);
+            border:1px solid #d5e4ff;
         }
 
         .summary-grid {
-            display: grid;
-            grid-template-columns: repeat(4, minmax(0, 1fr));
-            gap: 15px;
-            margin-bottom: 22px;
+            display:grid;
+            grid-template-columns:repeat(4,minmax(0,1fr));
+            gap:15px;
+            margin-bottom:22px;
         }
 
         .summary-card {
-            background: white;
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 18px;
-            box-shadow: var(--shadow);
+            background:white;
+            border:1px solid var(--border);
+            border-radius:12px;
+            padding:18px;
+            box-shadow:var(--shadow);
         }
 
-        .summary-card .card-top {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 15px;
+        .card-top {
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            gap:10px;
+            margin-bottom:15px;
         }
 
-        .summary-card .card-label {
-            color: var(--muted);
-            font-size: 12px;
-            font-weight: 700;
+        .card-label {
+            color:var(--muted);
+            font-size:12px;
+            font-weight:700;
         }
 
-        .summary-card .card-icon {
-            width: 35px;
-            height: 35px;
-            display: grid;
-            place-items: center;
-            border-radius: 9px;
-            background: var(--primary-light);
-            color: var(--primary);
+        .card-icon {
+            width:35px;
+            height:35px;
+            display:grid;
+            place-items:center;
+            border-radius:9px;
+            background:var(--primary-light);
+            color:var(--primary);
         }
 
-        .summary-card .number {
-            font-size: 27px;
-            font-weight: 800;
-            color: var(--text);
+        .number {
+            font-size:27px;
+            font-weight:800;
+            color:var(--text);
         }
 
-        .summary-card .subtext {
-            color: var(--muted);
-            font-size: 11px;
-            margin-top: 6px;
+        .subtext {
+            color:var(--muted);
+            font-size:11px;
+            margin-top:6px;
         }
 
         .section-card {
-            background: white;
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            box-shadow: var(--shadow);
-            margin-bottom: 22px;
-            overflow: hidden;
+            background:white;
+            border:1px solid var(--border);
+            border-radius:12px;
+            box-shadow:var(--shadow);
+            margin-bottom:22px;
+            overflow:hidden;
         }
 
         .section-header {
-            padding: 19px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 15px;
-            border-bottom: 1px solid var(--border);
+            padding:19px 20px;
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            gap:15px;
+            border-bottom:1px solid var(--border);
         }
 
         .section-header h3 {
-            font-size: 16px;
-            margin-bottom: 5px;
+            font-size:16px;
+            margin-bottom:5px;
         }
 
         .section-header p {
-            font-size: 12px;
-            color: var(--muted);
+            font-size:12px;
+            color:var(--muted);
+            line-height:1.5;
         }
 
         .filters {
-            display: flex;
-            gap: 10px;
-            align-items: center;
+            display:flex;
+            gap:10px;
+            align-items:center;
         }
 
-        .search-box {
-            position: relative;
+        .header-actions {
+            display:flex;
+            align-items:center;
+            flex-wrap:wrap;
+            gap:9px;
         }
+
+        .search-box { position:relative; }
 
         .search-box i {
-            position: absolute;
-            left: 12px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #9aa8ba;
-            font-size: 13px;
+            position:absolute;
+            left:12px;
+            top:50%;
+            transform:translateY(-50%);
+            color:#9aa8ba;
+            font-size:13px;
         }
 
         .search-box input {
-            width: 230px;
-            padding: 10px 12px 10px 34px;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            outline: none;
-            font-size: 13px;
+            width:230px;
+            padding:10px 12px 10px 34px;
+            border:1px solid var(--border);
+            border-radius:8px;
+            outline:none;
+            font-size:13px;
         }
 
-        .search-box input:focus {
-            border-color: var(--primary);
-        }
+        .search-box input:focus { border-color:var(--primary); }
 
         .table-wrap {
-            width: 100%;
-            overflow-x: auto;
+            width:100%;
+            overflow-x:auto;
         }
 
         table {
-            width: 100%;
-            border-collapse: collapse;
-            min-width: 850px;
+            width:100%;
+            border-collapse:collapse;
+            min-width:850px;
         }
 
-        th, td {
-            padding: 14px 16px;
-            text-align: left;
-            border-bottom: 1px solid #edf0f5;
-            font-size: 12px;
-            white-space: nowrap;
+        th,td {
+            padding:14px 16px;
+            text-align:left;
+            border-bottom:1px solid #edf0f5;
+            font-size:12px;
+            white-space:nowrap;
         }
 
         th {
-            background: #f8faff;
-            color: #65748b;
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: .35px;
+            background:#f8faff;
+            color:#65748b;
+            font-size:11px;
+            text-transform:uppercase;
+            letter-spacing:.35px;
         }
 
-        tbody tr:hover {
-            background: #fafcff;
-        }
-
-        tbody tr:last-child td {
-            border-bottom: 0;
-        }
+        tbody tr:hover { background:#fafcff; }
+        tbody tr:last-child td { border-bottom:0; }
 
         .school-name {
-            font-weight: 700;
-            color: var(--text);
+            font-weight:700;
+            color:var(--text);
         }
 
         .school-code {
-            font-size: 11px;
-            color: var(--muted);
-            margin-top: 4px;
+            font-size:11px;
+            color:var(--muted);
+            margin-top:4px;
         }
 
-        .progress-cell {
-            min-width: 150px;
-        }
+        .progress-cell { min-width:150px; }
 
         .progress-info {
-            display: flex;
-            justify-content: space-between;
-            gap: 8px;
-            font-size: 11px;
-            font-weight: 700;
-            margin-bottom: 7px;
+            display:flex;
+            justify-content:space-between;
+            gap:8px;
+            font-size:11px;
+            font-weight:700;
+            margin-bottom:7px;
         }
 
         .progress-track {
-            height: 7px;
-            background: #e9eef5;
-            border-radius: 10px;
-            overflow: hidden;
+            height:7px;
+            background:#e9eef5;
+            border-radius:10px;
+            overflow:hidden;
         }
 
         .progress-fill {
-            height: 100%;
-            width: 0;
-            background: var(--primary);
-            border-radius: 10px;
-            transition: width .3s;
+            height:100%;
+            width:0;
+            background:var(--primary);
+            border-radius:10px;
+            transition:width .3s;
         }
 
-        .progress-fill.high {
-            background: var(--success);
-        }
-
-        .progress-fill.medium {
-            background: #d69e2e;
-        }
-
-        .progress-fill.low {
-            background: var(--danger);
-        }
+        .progress-fill.high { background:var(--success); }
+        .progress-fill.medium { background:#d69e2e; }
+        .progress-fill.low { background:var(--danger); }
 
         .percentage {
-            font-weight: 800;
-            font-size: 13px;
+            font-weight:800;
+            font-size:13px;
         }
 
         .status-pill {
-            display: inline-block;
-            padding: 5px 9px;
-            border-radius: 20px;
-            font-size: 10px;
-            font-weight: 700;
+            display:inline-block;
+            padding:5px 9px;
+            border-radius:20px;
+            font-size:10px;
+            font-weight:700;
+            margin-bottom:5px;
         }
 
         .status-complete {
-            color: var(--success);
-            background: var(--success-bg);
+            color:var(--success);
+            background:var(--success-bg);
         }
 
         .status-progress {
-            color: var(--warning);
-            background: var(--warning-bg);
+            color:var(--warning);
+            background:var(--warning-bg);
         }
 
         .status-pending {
-            color: var(--danger);
-            background: var(--danger-bg);
+            color:var(--danger);
+            background:var(--danger-bg);
         }
 
         .view-btn {
-            background: var(--primary-light);
-            color: var(--primary);
-            border: 0;
-            border-radius: 7px;
-            padding: 8px 11px;
-            font-size: 11px;
-            font-weight: 700;
+            background:var(--primary-light);
+            color:var(--primary);
+            border:0;
+            border-radius:7px;
+            padding:8px 11px;
+            font-size:11px;
+            font-weight:700;
         }
 
-        .view-btn:hover {
-            background: #d8e7ff;
-        }
+        .view-btn:hover { background:#d8e7ff; }
 
-        .details-section {
-            display: none;
-        }
-
-        .details-section.show {
-            display: block;
-        }
+        .details-section { display:none; }
+        .details-section.show { display:block; }
 
         .back-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 12px;
-            padding: 17px 20px;
-            border-bottom: 1px solid var(--border);
-            flex-wrap: wrap;
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            gap:12px;
+            padding:17px 20px;
+            border-bottom:1px solid var(--border);
+            flex-wrap:wrap;
         }
 
         .selected-school h3 {
-            font-size: 16px;
-            margin-bottom: 5px;
+            font-size:16px;
+            margin-bottom:5px;
         }
 
         .selected-school p {
-            color: var(--muted);
-            font-size: 12px;
+            color:var(--muted);
+            font-size:12px;
+            line-height:1.5;
         }
 
         .teacher-summary {
-            display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 12px;
-            padding: 17px 20px;
-            background: #fbfcff;
-            border-bottom: 1px solid var(--border);
+            display:grid;
+            grid-template-columns:repeat(3,minmax(0,1fr));
+            gap:12px;
+            padding:17px 20px;
+            background:#fbfcff;
+            border-bottom:1px solid var(--border);
         }
 
         .mini-card {
-            border: 1px solid var(--border);
-            border-radius: 9px;
-            padding: 13px;
-            background: white;
+            border:1px solid var(--border);
+            border-radius:9px;
+            padding:13px;
+            background:white;
         }
 
         .mini-card span {
-            display: block;
-            font-size: 11px;
-            color: var(--muted);
-            margin-bottom: 7px;
+            display:block;
+            font-size:11px;
+            color:var(--muted);
+            margin-bottom:7px;
         }
 
-        .mini-card strong {
-            font-size: 19px;
-        }
+        .mini-card strong { font-size:19px; }
 
         .teacher-cell strong {
-            display: block;
-            font-size: 12px;
+            display:block;
+            font-size:12px;
         }
 
         .teacher-cell small {
-            display: block;
-            margin-top: 4px;
-            color: var(--muted);
+            display:block;
+            margin-top:4px;
+            color:var(--muted);
         }
 
         .empty-state {
-            padding: 45px 20px;
-            text-align: center;
-            color: var(--muted);
+            padding:45px 20px;
+            text-align:center;
+            color:var(--muted);
         }
 
         .empty-state i {
-            font-size: 30px;
-            margin-bottom: 12px;
-            color: #a9b7ca;
+            font-size:30px;
+            margin-bottom:12px;
+            color:#a9b7ca;
         }
 
         .empty-state h4 {
-            color: var(--text);
-            font-size: 14px;
-            margin-bottom: 6px;
+            color:var(--text);
+            font-size:14px;
+            margin-bottom:6px;
         }
 
         .empty-state p {
-            font-size: 12px;
+            font-size:12px;
+            line-height:1.5;
         }
 
         .loading {
-            padding: 35px 20px;
-            text-align: center;
-            color: var(--muted);
-            font-size: 13px;
+            padding:35px 20px;
+            text-align:center;
+            color:var(--muted);
+            font-size:13px;
         }
 
         .loading i {
-            margin-right: 8px;
-            color: var(--primary);
+            margin-right:8px;
+            color:var(--primary);
         }
 
         .toast-container {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 100;
-            display: flex;
-            flex-direction: column;
-            gap: 9px;
+            position:fixed;
+            top:20px;
+            right:20px;
+            z-index:100;
+            display:flex;
+            flex-direction:column;
+            gap:9px;
         }
 
         .toast {
-            background: #1e293b;
-            color: white;
-            padding: 13px 17px;
-            border-radius: 8px;
-            box-shadow: var(--shadow);
-            font-size: 12px;
-            max-width: 340px;
-            animation: appear .2s ease;
+            background:#1e293b;
+            color:white;
+            padding:13px 17px;
+            border-radius:8px;
+            box-shadow:var(--shadow);
+            font-size:12px;
+            max-width:340px;
+            animation:appear .2s ease;
         }
 
-        .toast.error {
-            background: #a92727;
-        }
-
-        .toast.success {
-            background: #176b3c;
-        }
+        .toast.error { background:#a92727; }
+        .toast.success { background:#176b3c; }
 
         @keyframes appear {
-            from {
-                opacity: 0;
-                transform: translateY(-8px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity:0; transform:translateY(-8px); }
+            to { opacity:1; transform:translateY(0); }
         }
 
-        @media (max-width: 900px) {
-            .summary-grid {
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-            }
-
+        @media(max-width:1000px) {
             .section-header {
-                align-items: flex-start;
-                flex-direction: column;
+                align-items:flex-start;
+                flex-direction:column;
             }
 
-            .filters, .search-box, .search-box input {
-                width: 100%;
+            .header-actions,
+            .filters,
+            .search-box,
+            .search-box input {
+                width:100%;
+            }
+
+            .header-actions .btn { flex:1; }
+        }
+
+        @media(max-width:900px) {
+            .summary-grid {
+                grid-template-columns:repeat(2,minmax(0,1fr));
             }
         }
 
-        @media (max-width: 600px) {
-            .topbar {
-                padding: 13px 15px;
-            }
+        @media(max-width:600px) {
+            .topbar { padding:13px 15px; }
+            .brand h1 { font-size:14px; }
+            .role-label { display:none; }
 
-            .brand h1 {
-                font-size: 14px;
-            }
-
-            .role-label {
-                display: none;
-            }
-
-            .main {
-                padding: 20px 13px 35px;
-            }
+            .main { padding:20px 13px 35px; }
 
             .page-heading {
-                flex-direction: column;
+                flex-direction:column;
             }
 
-            .page-heading h2 {
-                font-size: 21px;
-            }
+            .page-heading h2 { font-size:21px; }
 
-            .summary-grid {
-                gap: 9px;
-            }
+            .summary-grid { gap:9px; }
 
-            .summary-card {
-                padding: 13px;
-            }
+            .summary-card { padding:13px; }
 
-            .summary-card .number {
-                font-size: 22px;
-            }
+            .number { font-size:22px; }
 
             .teacher-summary {
-                grid-template-columns: 1fr;
-                padding: 13px;
+                grid-template-columns:1fr;
+                padding:13px;
             }
 
-            .back-row {
-                padding: 14px;
+            .back-row { padding:14px; }
+            .section-header { padding:15px; }
+
+            .period-controls {
+                align-items:stretch;
+                flex-direction:column;
             }
 
-            .section-header {
-                padding: 15px;
+            .control-group,
+            .control-group select {
+                width:100%;
+                min-width:0;
             }
         }
     </style>
@@ -713,16 +741,59 @@
                 Examinations
             </button>
         </div>
+
+        <!-- TEST SELECTOR -->
+        <div class="period-controls" id="testControls">
+            <div class="control-group">
+                <label for="testSelect">SELECT OPEN TEST</label>
+                <select id="testSelect" onchange="changeSelectedTest()">
+                    <option value="">Loading open tests...</option>
+                </select>
+            </div>
+
+            <div class="period-info" id="testPeriodInfo">
+                Loading test information...
+            </div>
+        </div>
+
+        <!-- EXAMINATION PERIOD FILTERS -->
+        <div class="period-controls" id="examinationControls" style="display:none;">
+
+            <div class="control-group">
+                <label for="examYearSelect">ACADEMIC YEAR</label>
+                <select id="examYearSelect" onchange="changeExaminationPeriod()">
+                    <option value="">All academic years</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label for="examTermSelect">TERM</label>
+                <select id="examTermSelect" onchange="changeExaminationPeriod()">
+                    <option value="">All terms</option>
+                </select>
+            </div>
+
+            <div class="period-info">
+                Examination filters use academic-year names and term numbers
+                so that schools with different database period IDs are handled correctly.
+            </div>
+        </div>
+
+        <div class="notice warning" id="noOpenTestNotice">
+            There is no open test to inspect the marks of.
+        </div>
+
+        <div class="notice info" id="loadingTestNotice">
+            Loading available open tests...
+        </div>
     </section>
 
+    <!-- SECTOR SUMMARY -->
     <section class="summary-grid">
-
         <div class="summary-card">
             <div class="card-top">
                 <span class="card-label">TOTAL SCHOOLS</span>
-                <div class="card-icon">
-                    <i class="fas fa-school"></i>
-                </div>
+                <div class="card-icon"><i class="fas fa-school"></i></div>
             </div>
             <div class="number" id="totalSchools">0</div>
             <div class="subtext">Schools in your sector</div>
@@ -731,9 +802,7 @@
         <div class="summary-card">
             <div class="card-top">
                 <span class="card-label">EXPECTED MARKS</span>
-                <div class="card-icon">
-                    <i class="fas fa-list-check"></i>
-                </div>
+                <div class="card-icon"><i class="fas fa-list-check"></i></div>
             </div>
             <div class="number" id="expectedMarks">0</div>
             <div class="subtext">Total marks entries expected</div>
@@ -742,9 +811,7 @@
         <div class="summary-card">
             <div class="card-top">
                 <span class="card-label">RECORDED MARKS</span>
-                <div class="card-icon">
-                    <i class="fas fa-check-circle"></i>
-                </div>
+                <div class="card-icon"><i class="fas fa-check-circle"></i></div>
             </div>
             <div class="number" id="recordedMarks">0</div>
             <div class="subtext">Marks entries already recorded</div>
@@ -753,42 +820,45 @@
         <div class="summary-card">
             <div class="card-top">
                 <span class="card-label">MISSING MARKS</span>
-                <div class="card-icon">
-                    <i class="fas fa-hourglass-half"></i>
-                </div>
+                <div class="card-icon"><i class="fas fa-hourglass-half"></i></div>
             </div>
             <div class="number" id="missingMarks">0</div>
             <div class="subtext">Marks entries still outstanding</div>
         </div>
-
     </section>
 
     <!-- SCHOOL RANKING -->
-
     <section class="section-card" id="schoolsSection">
-
         <div class="section-header">
             <div>
                 <h3>School Marks-Recording Performance</h3>
-                <p>
+                <p id="schoolTableDescription">
                     Schools are ranked from highest to lowest completion percentage.
                 </p>
             </div>
 
-            <div class="filters">
-                <div class="search-box">
-                    <i class="fas fa-search"></i>
-                    <input type="search"
-                           id="schoolSearch"
-                           placeholder="Search school..."
-                           oninput="filterSchools()">
+            <div class="header-actions">
+                <button class="btn btn-success" id="allSchoolsPdfBtn"
+                        onclick="downloadAllSchoolsPDF()">
+                    <i class="fas fa-file-pdf"></i>
+                    All Schools PDF
+                </button>
+
+                <div class="filters">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="search"
+                               id="schoolSearch"
+                               placeholder="Search school..."
+                               oninput="filterSchools()">
+                    </div>
                 </div>
             </div>
         </div>
 
         <div class="table-wrap">
             <table>
-                <thead>
+                <thead id="schoolsTableHead">
                     <tr>
                         <th>Rank</th>
                         <th>School</th>
@@ -814,11 +884,9 @@
                 </tbody>
             </table>
         </div>
-
     </section>
 
     <!-- TEACHER DETAILS -->
-
     <section class="section-card details-section" id="teachersSection">
 
         <div class="back-row">
@@ -829,10 +897,18 @@
                 </p>
             </div>
 
-            <button class="btn btn-light" onclick="backToSchools()">
-                <i class="fas fa-arrow-left"></i>
-                Back to Schools
-            </button>
+            <div class="header-actions">
+                <button class="btn btn-success" id="selectedSchoolPdfBtn"
+                        onclick="downloadSelectedSchoolPDF()" disabled>
+                    <i class="fas fa-file-pdf"></i>
+                    Selected School PDF
+                </button>
+
+                <button class="btn btn-light" onclick="backToSchools()">
+                    <i class="fas fa-arrow-left"></i>
+                    Back to Schools
+                </button>
+            </div>
         </div>
 
         <div class="teacher-summary">
@@ -900,11 +976,9 @@
                 </tbody>
             </table>
         </div>
-
     </section>
 
-    <!-- TEACHER SUBJECT AND CLASS BREAKDOWN -->
-
+    <!-- TEACHER CLASS AND SUBJECT BREAKDOWN -->
     <section class="section-card details-section" id="teacherBreakdownSection">
 
         <div class="back-row">
@@ -973,12 +1047,15 @@
                 </tbody>
             </table>
         </div>
-
     </section>
 
 </main>
 
 <div class="toast-container" id="toastContainer"></div>
+
+<!-- PDF LIBRARIES -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.4/jspdf.plugin.autotable.min.js"></script>
 
 <script>
 /* =====================================================
@@ -993,9 +1070,14 @@ let currentRecordType = "tests";
 let schools = [];
 let teachers = [];
 let teacherBreakdown = [];
+let openTests = [];
+let examinationPeriods = [];
 
 let selectedSchool = null;
 let selectedTeacher = null;
+let selectedTestId = "";
+
+let schoolRequestVersion = 0;
 
 
 /* =====================================================
@@ -1073,9 +1155,21 @@ function showToast(message, type = "success") {
 
     container.appendChild(toast);
 
-    setTimeout(() => {
-        toast.remove();
-    }, 3500);
+    setTimeout(() => toast.remove(), 3500);
+}
+
+function resetDetails() {
+    selectedSchool = null;
+    selectedTeacher = null;
+
+    teachers = [];
+    teacherBreakdown = [];
+
+    document.getElementById("schoolsSection").style.display = "block";
+    document.getElementById("teachersSection").classList.remove("show");
+    document.getElementById("teacherBreakdownSection").classList.remove("show");
+
+    document.getElementById("selectedSchoolPdfBtn").disabled = true;
 }
 
 
@@ -1106,10 +1200,284 @@ async function apiRequest(action, params = {}) {
     }
 
     if (result.success === false) {
-        throw new Error(result.message || "The request could not be completed.");
+        throw new Error(
+            result.message || "The request could not be completed."
+        );
     }
 
     return result;
+}
+
+
+/* =====================================================
+   GET CURRENT FILTER PARAMETERS
+===================================================== */
+
+function getCurrentRequestParams() {
+    if (currentRecordType === "tests") {
+        if (!selectedTestId) return {};
+
+        return {
+            record_type: "tests",
+            test_id: selectedTestId
+        };
+    }
+
+    return {
+        record_type: "examinations",
+        academic_year:
+            document.getElementById("examYearSelect").value,
+        term_number:
+            document.getElementById("examTermSelect").value
+    };
+}
+
+
+/* =====================================================
+   LOAD OPEN TESTS
+===================================================== */
+
+async function loadOpenTests() {
+    const select = document.getElementById("testSelect");
+    const notice = document.getElementById("noOpenTestNotice");
+    const loadingNotice = document.getElementById("loadingTestNotice");
+
+    loadingNotice.classList.add("show");
+    notice.classList.remove("show");
+
+    select.disabled = true;
+    select.innerHTML = `<option value="">Loading open tests...</option>`;
+
+    try {
+        const result = await apiRequest("get_open_tests");
+
+        openTests = result.tests || [];
+
+        loadingNotice.classList.remove("show");
+
+        if (!openTests.length) {
+            selectedTestId = "";
+
+            select.innerHTML = `<option value="">No open tests available</option>`;
+            select.disabled = true;
+
+            document.getElementById("testPeriodInfo").textContent = "";
+            notice.classList.add("show");
+
+            schools = [];
+            renderSchools();
+            updateSectorSummary({
+                total_schools: 0,
+                expected_marks: 0,
+                recorded_marks: 0,
+                missing_marks: 0
+            });
+
+            document.getElementById("allSchoolsPdfBtn").disabled = true;
+
+            return;
+        }
+
+        /*
+         * The API returns the newest open test first.
+         * Automatically select that test.
+         */
+
+        selectedTestId = String(openTests[0].test_id);
+
+        select.innerHTML = openTests.map(test => {
+            const testId = String(test.test_id);
+
+            const date = test.created_at
+                ? new Date(test.created_at).toLocaleDateString()
+                : "";
+
+            const label = `${test.test_name}${date ? " — " + date : ""}`;
+
+            return `
+                <option value="${escapeHTML(testId)}">
+                    ${escapeHTML(label)}
+                </option>
+            `;
+        }).join("");
+
+        select.value = selectedTestId;
+        select.disabled = false;
+
+        updateTestPeriodInformation();
+
+        await loadSchoolPerformance();
+
+    } catch (error) {
+        loadingNotice.classList.remove("show");
+
+        select.innerHTML = `<option value="">Unable to load open tests</option>`;
+
+        notice.textContent = error.message;
+        notice.classList.add("show");
+
+        schools = [];
+        renderSchools();
+
+        updateSectorSummary({
+            total_schools: 0,
+            expected_marks: 0,
+            recorded_marks: 0,
+            missing_marks: 0
+        });
+
+        showToast(error.message, "error");
+    }
+}
+
+
+/* =====================================================
+   SELECTED TEST INFORMATION
+===================================================== */
+
+function updateTestPeriodInformation() {
+    const test = openTests.find(
+        item => String(item.test_id) === String(selectedTestId)
+    );
+
+    const info = document.getElementById("testPeriodInfo");
+
+    if (!test) {
+        info.textContent = "";
+        return;
+    }
+
+    const periods = Array.isArray(test.periods)
+        ? test.periods
+        : [];
+
+    const periodLabels = [...new Set(
+        periods.map(period => {
+            return [
+                period.academic_year,
+                period.term
+            ].filter(Boolean).join(" / ");
+        }).filter(Boolean)
+    )];
+
+    info.innerHTML = `
+        <strong>Academic period:</strong>
+        ${periodLabels.length
+            ? escapeHTML(periodLabels.join(" | "))
+            : "Period information unavailable"}
+        <br>
+        <strong>Schools attached:</strong>
+        ${numberFormat(periods.length)}
+        <br>
+        <strong>Test status:</strong> Open
+    `;
+}
+
+
+/* =====================================================
+   CHANGE SELECTED TEST
+===================================================== */
+
+async function changeSelectedTest() {
+    const value = document.getElementById("testSelect").value;
+
+    if (!value) return;
+
+    selectedTestId = value;
+
+    resetDetails();
+
+    document.getElementById("schoolSearch").value = "";
+
+    updateTestPeriodInformation();
+
+    await loadSchoolPerformance();
+}
+
+
+/* =====================================================
+   LOAD EXAMINATION PERIODS
+===================================================== */
+
+async function loadExaminationPeriods() {
+    const yearSelect = document.getElementById("examYearSelect");
+    const termSelect = document.getElementById("examTermSelect");
+
+    yearSelect.disabled = true;
+    termSelect.disabled = true;
+
+    try {
+        const result = await apiRequest("get_examination_periods");
+
+        examinationPeriods = result.periods || [];
+
+        const years = [...new Set(
+            examinationPeriods
+                .map(item => item.academic_year)
+                .filter(Boolean)
+        )];
+
+        const previousYear = yearSelect.value;
+        const previousTerm = termSelect.value;
+
+        yearSelect.innerHTML = `
+            <option value="">All academic years</option>
+            ${years.map(year => `
+                <option value="${escapeHTML(year)}">
+                    ${escapeHTML(year)}
+                </option>
+            `).join("")}
+        `;
+
+        const terms = [...new Map(
+            examinationPeriods
+                .filter(item => item.term_number !== null)
+                .map(item => [
+                    String(item.term_number),
+                    {
+                        number: String(item.term_number),
+                        name: item.term
+                    }
+                ])
+        ).values()].sort((a, b) =>
+            Number(a.number) - Number(b.number)
+        );
+
+        termSelect.innerHTML = `
+            <option value="">All terms</option>
+            ${terms.map(term => `
+                <option value="${escapeHTML(term.number)}">
+                    ${escapeHTML(term.name || "Term " + term.number)}
+                </option>
+            `).join("")}
+        `;
+
+        if (years.includes(previousYear)) {
+            yearSelect.value = previousYear;
+        }
+
+        if (terms.some(term => term.number === previousTerm)) {
+            termSelect.value = previousTerm;
+        }
+
+    } catch (error) {
+        showToast(error.message, "error");
+    } finally {
+        yearSelect.disabled = false;
+        termSelect.disabled = false;
+    }
+}
+
+
+/* =====================================================
+   CHANGE EXAMINATION PERIOD
+===================================================== */
+
+async function changeExaminationPeriod() {
+    resetDetails();
+    document.getElementById("schoolSearch").value = "";
+
+    await loadSchoolPerformance();
 }
 
 
@@ -1119,6 +1487,22 @@ async function apiRequest(action, params = {}) {
 
 async function loadSchoolPerformance() {
     const body = document.getElementById("schoolsTableBody");
+
+    const version = ++schoolRequestVersion;
+
+    if (currentRecordType === "tests" && !selectedTestId) {
+        schools = [];
+        renderSchools();
+
+        updateSectorSummary({
+            total_schools: 0,
+            expected_marks: 0,
+            recorded_marks: 0,
+            missing_marks: 0
+        });
+
+        return;
+    }
 
     body.innerHTML = `
         <tr>
@@ -1132,16 +1516,14 @@ async function loadSchoolPerformance() {
     `;
 
     try {
-        const result = await apiRequest("get_school_progress", {
-            record_type: currentRecordType
-        });
+        const result = await apiRequest(
+            "get_school_progress",
+            getCurrentRequestParams()
+        );
+
+        if (version !== schoolRequestVersion) return;
 
         schools = result.schools || [];
-
-        /*
-         * The API is responsible for calculating completion
-         * using actual expected entries and recorded marks.
-         */
 
         schools.sort((a, b) =>
             Number(b.completion_percentage || 0) -
@@ -1151,7 +1533,12 @@ async function loadSchoolPerformance() {
         renderSchools();
         updateSectorSummary(result.summary || calculateSummary(schools));
 
+        document.getElementById("allSchoolsPdfBtn").disabled =
+            currentRecordType === "tests" && !selectedTestId;
+
     } catch (error) {
+        if (version !== schoolRequestVersion) return;
+
         body.innerHTML = `
             <tr>
                 <td colspan="9">
@@ -1175,9 +1562,9 @@ async function loadSchoolPerformance() {
 
 function calculateSummary(items) {
     return items.reduce((summary, item) => {
-        summary.expected += Number(item.expected_marks || 0);
-        summary.recorded += Number(item.recorded_marks || 0);
-        summary.missing += Number(item.missing_marks || 0);
+        summary.expected_marks += Number(item.expected_marks || 0);
+        summary.recorded_marks += Number(item.recorded_marks || 0);
+        summary.missing_marks += Number(item.missing_marks || 0);
 
         return summary;
     }, {
@@ -1209,15 +1596,41 @@ function updateSectorSummary(summary) {
 
 function renderSchools(list = schools) {
     const body = document.getElementById("schoolsTableBody");
+    const head = document.getElementById("schoolsTableHead");
+
+    const isTests = currentRecordType === "tests";
+
+    head.innerHTML = `
+        <tr>
+            <th>Rank</th>
+            <th>School</th>
+            ${isTests ? "<th>Academic Period</th>" : ""}
+            <th>Teachers</th>
+            <th>Expected</th>
+            <th>Recorded</th>
+            <th>Missing</th>
+            <th>Completion</th>
+            <th>Performance</th>
+            <th>Action</th>
+        </tr>
+    `;
+
+    const colspan = isTests ? 10 : 9;
 
     if (!list.length) {
+        const noTest = isTests && !selectedTestId;
+
         body.innerHTML = `
             <tr>
-                <td colspan="9">
+                <td colspan="${colspan}">
                     <div class="empty-state">
-                        <i class="fas fa-school"></i>
-                        <h4>No school records found</h4>
-                        <p>There is no recording data available for this category.</p>
+                        <i class="fas ${noTest ? "fa-file-circle-xmark" : "fa-school"}"></i>
+                        <h4>${noTest
+                            ? "There is no open test to inspect the marks of."
+                            : "No school records found"}</h4>
+                        <p>${noTest
+                            ? "When a test is opened, its school recording progress will appear here."
+                            : "There is no recording data available for the selected filters."}</p>
                     </div>
                 </td>
             </tr>
@@ -1229,6 +1642,11 @@ function renderSchools(list = schools) {
     body.innerHTML = list.map((school, index) => {
         const schoolId = Number(school.school_id);
         const completion = Number(school.completion_percentage || 0);
+
+        const period = [
+            school.academic_year,
+            school.term
+        ].filter(Boolean).join(" / ") || "—";
 
         return `
             <tr>
@@ -1243,18 +1661,15 @@ function renderSchools(list = schools) {
                     </div>
                 </td>
 
+                ${isTests ? `<td>${escapeHTML(period)}</td>` : ""}
+
                 <td>${numberFormat(school.teacher_count)}</td>
-
                 <td>${numberFormat(school.expected_marks)}</td>
-
                 <td>${numberFormat(school.recorded_marks)}</td>
-
                 <td>${numberFormat(school.missing_marks)}</td>
 
                 <td>
-                    <span class="percentage">
-                        ${percentage(completion)}
-                    </span>
+                    <span class="percentage">${percentage(completion)}</span>
                 </td>
 
                 <td>
@@ -1266,7 +1681,7 @@ function renderSchools(list = schools) {
                     <button class="view-btn"
                             onclick="viewSchoolTeachers(${schoolId})">
                         <i class="fas fa-users"></i>
-                        View Teachers Recording
+                        View Teachers
                     </button>
                 </td>
             </tr>
@@ -1318,10 +1733,24 @@ async function viewSchoolTeachers(schoolId) {
     document.getElementById("selectedSchoolName").textContent =
         selectedSchool.school_name;
 
+    const periodText = currentRecordType === "tests"
+        ? [
+            selectedSchool.academic_year,
+            selectedSchool.term
+          ].filter(Boolean).join(" / ")
+        : [
+            document.getElementById("examYearSelect").value,
+            document.getElementById("examTermSelect").selectedOptions[0]?.text
+          ].filter(Boolean).join(" / ");
+
     document.getElementById("selectedSchoolDescription").textContent =
-        `Teacher recording performance — ${currentRecordType === "tests" ? "Tests" : "Examinations"}`;
+        `Teacher recording performance — ${
+            currentRecordType === "tests" ? "Tests" : "Examinations"
+        }${periodText ? " — " + periodText : ""}`;
 
     document.getElementById("teacherSearch").value = "";
+
+    document.getElementById("selectedSchoolPdfBtn").disabled = true;
 
     const body = document.getElementById("teachersTableBody");
 
@@ -1337,10 +1766,13 @@ async function viewSchoolTeachers(schoolId) {
     `;
 
     try {
-        const result = await apiRequest("get_teacher_progress", {
-            school_id: schoolId,
-            record_type: currentRecordType
-        });
+        const result = await apiRequest(
+            "get_teacher_progress",
+            {
+                school_id: String(schoolId),
+                ...getCurrentRequestParams()
+            }
+        );
 
         teachers = result.teachers || [];
 
@@ -1351,6 +1783,8 @@ async function viewSchoolTeachers(schoolId) {
 
         renderTeachers();
         updateSchoolSummary(result.summary || calculateSummary(teachers));
+
+        document.getElementById("selectedSchoolPdfBtn").disabled = false;
 
     } catch (error) {
         body.innerHTML = `
@@ -1368,10 +1802,7 @@ async function viewSchoolTeachers(schoolId) {
         showToast(error.message, "error");
     }
 
-    window.scrollTo({
-        top: 0,
-        behavior: "smooth"
-    });
+    window.scrollTo({ top:0, behavior:"smooth" });
 }
 
 
@@ -1429,19 +1860,13 @@ function renderTeachers(list = teachers) {
                 </td>
 
                 <td>${numberFormat(teacher.assigned_classes_count)}</td>
-
                 <td>${numberFormat(teacher.assigned_subjects_count)}</td>
-
                 <td>${numberFormat(teacher.expected_marks)}</td>
-
                 <td>${numberFormat(teacher.recorded_marks)}</td>
-
                 <td>${numberFormat(teacher.missing_marks)}</td>
 
                 <td>
-                    <span class="percentage">
-                        ${percentage(completion)}
-                    </span>
+                    <span class="percentage">${percentage(completion)}</span>
                     ${progressHTML(completion)}
                 </td>
 
@@ -1515,18 +1940,18 @@ async function viewTeacherBreakdown(teacherId) {
     `;
 
     try {
-        const result = await apiRequest("get_teacher_breakdown", {
-            school_id: selectedSchool.school_id,
-            teacher_id: teacherId,
-            record_type: currentRecordType
-        });
+        const result = await apiRequest(
+            "get_teacher_breakdown",
+            {
+                school_id: String(selectedSchool.school_id),
+                teacher_id: String(teacherId),
+                ...getCurrentRequestParams()
+            }
+        );
 
         teacherBreakdown = result.breakdown || [];
 
-        updateTeacherSummary(
-            result.summary || selectedTeacher
-        );
-
+        updateTeacherSummary(result.summary || selectedTeacher);
         renderTeacherBreakdown();
 
     } catch (error) {
@@ -1546,7 +1971,7 @@ async function viewTeacherBreakdown(teacherId) {
     }
 
     document.getElementById("teacherBreakdownSection")
-        .scrollIntoView({ behavior: "smooth", block: "start" });
+        .scrollIntoView({ behavior:"smooth", block:"start" });
 }
 
 
@@ -1595,19 +2020,12 @@ function renderTeacherBreakdown() {
         return `
             <tr>
                 <td><strong>${escapeHTML(item.class_name)}</strong></td>
-
                 <td>${escapeHTML(item.subject_name)}</td>
-
                 <td>${numberFormat(item.expected_marks)}</td>
-
                 <td>${numberFormat(item.recorded_marks)}</td>
-
                 <td>${numberFormat(item.missing_marks)}</td>
-
                 <td>
-                    <span class="percentage">
-                        ${percentage(completion)}
-                    </span>
+                    <span class="percentage">${percentage(completion)}</span>
                     ${progressHTML(completion)}
                 </td>
             </tr>
@@ -1629,10 +2047,9 @@ function backToSchools() {
     selectedSchool = null;
     selectedTeacher = null;
 
-    window.scrollTo({
-        top: 0,
-        behavior: "smooth"
-    });
+    document.getElementById("selectedSchoolPdfBtn").disabled = true;
+
+    window.scrollTo({ top:0, behavior:"smooth" });
 }
 
 function backToTeachers() {
@@ -1641,7 +2058,7 @@ function backToTeachers() {
     selectedTeacher = null;
 
     document.getElementById("teachersSection")
-        .scrollIntoView({ behavior: "smooth", block: "start" });
+        .scrollIntoView({ behavior:"smooth", block:"start" });
 }
 
 
@@ -1651,7 +2068,6 @@ function backToTeachers() {
 
 async function changeRecordType(type, button) {
     if (!["tests", "examinations"].includes(type)) return;
-
     if (currentRecordType === type) return;
 
     currentRecordType = type;
@@ -1662,23 +2078,338 @@ async function changeRecordType(type, button) {
 
     button.classList.add("active");
 
-    /*
-     * Reset school and teacher details because the selected
-     * recording category has changed.
-     */
-
-    selectedSchool = null;
-    selectedTeacher = null;
-    teachers = [];
-    teacherBreakdown = [];
-
-    document.getElementById("schoolsSection").style.display = "block";
-    document.getElementById("teachersSection").classList.remove("show");
-    document.getElementById("teacherBreakdownSection").classList.remove("show");
+    resetDetails();
 
     document.getElementById("schoolSearch").value = "";
 
-    await loadSchoolPerformance();
+    document.getElementById("testControls").style.display =
+        type === "tests" ? "flex" : "none";
+
+    document.getElementById("examinationControls").style.display =
+        type === "examinations" ? "flex" : "none";
+
+    document.getElementById("noOpenTestNotice").classList.remove("show");
+
+    if (type === "tests") {
+        await loadOpenTests();
+    } else {
+        await loadExaminationPeriods();
+        await loadSchoolPerformance();
+    }
+}
+
+
+/* =====================================================
+   PDF HELPERS
+===================================================== */
+
+function getPDFDocument() {
+    if (!window.jspdf || !window.jspdf.jsPDF) {
+        throw new Error(
+            "The PDF library could not be loaded. Please refresh the page and try again."
+        );
+    }
+
+    const doc = new window.jspdf.jsPDF({
+        orientation:"landscape",
+        unit:"mm",
+        format:"a4"
+    });
+
+    if (typeof doc.autoTable !== "function") {
+        throw new Error(
+            "The PDF table library could not be loaded. Please refresh the page and try again."
+        );
+    }
+
+    return doc;
+}
+
+function getReportPeriodText() {
+    if (currentRecordType === "tests") {
+        const test = openTests.find(
+            item => String(item.test_id) === String(selectedTestId)
+        );
+
+        return test
+            ? `Test: ${test.test_name}`
+            : "Test";
+    }
+
+    const year = document.getElementById("examYearSelect").value;
+    const term = document.getElementById("examTermSelect")
+        .selectedOptions[0]?.text;
+
+    return [
+        year || "All academic years",
+        term && term !== "All terms" ? term : "All terms"
+    ].join(" — ");
+}
+
+function addPDFHeader(doc, title, subtitle) {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(16);
+    doc.text("FILA GRADES SYSTEM", 14, 15);
+
+    doc.setFontSize(13);
+    doc.text(title, 14, 23);
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+
+    doc.text(subtitle, 14, 30);
+    doc.text(
+        `Generated: ${new Date().toLocaleString()}`,
+        14,
+        36
+    );
+}
+
+function addPDFFooter(doc) {
+    const pageCount = doc.internal.getNumberOfPages();
+
+    for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+
+        doc.setFontSize(8);
+        doc.setTextColor(110);
+
+        doc.text(
+            `Fila Grades System | Page ${i} of ${pageCount}`,
+            doc.internal.pageSize.getWidth() - 14,
+            doc.internal.pageSize.getHeight() - 8,
+            { align:"right" }
+        );
+    }
+}
+
+function getSafeFileName(value) {
+    return String(value || "report")
+        .replace(/[^a-z0-9-_]+/gi, "_")
+        .replace(/^_+|_+$/g, "");
+}
+
+
+/* =====================================================
+   DOWNLOAD ALL SCHOOLS PDF
+===================================================== */
+
+function downloadAllSchoolsPDF() {
+    try {
+        if (!schools.length) {
+            showToast("There are no school records to download.", "error");
+            return;
+        }
+
+        if (currentRecordType === "tests" && !selectedTestId) {
+            showToast(
+                "There is no open test to inspect the marks of.",
+                "error"
+            );
+            return;
+        }
+
+        const doc = getPDFDocument();
+
+        addPDFHeader(
+            doc,
+            "SCHOOL MARKS-RECORDING PERFORMANCE",
+            getReportPeriodText()
+        );
+
+        const isTests = currentRecordType === "tests";
+
+        const head = isTests
+            ? [[
+                "Rank",
+                "School",
+                "Academic Year / Term",
+                "Teachers",
+                "Expected",
+                "Recorded",
+                "Missing",
+                "Completion"
+            ]]
+            : [[
+                "Rank",
+                "School",
+                "Teachers",
+                "Expected",
+                "Recorded",
+                "Missing",
+                "Completion"
+            ]];
+
+        const body = schools.map((school, index) => {
+            const common = [
+                String(index + 1),
+                school.school_name || "",
+            ];
+
+            if (isTests) {
+                common.push(
+                    [
+                        school.academic_year,
+                        school.term
+                    ].filter(Boolean).join(" / ") || "—"
+                );
+            }
+
+            common.push(
+                String(school.teacher_count || 0),
+                String(school.expected_marks || 0),
+                String(school.recorded_marks || 0),
+                String(school.missing_marks || 0),
+                percentage(school.completion_percentage)
+            );
+
+            return common;
+        });
+
+        doc.autoTable({
+            head,
+            body,
+            startY:43,
+            theme:"grid",
+            styles:{
+                fontSize:8,
+                cellPadding:2.5,
+                overflow:"linebreak"
+            },
+            headStyles:{
+                fillColor:[23,78,166],
+                textColor:255,
+                fontStyle:"bold"
+            },
+            alternateRowStyles:{
+                fillColor:[245,248,253]
+            },
+            margin:{ left:14, right:14 }
+        });
+
+        const summary = calculateSummary(schools);
+        const finalY = doc.lastAutoTable.finalY + 9;
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(9);
+
+        doc.text(
+            `Schools: ${schools.length}   Expected: ${numberFormat(summary.expected_marks)}   Recorded: ${numberFormat(summary.recorded_marks)}   Missing: ${numberFormat(summary.missing_marks)}`,
+            14,
+            finalY
+        );
+
+        addPDFFooter(doc);
+
+        const filename = `Fila_Grades_All_Schools_${getSafeFileName(
+            currentRecordType === "tests" ? selectedTestId : "examinations"
+        )}.pdf`;
+
+        doc.save(filename);
+
+        showToast("All Schools PDF downloaded successfully.");
+
+    } catch (error) {
+        console.error("All schools PDF error:", error);
+        showToast(error.message, "error");
+    }
+}
+
+
+/* =====================================================
+   DOWNLOAD SELECTED SCHOOL PDF
+===================================================== */
+
+function downloadSelectedSchoolPDF() {
+    try {
+        if (!selectedSchool) {
+            showToast("Please select a school first.", "error");
+            return;
+        }
+
+        if (!teachers.length) {
+            showToast("There are no teacher records to download.", "error");
+            return;
+        }
+
+        const doc = getPDFDocument();
+
+        const period = currentRecordType === "tests"
+            ? [
+                selectedSchool.academic_year,
+                selectedSchool.term
+              ].filter(Boolean).join(" / ") || "Period not available"
+            : getReportPeriodText();
+
+        addPDFHeader(
+            doc,
+            "SELECTED SCHOOL MARKS-RECORDING REPORT",
+            `${selectedSchool.school_name} — ${period}`
+        );
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(10);
+
+        doc.text(
+            `Expected: ${numberFormat(selectedSchool.expected_marks)}    Recorded: ${numberFormat(selectedSchool.recorded_marks)}    Missing: ${numberFormat(selectedSchool.missing_marks)}    Completion: ${percentage(selectedSchool.completion_percentage)}`,
+            14,
+            43
+        );
+
+        doc.autoTable({
+            head:[[
+                "Rank",
+                "Teacher",
+                "Phone",
+                "Classes",
+                "Subjects",
+                "Expected",
+                "Recorded",
+                "Missing",
+                "Completion"
+            ]],
+            body:teachers.map((teacher, index) => [
+                String(index + 1),
+                teacher.full_name || "",
+                teacher.phone || "",
+                String(teacher.assigned_classes_count || 0),
+                String(teacher.assigned_subjects_count || 0),
+                String(teacher.expected_marks || 0),
+                String(teacher.recorded_marks || 0),
+                String(teacher.missing_marks || 0),
+                percentage(teacher.completion_percentage)
+            ]),
+            startY:50,
+            theme:"grid",
+            styles:{
+                fontSize:7.5,
+                cellPadding:2.2,
+                overflow:"linebreak"
+            },
+            headStyles:{
+                fillColor:[23,78,166],
+                textColor:255,
+                fontStyle:"bold"
+            },
+            alternateRowStyles:{
+                fillColor:[245,248,253]
+            },
+            margin:{ left:14, right:14 }
+        });
+
+        addPDFFooter(doc);
+
+        const filename =
+            `Fila_Grades_${getSafeFileName(selectedSchool.school_name)}_Teachers.pdf`;
+
+        doc.save(filename);
+
+        showToast("Selected School PDF downloaded successfully.");
+
+    } catch (error) {
+        console.error("Selected school PDF error:", error);
+        showToast(error.message, "error");
+    }
 }
 
 
@@ -1696,10 +2427,37 @@ async function refreshData() {
     `;
 
     try {
-        await loadSchoolPerformance();
+        if (currentRecordType === "tests") {
+            const previousTestId = selectedTestId;
+
+            await loadOpenTests();
+
+            /*
+             * Keep the previously selected test if it is
+             * still open. Otherwise the latest open test
+             * selected by loadOpenTests() remains selected.
+             */
+
+            const stillOpen = openTests.some(
+                test => String(test.test_id) === String(previousTestId)
+            );
+
+            if (stillOpen && previousTestId) {
+                selectedTestId = previousTestId;
+                document.getElementById("testSelect").value = previousTestId;
+
+                updateTestPeriodInformation();
+                await loadSchoolPerformance();
+            }
+
+        } else {
+            await loadExaminationPeriods();
+            await loadSchoolPerformance();
+        }
 
         if (selectedSchool) {
-            await viewSchoolTeachers(selectedSchool.school_id);
+            const schoolId = selectedSchool.school_id;
+            await viewSchoolTeachers(schoolId);
         }
 
     } finally {
@@ -1716,10 +2474,12 @@ async function refreshData() {
    INITIAL LOAD
 ===================================================== */
 
-document.addEventListener("DOMContentLoaded", () => {
-    loadSchoolPerformance();
-});
+document.addEventListener("DOMContentLoaded", async () => {
+    document.getElementById("testControls").style.display = "flex";
+    document.getElementById("examinationControls").style.display = "none";
 
+    await loadOpenTests();
+});
 </script>
 
 </body>
