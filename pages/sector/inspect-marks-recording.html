@@ -2106,25 +2106,23 @@ async function changeRecordType(type, button) {
 function getPDFDocument() {
     if (!window.jspdf || !window.jspdf.jsPDF) {
         throw new Error(
-            "The PDF library could not be loaded. Please refresh the page and try again."
+            "jsPDF could not be loaded. Check your internet connection and refresh the page."
         );
     }
 
-    const doc = new window.jspdf.jsPDF({
-        orientation:"landscape",
-        unit:"mm",
-        format:"a4"
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({
+        orientation: "landscape",
+        unit: "mm",
+        format: "a4"
     });
 
     if (typeof doc.autoTable !== "function") {
-        throw new Error(
-            "The PDF table library could not be loaded. Please refresh the page and try again."
-        );
+        throw new Error("The jsPDF AutoTable plugin could not be loaded.");
     }
 
     return doc;
 }
-
 function getReportPeriodText() {
     if (currentRecordType === "tests") {
         const test = openTests.find(
