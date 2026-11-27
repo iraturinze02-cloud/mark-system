@@ -895,12 +895,6 @@ const response = await fetch(
         ------------------------------------- */
 
         currentUserRole = data.role || data.user?.role || null;
-        const reportCardsBtn = document.getElementById("generateReportCardsBtn");
-
-reportCardsBtn.style.display =
-    currentUserRole === "school_admin"
-        ? "inline-block"
-        : "none";
 
         if (
     !["sector_admin", "school_admin", "dos"].includes(currentUserRole)
@@ -1044,6 +1038,70 @@ reportCardsBtn.style.display =
             ? "inline-block"
             : "none";
 }
+    
+/* =====================================================
+   REPORT CARD BUTTON AND NAVIGATION
+===================================================== */
+
+// Set this to the actual location of your Student Report Cards HTML page.
+const REPORT_CARDS_PAGE_URL = "report-cards.html";
+
+function updateReportCardsButton(test) {
+
+    const button = document.getElementById("generateReportCardsBtn");
+
+    if (!button) return;
+
+    const isSchoolAdmin = currentUserRole === "school_admin";
+
+    const isClosed =
+        String(test?.status || "").trim().toLowerCase() === "closed";
+
+    button.style.display = isSchoolAdmin ? "inline-block" : "none";
+
+    button.disabled = !isClosed;
+    button.textContent = isClosed
+        ? "GENERATE REPORT CARDS"
+        : "WAIT FOR TEST CLOSURE";
+
+    button.title = isClosed
+        ? "Generate report cards for this closed test"
+        : "Report cards can only be generated after the test is closed";
+
+    button.style.opacity = isClosed ? "1" : "0.6";
+    button.style.cursor = isClosed ? "pointer" : "not-allowed";
+}
+
+function openReportCards() {
+
+    if (!selectedTestId) {
+        alert("Please select a test first.");
+        return;
+    }
+
+    const test = allTests.find(
+        item => String(item.id) === String(selectedTestId)
+    );
+
+    if (!test) {
+        alert("The selected test could not be found.");
+        return;
+    }
+
+    if (currentUserRole !== "school_admin") {
+        alert("Only the School Admin can generate report cards.");
+        return;
+    }
+
+    if (String(test.status || "").trim().toLowerCase() !== "closed") {
+        alert("This test is still open. Please wait until it is closed before generating report cards.");
+        return;
+    }
+
+    window.location.href =
+        `${REPORT_CARDS_PAGE_URL}?test_id=${encodeURIComponent(selectedTestId)}`;
+}
+
 
 function viewSectorMarks() {
 
@@ -1199,10 +1257,12 @@ function displaySelectedTest() {
             <div class="message">Selected test could not be found.</div>
         `;
         updateSectorMarksButton(null);
+        updateReportCardsButton(null);
         return;
     }
 
-    updateSectorMarksButton(test);
+ updateSectorMarksButton(test);
+updateReportCardsButton(test);
 
     // Determine whether this test has been closed.
     const isClosed =
