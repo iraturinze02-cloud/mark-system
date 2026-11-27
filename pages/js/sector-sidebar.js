@@ -82,7 +82,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     <span class="sidebar-icon">📝</span>
                     <span>Manage Tests</span>
                 </a>
-                <a href="../admin/tests-reports.html" class="sidebar-link">
+                <a href="tests-reports.html" class="sidebar-link">
                     <span class="sidebar-icon">📖</span>
                     <span>Tests Reports</span>
                 </a>
