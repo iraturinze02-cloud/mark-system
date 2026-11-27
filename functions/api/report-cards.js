@@ -6,41 +6,58 @@ import {
 } from "../_utils.js";
 
 /* =====================================================
-   SCHOOL REPORT CARDS
+   FILA GRADES SYSTEM
+   SCHOOL REPORT CARDS API
 
    ACCESS:
    - School admin only.
 
    SECTOR-ADMIN-CREATED TEST:
    - Load participating schools in the admin's sector.
-   - Calculate school and sector positions.
+   - Calculate school positions.
+   - Calculate sector positions by comparing the same
+     class across participating schools.
    - Return report cards only for the admin's school.
 
    SCHOOL-ADMIN-CREATED TEST:
-   - Load only the admin's school.
+   - Load only the creator's school.
    - Calculate school positions only.
+
+   IMPORTANT:
+   - Report cards can only be generated after test closure.
+===================================================== */
+
+
+/* =====================================================
+   1. CALCULATE STUDENT PERFORMANCE
 ===================================================== */
 
 function calculatePerformance(student, subjects) {
+
     let total = 0;
     let maximum = 0;
     let complete = true;
 
+    const marks = student.marks || {};
+
     for (const subject of subjects) {
+
         const maxMark = Number(subject.maximum_mark || 0);
-        const mark = student.marks[subject.id];
+        const mark = marks[subject.id];
 
         maximum += maxMark;
 
         if (
             mark === null ||
             mark === undefined ||
+            mark === "" ||
             !Number.isFinite(Number(mark))
         ) {
             complete = false;
-        } else {
-            total += Number(mark);
+            continue;
         }
+
+        total += Number(mark);
     }
 
     if (!complete || maximum <= 0) {
@@ -62,39 +79,55 @@ function calculatePerformance(student, subjects) {
     };
 }
 
+
 /* =====================================================
-   ASSIGN RANKS
+   2. ASSIGN RANKS
 
    Competition ranking:
    1, 1, 3
+
+   - Equal percentages receive equal positions.
+   - Incomplete students are not ranked.
 ===================================================== */
 
 function assignRanks(students, performanceMap) {
+
     const eligible = students
         .filter(student => {
             const result = performanceMap.get(student.id);
+
             return result && result.complete;
         })
         .slice()
         .sort((a, b) => {
-            return performanceMap.get(b.id).percentage -
-                   performanceMap.get(a.id).percentage;
+
+            return (
+                performanceMap.get(b.id).percentage -
+                performanceMap.get(a.id).percentage
+            );
+
         });
 
     let previousPercentage = null;
     let previousPosition = null;
 
     eligible.forEach((student, index) => {
+
+        const result = performanceMap.get(student.id);
+
         const percentage = Number(
-            performanceMap.get(student.id).percentage.toFixed(6)
+            result.percentage.toFixed(6)
         );
 
         if (percentage === previousPercentage) {
-            performanceMap.get(student.id).position = previousPosition;
+
+            result.position = previousPosition;
+
         } else {
+
             const position = index + 1;
 
-            performanceMap.get(student.id).position = position;
+            result.position = position;
 
             previousPercentage = percentage;
             previousPosition = position;
@@ -102,11 +135,16 @@ function assignRanks(students, performanceMap) {
     });
 }
 
+
 /* =====================================================
-   GET REPORT CARDS
+   3. GET REPORT CARDS
 ===================================================== */
 
 export async function onRequestGet(context) {
+
+    /* ---------------------------------------------
+       AUTHENTICATION
+    --------------------------------------------- */
 
     const auth = await authenticateRole(context, [
         "school_admin"
@@ -118,16 +156,23 @@ export async function onRequestGet(context) {
     const sectorId = String(auth.sectorId || "");
 
     if (!schoolId) {
+
         return json({
             success: false,
             message: "Your account is not linked to a school."
         }, 403);
     }
 
+    /* ---------------------------------------------
+       VALIDATE TEST ID
+    --------------------------------------------- */
+
     const url = new URL(context.request.url);
+
     const testId = url.searchParams.get("test_id");
 
     if (!testId || !/^\d+$/.test(testId)) {
+
         return json({
             success: false,
             message: "A valid test_id is required."
@@ -137,10 +182,11 @@ export async function onRequestGet(context) {
     let client;
 
     try {
+
         client = await connectDB(context);
 
         /* ---------------------------------------------
-           1. VERIFY TEST ACCESS AND CREATOR
+           4. VERIFY TEST ACCESS AND CREATOR
         --------------------------------------------- */
 
         const testResult = await client.query(
@@ -165,9 +211,12 @@ export async function onRequestGet(context) {
             WHERE t.id = $1
 
               AND (
+
                     (
                         creator.role = 'sector_admin'
+
                         AND t.sector_id = $2
+
                         AND EXISTS (
                             SELECT 1
                             FROM test_classes own_tc
@@ -182,6 +231,7 @@ export async function onRequestGet(context) {
                         creator.role = 'school_admin'
                         AND t.school_id = $3
                     )
+
               )
 
             LIMIT 1
@@ -190,6 +240,7 @@ export async function onRequestGet(context) {
         );
 
         if (testResult.rows.length === 0) {
+
             return json({
                 success: false,
                 message: "This test is not available to your school."
@@ -198,6 +249,10 @@ export async function onRequestGet(context) {
 
         const test = testResult.rows[0];
 
+        /* ---------------------------------------------
+           5. VERIFY TEST CREATOR
+        --------------------------------------------- */
+
         const isSectorTest =
             test.creator_role === "sector_admin";
 
@@ -205,6 +260,7 @@ export async function onRequestGet(context) {
             !isSectorTest &&
             test.creator_role !== "school_admin"
         ) {
+
             return json({
                 success: false,
                 message: "Unsupported test creator role."
@@ -212,17 +268,44 @@ export async function onRequestGet(context) {
         }
 
         /* ---------------------------------------------
-           2. LOAD PARTICIPATING SCHOOL RESULTS
+           6. REQUIRE TEST CLOSURE
+
+           Report cards must not be generated while
+           marks are still being recorded.
+        --------------------------------------------- */
+
+        const testStatus = String(
+            test.status || ""
+        ).trim().toLowerCase();
+
+        if (testStatus !== "closed") {
+
+            return json({
+                success: false,
+                code: "TEST_NOT_CLOSED",
+                message:
+                    "This test is still open. Please wait for the test to be closed before generating report cards.",
+                test: {
+                    id: String(test.id),
+                    name: test.test_name,
+                    status: test.status
+                }
+            }, 409);
+        }
+
+        /* ---------------------------------------------
+           7. LOAD PARTICIPATING SCHOOL RESULTS
 
            Sector test:
-           All participating schools in the sector.
+           Load all participating schools in the
+           admin's sector.
 
            School test:
-           Only the creator's school.
+           Load only the creator's school.
         --------------------------------------------- */
 
         let schoolCondition = "";
-        let parameters = [testId];
+        const parameters = [testId];
 
         if (isSectorTest) {
 
@@ -316,7 +399,7 @@ export async function onRequestGet(context) {
         );
 
         /* ---------------------------------------------
-           3. ORGANIZE ALL PARTICIPATING SCHOOLS
+           8. ORGANIZE ALL PARTICIPATING SCHOOLS
         --------------------------------------------- */
 
         const classesMap = new Map();
@@ -327,7 +410,9 @@ export async function onRequestGet(context) {
                 `${row.school_id}_${row.class_id}`;
 
             if (!classesMap.has(classKey)) {
+
                 classesMap.set(classKey, {
+
                     school_id: String(row.school_id),
                     school_name: row.school_name,
 
@@ -337,12 +422,15 @@ export async function onRequestGet(context) {
 
                     subjects: [],
                     students: []
+
                 });
             }
 
             const classItem = classesMap.get(classKey);
 
-            /* Subjects */
+            /* -----------------------------------------
+               SUBJECTS
+            ----------------------------------------- */
 
             const subjectId = String(row.subject_id);
 
@@ -351,17 +439,24 @@ export async function onRequestGet(context) {
                     subject => subject.id === subjectId
                 )
             ) {
+
                 classItem.subjects.push({
+
                     id: subjectId,
                     name: row.subject_name,
                     code: row.subject_code,
                     maximum_mark: Number(row.maximum_mark)
+
                 });
             }
 
-            /* Students */
+            /* -----------------------------------------
+               STUDENTS
+            ----------------------------------------- */
 
-            if (row.student_id === null) continue;
+            if (row.student_id === null) {
+                continue;
+            }
 
             const studentId = String(row.student_id);
 
@@ -370,11 +465,15 @@ export async function onRequestGet(context) {
             );
 
             if (!student) {
+
                 student = {
+
                     id: studentId,
                     name: row.student_name,
                     student_code: row.student_code,
+
                     marks: {}
+
                 };
 
                 classItem.students.push(student);
@@ -386,10 +485,15 @@ export async function onRequestGet(context) {
                     : Number(row.score);
         }
 
-        const allClasses = Array.from(classesMap.values());
+        const allClasses = Array.from(
+            classesMap.values()
+        );
 
         /* ---------------------------------------------
-           4. CALCULATE SCHOOL POSITIONS
+           9. CALCULATE SCHOOL POSITIONS
+
+           Each school's students are ranked separately
+           within their respective classes.
         --------------------------------------------- */
 
         for (const classItem of allClasses) {
@@ -397,6 +501,7 @@ export async function onRequestGet(context) {
             const performanceMap = new Map();
 
             for (const student of classItem.students) {
+
                 performanceMap.set(
                     student.id,
                     calculatePerformance(
@@ -412,6 +517,7 @@ export async function onRequestGet(context) {
             );
 
             for (const student of classItem.students) {
+
                 const performance =
                     performanceMap.get(student.id);
 
@@ -421,16 +527,23 @@ export async function onRequestGet(context) {
                 student.sector_position = null;
 
                 student.total = performance.total;
+
                 student.maximum = performance.maximum;
+
                 student.percentage = performance.percentage;
+
                 student.complete = performance.complete;
             }
         }
 
         /* ---------------------------------------------
-           5. CALCULATE SECTOR POSITIONS
+           10. CALCULATE SECTOR POSITIONS
 
-           Compare the same class across all schools.
+           Only sector-admin-created tests receive
+           sector positions.
+
+           Students are compared with students in the
+           same class across participating schools.
         --------------------------------------------- */
 
         if (isSectorTest) {
@@ -439,7 +552,9 @@ export async function onRequestGet(context) {
 
             for (const classItem of allClasses) {
 
-                const classKey = String(classItem.class_id);
+                const classKey = String(
+                    classItem.class_id
+                );
 
                 if (!sectorGroups.has(classKey)) {
                     sectorGroups.set(classKey, []);
@@ -455,6 +570,7 @@ export async function onRequestGet(context) {
                 const performanceMap = new Map();
 
                 for (const student of students) {
+
                     performanceMap.set(
                         student.id,
                         {
@@ -465,20 +581,28 @@ export async function onRequestGet(context) {
                     );
                 }
 
-                assignRanks(students, performanceMap);
+                assignRanks(
+                    students,
+                    performanceMap
+                );
 
                 for (const student of students) {
+
                     student.sector_position =
-                        performanceMap.get(student.id).position;
+                        performanceMap.get(
+                            student.id
+                        ).position;
                 }
             }
         }
 
         /* ---------------------------------------------
-           6. RETURN ONLY THIS SCHOOL'S REPORT CARDS
+           11. RETURN ONLY THIS SCHOOL'S REPORT CARDS
 
-           Other schools are used for sector ranking,
-           but their student records are not returned.
+           Other participating schools are used only
+           for sector ranking.
+
+           Their student records are not returned.
         --------------------------------------------- */
 
         const ownClasses = allClasses.filter(
@@ -486,20 +610,32 @@ export async function onRequestGet(context) {
                 String(classItem.school_id) === schoolId
         );
 
+        /* ---------------------------------------------
+           12. RETURN RESPONSE
+        --------------------------------------------- */
+
         return json({
+
             success: true,
 
             test: {
+
                 id: String(test.id),
+
                 name: test.test_name,
+
                 status: test.status,
+
                 created_at: test.created_at,
+
                 creator_name: test.creator_name,
+
                 creator_role: test.creator_role,
 
                 report_card_type: isSectorTest
                     ? "school_and_sector"
                     : "school_only"
+
             },
 
             school: {
@@ -507,6 +643,7 @@ export async function onRequestGet(context) {
             },
 
             classes: ownClasses
+
         });
 
     } catch (error) {
