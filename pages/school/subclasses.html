@@ -1,0 +1,1060 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="theme-color" content="#173f70">
+
+    <title>Manage Subclasses | Fila Grades System</title>
+
+    <link rel="icon" type="image/x-icon" href="../../images/favicon/favicon.ico">
+    <link rel="stylesheet" href="../css/school-sidebar.css">
+    <link rel="stylesheet" href="../../style.css">
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            background: #f4f7fb;
+            font-family: Arial, sans-serif;
+            color: #1f2937;
+        }
+
+        .page-header {
+            background: linear-gradient(135deg, #1e40af, #1d4ed8);
+            color: white;
+            padding: 25px 20px;
+            text-align: center;
+        }
+
+        .page-header h1 {
+            margin: 0;
+            font-size: 25px;
+        }
+
+        .page-header p {
+            margin: 8px 0 0;
+            font-size: 14px;
+            opacity: .9;
+        }
+
+        .page-container {
+            max-width: 1100px;
+            margin: 25px auto;
+            padding: 0 20px 40px;
+        }
+
+        .filter-card,
+        .class-card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 13px;
+            box-shadow: 0 4px 12px rgba(0,0,0,.04);
+        }
+
+        .filter-card {
+            padding: 22px;
+            margin-bottom: 22px;
+        }
+
+        .filter-card label {
+            display: block;
+            font-size: 13px;
+            font-weight: bold;
+            color: #334155;
+            margin-bottom: 9px;
+        }
+
+        select,
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            background: white;
+            font-size: 14px;
+        }
+
+        select:focus,
+        input:focus {
+            outline: 2px solid #93c5fd;
+            border-color: #2563eb;
+        }
+
+        .academic-year-info {
+            margin-top: 12px;
+            color: #64748b;
+            font-size: 13px;
+        }
+
+        .section-heading {
+            margin: 25px 0 15px;
+            color: #1e40af;
+            font-size: 19px;
+        }
+
+        .classes-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 18px;
+        }
+
+        .class-card {
+            padding: 20px;
+            min-width: 0;
+        }
+
+        .class-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 12px;
+            border-bottom: 1px solid #e5e7eb;
+            padding-bottom: 14px;
+        }
+
+        .class-card h3 {
+            margin: 0;
+            color: #1e40af;
+            font-size: 19px;
+        }
+
+        .level-label {
+            display: inline-block;
+            margin-top: 6px;
+            color: #64748b;
+            font-size: 11px;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+
+        .add-btn,
+        .primary-btn {
+            border: none;
+            background: #2563eb;
+            color: white;
+            padding: 10px 13px;
+            border-radius: 7px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .add-btn:hover,
+        .primary-btn:hover {
+            background: #1d4ed8;
+        }
+
+        .subclass-list {
+            display: grid;
+            gap: 10px;
+            margin-top: 16px;
+        }
+
+        .subclass-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 9px;
+            padding: 12px;
+        }
+
+        .subclass-name {
+            font-weight: bold;
+            color: #334155;
+            font-size: 14px;
+        }
+
+        .subclass-status {
+            display: block;
+            font-size: 11px;
+            margin-top: 5px;
+            font-weight: bold;
+        }
+
+        .status-active {
+            color: #15803d;
+        }
+
+        .status-inactive {
+            color: #dc2626;
+        }
+
+        .item-actions {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+
+        .small-btn {
+            border: 1px solid #cbd5e1;
+            background: white;
+            color: #334155;
+            padding: 7px 9px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 11px;
+        }
+
+        .small-btn:hover {
+            border-color: #2563eb;
+            color: #1d4ed8;
+        }
+
+        .small-btn.danger {
+            color: #dc2626;
+        }
+
+        .empty-message {
+            color: #94a3b8;
+            font-size: 13px;
+            padding: 18px 0 5px;
+            text-align: center;
+        }
+
+        .loading,
+        .error-message {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            text-align: center;
+            color: #64748b;
+        }
+
+        .error-message {
+            color: #dc2626;
+        }
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, .55);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+            padding: 18px;
+        }
+
+        .modal-overlay.show {
+            display: flex;
+        }
+
+        .modal {
+            width: 100%;
+            max-width: 430px;
+            background: white;
+            border-radius: 14px;
+            padding: 24px;
+            box-shadow: 0 15px 40px rgba(0,0,0,.2);
+        }
+
+        .modal h2 {
+            margin: 0 0 20px;
+            color: #1e40af;
+            font-size: 20px;
+        }
+
+        .modal label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            font-size: 13px;
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 22px;
+        }
+
+        .cancel-btn {
+            background: #e2e8f0;
+            color: #334155;
+            border: none;
+            border-radius: 7px;
+            padding: 10px 14px;
+            cursor: pointer;
+        }
+
+        .toast {
+            position: fixed;
+            right: 20px;
+            bottom: 20px;
+            z-index: 10000;
+            background: #166534;
+            color: white;
+            padding: 13px 18px;
+            border-radius: 9px;
+            font-size: 13px;
+            display: none;
+            max-width: calc(100% - 40px);
+        }
+
+        .toast.error {
+            background: #b91c1c;
+        }
+
+        .toast.show {
+            display: block;
+        }
+
+        .page-footer {
+            text-align: center;
+            color: #94a3b8;
+            font-size: 12px;
+            margin-top: 25px;
+        }
+
+        @media(max-width: 700px) {
+            .classes-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .page-header h1 {
+                font-size: 21px;
+            }
+
+            .subclass-item {
+                align-items: flex-start;
+            }
+        }
+
+        @media(max-width: 420px) {
+            .subclass-item {
+                flex-direction: column;
+            }
+
+            .item-actions {
+                width: 100%;
+                justify-content: flex-start;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div id="schoolSidebarContainer"></div>
+
+<main class="school-main-content">
+
+    <header class="page-header">
+        <h1>MANAGE SCHOOL SUBCLASSES</h1>
+        <p>Organize learners and teachers into academic-year-specific streams</p>
+    </header>
+
+    <div class="page-container">
+
+        <section class="filter-card">
+
+            <label for="academicYearSelect">
+                Select Academic Year
+            </label>
+
+            <select id="academicYearSelect">
+                <option value="">Loading academic years...</option>
+            </select>
+
+            <div class="academic-year-info" id="yearInfo"></div>
+
+        </section>
+
+        <h2 class="section-heading">
+            Classes and Subclasses
+        </h2>
+
+        <div id="classesContainer" class="loading">
+            Loading classes...
+        </div>
+
+        <div class="page-footer">
+            Fila Grades System Platform
+        </div>
+
+    </div>
+
+</main>
+
+
+<!-- CREATE / EDIT MODAL -->
+
+<div class="modal-overlay" id="subclassModal">
+
+    <div class="modal">
+
+        <h2 id="modalTitle">Add Subclass</h2>
+
+        <form id="subclassForm">
+
+            <input type="hidden" id="editingSubclassId">
+
+            <input type="hidden" id="selectedClassId">
+
+            <label id="classNameLabel">
+                Selected Class
+            </label>
+
+            <div
+                id="selectedClassName"
+                style="margin-bottom:18px;color:#64748b;font-size:14px;">
+            </div>
+
+            <label for="subclassName">
+                Subclass Name
+            </label>
+
+            <input
+                type="text"
+                id="subclassName"
+                maxlength="50"
+                placeholder="Example: A"
+                required
+                autocomplete="off"
+            >
+
+            <div class="modal-actions">
+
+                <button
+                    type="button"
+                    class="cancel-btn"
+                    id="cancelModalBtn">
+                    Cancel
+                </button>
+
+                <button
+                    type="submit"
+                    class="primary-btn"
+                    id="saveSubclassBtn">
+                    Save Subclass
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+
+<div class="toast" id="toast"></div>
+
+
+<script src="../js/school-sidebar.js"></script>
+<script src="../js/auth-guard.js"></script>
+
+<script>
+/* =====================================================
+   AUTHENTICATION
+===================================================== */
+
+(function () {
+    let currentUser = null;
+
+    try {
+        currentUser = JSON.parse(
+            localStorage.getItem("currentUser") || "null"
+        );
+    } catch {
+        currentUser = null;
+    }
+
+    const role = localStorage.getItem("role");
+
+    if (
+        !currentUser ||
+        !currentUser.id ||
+        !["school_admin", "dos"].includes(role) ||
+        currentUser.role !== role
+    ) {
+        window.location.replace("../../index.html");
+    }
+})();
+
+
+/* =====================================================
+   STATE
+===================================================== */
+
+const academicYearSelect =
+    document.getElementById("academicYearSelect");
+
+const classesContainer =
+    document.getElementById("classesContainer");
+
+const yearInfo =
+    document.getElementById("yearInfo");
+
+const modal =
+    document.getElementById("subclassModal");
+
+let currentClasses = [];
+let academicYears = [];
+let toastTimer = null;
+
+
+/* =====================================================
+   API HELPER
+===================================================== */
+
+async function apiRequest(url, options = {}) {
+
+    const response = await fetch(url, {
+        credentials: "same-origin",
+        ...options,
+        headers: {
+            "Content-Type": "application/json",
+            ...(options.headers || {})
+        }
+    });
+
+    let data;
+
+    try {
+        data = await response.json();
+    } catch {
+        throw new Error("Invalid server response.");
+    }
+
+    if (!response.ok || !data.success) {
+        throw new Error(
+            data.message || "The request could not be completed."
+        );
+    }
+
+    return data;
+}
+
+
+/* =====================================================
+   TOAST
+===================================================== */
+
+function showToast(message, isError = false) {
+
+    const toast = document.getElementById("toast");
+
+    toast.textContent = message;
+    toast.className = "toast show";
+
+    if (isError) {
+        toast.classList.add("error");
+    }
+
+    clearTimeout(toastTimer);
+
+    toastTimer = setTimeout(() => {
+        toast.className = "toast";
+    }, 3500);
+}
+
+
+/* =====================================================
+   LOAD ACADEMIC YEARS
+===================================================== */
+
+async function loadAcademicYears() {
+
+    academicYearSelect.innerHTML =
+        '<option value="">Loading...</option>';
+
+    try {
+
+        const data = await apiRequest(
+            "/api/academic-years-terms"
+        );
+
+        academicYears = data.academic_years || [];
+
+        if (!academicYears.length) {
+
+            academicYearSelect.innerHTML =
+                '<option value="">No academic years found</option>';
+
+            classesContainer.innerHTML =
+                '<div class="loading">Create an academic year first.</div>';
+
+            return;
+        }
+
+        academicYearSelect.innerHTML = "";
+
+        academicYears.forEach(year => {
+
+            const option = document.createElement("option");
+
+            option.value = year.id;
+            option.textContent = year.year_name;
+
+            academicYearSelect.appendChild(option);
+        });
+
+        const activeYear = data.active_academic_year;
+
+        if (
+            activeYear &&
+            academicYears.some(
+                year => String(year.id) === String(activeYear.id)
+            )
+        ) {
+            academicYearSelect.value = String(activeYear.id);
+        } else {
+            academicYearSelect.value = String(academicYears[0].id);
+        }
+
+        await loadSubclasses();
+
+    } catch (error) {
+
+        academicYearSelect.innerHTML =
+            '<option value="">Unable to load academic years</option>';
+
+        classesContainer.innerHTML =
+            '<div class="error-message">' +
+            escapeHtml(error.message) +
+            '</div>';
+    }
+}
+
+
+/* =====================================================
+   LOAD SUBCLASSES
+===================================================== */
+
+async function loadSubclasses() {
+
+    const academicYearId = academicYearSelect.value;
+
+    if (!academicYearId) return;
+
+    classesContainer.className = "loading";
+    classesContainer.textContent = "Loading classes and subclasses...";
+
+    const selectedYear = academicYears.find(
+        year => String(year.id) === String(academicYearId)
+    );
+
+    yearInfo.textContent = selectedYear
+        ? `Managing subclasses for academic year ${selectedYear.year_name}`
+        : "";
+
+    try {
+
+        const data = await apiRequest(
+            `/api/subclasses?academic_year_id=${encodeURIComponent(academicYearId)}`
+        );
+
+        currentClasses = data.classes || [];
+
+        renderClasses();
+
+    } catch (error) {
+
+        classesContainer.className = "error-message";
+        classesContainer.textContent = error.message;
+    }
+}
+
+
+/* =====================================================
+   RENDER CLASSES
+===================================================== */
+
+function renderClasses() {
+
+    classesContainer.className = "";
+
+    if (!currentClasses.length) {
+
+        classesContainer.innerHTML =
+            '<div class="loading">No enabled classes were found for your school.</div>';
+
+        return;
+    }
+
+    const grid = document.createElement("div");
+
+    grid.className = "classes-grid";
+
+    currentClasses.forEach(classItem => {
+
+        const card = document.createElement("section");
+
+        card.className = "class-card";
+
+        const header = document.createElement("div");
+
+        header.className = "class-card-header";
+
+        const title = document.createElement("div");
+
+        const heading = document.createElement("h3");
+
+        heading.textContent = classItem.class_name;
+
+        const level = document.createElement("span");
+
+        level.className = "level-label";
+        level.textContent = classItem.level_name;
+
+        title.append(heading, level);
+
+        const addButton = document.createElement("button");
+
+        addButton.type = "button";
+        addButton.className = "add-btn";
+        addButton.textContent = "+ Add";
+        addButton.addEventListener("click", () => {
+            openCreateModal(classItem);
+        });
+
+        header.append(title, addButton);
+
+        const list = document.createElement("div");
+
+        list.className = "subclass-list";
+
+        if (!classItem.subclasses.length) {
+
+            const empty = document.createElement("div");
+
+            empty.className = "empty-message";
+            empty.textContent = "No subclasses created yet.";
+
+            list.appendChild(empty);
+
+        } else {
+
+            classItem.subclasses.forEach(subclass => {
+
+                list.appendChild(
+                    createSubclassItem(classItem, subclass)
+                );
+
+            });
+        }
+
+        card.append(header, list);
+
+        grid.appendChild(card);
+    });
+
+    classesContainer.appendChild(grid);
+}
+
+
+/* =====================================================
+   CREATE SUBCLASS ITEM
+===================================================== */
+
+function createSubclassItem(classItem, subclass) {
+
+    const item = document.createElement("div");
+
+    item.className = "subclass-item";
+
+    const details = document.createElement("div");
+
+    const name = document.createElement("div");
+
+    name.className = "subclass-name";
+    name.textContent =
+        `${classItem.class_name} ${subclass.subclass_name}`;
+
+    const status = document.createElement("span");
+
+    status.className =
+        "subclass-status " +
+        (subclass.status === "active"
+            ? "status-active"
+            : "status-inactive");
+
+    status.textContent =
+        subclass.status === "active"
+            ? "Active"
+            : "Inactive";
+
+    details.append(name, status);
+
+    const actions = document.createElement("div");
+
+    actions.className = "item-actions";
+
+    const editButton = document.createElement("button");
+
+    editButton.type = "button";
+    editButton.className = "small-btn";
+    editButton.textContent = "Rename";
+
+    editButton.addEventListener("click", () => {
+        openEditModal(classItem, subclass);
+    });
+
+    const statusButton = document.createElement("button");
+
+    statusButton.type = "button";
+    statusButton.className = "small-btn";
+
+    statusButton.textContent =
+        subclass.status === "active"
+            ? "Deactivate"
+            : "Activate";
+
+    if (subclass.status === "active") {
+        statusButton.classList.add("danger");
+    }
+
+    statusButton.addEventListener("click", () => {
+        changeSubclassStatus(subclass);
+    });
+
+    actions.append(editButton, statusButton);
+
+    item.append(details, actions);
+
+    return item;
+}
+
+
+/* =====================================================
+   OPEN CREATE MODAL
+===================================================== */
+
+function openCreateModal(classItem) {
+
+    document.getElementById("modalTitle").textContent =
+        "Add Subclass";
+
+    document.getElementById("editingSubclassId").value = "";
+
+    document.getElementById("selectedClassId").value =
+        classItem.id;
+
+    document.getElementById("selectedClassName").textContent =
+        `${classItem.class_name} — ${classItem.level_name}`;
+
+    document.getElementById("subclassName").value = "";
+
+    document.getElementById("saveSubclassBtn").textContent =
+        "Create Subclass";
+
+    modal.classList.add("show");
+
+    document.getElementById("subclassName").focus();
+}
+
+
+/* =====================================================
+   OPEN EDIT MODAL
+===================================================== */
+
+function openEditModal(classItem, subclass) {
+
+    document.getElementById("modalTitle").textContent =
+        "Rename Subclass";
+
+    document.getElementById("editingSubclassId").value =
+        subclass.id;
+
+    document.getElementById("selectedClassId").value =
+        classItem.id;
+
+    document.getElementById("selectedClassName").textContent =
+        `${classItem.class_name} — ${classItem.level_name}`;
+
+    document.getElementById("subclassName").value =
+        subclass.subclass_name;
+
+    document.getElementById("saveSubclassBtn").textContent =
+        "Save Changes";
+
+    modal.classList.add("show");
+
+    document.getElementById("subclassName").focus();
+}
+
+
+/* =====================================================
+   CLOSE MODAL
+===================================================== */
+
+function closeModal() {
+    modal.classList.remove("show");
+}
+
+document.getElementById("cancelModalBtn")
+    .addEventListener("click", closeModal);
+
+modal.addEventListener("click", event => {
+    if (event.target === modal) {
+        closeModal();
+    }
+});
+
+
+/* =====================================================
+   CREATE OR RENAME SUBCLASS
+===================================================== */
+
+document.getElementById("subclassForm")
+    .addEventListener("submit", async event => {
+
+        event.preventDefault();
+
+        const saveButton =
+            document.getElementById("saveSubclassBtn");
+
+        const editingId =
+            document.getElementById("editingSubclassId").value;
+
+        const subclassName =
+            document.getElementById("subclassName").value.trim();
+
+        if (!subclassName) {
+            showToast("Enter a subclass name.", true);
+            return;
+        }
+
+        saveButton.disabled = true;
+        saveButton.textContent = "Saving...";
+
+        try {
+
+            if (editingId) {
+
+                await apiRequest("/api/subclasses", {
+                    method: "PATCH",
+                    body: JSON.stringify({
+                        id: editingId,
+                        subclass_name: subclassName
+                    })
+                });
+
+                showToast("Subclass renamed successfully.");
+
+            } else {
+
+                await apiRequest("/api/subclasses", {
+                    method: "POST",
+                    body: JSON.stringify({
+                        academic_year_id: academicYearSelect.value,
+                        class_id:
+                            document.getElementById("selectedClassId").value,
+                        subclass_name: subclassName
+                    })
+                });
+
+                showToast("Subclass created successfully.");
+            }
+
+            closeModal();
+
+            await loadSubclasses();
+
+        } catch (error) {
+
+            showToast(error.message, true);
+
+        } finally {
+
+            saveButton.disabled = false;
+
+            saveButton.textContent =
+                editingId ? "Save Changes" : "Create Subclass";
+        }
+    });
+
+
+/* =====================================================
+   ACTIVATE / DEACTIVATE
+===================================================== */
+
+async function changeSubclassStatus(subclass) {
+
+    const nextStatus =
+        subclass.status === "active"
+            ? "inactive"
+            : "active";
+
+    const action =
+        nextStatus === "active"
+            ? "activate"
+            : "deactivate";
+
+    if (!confirm(
+        `Are you sure you want to ${action} this subclass?`
+    )) {
+        return;
+    }
+
+    try {
+
+        await apiRequest("/api/subclasses", {
+            method: "PATCH",
+            body: JSON.stringify({
+                id: subclass.id,
+                status: nextStatus
+            })
+        });
+
+        showToast(`Subclass ${action}d successfully.`);
+
+        await loadSubclasses();
+
+    } catch (error) {
+
+        showToast(error.message, true);
+    }
+}
+
+
+/* =====================================================
+   ESCAPE HTML
+===================================================== */
+
+function escapeHtml(value) {
+
+    return String(value ?? "").replace(
+        /[&<>"']/g,
+        character => ({
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            '"': "&quot;",
+            "'": "&#039;"
+        })[character]
+    );
+}
+
+
+/* =====================================================
+   ACADEMIC YEAR CHANGE
+===================================================== */
+
+academicYearSelect.addEventListener(
+    "change",
+    loadSubclasses
+);
+
+
+/* =====================================================
+   INITIALIZE
+===================================================== */
+
+loadAcademicYears();
+
+</script>
+
+</body>
+</html>
