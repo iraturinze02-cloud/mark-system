@@ -2093,11 +2093,18 @@ function renderGrades(grades) {
 }
 
 
+
 /* =========================================================
    TEACHER REPORTS
+   Overall teacher ranking + subject-grouped rankings
 ========================================================= */
 
 function renderTeachers(overall, bySubject) {
+
+    /* =====================================================
+       OVERALL TEACHER PERFORMANCE
+    ===================================================== */
+
     $("teacherOverallBody").innerHTML = overall.map(item => `
         <tr>
             <td>
@@ -2105,39 +2112,106 @@ function renderTeachers(overall, bySubject) {
                     ${item.rank}
                 </span>
             </td>
-            <td class="teacher-name">${escapeHTML(item.teacher)}</td>
+            <td class="teacher-name">
+                ${escapeHTML(item.teacher)}
+            </td>
             <td>${escapeHTML(item.school)}</td>
             <td>${formatNumber(item.candidates)}</td>
             <td>${formatNumber(item.recorded)}</td>
             <td>${formatNumber(item.passed)}</td>
             <td>${formatNumber(item.failed)}</td>
-            <td><strong>${formatPercent(item.average_percentage)}</strong></td>
-            <td class="rate">${formatPercent(item.pass_rate)}</td>
+            <td>
+                <strong>${formatPercent(item.average_percentage)}</strong>
+            </td>
+            <td class="rate">
+                ${formatPercent(item.pass_rate)}
+            </td>
         </tr>
     `).join("") || `
-        <tr><td colspan="9">
-            No teacher results available for this academic period.
-        </td></tr>
+        <tr>
+            <td colspan="9">
+                No teacher results available for this academic period.
+            </td>
+        </tr>
     `;
 
-    $("teacherSubjectBody").innerHTML = bySubject.map(item => `
+
+    /* =====================================================
+       TEACHER PERFORMANCE GROUPED BY SUBJECT
+
+       Example:
+
+       ENGLISH
+       1. Teacher A
+       2. Teacher B
+
+       MATHEMATICS
+       1. Teacher C
+       2. Teacher D
+    ===================================================== */
+
+    $("teacherSubjectBody").innerHTML = bySubject.map(group => {
+
+        const teachers = Array.isArray(group.teachers)
+            ? group.teachers
+            : [];
+
+        return `
+            <tr class="subject-group-row">
+                <td colspan="10">
+                    <strong>
+                        ${escapeHTML(group.subject)}
+                    </strong>
+                    ${
+                        group.subject_code
+                            ? `<span class="subject-code">
+                                (${escapeHTML(group.subject_code)})
+                               </span>`
+                            : ""
+                    }
+                </td>
+            </tr>
+
+            ${
+                teachers.map(item => `
+                    <tr>
+                        <td>
+                            <span class="rank ${item.rank === 1 ? "first" : ""}">
+                                ${item.rank}
+                            </span>
+                        </td>
+                        <td class="teacher-name">
+                            ${escapeHTML(item.teacher)}
+                        </td>
+                        <td>${escapeHTML(item.school)}</td>
+                        <td>${formatNumber(item.candidates)}</td>
+                        <td>${formatNumber(item.recorded)}</td>
+                        <td>${formatNumber(item.passed)}</td>
+                        <td>${formatNumber(item.failed)}</td>
+                        <td>
+                            <strong>
+                                ${formatPercent(item.average_percentage)}
+                            </strong>
+                        </td>
+                        <td class="rate">
+                            ${formatPercent(item.pass_rate)}
+                        </td>
+                    </tr>
+                `).join("")
+            }
+        `;
+    }).join("") || `
         <tr>
-            <td class="teacher-name">${escapeHTML(item.teacher)}</td>
-            <td>${escapeHTML(item.school)}</td>
-            <td><strong>${escapeHTML(item.subject_code || "—")}</strong></td>
-            <td>${escapeHTML(item.subject)}</td>
-            <td>${formatNumber(item.candidates)}</td>
-            <td>${formatNumber(item.recorded)}</td>
-            <td>${formatNumber(item.passed)}</td>
-            <td>${formatNumber(item.failed)}</td>
-            <td>${formatPercent(item.average_percentage)}</td>
-            <td class="rate">${formatPercent(item.pass_rate)}</td>
+            <td colspan="10">
+                No teacher-subject results available.
+            </td>
         </tr>
-    `).join("") || `
-        <tr><td colspan="10">
-            No teacher-subject results available.
-        </td></tr>
     `;
+
+
+    /* =====================================================
+       OVERALL TEACHER PERFORMANCE CHART
+    ===================================================== */
 
     chartDefaults();
 
@@ -2167,7 +2241,8 @@ function renderTeachers(overall, bySubject) {
                 legend: { display: false },
                 tooltip: {
                     callbacks: {
-                        label: context => `${context.raw.toFixed(2)}%`
+                        label: context =>
+                            `${context.raw.toFixed(2)}%`
                     }
                 }
             },
@@ -2185,7 +2260,6 @@ function renderTeachers(overall, bySubject) {
         }
     });
 }
-
 
 /* =========================================================
    TEST PROGRESS
