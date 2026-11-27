@@ -564,69 +564,67 @@ function showToast(message, isError = false) {
    LOAD ACADEMIC YEARS
 ===================================================== */
 
+
 async function loadAcademicYears() {
-
-    academicYearSelect.innerHTML =
-        '<option value="">Loading...</option>';
-
     try {
-
-        const data = await apiRequest(
-            "/api/academic-years-terms"
+        const response = await fetch(
+            "/api/academic-calendar?action=get",
+            {
+                method: "GET",
+                credentials: "same-origin",
+                headers: {
+                    "Accept": "application/json"
+                },
+                cache: "no-store"
+            }
         );
 
-        academicYears = data.academic_years || [];
+        const data = await response.json().catch(() => null);
 
-        if (!academicYears.length) {
-
-            academicYearSelect.innerHTML =
-                '<option value="">No academic years found</option>';
-
-            classesContainer.innerHTML =
-                '<div class="loading">Create an academic year first.</div>';
-
-            return;
+        if (!response.ok || !data || !data.success) {
+            throw new Error(
+                data?.message || "Unable to load academic years."
+            );
         }
 
-        academicYearSelect.innerHTML = "";
+        const years = Array.isArray(data.academic_years)
+            ? data.academic_years
+            : [];
 
-        academicYears.forEach(year => {
+        if (!years.length) {
+            throw new Error("No academic years are available.");
+        }
 
-            const option = document.createElement("option");
+        academicYears = years;
 
-            option.value = year.id;
-            option.textContent = year.year_name;
+        const yearSelect = document.getElementById("academicYearSelect");
 
-            academicYearSelect.appendChild(option);
-        });
+        if (!yearSelect) {
+            throw new Error("Academic year selector was not found.");
+        }
+
+        yearSelect.innerHTML = years.map(year => `
+            <option value="${escapeHtml(String(year.id))}">
+                ${escapeHtml(year.year_name)}
+            </option>
+        `).join("");
 
         const activeYear = data.active_academic_year;
 
-        if (
+        const selectedYear = years.find(year =>
             activeYear &&
-            academicYears.some(
-                year => String(year.id) === String(activeYear.id)
-            )
-        ) {
-            academicYearSelect.value = String(activeYear.id);
-        } else {
-            academicYearSelect.value = String(academicYears[0].id);
-        }
+            String(year.id) === String(activeYear.id)
+        ) || years[0];
+
+        yearSelect.value = String(selectedYear.id);
 
         await loadSubclasses();
 
     } catch (error) {
-
-        academicYearSelect.innerHTML =
-            '<option value="">Unable to load academic years</option>';
-
-        classesContainer.innerHTML =
-            '<div class="error-message">' +
-            escapeHtml(error.message) +
-            '</div>';
+        console.error("Academic years loading error:", error);
+        showToast(error.message, "error");
     }
 }
-
 
 /* =====================================================
    LOAD SUBCLASSES
