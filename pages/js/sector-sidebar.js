@@ -70,7 +70,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     <span>Inspect Marks Recording</span>
                 </a>
                  <a href="sector-teachers-performance.html" class="sidebar-link">
-                    <span class="sidebar-icon">📈</span>
+                    <span class="sidebar-icon">🎩</span>
                     <span>Teachers' Perfomance</span>
                 </a>
 
@@ -81,6 +81,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 <a href="../admin/tests.html" class="sidebar-link">
                     <span class="sidebar-icon">📝</span>
                     <span>Manage Tests</span>
+                </a>
+                <a href="../admin/tests-reports.html" class="sidebar-link">
+                    <span class="sidebar-icon">📖</span>
+                    <span>Tests Reports</span>
                 </a>
 
             </nav>
