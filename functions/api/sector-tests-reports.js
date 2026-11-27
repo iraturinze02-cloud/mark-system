@@ -14,24 +14,19 @@ import {
    GET /api/sector-tests-reports?action=report&academic_year=2026-2027
    GET /api/sector-tests-reports?action=report&academic_year=2026-2027&test_id=123
 
-   Reports:
-   - Academic-year overview across all terms and tests
-   - Individual test analysis
-   - Ten-mark performance distribution
-   - School performance ranking
-   - Gender performance
-   - Subject performance
-   - Success-category distribution
-   - Teacher performance by subject
-   - Overall teacher performance
-   - Marks-recording completion
-
-   IMPORTANT:
-   - Does not modify existing reporting endpoints.
-   - Uses school-specific academic_year_id and term_id.
-   - Uses active student enrollments for the relevant period.
-   - Uses the latest mark record for each test/student/class/subject.
-   - Teacher assignments must match the academic year and term.
+   REPORTING RULES:
+   - Academic-year report combines all available results
+     across tests and terms in the selected academic year.
+   - Individual-test report combines the subjects in that test.
+   - Overall learner percentages are weighted:
+       total marks obtained / total possible marks * 100
+   - Each learner is counted once in overall distributions.
+   - Subject performance remains subject-result based.
+   - Teacher assignments support exact-period assignments
+     and legacy assignments with NULL period fields.
+   - Subclass-specific teacher assignments are respected.
+   - Uses latest mark for each test/student/class/subject.
+   - No database migration required.
 ========================================================= */
 
 
@@ -86,10 +81,19 @@ function emptyCounters() {
     };
 }
 
+/*
+ * Result-based counters.
+ *
+ * Used for subject performance, where each row represents
+ * one learner's result in one subject.
+ */
 function addResult(target, row) {
     target.candidates++;
 
-    if (row.score === null || row.score === undefined) {
+    if (
+        row.percentage === null ||
+        row.percentage === undefined
+    ) {
         target.missing++;
         return;
     }
@@ -134,6 +138,135 @@ function finishCounters(target) {
     };
 }
 
+
+/* =========================================================
+   LEARNER-BASED AGGREGATION
+
+   These functions ensure that one learner is counted once
+   in the overall, school, gender, grade and band reports.
+
+   The learner's percentage is calculated from the sum of
+   their recorded marks and the corresponding total marks.
+
+   Example:
+       Subject 1: 70 / 100
+       Subject 2: 40 / 50
+       Subject 3: 30 / 50
+
+       Overall = 140 / 200 * 100 = 70%
+
+   It is NOT calculated by counting the three subject
+   percentages as three separate learners.
+========================================================= */
+
+function createLearnerEntry(metadata) {
+    return {
+        ...metadata,
+
+        opportunities: 0,
+        recorded_subjects: 0,
+
+        score_sum: 0,
+        maximum_sum: 0
+    };
+}
+
+function addLearnerResult(target, row) {
+    target.opportunities++;
+
+    const score =
+        row.score === null || row.score === undefined
+            ? null
+            : num(row.score);
+
+    const maximum = num(row.total_marks);
+
+    if (
+        score === null ||
+        maximum <= 0
+    ) {
+        return;
+    }
+
+    target.recorded_subjects++;
+
+    target.score_sum += score;
+    target.maximum_sum += maximum;
+}
+
+function getLearnerPercentage(learner) {
+    if (
+        !learner ||
+        learner.recorded_subjects <= 0 ||
+        learner.maximum_sum <= 0
+    ) {
+        return null;
+    }
+
+    return round(
+        (learner.score_sum / learner.maximum_sum) * 100
+    );
+}
+
+function finishLearnerMap(map) {
+    const learners = Array.from(map.values());
+
+    const result = {
+        candidates: learners.length,
+        recorded: 0,
+        missing: 0,
+        passed: 0,
+        failed: 0,
+        average: 0,
+        average_percentage: 0,
+        pass_rate: 0,
+        recording_rate: 0
+    };
+
+    let percentageSum = 0;
+
+    for (const learner of learners) {
+        const learnerPercentage =
+            getLearnerPercentage(learner);
+
+        if (learnerPercentage === null) {
+            result.missing++;
+            continue;
+        }
+
+        result.recorded++;
+        percentageSum += learnerPercentage;
+
+        if (learnerPercentage >= 50) {
+            result.passed++;
+        } else {
+            result.failed++;
+        }
+    }
+
+    result.average_percentage = result.recorded > 0
+        ? round(percentageSum / result.recorded)
+        : 0;
+
+    /*
+     * For learner-based reports, average is the average
+     * of each learner's overall percentage.
+     */
+    result.average = result.average_percentage;
+
+    result.pass_rate = percentage(
+        result.passed,
+        result.recorded
+    );
+
+    result.recording_rate = percentage(
+        result.recorded,
+        result.candidates
+    );
+
+    return result;
+}
+
 function createBandCounters() {
     return [
         { label: "0–9.99", min: 0, max: 10, count: 0 },
@@ -164,7 +297,7 @@ function createSchoolEntry(row) {
     return {
         school_id: String(row.school_id),
         school: row.school_name,
-        ...emptyCounters()
+        learners: new Map()
     };
 }
 
@@ -175,6 +308,13 @@ function createSubjectEntry(row) {
         subject_code: row.subject_code,
         ...emptyCounters()
     };
+}
+
+function createLearnerKey(row) {
+    return [
+        String(row.school_id),
+        String(row.student_id)
+    ].join("_");
 }
 
 
@@ -230,10 +370,6 @@ async function getSectorTest(client, testId, sectorId) {
 
 /* =========================================================
    AVAILABLE ACADEMIC YEARS
-
-   Academic years are school-specific in the database.
-   We therefore return distinct year_name values for the
-   schools participating in tests within the sector.
 ========================================================= */
 
 async function getAcademicYears(client, sectorId) {
@@ -336,9 +472,8 @@ async function getAcademicYearTests(
    One row represents one learner's result opportunity
    in one test, school, class and subject.
 
-   Students are selected using the enrollment matching
-   the academic year and term attached to that school
-   in test_schools.
+   The active enrollment must match the school, class,
+   academic year and term associated with the test.
 
    Latest mark is selected to avoid counting old versions
    of a mark multiple times.
@@ -376,7 +511,8 @@ async function getResultRows(
                 se.school_id,
                 se.class_id,
                 se.academic_year_id,
-                se.term_id
+                se.term_id,
+                se.subclass_id
 
             FROM student_enrollments se
 
@@ -505,19 +641,15 @@ async function getResultRows(
 /* =========================================================
    LOAD TEACHER RESULTS
 
-   Teacher assignments are matched using:
-   - school
-   - class
-   - subject
-   - academic year
-   - term
-
-   This prevents historical reports from attributing
-   marks to a teacher assigned in another period.
-
-   Assignments with NULL academic_year_id or term_id
-   are intentionally excluded from period-specific
-   teacher performance.
+   Assignment matching:
+   - Exact academic year and term assignments are preferred.
+   - Legacy assignments with NULL year/term are accepted.
+   - Assignments belonging to another year or term are not
+     used.
+   - Subclass-specific assignments only match learners
+     belonging to that subclass.
+   - One matching assignment is selected per learner,
+     test, class and subject to avoid duplicate counting.
 ========================================================= */
 
 async function getTeacherRows(
@@ -552,7 +684,8 @@ async function getTeacherRows(
                 se.school_id,
                 se.class_id,
                 se.academic_year_id,
-                se.term_id
+                se.term_id,
+                se.subclass_id
 
             FROM student_enrollments se
 
@@ -571,8 +704,8 @@ async function getTeacherRows(
         SELECT
             t.id AS test_id,
 
-            ta.teacher_id,
-            u.full_name AS teacher_name,
+            assignment.teacher_id,
+            assignment.teacher_name,
 
             s.id AS school_id,
             s.school_name,
@@ -590,6 +723,8 @@ async function getTeacherRows(
             test_subject.total_marks,
 
             st.id AS student_id,
+            st.full_name AS student_name,
+
             latest_mark.score
 
         FROM tests t
@@ -619,32 +754,78 @@ async function getTeacherRows(
         INNER JOIN subjects sub
             ON sub.id = test_subject.subject_id
 
-        INNER JOIN teacher_assignments ta
-            ON ta.school_id = ts.school_id
-           AND ta.class_id = tc.class_id
-           AND ta.subject_id = sub.id
-           AND ta.academic_year_id = ts.academic_year_id
-           AND ta.term_id = ts.term_id
-
-        INNER JOIN teachers teacher
-            ON teacher.id = ta.teacher_id
-           AND teacher.school_id = ta.school_id
-
-        INNER JOIN users u
-            ON u.id = teacher.user_id
-           AND u.school_id = teacher.school_id
-           AND u.role = 'teacher'
-
         LEFT JOIN active_enrollments enrollment
             ON enrollment.school_id = ts.school_id
            AND enrollment.class_id = tc.class_id
            AND enrollment.academic_year_id = ts.academic_year_id
            AND enrollment.term_id = ts.term_id
 
-        LEFT JOIN students st
+        INNER JOIN students st
             ON st.id = enrollment.student_id
            AND st.school_id = ts.school_id
            AND LOWER(TRIM(st.status)) = 'active'
+
+        INNER JOIN LATERAL (
+            SELECT
+                ta.teacher_id,
+                u.full_name AS teacher_name
+
+            FROM teacher_assignments ta
+
+            INNER JOIN teachers teacher
+                ON teacher.id = ta.teacher_id
+               AND teacher.school_id = ta.school_id
+
+            INNER JOIN users u
+                ON u.id = teacher.user_id
+               AND u.school_id = teacher.school_id
+               AND u.role = 'teacher'
+
+            WHERE ta.school_id = ts.school_id
+              AND ta.class_id = tc.class_id
+              AND ta.subject_id = sub.id
+
+              AND (
+                    ta.academic_year_id = ts.academic_year_id
+                    OR ta.academic_year_id IS NULL
+              )
+
+              AND (
+                    ta.term_id = ts.term_id
+                    OR ta.term_id IS NULL
+              )
+
+              AND (
+                    ta.subclass_id IS NULL
+                    OR ta.subclass_id = enrollment.subclass_id
+              )
+
+            ORDER BY
+                CASE
+                    WHEN ta.academic_year_id = ts.academic_year_id
+                     AND ta.term_id = ts.term_id
+                    THEN 1
+
+                    WHEN ta.academic_year_id = ts.academic_year_id
+                    THEN 2
+
+                    WHEN ta.term_id = ts.term_id
+                    THEN 3
+
+                    ELSE 4
+                END,
+
+                CASE
+                    WHEN ta.subclass_id = enrollment.subclass_id
+                     AND ta.subclass_id IS NOT NULL
+                    THEN 1
+                    ELSE 2
+                END,
+
+                ta.id DESC
+
+            LIMIT 1
+        ) assignment ON TRUE
 
         LEFT JOIN LATERAL (
             SELECT mk.score
@@ -667,7 +848,7 @@ async function getTeacherRows(
           ${testCondition}
 
         ORDER BY
-            u.full_name,
+            assignment.teacher_name,
             s.school_name,
             sub.subject_name,
             c.class_name,
@@ -684,12 +865,48 @@ async function getTeacherRows(
    BUILD REPORTS
 ========================================================= */
 
-function buildReports(rows, teacherRows, tests, academicYear) {
-    const overall = emptyCounters();
+function buildReports(
+    rows,
+    teacherRows,
+    tests,
+    academicYear
+) {
+    /*
+     * Overall learner map:
+     * one entry per learner per school across the selected
+     * academic year, or across the selected individual test.
+     */
+    const overallLearners = new Map();
 
+    /*
+     * School learner maps:
+     * one entry per learner per school.
+     */
     const schoolMap = new Map();
+
+    /*
+     * Subject counters remain based on learner-subject
+     * result opportunities.
+     */
     const subjectMap = new Map();
-    const genderMap = new Map();
+
+    /*
+     * Gender learner maps:
+     * one entry per learner.
+     */
+    const genderLearnerMaps = new Map();
+
+    /*
+     * Test learner maps:
+     * one entry per learner per test.
+     */
+    const testMap = new Map();
+
+    /*
+     * Performance bands and grades count learners,
+     * not individual subject results.
+     */
+    const bands = createBandCounters();
 
     const gradeMap = {
         A: 0,
@@ -701,16 +918,17 @@ function buildReports(rows, teacherRows, tests, academicYear) {
         F: 0
     };
 
-    const bands = createBandCounters();
-    const schoolBandMap = new Map();
-
-    const testMap = new Map();
-
-    const seenStudents = new Set();
-
+    /*
+     * Process result rows.
+     */
     for (const row of rows) {
         const testId = String(row.test_id);
+        const schoolId = String(row.school_id);
 
+        /*
+         * Initialize test information even if the test
+         * has no active learners.
+         */
         if (!testMap.has(testId)) {
             testMap.set(testId, {
                 id: testId,
@@ -719,22 +937,32 @@ function buildReports(rows, teacherRows, tests, academicYear) {
                 created_at: row.test_created_at,
                 terms: new Set(),
                 schools: new Set(),
-                ...emptyCounters()
+                learners: new Map()
             });
         }
 
         const testEntry = testMap.get(testId);
 
         testEntry.terms.add(num(row.term_number));
-        testEntry.schools.add(String(row.school_id));
+        testEntry.schools.add(schoolId);
 
-        if (!schoolMap.has(String(row.school_id))) {
+        /*
+         * Initialize school.
+         */
+        if (!schoolMap.has(schoolId)) {
             schoolMap.set(
-                String(row.school_id),
-                createSchoolEntry(row)
+                schoolId,
+                {
+                    school_id: schoolId,
+                    school: row.school_name,
+                    learners: new Map()
+                }
             );
         }
 
+        /*
+         * Initialize subject.
+         */
         if (!subjectMap.has(String(row.subject_id))) {
             subjectMap.set(
                 String(row.subject_id),
@@ -742,15 +970,19 @@ function buildReports(rows, teacherRows, tests, academicYear) {
             );
         }
 
+        /*
+         * Ignore rows without an actual learner.
+         */
         if (!row.student_id) {
             continue;
         }
 
-        const maximum = num(row.total_marks);
+        const score =
+            row.score === null || row.score === undefined
+                ? null
+                : num(row.score);
 
-        const score = row.score === null
-            ? null
-            : num(row.score);
+        const maximum = num(row.total_marks);
 
         const resultPercentage =
             score !== null && maximum > 0
@@ -762,43 +994,92 @@ function buildReports(rows, teacherRows, tests, academicYear) {
             percentage: resultPercentage
         };
 
-        const studentKey = [
-            testId,
-            row.school_id,
-            row.class_id,
-            row.student_id
+        const learnerKey = createLearnerKey(row);
+
+        const studentId = String(row.student_id);
+
+        /*
+         * OVERALL LEARNER
+         */
+        if (!overallLearners.has(learnerKey)) {
+            overallLearners.set(
+                learnerKey,
+                createLearnerEntry({
+                    student_id: studentId,
+                    school_id: schoolId,
+                    student: row.student_name,
+                    gender: row.gender
+                })
+            );
+        }
+
+        addLearnerResult(
+            overallLearners.get(learnerKey),
+            row
+        );
+
+        /*
+         * SCHOOL LEARNER
+         */
+        const schoolLearners =
+            schoolMap.get(schoolId).learners;
+
+        if (!schoolLearners.has(studentId)) {
+            schoolLearners.set(
+                studentId,
+                createLearnerEntry({
+                    student_id: studentId,
+                    school_id: schoolId,
+                    student: row.student_name,
+                    gender: row.gender
+                })
+            );
+        }
+
+        addLearnerResult(
+            schoolLearners.get(studentId),
+            row
+        );
+
+        /*
+         * SUBJECT RESULT
+         *
+         * Subject performance is intentionally calculated
+         * from individual learner-subject results.
+         */
+        addResult(
+            subjectMap.get(String(row.subject_id)),
+            resultRow
+        );
+
+        /*
+         * TEST LEARNER
+         */
+        const testLearnerKey = [
+            schoolId,
+            studentId
         ].join("_");
 
-        seenStudents.add(studentKey);
-
-        addResult(overall, resultRow);
-        addResult(schoolMap.get(String(row.school_id)), resultRow);
-        addResult(subjectMap.get(String(row.subject_id)), resultRow);
-        addResult(testEntry, resultRow);
-
-        if (score === null || resultPercentage === null) {
-            continue;
+        if (!testEntry.learners.has(testLearnerKey)) {
+            testEntry.learners.set(
+                testLearnerKey,
+                createLearnerEntry({
+                    student_id: studentId,
+                    school_id: schoolId,
+                    student: row.student_name,
+                    gender: row.gender
+                })
+            );
         }
 
-        const bandIndex = getBand(resultPercentage);
+        addLearnerResult(
+            testEntry.learners.get(testLearnerKey),
+            row
+        );
 
-        bands[bandIndex].count++;
-
-        const schoolId = String(row.school_id);
-
-        if (!schoolBandMap.has(schoolId)) {
-            schoolBandMap.set(schoolId, {
-                school_id: schoolId,
-                school: row.school_name,
-                bands: createBandCounters()
-            });
-        }
-
-        schoolBandMap.get(schoolId).bands[bandIndex].count++;
-
-        const grade = gradeCategory(resultPercentage);
-        gradeMap[grade]++;
-
+        /*
+         * GENDER LEARNER
+         */
         const gender = String(row.gender || "")
             .trim()
             .toLowerCase();
@@ -811,26 +1092,94 @@ function buildReports(rows, teacherRows, tests, academicYear) {
             genderLabel = "Female";
         }
 
-        if (!genderMap.has(genderLabel)) {
-            genderMap.set(genderLabel, {
-                gender: genderLabel,
-                ...emptyCounters()
-            });
+        if (!genderLearnerMaps.has(genderLabel)) {
+            genderLearnerMaps.set(
+                genderLabel,
+                new Map()
+            );
         }
 
-        addResult(genderMap.get(genderLabel), resultRow);
+        const genderLearners =
+            genderLearnerMaps.get(genderLabel);
+
+        if (!genderLearners.has(learnerKey)) {
+            genderLearners.set(
+                learnerKey,
+                createLearnerEntry({
+                    student_id: studentId,
+                    school_id: schoolId,
+                    student: row.student_name,
+                    gender: genderLabel
+                })
+            );
+        }
+
+        addLearnerResult(
+            genderLearners.get(learnerKey),
+            row
+        );
     }
 
 
-    /* -----------------------------------------------------
+    /* =====================================================
+       OVERALL LEARNER SUMMARY
+    ===================================================== */
+
+    const overall = finishLearnerMap(overallLearners);
+
+
+    /* =====================================================
+       PERFORMANCE DISTRIBUTION
+
+       Every learner is counted once using their overall
+       percentage across the selected reporting scope.
+    ===================================================== */
+
+    const schoolBandMap = new Map();
+
+    for (const [schoolId, school] of schoolMap.entries()) {
+        schoolBandMap.set(schoolId, {
+            school_id: school.school_id,
+            school: school.school,
+            bands: createBandCounters()
+        });
+    }
+
+    for (const learner of overallLearners.values()) {
+        const learnerPercentage =
+            getLearnerPercentage(learner);
+
+        if (learnerPercentage === null) {
+            continue;
+        }
+
+        const bandIndex = getBand(learnerPercentage);
+
+        bands[bandIndex].count++;
+
+        const schoolId = String(learner.school_id);
+
+        if (schoolBandMap.has(schoolId)) {
+            schoolBandMap.get(schoolId)
+                .bands[bandIndex]
+                .count++;
+        }
+
+        const grade = gradeCategory(learnerPercentage);
+
+        gradeMap[grade]++;
+    }
+
+
+    /* =====================================================
        SCHOOL RANKING
-    ----------------------------------------------------- */
+    ===================================================== */
 
     const schools = Array.from(schoolMap.values())
         .map(item => ({
             school_id: item.school_id,
             school: item.school,
-            ...finishCounters(item)
+            ...finishLearnerMap(item.learners)
         }))
         .sort((a, b) =>
             b.pass_rate - a.pass_rate ||
@@ -844,9 +1193,9 @@ function buildReports(rows, teacherRows, tests, academicYear) {
         }));
 
 
-    /* -----------------------------------------------------
+    /* =====================================================
        SUBJECT PERFORMANCE
-    ----------------------------------------------------- */
+    ===================================================== */
 
     const subjects = Array.from(subjectMap.values())
         .map(item => ({
@@ -861,20 +1210,23 @@ function buildReports(rows, teacherRows, tests, academicYear) {
         );
 
 
-    /* -----------------------------------------------------
+    /* =====================================================
        GENDER ANALYSIS
-    ----------------------------------------------------- */
+    ===================================================== */
 
-    const genders = Array.from(genderMap.values())
-        .map(item => ({
-            gender: item.gender,
-            ...finishCounters(item)
-        }));
+    const genders = Array.from(genderLearnerMaps.entries())
+        .map(([gender, learners]) => ({
+            gender,
+            ...finishLearnerMap(learners)
+        }))
+        .sort((a, b) =>
+            a.gender.localeCompare(b.gender)
+        );
 
 
-    /* -----------------------------------------------------
+    /* =====================================================
        SCHOOL PERFORMANCE BY SCORE BAND
-    ----------------------------------------------------- */
+    ===================================================== */
 
     const schoolBands = Array.from(schoolBandMap.values())
         .map(school => ({
@@ -908,9 +1260,11 @@ function buildReports(rows, teacherRows, tests, academicYear) {
     });
 
 
-    /* -----------------------------------------------------
+    /* =====================================================
        GRADE DISTRIBUTION
-    ----------------------------------------------------- */
+
+       Counts learners, not subject results.
+    ===================================================== */
 
     const grades = Object.entries(gradeMap).map(
         ([grade, count]) => ({
@@ -924,9 +1278,12 @@ function buildReports(rows, teacherRows, tests, academicYear) {
     );
 
 
-    /* -----------------------------------------------------
+    /* =====================================================
        TEST PERFORMANCE / YEAR PROGRESS
-    ----------------------------------------------------- */
+
+       Each learner is counted once per test, using the
+       combined percentage across that test's subjects.
+    ===================================================== */
 
     const testPerformance = Array.from(testMap.values())
         .map(item => ({
@@ -936,48 +1293,39 @@ function buildReports(rows, teacherRows, tests, academicYear) {
             created_at: item.created_at,
             terms: Array.from(item.terms).sort((a, b) => a - b),
             total_schools: item.schools.size,
-            ...finishCounters(item)
+            ...finishLearnerMap(item.learners)
         }))
         .sort((a, b) =>
             new Date(a.created_at) - new Date(b.created_at)
         );
 
 
-    /* -----------------------------------------------------
+    /* =====================================================
        TEACHER PERFORMANCE
 
-       Each teacher-subject-class assignment is counted
-       once for each candidate result.
+       Teacher subject performance combines the learner's
+       recorded marks for that subject across the selected
+       reporting scope.
 
-       Overall teacher performance is weighted by the
-       number of recorded learner-subject results.
-    ----------------------------------------------------- */
+       Overall teacher performance combines all assigned
+       subject results for each learner.
 
-    const teacherSubjectMap = new Map();
-    const teacherOverallMap = new Map();
+       Each learner is counted once per teacher and school.
+    ===================================================== */
+
+    const teacherSubjectLearners = new Map();
+    const teacherOverallLearners = new Map();
+
+    const teacherSubjectMetadata = new Map();
+    const teacherOverallMetadata = new Map();
 
     for (const row of teacherRows) {
         if (!row.student_id) continue;
 
-        const score = row.score === null
-            ? null
-            : num(row.score);
-
-        const maximum = num(row.total_marks);
-
-        const resultPercentage =
-            score !== null && maximum > 0
-                ? round((score / maximum) * 100)
-                : null;
-
-        const resultRow = {
-            score,
-            percentage: resultPercentage
-        };
-
         const teacherId = String(row.teacher_id);
         const schoolId = String(row.school_id);
         const subjectId = String(row.subject_id);
+        const studentId = String(row.student_id);
 
         const subjectKey = [
             teacherId,
@@ -990,110 +1338,143 @@ function buildReports(rows, teacherRows, tests, academicYear) {
             schoolId
         ].join("_");
 
-        if (!teacherSubjectMap.has(subjectKey)) {
-            teacherSubjectMap.set(subjectKey, {
+        const learnerKey = studentId;
+
+        /*
+         * Teacher subject metadata.
+         */
+        if (!teacherSubjectMetadata.has(subjectKey)) {
+            teacherSubjectMetadata.set(subjectKey, {
                 teacher_id: teacherId,
                 teacher: row.teacher_name,
                 school_id: schoolId,
                 school: row.school_name,
                 subject_id: subjectId,
                 subject: row.subject_name,
-                subject_code: row.subject_code,
-                ...emptyCounters()
+                subject_code: row.subject_code
             });
         }
 
-        if (!teacherOverallMap.has(overallKey)) {
-            teacherOverallMap.set(overallKey, {
+        /*
+         * Teacher overall metadata.
+         */
+        if (!teacherOverallMetadata.has(overallKey)) {
+            teacherOverallMetadata.set(overallKey, {
                 teacher_id: teacherId,
                 teacher: row.teacher_name,
                 school_id: schoolId,
-                school: row.school_name,
-                ...emptyCounters()
+                school: row.school_name
             });
         }
 
-        addResult(
-            teacherSubjectMap.get(subjectKey),
-            resultRow
+        /*
+         * Teacher subject learner map.
+         */
+        if (!teacherSubjectLearners.has(subjectKey)) {
+            teacherSubjectLearners.set(
+                subjectKey,
+                new Map()
+            );
+        }
+
+        const subjectLearners =
+            teacherSubjectLearners.get(subjectKey);
+
+        if (!subjectLearners.has(learnerKey)) {
+            subjectLearners.set(
+                learnerKey,
+                createLearnerEntry({
+                    student_id: studentId,
+                    school_id: schoolId
+                })
+            );
+        }
+
+        addLearnerResult(
+            subjectLearners.get(learnerKey),
+            row
         );
 
-        addResult(
-            teacherOverallMap.get(overallKey),
-            resultRow
+        /*
+         * Teacher overall learner map.
+         */
+        if (!teacherOverallLearners.has(overallKey)) {
+            teacherOverallLearners.set(
+                overallKey,
+                new Map()
+            );
+        }
+
+        const overallLearnersForTeacher =
+            teacherOverallLearners.get(overallKey);
+
+        if (!overallLearnersForTeacher.has(learnerKey)) {
+            overallLearnersForTeacher.set(
+                learnerKey,
+                createLearnerEntry({
+                    student_id: studentId,
+                    school_id: schoolId
+                })
+            );
+        }
+
+        addLearnerResult(
+            overallLearnersForTeacher.get(learnerKey),
+            row
         );
     }
 
-    const teacherSubjects = Array.from(teacherSubjectMap.values())
-        .map(item => ({
-            teacher_id: item.teacher_id,
-            teacher: item.teacher,
-            school_id: item.school_id,
-            school: item.school,
-            subject_id: item.subject_id,
-            subject: item.subject,
-            subject_code: item.subject_code,
-            ...finishCounters(item)
-        }))
-        .sort((a, b) =>
-            a.school.localeCompare(b.school) ||
-            a.teacher.localeCompare(b.teacher) ||
-            a.subject.localeCompare(b.subject)
-        );
 
-    const teachers = Array.from(teacherOverallMap.values())
-        .map(item => ({
-            teacher_id: item.teacher_id,
-            teacher: item.teacher,
-            school_id: item.school_id,
-            school: item.school,
-            ...finishCounters(item)
-        }))
-        .sort((a, b) =>
-            b.average_percentage - a.average_percentage ||
-            b.pass_rate - a.pass_rate ||
-            a.teacher.localeCompare(b.teacher)
-        )
-        .map((item, index) => ({
-            rank: index + 1,
-            ...item
-        }));
+    /* =====================================================
+       FINAL TEACHER SUBJECT PERFORMANCE
+    ===================================================== */
+
+    const teacherSubjects = Array.from(
+        teacherSubjectLearners.entries()
+    ).map(([key, learners]) => ({
+        ...teacherSubjectMetadata.get(key),
+        ...finishLearnerMap(learners)
+    }))
+    .sort((a, b) =>
+        a.school.localeCompare(b.school) ||
+        a.teacher.localeCompare(b.teacher) ||
+        a.subject.localeCompare(b.subject)
+    );
 
 
-    /* -----------------------------------------------------
-       MARKS RECORDING COMPLETION
-    ----------------------------------------------------- */
+    /* =====================================================
+       FINAL OVERALL TEACHER PERFORMANCE
+    ===================================================== */
 
-    const recording = {
-        candidates: overall.candidates,
-        recorded: overall.recorded,
-        missing: overall.missing,
-        completion_rate: percentage(
-            overall.recorded,
-            overall.candidates
-        )
-    };
-
-    const schoolRecording = schools.map(school => ({
-        school_id: school.school_id,
-        school: school.school,
-        candidates: school.candidates,
-        recorded: school.recorded,
-        missing: school.missing,
-        completion_rate: school.recording_rate
+    const teachers = Array.from(
+        teacherOverallLearners.entries()
+    ).map(([key, learners]) => ({
+        ...teacherOverallMetadata.get(key),
+        ...finishLearnerMap(learners)
+    }))
+    .sort((a, b) =>
+        b.average_percentage - a.average_percentage ||
+        b.pass_rate - a.pass_rate ||
+        a.teacher.localeCompare(b.teacher)
+    )
+    .map((item, index) => ({
+        rank: index + 1,
+        ...item
     }));
 
 
-    /* -----------------------------------------------------
+    /* =====================================================
        SUMMARY
-    ----------------------------------------------------- */
+    ===================================================== */
 
     const summary = {
         academic_year: academicYear,
 
         total_tests: tests.length,
 
-        tests_with_results: testPerformance.length,
+        tests_with_results: testPerformance.filter(
+            item => item.recorded > 0
+        ).length,
 
         total_schools: schools.length,
 
@@ -1101,6 +1482,10 @@ function buildReports(rows, teacherRows, tests, academicYear) {
 
         total_teachers: teachers.length,
 
+        /*
+         * These are unique learners, not learner-subject
+         * result opportunities.
+         */
         total_candidates: overall.candidates,
 
         total_recorded: overall.recorded,
@@ -1111,19 +1496,26 @@ function buildReports(rows, teacherRows, tests, academicYear) {
 
         total_failed: overall.failed,
 
-        average_percentage: overall.recorded > 0
-            ? round(
-                overall.percentage_sum / overall.recorded
-            )
-            : 0,
+        average_percentage: overall.average_percentage,
 
-        pass_rate: percentage(
-            overall.passed,
-            overall.recorded
-        ),
+        pass_rate: overall.pass_rate,
 
-        recording_rate: recording.completion_rate
+        /*
+         * Kept for compatibility with existing dashboard
+         * code. This is now the percentage of learners
+         * with at least one valid recorded result.
+         */
+        recording_rate: overall.recording_rate
     };
+
+
+    /* =====================================================
+       RESPONSE DATA
+
+       Existing property names are retained for compatibility
+       with the current dashboard while the learner counts
+       and overall percentages are corrected.
+    ===================================================== */
 
     return {
         summary,
@@ -1133,7 +1525,9 @@ function buildReports(rows, teacherRows, tests, academicYear) {
                 label: band.label,
                 count: band.count
             })),
+
             school_breakdown: schoolBands,
+
             leading_schools: bandWinners
         },
 
@@ -1151,9 +1545,27 @@ function buildReports(rows, teacherRows, tests, academicYear) {
 
         academic_year_progress: testPerformance,
 
+        /*
+         * Retained temporarily for API compatibility.
+         * Remove the marks-recording section from the HTML
+         * dashboard and its exports as requested.
+         */
         marks_recording: {
-            overall: recording,
-            schools: schoolRecording
+            overall: {
+                candidates: overall.candidates,
+                recorded: overall.recorded,
+                missing: overall.missing,
+                completion_rate: overall.recording_rate
+            },
+
+            schools: schools.map(school => ({
+                school_id: school.school_id,
+                school: school.school,
+                candidates: school.candidates,
+                recorded: school.recorded,
+                missing: school.missing,
+                completion_rate: school.recording_rate
+            }))
         }
     };
 }
