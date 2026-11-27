@@ -1429,17 +1429,68 @@ function buildReports(
        FINAL TEACHER SUBJECT PERFORMANCE
     ===================================================== */
 
+    
+    /* =====================================================
+       TEACHER PERFORMANCE BY SUBJECT
+
+       Group teachers by subject.
+       Rank teachers separately within each subject.
+       Highest average percentage ranks first.
+    ===================================================== */
+
     const teacherSubjects = Array.from(
         teacherSubjectLearners.entries()
     ).map(([key, learners]) => ({
         ...teacherSubjectMetadata.get(key),
         ...finishLearnerMap(learners)
-    }))
-    .sort((a, b) =>
-        a.school.localeCompare(b.school) ||
-        a.teacher.localeCompare(b.teacher) ||
+    }));
+
+    // Group teachers by subject.
+    const teacherSubjectGroups = new Map();
+
+    for (const teacher of teacherSubjects) {
+        const subjectKey = String(teacher.subject_id);
+
+        if (!teacherSubjectGroups.has(subjectKey)) {
+            teacherSubjectGroups.set(subjectKey, {
+                subject_id: teacher.subject_id,
+                subject: teacher.subject,
+                subject_code: teacher.subject_code,
+                teachers: []
+            });
+        }
+
+        teacherSubjectGroups
+            .get(subjectKey)
+            .teachers
+            .push(teacher);
+    }
+
+    // Rank teachers independently inside each subject.
+    const rankedTeacherSubjects = Array.from(
+        teacherSubjectGroups.values()
+    ).map(group => {
+        group.teachers.sort((a, b) =>
+            b.average_percentage - a.average_percentage ||
+            b.pass_rate - a.pass_rate ||
+            b.passed - a.passed ||
+            a.teacher.localeCompare(b.teacher)
+        );
+
+        return {
+            subject_id: group.subject_id,
+            subject: group.subject,
+            subject_code: group.subject_code,
+
+            teachers: group.teachers.map((teacher, index) => ({
+                rank: index + 1,
+                ...teacher
+            }))
+        };
+    }).sort((a, b) =>
         a.subject.localeCompare(b.subject)
     );
+
 
 
     /* =====================================================
