@@ -6,6 +6,7 @@ import {
 } from "../../_utils.js";
 
 export async function onRequestPost(context) {
+    // ONLY SCHOOL ADMIN CAN ADD TEACHER ASSIGNMENTS
     const auth = await requireSchoolAdmin(context);
 
     if (auth.error) return auth.error;
@@ -41,6 +42,7 @@ export async function onRequestPost(context) {
     try {
         client = await connectDB(context);
 
+        // VALIDATE TEACHER, CLASS AND SUBJECT
         const check = await client.query(
             `SELECT
                 t.id AS teacher_id,
@@ -91,16 +93,25 @@ export async function onRequestPost(context) {
             }, 400);
         }
 
+        // SAVE ASSIGNMENT
+        // MATCHES THE EXISTING EXPRESSION-BASED UNIQUE INDEX
         await client.query(
             `INSERT INTO teacher_assignments (
-    school_id,
-    teacher_id,
-    class_id,
-    subject_id
-)
-VALUES ($1, $2, $3, $4)
-ON CONFLICT (teacher_id, school_id, class_id, subject_id)
-DO NOTHING`,
+                school_id,
+                teacher_id,
+                class_id,
+                subject_id
+             )
+             VALUES ($1, $2, $3, $4)
+             ON CONFLICT (
+                teacher_id,
+                school_id,
+                class_id,
+                subject_id,
+                (COALESCE(academic_year_id, 0::bigint)),
+                (COALESCE(subclass_id, 0::bigint))
+             )
+             DO NOTHING`,
             [
                 auth.schoolId,
                 teacherId,
@@ -115,26 +126,26 @@ DO NOTHING`,
         });
 
     } catch (error) {
-    console.error("SAVE TEACHER ASSIGNMENT ERROR:", {
-        message: error?.message,
-        code: error?.code,
-        detail: error?.detail,
-        constraint: error?.constraint,
-        table: error?.table,
-        column: error?.column,
-        stack: error?.stack
-    });
-
-    return json({
-        success: false,
-        message: "Could not save the teaching assignment.",
-        debug: {
-            error: error?.message,
+        console.error("SAVE TEACHER ASSIGNMENT ERROR:", {
+            message: error?.message,
             code: error?.code,
             detail: error?.detail,
-            constraint: error?.constraint
-        }
-    }, 500);
+            constraint: error?.constraint,
+            table: error?.table,
+            column: error?.column,
+            stack: error?.stack
+        });
+
+        return json({
+            success: false,
+            message: "Could not save the teaching assignment.",
+            debug: {
+                error: error?.message,
+                code: error?.code,
+                detail: error?.detail,
+                constraint: error?.constraint
+            }
+        }, 500);
 
     } finally {
         if (client) await client.end().catch(() => {});
