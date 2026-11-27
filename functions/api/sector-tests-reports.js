@@ -1590,7 +1590,7 @@ function buildReports(
 
         grade_distribution: grades,
 
-        teacher_subject_performance: teacherSubjects,
+        teacher_subject_performance: rankedTeacherSubjects,
 
         teacher_overall_performance: teachers,
 
