@@ -656,40 +656,15 @@ tbody tr:hover {
     line-height: 1.6;
 }
 
-.band-school-list {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0,1fr));
-    gap: 9px;
-}
 
-.band-school {
-    border: 1px solid #edf1f6;
-    border-radius: 10px;
-    padding: 10px;
-    min-width: 0;
-}
 
-.band-school-label {
-    color: #8391a4;
-    font-size: 9px;
-    font-weight: 800;
-    text-transform: uppercase;
-}
 
-.band-school-name {
-    margin-top: 5px;
-    color: var(--navy);
-    font-size: 11px;
-    font-weight: 800;
-    overflow-wrap: anywhere;
-}
 
-.band-school-count {
-    color: var(--blue);
-    font-size: 17px;
-    font-weight: 800;
-    margin-top: 4px;
-}
+
+
+
+
+
 
 .empty-state {
     background: white;
@@ -875,9 +850,6 @@ tbody tr:hover {
         height: 260px;
     }
 
-    .band-school-list {
-        grid-template-columns: 1fr;
-    }
 }
 </style>
 </head>
@@ -907,9 +879,8 @@ tbody tr:hover {
             <div class="eyebrow">Academic performance intelligence</div>
             <h1>Tests & Reports Dashboard</h1>
             <p>
-                Monitor learner achievement, compare schools, evaluate
-                teachers and track marks-recording progress across your
-                sector's academic year.
+                Monitor learner achievement, compare schools and evaluate
+                teacher performance across your sector's academic year.
             </p>
         </div>
 
@@ -1008,86 +979,43 @@ tbody tr:hover {
         </div>
 
         <section class="kpi-grid">
-
             <div class="kpi-card" style="--accent:#2463eb;--tint:#eaf1ff">
-                <div class="kpi-top">
-                    <div class="kpi-label">Tests included</div>
-                    <div class="kpi-icon">T</div>
-                </div>
+                <div class="kpi-top"><div class="kpi-label">Tests included</div><div class="kpi-icon">T</div></div>
                 <div class="kpi-value" id="kpiTests">0</div>
                 <div class="kpi-foot">Tests in the selected report</div>
             </div>
-
             <div class="kpi-card" style="--accent:#079669;--tint:#e5f8f0">
-                <div class="kpi-top">
-                    <div class="kpi-label">Schools assessed</div>
-                    <div class="kpi-icon">S</div>
-                </div>
+                <div class="kpi-top"><div class="kpi-label">Schools assessed</div><div class="kpi-icon">S</div></div>
                 <div class="kpi-value" id="kpiSchools">0</div>
                 <div class="kpi-foot">Participating schools</div>
             </div>
-
             <div class="kpi-card" style="--accent:#7956d8;--tint:#f0ebff">
-                <div class="kpi-top">
-                    <div class="kpi-label">Assessment results</div>
-                    <div class="kpi-icon">R</div>
-                </div>
+                <div class="kpi-top"><div class="kpi-label">Unique learners</div><div class="kpi-icon">L</div></div>
                 <div class="kpi-value" id="kpiCandidates">0</div>
-                <div class="kpi-foot">Learner-subject assessment opportunities</div>
+                <div class="kpi-foot">Each learner counted once in this report</div>
             </div>
-
             <div class="kpi-card" style="--accent:#0ea5c6;--tint:#e4f8fc">
-                <div class="kpi-top">
-                    <div class="kpi-label">Average performance</div>
-                    <div class="kpi-icon">%</div>
-                </div>
+                <div class="kpi-top"><div class="kpi-label">Average performance</div><div class="kpi-icon">%</div></div>
                 <div class="kpi-value" id="kpiAverage">0%</div>
-                <div class="kpi-foot">Average percentage of recorded results</div>
+                <div class="kpi-foot">Average of learners' overall percentages</div>
             </div>
-
             <div class="kpi-card" style="--accent:#079669;--tint:#e5f8f0">
-                <div class="kpi-top">
-                    <div class="kpi-label">Passed</div>
-                    <div class="kpi-icon">✓</div>
-                </div>
+                <div class="kpi-top"><div class="kpi-label">Learners passed</div><div class="kpi-icon">✓</div></div>
                 <div class="kpi-value" id="kpiPassed">0</div>
-                <div class="kpi-foot">Recorded results at 50% or above</div>
+                <div class="kpi-foot">Overall percentage of 50% or above</div>
             </div>
-
             <div class="kpi-card" style="--accent:#dc4656;--tint:#ffedf0">
-                <div class="kpi-top">
-                    <div class="kpi-label">Failed</div>
-                    <div class="kpi-icon">!</div>
-                </div>
+                <div class="kpi-top"><div class="kpi-label">Learners below 50%</div><div class="kpi-icon">!</div></div>
                 <div class="kpi-value" id="kpiFailed">0</div>
-                <div class="kpi-foot">Recorded results below 50%</div>
+                <div class="kpi-foot">Based on each learner's overall percentage</div>
             </div>
-
-            <div class="kpi-card" style="--accent:#e78b22;--tint:#fff4e4">
-                <div class="kpi-top">
-                    <div class="kpi-label">Missing marks</div>
-                    <div class="kpi-icon">…</div>
-                </div>
-                <div class="kpi-value" id="kpiMissing">0</div>
-                <div class="kpi-foot">Assessment results not yet recorded</div>
-            </div>
-
-            <div class="kpi-card" style="--accent:#2463eb;--tint:#eaf1ff">
-                <div class="kpi-top">
-                    <div class="kpi-label">Recording completion</div>
-                    <div class="kpi-icon">↗</div>
-                </div>
-                <div class="kpi-value" id="kpiRecording">0%</div>
-                <div class="kpi-foot">Recorded results against candidates</div>
-            </div>
-
         </section>
 
 
         <div class="section-title">
             <div>
                 <h2><span class="section-number">02</span>Learner performance distribution</h2>
-                <p>How recorded learner-subject results are distributed across percentage bands</p>
+                <p>Distribution of learners by their overall percentage obtained</p>
             </div>
         </div>
 
@@ -1096,8 +1024,8 @@ tbody tr:hover {
             <article class="report-card full">
                 <div class="card-heading">
                     <div>
-                        <h3>Performance distribution by ten-mark bands</h3>
-                        <p>Number of recorded results in each percentage band</p>
+                        <h3>Learner overall percentages by ten-mark bands</h3>
+                        <p>Each learner is counted once. Overall percentage = total marks obtained ÷ total possible marks across the selected report scope.</p>
                     </div>
                 </div>
                 <div class="chart-wrap tall">
@@ -1105,27 +1033,9 @@ tbody tr:hover {
                 </div>
             </article>
 
-            <article class="report-card full">
-                <div class="card-heading">
-                    <div>
-                        <h3>School comparison across performance bands</h3>
-                        <p>Compare the number of learners' subject results in each band by school</p>
-                    </div>
-                </div>
-                <div class="chart-wrap tall">
-                    <canvas id="schoolBandChart"></canvas>
-                </div>
-            </article>
 
-            <article class="report-card full">
-                <div class="card-heading">
-                    <div>
-                        <h3>Leading school in each performance band</h3>
-                        <p>School with the highest number of results in each band</p>
-                    </div>
-                </div>
-                <div id="bandLeaders" class="band-school-list"></div>
-            </article>
+
+
 
         </section>
 
@@ -1133,7 +1043,7 @@ tbody tr:hover {
         <div class="section-title">
             <div>
                 <h2><span class="section-number">03</span>School performance ranking</h2>
-                <p>Schools ranked by pass rate, with assessment counts and average performance</p>
+                <p>Schools compared by learner performance, average percentage and pass rate</p>
             </div>
         </div>
 
@@ -1142,7 +1052,7 @@ tbody tr:hover {
                 <div class="card-heading">
                     <div>
                         <h3>Sector school ranking</h3>
-                        <p>Ranking uses passed results divided by recorded results; incomplete results are excluded from pass rate</p>
+                        <p>Ranking compares recorded learner-subject results; each learner is counted once in the learner total</p>
                     </div>
                 </div>
 
@@ -1152,14 +1062,13 @@ tbody tr:hover {
                             <tr>
                                 <th>Rank</th>
                                 <th>School</th>
-                                <th>Candidates</th>
-                                <th>Recorded</th>
-                                <th>Missing</th>
-                                <th>Passed</th>
-                                <th>Failed</th>
+                                <th>Learners</th>
+                                <th>Results</th>
+                                
+                                <th>Passed results</th>
+                                <th>Failed results</th>
                                 <th>Average</th>
                                 <th>Pass rate</th>
-                                <th>Recording</th>
                             </tr>
                         </thead>
                         <tbody id="schoolRankingBody"></tbody>
@@ -1184,7 +1093,7 @@ tbody tr:hover {
         <div class="section-title">
             <div>
                 <h2><span class="section-number">04</span>Gender-based analysis</h2>
-                <p>Compare recorded results and performance by learner gender</p>
+                <p>Compare learner performance by gender</p>
             </div>
         </div>
 
@@ -1205,7 +1114,7 @@ tbody tr:hover {
                 <div class="card-heading">
                     <div>
                         <h3>Gender assessment summary</h3>
-                        <p>Recorded, missing, passed and failed results</p>
+                        <p>Results, passed and failed</p>
                     </div>
                 </div>
                 <div class="table-wrap">
@@ -1213,10 +1122,10 @@ tbody tr:hover {
                         <thead>
                             <tr>
                                 <th>Gender</th>
-                                <th>Candidates</th>
-                                <th>Recorded</th>
-                                <th>Passed</th>
-                                <th>Failed</th>
+                                <th>Learners</th>
+                                <th>Results</th>
+                                <th>Passed results</th>
+                                <th>Failed results</th>
                                 <th>Pass rate</th>
                             </tr>
                         </thead>
@@ -1230,7 +1139,7 @@ tbody tr:hover {
         <div class="section-title">
             <div>
                 <h2><span class="section-number">05</span>Subject performance</h2>
-                <p>Compare subjects by average percentage, pass rate and assessment completion</p>
+                <p>Compare subjects by average percentage and pass rate</p>
             </div>
         </div>
 
@@ -1251,7 +1160,7 @@ tbody tr:hover {
                 <div class="card-heading">
                     <div>
                         <h3>Subject performance details</h3>
-                        <p>Assessment counts, average marks and pass rate</p>
+                        <p>Learner counts, average marks and pass rate</p>
                     </div>
                 </div>
                 <div class="table-wrap">
@@ -1260,11 +1169,11 @@ tbody tr:hover {
                             <tr>
                                 <th>Subject code</th>
                                 <th>Subject</th>
-                                <th>Candidates</th>
-                                <th>Recorded</th>
-                                <th>Missing</th>
-                                <th>Passed</th>
-                                <th>Failed</th>
+                                <th>Learners</th>
+                                <th>Results</th>
+                                
+                                <th>Passed results</th>
+                                <th>Failed results</th>
                                 <th>Average mark</th>
                                 <th>Average %</th>
                                 <th>Pass rate</th>
@@ -1280,7 +1189,7 @@ tbody tr:hover {
         <div class="section-title">
             <div>
                 <h2><span class="section-number">06</span>Success-category distribution</h2>
-                <p>Distribution using the Fila Grades success categories</p>
+                <p>Learners grouped by their overall percentage using Fila Grades success categories</p>
             </div>
         </div>
 
@@ -1301,7 +1210,7 @@ tbody tr:hover {
                 <div class="card-heading">
                     <div>
                         <h3>Grade category details</h3>
-                        <p>Number and percentage of recorded results</p>
+                        <p>Number and share of learners by overall percentage</p>
                     </div>
                 </div>
                 <div class="table-wrap">
@@ -1333,7 +1242,7 @@ tbody tr:hover {
                 <div class="card-heading">
                     <div>
                         <h3>Overall teacher performance ranking</h3>
-                        <p>Weighted average percentage across recorded learner-subject results</p>
+                        <p>Average percentage across each teacher's assigned learner results</p>
                     </div>
                 </div>
 
@@ -1344,11 +1253,11 @@ tbody tr:hover {
                                 <th>Rank</th>
                                 <th>Teacher</th>
                                 <th>School</th>
-                                <th>Candidates</th>
-                                <th>Recorded</th>
-                                <th>Missing</th>
-                                <th>Passed</th>
-                                <th>Failed</th>
+                                <th>Learners</th>
+                                <th>Results</th>
+                                
+                                <th>Passed results</th>
+                                <th>Failed results</th>
                                 <th>Average %</th>
                                 <th>Pass rate</th>
                             </tr>
@@ -1374,10 +1283,10 @@ tbody tr:hover {
                                 <th>School</th>
                                 <th>Subject code</th>
                                 <th>Subject</th>
-                                <th>Candidates</th>
-                                <th>Recorded</th>
-                                <th>Passed</th>
-                                <th>Failed</th>
+                                <th>Learners</th>
+                                <th>Results</th>
+                                <th>Passed results</th>
+                                <th>Failed results</th>
                                 <th>Average %</th>
                                 <th>Pass rate</th>
                             </tr>
@@ -1391,7 +1300,7 @@ tbody tr:hover {
                 <div class="card-heading">
                     <div>
                         <h3>Teacher average-performance comparison</h3>
-                        <p>Overall average percentage for teachers with recorded results</p>
+                        <p>Average percentage across each teacher's assigned learner results</p>
                     </div>
                 </div>
                 <div class="chart-wrap tall">
@@ -1404,7 +1313,7 @@ tbody tr:hover {
         <div class="section-title">
             <div>
                 <h2><span class="section-number">08</span>Academic-year progress</h2>
-                <p>Performance and assessment completion across the tests in the selected year</p>
+                <p>Performance across the tests in the selected year</p>
             </div>
         </div>
 
@@ -1425,7 +1334,7 @@ tbody tr:hover {
                 <div class="card-heading">
                     <div>
                         <h3>Test performance details</h3>
-                        <p>Assessment results recorded for each test</p>
+                        <p>Learner results for each test</p>
                     </div>
                 </div>
                 <div class="table-wrap">
@@ -1435,11 +1344,11 @@ tbody tr:hover {
                                 <th>Test</th>
                                 <th>Status</th>
                                 <th>Schools</th>
-                                <th>Candidates</th>
-                                <th>Recorded</th>
-                                <th>Missing</th>
-                                <th>Passed</th>
-                                <th>Failed</th>
+                                <th>Learners</th>
+                                <th>Results</th>
+                                
+                                <th>Passed results</th>
+                                <th>Failed results</th>
                                 <th>Average %</th>
                                 <th>Pass rate</th>
                             </tr>
@@ -1451,61 +1360,7 @@ tbody tr:hover {
         </section>
 
 
-        <div class="section-title">
-            <div>
-                <h2><span class="section-number">09</span>Marks-recording completion</h2>
-                <p>Monitor the progress of marks recording across participating schools</p>
-            </div>
-        </div>
 
-        <section class="report-grid">
-            <article class="report-card">
-                <div class="card-heading">
-                    <div>
-                        <h3>Sector recording completion</h3>
-                        <p>Recorded results compared with missing results</p>
-                    </div>
-                </div>
-                <div class="chart-wrap short">
-                    <canvas id="recordingChart"></canvas>
-                </div>
-            </article>
-
-            <article class="report-card">
-                <div class="card-heading">
-                    <div>
-                        <h3>Recording progress</h3>
-                        <p>Overall completion indicators</p>
-                    </div>
-                </div>
-                <div id="recordingSummary"></div>
-            </article>
-
-            <article class="report-card full">
-                <div class="card-heading">
-                    <div>
-                        <h3>School marks-recording progress</h3>
-                        <p>Schools with the lowest completion rates need attention</p>
-                    </div>
-                </div>
-
-                <div class="table-wrap">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>School</th>
-                                <th>Candidates</th>
-                                <th>Recorded</th>
-                                <th>Missing</th>
-                                <th>Completion</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody id="recordingBody"></tbody>
-                    </table>
-                </div>
-            </article>
-        </section>
 
     </div>
 
@@ -1858,12 +1713,8 @@ function renderDashboard(data) {
     $("kpiAverage").textContent = formatPercent(summary.average_percentage);
     $("kpiPassed").textContent = formatNumber(summary.total_passed);
     $("kpiFailed").textContent = formatNumber(summary.total_failed);
-    $("kpiMissing").textContent = formatNumber(summary.total_missing);
-    $("kpiRecording").textContent = formatPercent(summary.recording_rate);
 
     renderBandChart(reports.performance_distribution);
-    renderSchoolBandChart(reports.performance_distribution);
-    renderBandLeaders(reports.performance_distribution);
 
     renderSchoolRanking(reports.school_ranking);
     renderSchoolChart(reports.school_ranking);
@@ -1878,7 +1729,6 @@ function renderDashboard(data) {
     );
 
     renderTestProgress(reports.academic_year_progress);
-    renderRecording(reports.marks_recording);
 }
 
 
@@ -1949,7 +1799,7 @@ function renderBandChart(distribution) {
         data: {
             labels: bands.map(item => item.label),
             datasets: [{
-                label: "Recorded results",
+                label: "Learners",
                 data: bands.map(item => item.count),
                 backgroundColor: [
                     "#d95763",
@@ -1986,91 +1836,6 @@ function renderBandChart(distribution) {
 
 
 /* =========================================================
-   SCHOOL BY BAND
-========================================================= */
-
-function renderSchoolBandChart(distribution) {
-    chartDefaults();
-
-    const schools = distribution.school_breakdown || [];
-    const labels = distribution.bands?.map(item => item.label) || [];
-
-    const palette = [
-        "#2463eb",
-        "#079669",
-        "#e78b22",
-        "#7956d8",
-        "#0ea5c6",
-        "#dc4656",
-        "#68809e",
-        "#b05ca8",
-        "#729b49",
-        "#a17a50"
-    ];
-
-    makeChart("schoolBandChart", {
-        type: "bar",
-        data: {
-            labels,
-            datasets: schools.map((school, index) => ({
-                label: school.school,
-                data: school.bands.map(item => item.count),
-                backgroundColor: palette[index % palette.length],
-                borderRadius: 3
-            }))
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: "bottom",
-                    labels: {
-                        font: { size: 9 },
-                        padding: 12
-                    }
-                }
-            },
-            scales: {
-                x: {
-                    stacked: false,
-                    grid: { display: false },
-                    border: { display: false }
-                },
-                y: axisOptions()
-            }
-        }
-    });
-}
-
-
-/* =========================================================
-   BAND LEADERS
-========================================================= */
-
-function renderBandLeaders(distribution) {
-    const leaders = distribution.leading_schools || [];
-
-    $("bandLeaders").innerHTML = leaders.map(item => `
-        <div class="band-school">
-            <div class="band-school-label">
-                ${escapeHTML(item.label)} band
-            </div>
-            <div class="band-school-name">
-                ${escapeHTML(item.leading_school || "No results")}
-            </div>
-            <div class="band-school-count">
-                ${formatNumber(item.leading_school_count)}
-                <span style="font-size:10px;color:#94a1b2;font-weight:500">
-                    results
-                </span>
-            </div>
-        </div>
-    `).join("") || `<div class="legend-note">No band data available.</div>`;
-}
-
-
-/* =========================================================
    SCHOOL RANKING
 ========================================================= */
 
@@ -2085,22 +1850,15 @@ function renderSchoolRanking(schools) {
             <td class="school-name">${escapeHTML(school.school)}</td>
             <td>${formatNumber(school.candidates)}</td>
             <td>${formatNumber(school.recorded)}</td>
-            <td>${formatNumber(school.missing)}</td>
             <td>${formatNumber(school.passed)}</td>
             <td>${formatNumber(school.failed)}</td>
             <td>${formatDecimal(school.average_percentage)}%</td>
             <td class="rate ${school.pass_rate < 50 ? "low" : ""}">
                 ${formatPercent(school.pass_rate)}
             </td>
-            <td>
-                <span class="progress">
-                    <span style="width:${Math.max(0, Math.min(100, school.recording_rate))}%"></span>
-                </span>
-                ${formatPercent(school.recording_rate)}
-            </td>
         </tr>
     `).join("") || `
-        <tr><td colspan="10">No school results available.</td></tr>
+        <tr><td colspan="8">No school results available.</td></tr>
     `;
 }
 
@@ -2222,14 +1980,13 @@ function renderSubject(subjects) {
             <td class="school-name">${escapeHTML(item.subject)}</td>
             <td>${formatNumber(item.candidates)}</td>
             <td>${formatNumber(item.recorded)}</td>
-            <td>${formatNumber(item.missing)}</td>
             <td>${formatNumber(item.passed)}</td>
             <td>${formatNumber(item.failed)}</td>
             <td>${formatDecimal(item.average)}</td>
             <td>${formatPercent(item.average_percentage)}</td>
             <td class="rate">${formatPercent(item.pass_rate)}</td>
         </tr>
-    `).join("") || `<tr><td colspan="10">No subject data available.</td></tr>`;
+    `).join("") || `<tr><td colspan="9">No subject data available.</td></tr>`;
 
     chartDefaults();
 
@@ -2352,14 +2109,13 @@ function renderTeachers(overall, bySubject) {
             <td>${escapeHTML(item.school)}</td>
             <td>${formatNumber(item.candidates)}</td>
             <td>${formatNumber(item.recorded)}</td>
-            <td>${formatNumber(item.missing)}</td>
             <td>${formatNumber(item.passed)}</td>
             <td>${formatNumber(item.failed)}</td>
             <td><strong>${formatPercent(item.average_percentage)}</strong></td>
             <td class="rate">${formatPercent(item.pass_rate)}</td>
         </tr>
     `).join("") || `
-        <tr><td colspan="10">
+        <tr><td colspan="9">
             No teacher results available for this academic period.
         </td></tr>
     `;
@@ -2447,13 +2203,12 @@ function renderTestProgress(tests) {
             <td>${formatNumber(item.total_schools)}</td>
             <td>${formatNumber(item.candidates)}</td>
             <td>${formatNumber(item.recorded)}</td>
-            <td>${formatNumber(item.missing)}</td>
             <td>${formatNumber(item.passed)}</td>
             <td>${formatNumber(item.failed)}</td>
             <td>${formatPercent(item.average_percentage)}</td>
             <td class="rate">${formatPercent(item.pass_rate)}</td>
         </tr>
-    `).join("") || `<tr><td colspan="10">No test data available.</td></tr>`;
+    `).join("") || `<tr><td colspan="9">No test data available.</td></tr>`;
 
     chartDefaults();
 
@@ -2502,114 +2257,6 @@ function renderTestProgress(tests) {
                         callback: value => `${value}%`
                     }
                 }
-            }
-        }
-    });
-}
-
-
-/* =========================================================
-   MARKS RECORDING
-========================================================= */
-
-function renderRecording(data) {
-    const overall = data.overall || {};
-    const schools = data.schools || [];
-
-    $("recordingSummary").innerHTML = `
-        <div style="margin:8px 0 20px">
-            <div style="display:flex;justify-content:space-between;align-items:center">
-                <span style="font-size:11px;color:#75849a;font-weight:700">
-                    OVERALL COMPLETION
-                </span>
-                <strong style="font-size:23px;color:#079669">
-                    ${formatPercent(overall.completion_rate)}
-                </strong>
-            </div>
-
-            <div style="height:10px;background:#edf2f7;border-radius:20px;margin-top:11px;overflow:hidden">
-                <div style="height:100%;width:${Math.max(0, Math.min(100, overall.completion_rate || 0))}%;background:linear-gradient(90deg,#2463eb,#079669);border-radius:20px"></div>
-            </div>
-        </div>
-
-        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px">
-            <div style="padding:13px;background:#f1f8ff;border-radius:10px">
-                <div style="font-size:9px;color:#75849a;font-weight:800">TOTAL CANDIDATES</div>
-                <div style="font-size:20px;color:#102e56;font-weight:800;margin-top:5px">
-                    ${formatNumber(overall.candidates)}
-                </div>
-            </div>
-
-            <div style="padding:13px;background:#eaf9f2;border-radius:10px">
-                <div style="font-size:9px;color:#75849a;font-weight:800">RECORDED</div>
-                <div style="font-size:20px;color:#079669;font-weight:800;margin-top:5px">
-                    ${formatNumber(overall.recorded)}
-                </div>
-            </div>
-
-            <div style="padding:13px;background:#fff5e8;border-radius:10px">
-                <div style="font-size:9px;color:#75849a;font-weight:800">MISSING</div>
-                <div style="font-size:20px;color:#c27b1b;font-weight:800;margin-top:5px">
-                    ${formatNumber(overall.missing)}
-                </div>
-            </div>
-
-            <div style="padding:13px;background:#f1f3ff;border-radius:10px">
-                <div style="font-size:9px;color:#75849a;font-weight:800">SCHOOLS</div>
-                <div style="font-size:20px;color:#7956d8;font-weight:800;margin-top:5px">
-                    ${formatNumber(schools.length)}
-                </div>
-            </div>
-        </div>
-    `;
-
-    $("recordingBody").innerHTML = [...schools]
-        .sort((a, b) => a.completion_rate - b.completion_rate)
-        .map(item => `
-            <tr>
-                <td class="school-name">${escapeHTML(item.school)}</td>
-                <td>${formatNumber(item.candidates)}</td>
-                <td>${formatNumber(item.recorded)}</td>
-                <td>${formatNumber(item.missing)}</td>
-                <td>
-                    <span class="progress">
-                        <span style="width:${Math.max(0, Math.min(100, item.completion_rate))}%"></span>
-                    </span>
-                    <strong>${formatPercent(item.completion_rate)}</strong>
-                </td>
-                <td>
-                    <span class="status-pill ${item.completion_rate >= 100 ? "" : "pending"}">
-                        ${item.completion_rate >= 100 ? "Completed" : "In progress"}
-                    </span>
-                </td>
-            </tr>
-        `).join("") || `
-            <tr><td colspan="6">No recording data available.</td></tr>
-        `;
-
-    chartDefaults();
-
-    makeChart("recordingChart", {
-        type: "doughnut",
-        data: {
-            labels: ["Recorded", "Missing"],
-            datasets: [{
-                data: [
-                    overall.recorded || 0,
-                    overall.missing || 0
-                ],
-                backgroundColor: ["#079669", "#e8a13a"],
-                borderColor: "#ffffff",
-                borderWidth: 4,
-                hoverOffset: 5
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            cutout: "68%",
-            plugins: {
-                legend: { position: "bottom" }
             }
         }
     });
@@ -2743,8 +2390,7 @@ function createPngReportCanvas() {
         { title: "GRADE DISTRIBUTION", rows: reports.grade_distribution, type: "grades" },
         { title: "OVERALL TEACHER PERFORMANCE", rows: reports.teacher_overall_performance, type: "teachers" },
         { title: "TEACHER PERFORMANCE BY SUBJECT", rows: reports.teacher_subject_performance, type: "teacherSubjects" },
-        { title: "ACADEMIC YEAR TEST PROGRESS", rows: reports.academic_year_progress, type: "tests" },
-        { title: "MARKS RECORDING BY SCHOOL", rows: reports.marks_recording.schools, type: "recording" }
+        { title: "ACADEMIC YEAR TEST PROGRESS", rows: reports.academic_year_progress, type: "tests" }
     ];
 
     const rowHeight = 39;
@@ -2819,12 +2465,10 @@ function createPngReportCanvas() {
     const summaryItems = [
         ["TESTS", summary.total_tests],
         ["SCHOOLS", summary.total_schools],
-        ["ASSESSMENTS", summary.total_candidates],
-        ["AVERAGE", `${summary.average_percentage.toFixed(2)}%`],
-        ["PASSED", summary.total_passed],
-        ["FAILED", summary.total_failed],
-        ["MISSING", summary.total_missing],
-        ["RECORDING", `${summary.recording_rate.toFixed(2)}%`]
+        ["LEARNERS", summary.total_candidates],
+        ["AVERAGE LEARNER %", `${summary.average_percentage.toFixed(2)}%`],
+        ["LEARNERS PASSED", summary.total_passed],
+        ["LEARNERS FAILED", summary.total_failed]
     ];
 
     const gap = 14;
@@ -3013,29 +2657,29 @@ function getPngColumns(type) {
         schools: [
             { label: "RANK" },
             { label: "SCHOOL" },
-            { label: "CANDIDATES" },
-            { label: "RECORDED" },
-            { label: "PASSED" },
-            { label: "FAILED" },
+            { label: "LEARNERS" },
+            { label: "RESULTS" },
+            { label: "PASSED RESULTS" },
+            { label: "FAILED RESULTS" },
             { label: "AVG %" },
             { label: "PASS RATE" }
         ],
         subjects: [
             { label: "CODE" },
             { label: "SUBJECT" },
-            { label: "CANDIDATES" },
-            { label: "RECORDED" },
-            { label: "PASSED" },
-            { label: "FAILED" },
+            { label: "LEARNERS" },
+            { label: "RESULTS" },
+            { label: "PASSED RESULTS" },
+            { label: "FAILED RESULTS" },
             { label: "AVG %" },
             { label: "PASS RATE" }
         ],
         gender: [
             { label: "GENDER" },
-            { label: "CANDIDATES" },
-            { label: "RECORDED" },
-            { label: "PASSED" },
-            { label: "FAILED" },
+            { label: "LEARNERS" },
+            { label: "RESULTS" },
+            { label: "PASSED RESULTS" },
+            { label: "FAILED RESULTS" },
             { label: "AVG %" },
             { label: "PASS RATE" }
         ],
@@ -3048,9 +2692,9 @@ function getPngColumns(type) {
             { label: "RANK" },
             { label: "TEACHER" },
             { label: "SCHOOL" },
-            { label: "RECORDED" },
-            { label: "PASSED" },
-            { label: "FAILED" },
+            { label: "RESULTS" },
+            { label: "PASSED RESULTS" },
+            { label: "FAILED RESULTS" },
             { label: "AVG %" },
             { label: "PASS RATE" }
         ],
@@ -3058,9 +2702,9 @@ function getPngColumns(type) {
             { label: "TEACHER" },
             { label: "SCHOOL" },
             { label: "SUBJECT" },
-            { label: "RECORDED" },
-            { label: "PASSED" },
-            { label: "FAILED" },
+            { label: "RESULTS" },
+            { label: "PASSED RESULTS" },
+            { label: "FAILED RESULTS" },
             { label: "AVG %" },
             { label: "PASS RATE" }
         ],
@@ -3068,18 +2712,11 @@ function getPngColumns(type) {
             { label: "TEST" },
             { label: "STATUS" },
             { label: "SCHOOLS" },
-            { label: "RECORDED" },
-            { label: "PASSED" },
-            { label: "FAILED" },
+            { label: "RESULTS" },
+            { label: "PASSED RESULTS" },
+            { label: "FAILED RESULTS" },
             { label: "AVG %" },
             { label: "PASS RATE" }
-        ],
-        recording: [
-            { label: "SCHOOL" },
-            { label: "CANDIDATES" },
-            { label: "RECORDED" },
-            { label: "MISSING" },
-            { label: "COMPLETION" }
         ]
     };
 
@@ -3151,13 +2788,6 @@ function getPngRow(type, item) {
             item.failed,
             `${item.average_percentage}%`,
             `${item.pass_rate}%`
-        ],
-        recording: [
-            item.school,
-            item.candidates,
-            item.recorded,
-            item.missing,
-            `${item.completion_rate}%`
         ]
     };
 
@@ -3450,12 +3080,10 @@ function pdfDrawSummary(doc, summary, y) {
     const items = [
         ["TESTS", summary.total_tests],
         ["SCHOOLS", summary.total_schools],
-        ["ASSESSMENTS", summary.total_candidates],
-        ["AVERAGE", `${summary.average_percentage}%`],
-        ["PASSED", summary.total_passed],
-        ["FAILED", summary.total_failed],
-        ["MISSING", summary.total_missing],
-        ["RECORDING", `${summary.recording_rate}%`]
+        ["LEARNERS", summary.total_candidates],
+        ["AVERAGE LEARNER %", `${summary.average_percentage}%`],
+        ["LEARNERS PASSED", summary.total_passed],
+        ["LEARNERS FAILED", summary.total_failed]
     ];
 
     items.forEach((item, index) => {
@@ -3490,21 +3118,19 @@ function pdfTableDefinitions(reports) {
             columns: [
                 { label: "RANK" },
                 { label: "SCHOOL" },
-                { label: "CANDIDATES" },
-                { label: "RECORDED" },
-                { label: "MISSING" },
-                { label: "PASSED" },
-                { label: "FAILED" },
+                { label: "LEARNERS" },
+                { label: "RESULTS" },
+                { label: "PASSED RESULTS" },
+                { label: "FAILED RESULTS" },
                 { label: "AVG %" },
                 { label: "PASS %" }
             ],
-            widths: [10, 42, 18, 17, 16, 15, 15, 17, 17],
+            widths: [12, 48, 24, 22, 18, 18, 22, 22],
             rows: reports.school_ranking.map(item => [
                 item.rank,
                 item.school,
                 item.candidates,
                 item.recorded,
-                item.missing,
                 item.passed,
                 item.failed,
                 `${item.average_percentage}%`,
@@ -3516,10 +3142,10 @@ function pdfTableDefinitions(reports) {
             columns: [
                 { label: "CODE" },
                 { label: "SUBJECT" },
-                { label: "CANDIDATES" },
-                { label: "RECORDED" },
-                { label: "PASSED" },
-                { label: "FAILED" },
+                { label: "LEARNERS" },
+                { label: "RESULTS" },
+                { label: "PASSED RESULTS" },
+                { label: "FAILED RESULTS" },
                 { label: "AVG MARK" },
                 { label: "AVG %" },
                 { label: "PASS %" }
@@ -3541,20 +3167,18 @@ function pdfTableDefinitions(reports) {
             title: "Gender Analysis",
             columns: [
                 { label: "GENDER" },
-                { label: "CANDIDATES" },
-                { label: "RECORDED" },
-                { label: "MISSING" },
-                { label: "PASSED" },
-                { label: "FAILED" },
+                { label: "LEARNERS" },
+                { label: "RESULTS" },
+                { label: "PASSED RESULTS" },
+                { label: "FAILED RESULTS" },
                 { label: "AVERAGE %" },
                 { label: "PASS RATE" }
             ],
-            widths: [30, 24, 24, 22, 20, 20, 23, 23],
+            widths: [34, 25, 25, 22, 22, 24, 24],
             rows: reports.gender_analysis.map(item => [
                 item.gender,
                 item.candidates,
                 item.recorded,
-                item.missing,
                 item.passed,
                 item.failed,
                 `${item.average_percentage}%`,
@@ -3583,9 +3207,9 @@ function pdfTableDefinitions(reports) {
                 { label: "RANK" },
                 { label: "TEACHER" },
                 { label: "SCHOOL" },
-                { label: "RECORDED" },
-                { label: "PASSED" },
-                { label: "FAILED" },
+                { label: "RESULTS" },
+                { label: "PASSED RESULTS" },
+                { label: "FAILED RESULTS" },
                 { label: "AVERAGE %" },
                 { label: "PASS RATE" }
             ],
@@ -3607,9 +3231,9 @@ function pdfTableDefinitions(reports) {
                 { label: "TEACHER" },
                 { label: "SCHOOL" },
                 { label: "SUBJECT" },
-                { label: "RECORDED" },
-                { label: "PASSED" },
-                { label: "FAILED" },
+                { label: "RESULTS" },
+                { label: "PASSED RESULTS" },
+                { label: "FAILED RESULTS" },
                 { label: "AVERAGE %" },
                 { label: "PASS RATE" }
             ],
@@ -3631,9 +3255,9 @@ function pdfTableDefinitions(reports) {
                 { label: "TEST" },
                 { label: "STATUS" },
                 { label: "SCHOOLS" },
-                { label: "RECORDED" },
-                { label: "PASSED" },
-                { label: "FAILED" },
+                { label: "RESULTS" },
+                { label: "PASSED RESULTS" },
+                { label: "FAILED RESULTS" },
                 { label: "AVERAGE %" },
                 { label: "PASS RATE" }
             ],
@@ -3649,24 +3273,7 @@ function pdfTableDefinitions(reports) {
                 `${item.pass_rate}%`
             ])
         },
-        {
-            title: "Marks Recording by School",
-            columns: [
-                { label: "SCHOOL" },
-                { label: "CANDIDATES" },
-                { label: "RECORDED" },
-                { label: "MISSING" },
-                { label: "COMPLETION" }
-            ],
-            widths: [65, 35, 35, 35, 40],
-            rows: reports.marks_recording.schools.map(item => [
-                item.school,
-                item.candidates,
-                item.recorded,
-                item.missing,
-                `${item.completion_rate}%`
-            ])
-        }
+
     ];
 }
 
@@ -3734,13 +3341,11 @@ function addPdfCover(doc) {
     const notes = [
         `Total tests included: ${summary.total_tests}`,
         `Participating schools: ${summary.total_schools}`,
-        `Learner-subject assessment opportunities: ${formatNumber(summary.total_candidates)}`,
-        `Recorded results: ${formatNumber(summary.total_recorded)}`,
-        `Passed results: ${formatNumber(summary.total_passed)}`,
-        `Failed results: ${formatNumber(summary.total_failed)}`,
-        `Missing results: ${formatNumber(summary.total_missing)}`,
-        `Overall pass rate: ${summary.pass_rate}%`,
-        `Marks-recording completion: ${summary.recording_rate}%`
+        `Unique learners assessed: ${formatNumber(summary.total_candidates)}`,
+        `Learners with overall percentage of 50% or above: ${formatNumber(summary.total_passed)}`,
+        `Learners with overall percentage below 50%: ${formatNumber(summary.total_failed)}`,
+        `Average learner overall percentage: ${summary.average_percentage}%`,
+        `Overall learner pass rate: ${summary.pass_rate}%`
     ];
 
     notes.forEach(note => {
@@ -3768,7 +3373,7 @@ function addPdfCover(doc) {
 
     pdfText(
         doc,
-        "Pass threshold: 50% or above. Missing marks are reported separately and are not classified as failures.",
+        "Learner overall percentage is calculated from total marks obtained divided by total possible marks across the selected report scope.",
         22,
         pageHeight - 30,
         {
@@ -3820,36 +3425,11 @@ async function downloadPDF() {
 
         y = pdfDrawBarChart(
             doc,
-            "Recorded results by percentage band",
+            "Learners by overall percentage band",
             currentReport.reports.performance_distribution.bands.map(item => item.label),
             currentReport.reports.performance_distribution.bands.map(item => item.count),
             y,
             { height: 50 }
-        );
-
-        const bandLeaders = currentReport.reports.performance_distribution.leading_schools;
-
-        y = pdfSectionTitle(doc, "Leading school in each performance band", y);
-
-        const leaderRows = bandLeaders.map(item => [
-            item.label,
-            item.leading_school || "No results",
-            item.leading_school_count
-        ]);
-
-        y = pdfDrawTable(
-            doc,
-            "Band leaders",
-            [
-                { label: "BAND" },
-                { label: "LEADING SCHOOL" },
-                { label: "RESULTS" }
-            ],
-            leaderRows,
-            y,
-            {
-                widths: [35, 100, 35]
-            }
         );
 
         // All detailed tables
