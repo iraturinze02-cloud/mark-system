@@ -4,7 +4,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <meta name="theme-color" content="#173f70">
 
     <title>Manage Subclasses | Fila Grades System</title>
@@ -14,89 +13,301 @@
     <link rel="stylesheet" href="../../style.css">
 
     <style>
+        :root {
+            --primary: #1d4ed8;
+            --primary-dark: #173f70;
+            --primary-light: #eff6ff;
+            --text: #1e293b;
+            --muted: #64748b;
+            --border: #e2e8f0;
+            --surface: #ffffff;
+            --background: #f4f7fb;
+            --success: #15803d;
+            --success-bg: #f0fdf4;
+            --danger: #dc2626;
+            --danger-bg: #fef2f2;
+            --shadow: 0 5px 20px rgba(15, 23, 42, .045);
+        }
+
         * {
             box-sizing: border-box;
         }
 
         body {
             margin: 0;
-            background: #f4f7fb;
-            font-family: Arial, sans-serif;
-            color: #1f2937;
+            background: var(--background);
+            color: var(--text);
+            font-family: Arial, Helvetica, sans-serif;
         }
 
+        button,
+        input,
+        select {
+            font: inherit;
+        }
+
+        button {
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .school-main-content {
+            min-height: 100vh;
+        }
+
+        /* =========================================
+           PAGE HEADER
+        ========================================= */
+
         .page-header {
-            background: linear-gradient(135deg, #1e40af, #1d4ed8);
+            position: relative;
+            overflow: hidden;
+            padding: 30px 32px;
             color: white;
-            padding: 25px 20px;
-            text-align: center;
+            background: linear-gradient(
+                115deg,
+                #173f70 0%,
+                #1e40af 58%,
+                #2563eb 100%
+            );
+        }
+
+        .page-header::after {
+            content: "";
+            position: absolute;
+            width: 260px;
+            height: 260px;
+            right: 8%;
+            top: -145px;
+            border: 1px solid rgba(255,255,255,.13);
+            border-radius: 50%;
+            box-shadow:
+                0 0 0 30px rgba(255,255,255,.035),
+                0 0 0 60px rgba(255,255,255,.025);
+            pointer-events: none;
+        }
+
+        .header-content {
+            position: relative;
+            z-index: 1;
+            max-width: 1250px;
+            margin: 0 auto;
+        }
+
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 14px;
+            color: rgba(255,255,255,.75);
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .breadcrumb span:last-child {
+            color: white;
         }
 
         .page-header h1 {
             margin: 0;
-            font-size: 25px;
+            font-size: 27px;
+            font-weight: 750;
+            letter-spacing: -.5px;
         }
 
         .page-header p {
-            margin: 8px 0 0;
+            margin: 9px 0 0;
+            max-width: 650px;
+            color: rgba(255,255,255,.85);
             font-size: 14px;
-            opacity: .9;
+            line-height: 1.6;
         }
+
+        /* =========================================
+           PAGE CONTAINER
+        ========================================= */
 
         .page-container {
-            max-width: 1100px;
-            margin: 25px auto;
-            padding: 0 20px 40px;
-        }
-
-        .filter-card,
-        .class-card {
-            background: white;
-            border: 1px solid #e2e8f0;
-            border-radius: 13px;
-            box-shadow: 0 4px 12px rgba(0,0,0,.04);
-        }
-
-        .filter-card {
-            padding: 22px;
-            margin-bottom: 22px;
-        }
-
-        .filter-card label {
-            display: block;
-            font-size: 13px;
-            font-weight: bold;
-            color: #334155;
-            margin-bottom: 9px;
-        }
-
-        select,
-        input {
             width: 100%;
-            padding: 12px;
+            max-width: 1310px;
+            margin: 0 auto;
+            padding: 27px 28px 45px;
+        }
+
+        /* =========================================
+           SUMMARY CARDS
+        ========================================= */
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            min-width: 0;
+            padding: 19px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+        }
+
+        .stat-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            width: 45px;
+            height: 45px;
+            border-radius: 11px;
+            background: var(--primary-light);
+            color: var(--primary);
+            font-size: 21px;
+        }
+
+        .stat-icon.green {
+            background: var(--success-bg);
+            color: var(--success);
+        }
+
+        .stat-icon.red {
+            background: var(--danger-bg);
+            color: var(--danger);
+        }
+
+        .stat-info {
+            min-width: 0;
+        }
+
+        .stat-label {
+            display: block;
+            margin-bottom: 5px;
+            color: var(--muted);
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .stat-value {
+            display: block;
+            color: var(--text);
+            font-size: 25px;
+            font-weight: 750;
+            line-height: 1.1;
+        }
+
+        /* =========================================
+           TOOLBAR
+        ========================================= */
+
+        .toolbar-card {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 18px;
+            padding: 21px;
+            margin-bottom: 27px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+        }
+
+        .toolbar-field {
+            flex: 1;
+            min-width: 220px;
+        }
+
+        .toolbar-field.search-field {
+            max-width: 380px;
+        }
+
+        .field-label {
+            display: block;
+            margin-bottom: 8px;
+            color: #334155;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        .input-wrapper input,
+        .input-wrapper select,
+        .modal input {
+            width: 100%;
+            height: 43px;
+            padding: 0 13px;
+            color: var(--text);
+            background: white;
             border: 1px solid #cbd5e1;
             border-radius: 8px;
-            background: white;
-            font-size: 14px;
-        }
-
-        select:focus,
-        input:focus {
-            outline: 2px solid #93c5fd;
-            border-color: #2563eb;
-        }
-
-        .academic-year-info {
-            margin-top: 12px;
-            color: #64748b;
+            outline: none;
             font-size: 13px;
+            transition: border-color .2s, box-shadow .2s;
         }
 
-        .section-heading {
-            margin: 25px 0 15px;
-            color: #1e40af;
-            font-size: 19px;
+        .input-wrapper input:focus,
+        .input-wrapper select:focus,
+        .modal input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37,99,235,.12);
         }
+
+        .year-description {
+            margin-top: 8px;
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .year-description strong {
+            color: var(--primary-dark);
+        }
+
+        /* =========================================
+           SECTION HEADING
+        ========================================= */
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .section-title {
+            margin: 0;
+            color: #173f70;
+            font-size: 19px;
+            font-weight: 750;
+        }
+
+        .section-description {
+            margin: 5px 0 0;
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .class-count-label {
+            padding: 7px 11px;
+            color: #1e40af;
+            background: #eff6ff;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        /* =========================================
+           CLASS GRID
+        ========================================= */
 
         .classes-grid {
             display: grid;
@@ -105,144 +316,283 @@
         }
 
         .class-card {
-            padding: 20px;
             min-width: 0;
+            padding: 21px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 13px;
+            box-shadow: var(--shadow);
+            transition: border-color .2s, box-shadow .2s;
+        }
+
+        .class-card:hover {
+            border-color: #bfdbfe;
+            box-shadow: 0 8px 24px rgba(15,23,42,.065);
         }
 
         .class-card-header {
             display: flex;
+            align-items: center;
             justify-content: space-between;
-            align-items: flex-start;
             gap: 12px;
-            border-bottom: 1px solid #e5e7eb;
-            padding-bottom: 14px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #edf0f5;
+        }
+
+        .class-heading {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 0;
+        }
+
+        .class-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            width: 43px;
+            height: 43px;
+            border-radius: 10px;
+            color: var(--primary);
+            background: var(--primary-light);
+            font-size: 19px;
+            font-weight: 800;
         }
 
         .class-card h3 {
             margin: 0;
-            color: #1e40af;
-            font-size: 19px;
+            color: #173f70;
+            font-size: 18px;
+            font-weight: 750;
         }
 
         .level-label {
-            display: inline-block;
-            margin-top: 6px;
-            color: #64748b;
-            font-size: 11px;
+            display: block;
+            margin-top: 5px;
+            color: var(--muted);
+            font-size: 10px;
+            font-weight: 700;
             text-transform: uppercase;
-            font-weight: bold;
+            letter-spacing: .55px;
         }
+
+        /* =========================================
+           BUTTONS
+        ========================================= */
 
         .add-btn,
         .primary-btn {
-            border: none;
-            background: #2563eb;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            min-height: 37px;
+            padding: 0 13px;
             color: white;
-            padding: 10px 13px;
+            background: var(--primary);
+            border: 1px solid var(--primary);
             border-radius: 7px;
             cursor: pointer;
             font-size: 12px;
-            font-weight: bold;
+            font-weight: 700;
+            transition: background .2s, transform .15s;
         }
 
         .add-btn:hover,
         .primary-btn:hover {
-            background: #1d4ed8;
+            background: #1e40af;
+            transform: translateY(-1px);
+        }
+
+        button:disabled {
+            opacity: .55;
+            cursor: not-allowed !important;
+            transform: none !important;
         }
 
         .subclass-list {
             display: grid;
             gap: 10px;
-            margin-top: 16px;
+            margin-top: 15px;
         }
+
+        /* =========================================
+           SUBCLASS ITEMS
+        ========================================= */
 
         .subclass-item {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 10px;
+            gap: 12px;
+            min-width: 0;
+            padding: 13px;
             background: #f8fafc;
-            border: 1px solid #e2e8f0;
+            border: 1px solid #e8edf4;
             border-radius: 9px;
-            padding: 12px;
+            transition: background .2s, border-color .2s;
+        }
+
+        .subclass-item:hover {
+            background: #f1f6ff;
+            border-color: #dbeafe;
+        }
+
+        .subclass-details {
+            min-width: 0;
         }
 
         .subclass-name {
-            font-weight: bold;
-            color: #334155;
+            color: #243b53;
             font-size: 14px;
+            font-weight: 750;
+            overflow-wrap: anywhere;
         }
 
         .subclass-status {
-            display: block;
-            font-size: 11px;
-            margin-top: 5px;
-            font-weight: bold;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            margin-top: 7px;
+            padding: 4px 8px;
+            border-radius: 20px;
+            font-size: 10px;
+            font-weight: 750;
+        }
+
+        .subclass-status::before {
+            content: "";
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: currentColor;
         }
 
         .status-active {
-            color: #15803d;
+            color: var(--success);
+            background: var(--success-bg);
         }
 
         .status-inactive {
-            color: #dc2626;
+            color: var(--danger);
+            background: var(--danger-bg);
         }
 
         .item-actions {
             display: flex;
-            gap: 6px;
-            flex-wrap: wrap;
+            align-items: center;
             justify-content: flex-end;
+            gap: 7px;
+            flex-shrink: 0;
         }
 
         .small-btn {
-            border: 1px solid #cbd5e1;
+            min-height: 31px;
+            padding: 0 10px;
+            color: #475569;
             background: white;
-            color: #334155;
-            padding: 7px 9px;
+            border: 1px solid #dbe2ea;
             border-radius: 6px;
             cursor: pointer;
             font-size: 11px;
+            font-weight: 650;
+            transition: all .2s;
         }
 
         .small-btn:hover {
-            border-color: #2563eb;
-            color: #1d4ed8;
+            color: var(--primary);
+            border-color: #93c5fd;
+            background: #eff6ff;
         }
 
         .small-btn.danger {
-            color: #dc2626;
+            color: var(--danger);
         }
+
+        .small-btn.danger:hover {
+            color: #b91c1c;
+            border-color: #fecaca;
+            background: var(--danger-bg);
+        }
+
+        /* =========================================
+           EMPTY / LOADING / ERROR STATES
+        ========================================= */
 
         .empty-message {
+            padding: 23px 12px;
             color: #94a3b8;
-            font-size: 13px;
-            padding: 18px 0 5px;
             text-align: center;
+            font-size: 12px;
+            line-height: 1.6;
         }
 
-        .loading,
-        .error-message {
+        .empty-icon {
+            display: block;
+            margin-bottom: 9px;
+            color: #94a3b8;
+            font-size: 24px;
+        }
+
+        .state-card {
+            padding: 35px 20px;
             background: white;
-            border-radius: 10px;
-            padding: 25px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
             text-align: center;
-            color: #64748b;
+            box-shadow: var(--shadow);
         }
 
-        .error-message {
-            color: #dc2626;
+        .state-icon {
+            display: block;
+            margin-bottom: 12px;
+            font-size: 29px;
         }
+
+        .state-card h3 {
+            margin: 0 0 7px;
+            color: #334155;
+            font-size: 16px;
+        }
+
+        .state-card p {
+            margin: 0;
+            color: var(--muted);
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .state-card.error h3 {
+            color: var(--danger);
+        }
+
+        .retry-btn {
+            margin-top: 17px;
+            padding: 9px 16px;
+            color: white;
+            background: var(--primary);
+            border: none;
+            border-radius: 7px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        /* =========================================
+           MODAL
+        ========================================= */
 
         .modal-overlay {
             display: none;
             position: fixed;
             inset: 0;
-            background: rgba(15, 23, 42, .55);
             z-index: 9999;
-            justify-content: center;
             align-items: center;
+            justify-content: center;
             padding: 18px;
+            background: rgba(15,23,42,.58);
+            backdrop-filter: blur(3px);
         }
 
         .modal-overlay.show {
@@ -251,54 +601,149 @@
 
         .modal {
             width: 100%;
-            max-width: 430px;
+            max-width: 450px;
+            padding: 26px;
             background: white;
-            border-radius: 14px;
-            padding: 24px;
-            box-shadow: 0 15px 40px rgba(0,0,0,.2);
+            border: 1px solid rgba(255,255,255,.4);
+            border-radius: 15px;
+            box-shadow: 0 22px 65px rgba(0,0,0,.22);
+            animation: modalIn .2s ease-out;
         }
 
-        .modal h2 {
-            margin: 0 0 20px;
-            color: #1e40af;
+        @keyframes modalIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px) scale(.98);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .modal-heading {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 15px;
+            margin-bottom: 23px;
+        }
+
+        .modal-heading h2 {
+            margin: 0;
+            color: #173f70;
             font-size: 20px;
+        }
+
+        .modal-heading p {
+            margin: 6px 0 0;
+            color: var(--muted);
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        .modal-close {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            width: 32px;
+            height: 32px;
+            color: #64748b;
+            background: #f1f5f9;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 20px;
+        }
+
+        .modal-close:hover {
+            color: #1e293b;
+            background: #e2e8f0;
+        }
+
+        .modal-field {
+            margin-bottom: 18px;
         }
 
         .modal label {
             display: block;
             margin-bottom: 8px;
-            font-weight: bold;
+            color: #334155;
+            font-size: 12px;
+            font-weight: 750;
+        }
+
+        .selected-class-box {
+            padding: 12px 13px;
+            color: #1e40af;
+            background: #eff6ff;
+            border: 1px solid #dbeafe;
+            border-radius: 8px;
             font-size: 13px;
+            font-weight: 700;
+        }
+
+        .modal input {
+            height: 45px;
+        }
+
+        .input-hint {
+            display: block;
+            margin-top: 7px;
+            color: #94a3b8;
+            font-size: 11px;
         }
 
         .modal-actions {
             display: flex;
             justify-content: flex-end;
             gap: 10px;
-            margin-top: 22px;
+            margin-top: 25px;
+            padding-top: 17px;
+            border-top: 1px solid #edf0f5;
         }
 
         .cancel-btn {
-            background: #e2e8f0;
-            color: #334155;
-            border: none;
+            min-height: 39px;
+            padding: 0 15px;
+            color: #475569;
+            background: #f1f5f9;
+            border: 1px solid #e2e8f0;
             border-radius: 7px;
-            padding: 10px 14px;
             cursor: pointer;
+            font-size: 12px;
+            font-weight: 700;
         }
+
+        .cancel-btn:hover {
+            background: #e2e8f0;
+        }
+
+        /* =========================================
+           TOAST
+        ========================================= */
 
         .toast {
             position: fixed;
-            right: 20px;
-            bottom: 20px;
-            z-index: 10000;
-            background: #166534;
+            right: 22px;
+            bottom: 22px;
+            z-index: 10001;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            max-width: calc(100% - 35px);
+            padding: 14px 18px;
             color: white;
-            padding: 13px 18px;
+            background: #166534;
             border-radius: 9px;
+            box-shadow: 0 8px 25px rgba(0,0,0,.16);
             font-size: 13px;
-            display: none;
-            max-width: calc(100% - 40px);
+            font-weight: 600;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(10px);
+            transition: all .25s;
         }
 
         .toast.error {
@@ -306,31 +751,114 @@
         }
 
         .toast.show {
-            display: block;
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
         }
+
+        /* =========================================
+           FOOTER
+        ========================================= */
 
         .page-footer {
-            text-align: center;
+            margin-top: 35px;
+            padding: 18px 0 5px;
             color: #94a3b8;
-            font-size: 12px;
-            margin-top: 25px;
+            border-top: 1px solid #e5eaf1;
+            text-align: center;
+            font-size: 11px;
         }
 
-        @media(max-width: 700px) {
+        /* =========================================
+           RESPONSIVE DESIGN
+        ========================================= */
+
+        @media (max-width: 1000px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 750px) {
+            .page-header {
+                padding: 25px 20px;
+            }
+
+            .page-header h1 {
+                font-size: 23px;
+            }
+
+            .page-container {
+                padding: 21px 17px 35px;
+            }
+
             .classes-grid {
                 grid-template-columns: 1fr;
             }
 
-            .page-header h1 {
+            .toolbar-card {
+                align-items: stretch;
+            }
+
+            .toolbar-field,
+            .toolbar-field.search-field {
+                max-width: none;
+                min-width: 100%;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 10px;
+            }
+
+            .stat-card {
+                gap: 10px;
+                padding: 13px 11px;
+            }
+
+            .stat-icon {
+                width: 36px;
+                height: 36px;
+                font-size: 17px;
+            }
+
+            .stat-value {
                 font-size: 21px;
+            }
+
+            .stat-label {
+                font-size: 10px;
+            }
+
+            .page-header h1 {
+                font-size: 20px;
+            }
+
+            .class-card {
+                padding: 16px;
             }
 
             .subclass-item {
                 align-items: flex-start;
             }
+
+            .item-actions {
+                gap: 5px;
+            }
+
+            .small-btn {
+                padding: 0 8px;
+                font-size: 10px;
+            }
+
+            .modal {
+                padding: 21px;
+            }
         }
 
-        @media(max-width: 420px) {
+        @media (max-width: 360px) {
             .subclass-item {
                 flex-direction: column;
             }
@@ -349,94 +877,248 @@
 
 <main class="school-main-content">
 
+    <!-- PAGE HEADER -->
+
     <header class="page-header">
-        <h1>MANAGE SCHOOL SUBCLASSES</h1>
-        <p>Organize learners and teachers into academic-year-specific streams</p>
+        <div class="header-content">
+
+            <div class="breadcrumb">
+                <span>School Management</span>
+                <span>›</span>
+                <span>Academic Structure</span>
+                <span>›</span>
+                <span>Subclasses</span>
+            </div>
+
+            <h1>Manage School Subclasses</h1>
+
+            <p>
+                Organize learners into academic-year-specific streams
+                and manage your school's class structure.
+            </p>
+
+        </div>
     </header>
+
 
     <div class="page-container">
 
-        <section class="filter-card">
+        <!-- SUMMARY STATISTICS -->
 
-            <label for="academicYearSelect">
-                Select Academic Year
-            </label>
+        <section class="stats-grid">
 
-            <select id="academicYearSelect">
-                <option value="">Loading academic years...</option>
-            </select>
+            <div class="stat-card">
+                <div class="stat-icon">▦</div>
+                <div class="stat-info">
+                    <span class="stat-label">Total Classes</span>
+                    <strong class="stat-value" id="totalClasses">0</strong>
+                </div>
+            </div>
 
-            <div class="academic-year-info" id="yearInfo"></div>
+            <div class="stat-card">
+                <div class="stat-icon">◫</div>
+                <div class="stat-info">
+                    <span class="stat-label">Total Subclasses</span>
+                    <strong class="stat-value" id="totalSubclasses">0</strong>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon green">✓</div>
+                <div class="stat-info">
+                    <span class="stat-label">Active Subclasses</span>
+                    <strong class="stat-value" id="activeSubclasses">0</strong>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon red">⊘</div>
+                <div class="stat-info">
+                    <span class="stat-label">Inactive Subclasses</span>
+                    <strong class="stat-value" id="inactiveSubclasses">0</strong>
+                </div>
+            </div>
 
         </section>
 
-        <h2 class="section-heading">
-            Classes and Subclasses
-        </h2>
 
-        <div id="classesContainer" class="loading">
-            Loading classes...
-        </div>
+        <!-- FILTER TOOLBAR -->
 
-        <div class="page-footer">
-            Fila Grades System Platform
-        </div>
+        <section class="toolbar-card">
+
+            <div class="toolbar-field">
+
+                <label class="field-label" for="academicYearSelect">
+                    Academic Year
+                </label>
+
+                <div class="input-wrapper">
+                    <select id="academicYearSelect">
+                        <option value="">Loading academic years...</option>
+                    </select>
+                </div>
+
+                <div class="year-description" id="yearInfo">
+                    Loading academic calendar...
+                </div>
+
+            </div>
+
+
+            <div class="toolbar-field search-field">
+
+                <label class="field-label" for="classSearch">
+                    Search Classes or Subclasses
+                </label>
+
+                <div class="input-wrapper">
+                    <input
+                        type="search"
+                        id="classSearch"
+                        placeholder="Search P5, P6 A, S1..."
+                        autocomplete="off"
+                    >
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- CLASSES SECTION -->
+
+        <section>
+
+            <div class="section-header">
+
+                <div>
+                    <h2 class="section-title">
+                        Classes and Subclasses
+                    </h2>
+
+                    <p class="section-description">
+                        Manage the streams available under each enabled class.
+                    </p>
+                </div>
+
+                <span class="class-count-label" id="classCountLabel">
+                    0 Classes
+                </span>
+
+            </div>
+
+            <div id="classesContainer">
+
+                <div class="state-card">
+                    <span class="state-icon">⏳</span>
+                    <h3>Loading classes</h3>
+                    <p>Please wait while your school's classes are loaded.</p>
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <footer class="page-footer">
+            Fila Grades System · School Academic Structure
+        </footer>
 
     </div>
 
 </main>
 
 
-<!-- CREATE / EDIT MODAL -->
+<!-- CREATE / EDIT SUBCLASS MODAL -->
 
-<div class="modal-overlay" id="subclassModal">
+<div
+    class="modal-overlay"
+    id="subclassModal"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="modalTitle"
+>
 
     <div class="modal">
 
-        <h2 id="modalTitle">Add Subclass</h2>
+        <div class="modal-heading">
+
+            <div>
+                <h2 id="modalTitle">Add Subclass</h2>
+
+                <p id="modalDescription">
+                    Create a new stream under the selected class.
+                </p>
+            </div>
+
+            <button
+                type="button"
+                class="modal-close"
+                id="closeModalBtn"
+                aria-label="Close modal"
+            >
+                &times;
+            </button>
+
+        </div>
+
 
         <form id="subclassForm">
 
             <input type="hidden" id="editingSubclassId">
-
             <input type="hidden" id="selectedClassId">
 
-            <label id="classNameLabel">
-                Selected Class
-            </label>
 
-            <div
-                id="selectedClassName"
-                style="margin-bottom:18px;color:#64748b;font-size:14px;">
+            <div class="modal-field">
+
+                <label>Selected Class</label>
+
+                <div
+                    class="selected-class-box"
+                    id="selectedClassName"
+                ></div>
+
             </div>
 
-            <label for="subclassName">
-                Subclass Name
-            </label>
 
-            <input
-                type="text"
-                id="subclassName"
-                maxlength="50"
-                placeholder="Example: A"
-                required
-                autocomplete="off"
-            >
+            <div class="modal-field">
+
+                <label for="subclassName">
+                    Subclass Name
+                </label>
+
+                <input
+                    type="text"
+                    id="subclassName"
+                    maxlength="50"
+                    placeholder="Example: A"
+                    required
+                    autocomplete="off"
+                >
+
+                <span class="input-hint">
+                    Example: Enter A to create P5 A.
+                </span>
+
+            </div>
+
 
             <div class="modal-actions">
 
                 <button
                     type="button"
                     class="cancel-btn"
-                    id="cancelModalBtn">
+                    id="cancelModalBtn"
+                >
                     Cancel
                 </button>
 
                 <button
                     type="submit"
                     class="primary-btn"
-                    id="saveSubclassBtn">
-                    Save Subclass
+                    id="saveSubclassBtn"
+                >
+                    Create Subclass
                 </button>
 
             </div>
@@ -448,7 +1130,14 @@
 </div>
 
 
-<div class="toast" id="toast"></div>
+<!-- TOAST -->
+
+<div
+    class="toast"
+    id="toast"
+    role="status"
+    aria-live="polite"
+></div>
 
 
 <script src="../js/school-sidebar.js"></script>
@@ -456,10 +1145,29 @@
 
 <script>
 /* =====================================================
+   FILA GRADES SYSTEM
+   SCHOOL SUBCLASS MANAGEMENT
+
+   ACCESS:
+   - School Admin
+   - DOS
+
+   EXISTING API ROUTES:
+   GET   /api/academic-calendar?action=get
+   GET   /api/subclasses?academic_year_id=
+   POST  /api/subclasses
+   PATCH /api/subclasses
+
+   DATABASE STRUCTURE AND API CONTRACT PRESERVED
+===================================================== */
+
+
+/* =====================================================
    AUTHENTICATION
 ===================================================== */
 
 (function () {
+
     let currentUser = null;
 
     try {
@@ -480,11 +1188,12 @@
     ) {
         window.location.replace("../../index.html");
     }
+
 })();
 
 
 /* =====================================================
-   STATE
+   ELEMENTS AND STATE
 ===================================================== */
 
 const academicYearSelect =
@@ -496,12 +1205,23 @@ const classesContainer =
 const yearInfo =
     document.getElementById("yearInfo");
 
+const classSearch =
+    document.getElementById("classSearch");
+
 const modal =
     document.getElementById("subclassModal");
+
+const subclassForm =
+    document.getElementById("subclassForm");
+
+const saveSubclassBtn =
+    document.getElementById("saveSubclassBtn");
 
 let currentClasses = [];
 let academicYears = [];
 let toastTimer = null;
+let isSaving = false;
+let isLoading = false;
 
 
 /* =====================================================
@@ -512,8 +1232,10 @@ async function apiRequest(url, options = {}) {
 
     const response = await fetch(url, {
         credentials: "same-origin",
+        cache: "no-store",
         ...options,
         headers: {
+            "Accept": "application/json",
             "Content-Type": "application/json",
             ...(options.headers || {})
         }
@@ -524,12 +1246,15 @@ async function apiRequest(url, options = {}) {
     try {
         data = await response.json();
     } catch {
-        throw new Error("Invalid server response.");
+        throw new Error(
+            "The server returned an invalid response. Please try again."
+        );
     }
 
-    if (!response.ok || !data.success) {
+    if (!response.ok || !data || !data.success) {
         throw new Error(
-            data.message || "The request could not be completed."
+            data?.message ||
+            "The request could not be completed."
         );
     }
 
@@ -538,7 +1263,7 @@ async function apiRequest(url, options = {}) {
 
 
 /* =====================================================
-   TOAST
+   TOAST NOTIFICATIONS
 ===================================================== */
 
 function showToast(message, isError = false) {
@@ -546,27 +1271,167 @@ function showToast(message, isError = false) {
     const toast = document.getElementById("toast");
 
     toast.textContent = message;
-    toast.className = "toast show";
+
+    toast.className = "toast";
 
     if (isError) {
         toast.classList.add("error");
     }
 
+    requestAnimationFrame(() => {
+        toast.classList.add("show");
+    });
+
     clearTimeout(toastTimer);
 
     toastTimer = setTimeout(() => {
-        toast.className = "toast";
+        toast.classList.remove("show");
     }, 3500);
 }
 
 
 /* =====================================================
-   LOAD ACADEMIC YEARS
+   HTML ESCAPING
 ===================================================== */
 
+function escapeHtml(value) {
+
+    return String(value ?? "").replace(
+        /[&<>"']/g,
+        character => ({
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            '"': "&quot;",
+            "'": "&#039;"
+        })[character]
+    );
+
+}
+
+
+/* =====================================================
+   SUMMARY STATISTICS
+===================================================== */
+
+function updateStatistics() {
+
+    const totalClasses = currentClasses.length;
+
+    let totalSubclasses = 0;
+    let active = 0;
+    let inactive = 0;
+
+    currentClasses.forEach(classItem => {
+
+        const subclasses = Array.isArray(classItem.subclasses)
+            ? classItem.subclasses
+            : [];
+
+        totalSubclasses += subclasses.length;
+
+        subclasses.forEach(subclass => {
+
+            if (subclass.status === "active") {
+                active++;
+            } else {
+                inactive++;
+            }
+
+        });
+
+    });
+
+    document.getElementById("totalClasses").textContent =
+        totalClasses;
+
+    document.getElementById("totalSubclasses").textContent =
+        totalSubclasses;
+
+    document.getElementById("activeSubclasses").textContent =
+        active;
+
+    document.getElementById("inactiveSubclasses").textContent =
+        inactive;
+
+    document.getElementById("classCountLabel").textContent =
+        `${totalClasses} ${totalClasses === 1 ? "Class" : "Classes"}`;
+
+}
+
+
+/* =====================================================
+   DISPLAY PAGE STATE
+===================================================== */
+
+function showPageState(title, message, icon = "ℹ️", isError = false) {
+
+    classesContainer.innerHTML = "";
+
+    const state = document.createElement("div");
+
+    state.className =
+        "state-card" + (isError ? " error" : "");
+
+    const stateIcon = document.createElement("span");
+
+    stateIcon.className = "state-icon";
+    stateIcon.textContent = icon;
+
+    const heading = document.createElement("h3");
+
+    heading.textContent = title;
+
+    const description = document.createElement("p");
+
+    description.textContent = message;
+
+    state.append(stateIcon, heading, description);
+
+    if (isError) {
+
+        const retry = document.createElement("button");
+
+        retry.type = "button";
+        retry.className = "retry-btn";
+        retry.textContent = "Try Again";
+
+        retry.addEventListener("click", () => {
+
+            if (academicYears.length) {
+                loadSubclasses();
+            } else {
+                loadAcademicYears();
+            }
+
+        });
+
+        state.appendChild(retry);
+    }
+
+    classesContainer.appendChild(state);
+
+}
+
+
+/* =====================================================
+   LOAD ACADEMIC YEARS
+
+   Uses the existing academic-calendar API.
+===================================================== */
 
 async function loadAcademicYears() {
+
+    academicYearSelect.disabled = true;
+
+    academicYearSelect.innerHTML = `
+        <option value="">Loading academic years...</option>
+    `;
+
+    yearInfo.textContent = "Loading academic calendar...";
+
     try {
+
         const response = await fetch(
             "/api/academic-calendar?action=get",
             {
@@ -581,10 +1446,18 @@ async function loadAcademicYears() {
 
         const data = await response.json().catch(() => null);
 
+        if (response.status === 401) {
+            window.location.href = "../../index.html";
+            return;
+        }
+
         if (!response.ok || !data || !data.success) {
+
             throw new Error(
-                data?.message || "Unable to load academic years."
+                data?.message ||
+                "Unable to load academic years."
             );
+
         }
 
         const years = Array.isArray(data.academic_years)
@@ -592,52 +1465,121 @@ async function loadAcademicYears() {
             : [];
 
         if (!years.length) {
-            throw new Error("No academic years are available.");
+
+            academicYears = [];
+
+            academicYearSelect.innerHTML = `
+                <option value="">No academic years available</option>
+            `;
+
+            yearInfo.textContent =
+                "No academic years have been configured.";
+
+            currentClasses = [];
+
+            updateStatistics();
+
+            showPageState(
+                "No Academic Years",
+                "There are currently no academic years available for your school.",
+                "📅"
+            );
+
+            return;
         }
 
         academicYears = years;
 
-        const yearSelect = document.getElementById("academicYearSelect");
+        academicYearSelect.innerHTML = "";
 
-        if (!yearSelect) {
-            throw new Error("Academic year selector was not found.");
-        }
+        const sortedYears = [...years].sort((a, b) =>
+            String(b.start_date || "").localeCompare(
+                String(a.start_date || "")
+            )
+        );
 
-        yearSelect.innerHTML = years.map(year => `
-            <option value="${escapeHtml(String(year.id))}">
-                ${escapeHtml(year.year_name)}
-            </option>
-        `).join("");
+        sortedYears.forEach(year => {
+
+            const option = document.createElement("option");
+
+            option.value = String(year.id);
+
+            option.textContent =
+                year.year_name +
+                (year.status === "active" ? " (Current)" : "");
+
+            academicYearSelect.appendChild(option);
+
+        });
 
         const activeYear = data.active_academic_year;
 
         const selectedYear = years.find(year =>
             activeYear &&
             String(year.id) === String(activeYear.id)
-        ) || years[0];
+        ) || sortedYears[0];
 
-        yearSelect.value = String(selectedYear.id);
+        academicYearSelect.value = String(selectedYear.id);
+
+        academicYearSelect.disabled = false;
 
         await loadSubclasses();
 
     } catch (error) {
-        console.error("Academic years loading error:", error);
-        showToast(error.message, "error");
+
+        console.error(
+            "Academic years loading error:",
+            error
+        );
+
+        academicYearSelect.innerHTML = `
+            <option value="">Unable to load academic years</option>
+        `;
+
+        yearInfo.textContent =
+            "The academic calendar could not be loaded.";
+
+        currentClasses = [];
+
+        updateStatistics();
+
+        showPageState(
+            "Unable to Load Academic Years",
+            error.message,
+            "⚠️",
+            true
+        );
+
+        showToast(error.message, true);
+
     }
+
 }
+
 
 /* =====================================================
    LOAD SUBCLASSES
+
+   Uses the existing subclasses API.
 ===================================================== */
 
 async function loadSubclasses() {
 
     const academicYearId = academicYearSelect.value;
 
-    if (!academicYearId) return;
+    if (!academicYearId || isLoading) return;
 
-    classesContainer.className = "loading";
-    classesContainer.textContent = "Loading classes and subclasses...";
+    isLoading = true;
+
+    academicYearSelect.disabled = true;
+
+    classesContainer.innerHTML = `
+        <div class="state-card">
+            <span class="state-icon">⏳</span>
+            <h3>Loading Classes</h3>
+            <p>Please wait while your school's academic structure is loaded.</p>
+        </div>
+    `;
 
     const selectedYear = academicYears.find(
         year => String(year.id) === String(academicYearId)
@@ -653,15 +1595,45 @@ async function loadSubclasses() {
             `/api/subclasses?academic_year_id=${encodeURIComponent(academicYearId)}`
         );
 
-        currentClasses = data.classes || [];
+        currentClasses = Array.isArray(data.classes)
+            ? data.classes.map(classItem => ({
+                ...classItem,
+                subclasses: Array.isArray(classItem.subclasses)
+                    ? classItem.subclasses
+                    : []
+            }))
+            : [];
+
+        updateStatistics();
 
         renderClasses();
 
     } catch (error) {
 
-        classesContainer.className = "error-message";
-        classesContainer.textContent = error.message;
+        console.error(
+            "Subclass loading error:",
+            error
+        );
+
+        currentClasses = [];
+
+        updateStatistics();
+
+        showPageState(
+            "Unable to Load Classes",
+            error.message,
+            "⚠️",
+            true
+        );
+
+    } finally {
+
+        isLoading = false;
+
+        academicYearSelect.disabled = false;
+
     }
+
 }
 
 
@@ -671,12 +1643,66 @@ async function loadSubclasses() {
 
 function renderClasses() {
 
-    classesContainer.className = "";
+    const searchTerm = classSearch.value
+        .trim()
+        .toLowerCase();
+
+    const filteredClasses = currentClasses.filter(classItem => {
+
+        const className = String(
+            classItem.class_name || ""
+        ).toLowerCase();
+
+        const levelName = String(
+            classItem.level_name || ""
+        ).toLowerCase();
+
+        const subclasses = Array.isArray(classItem.subclasses)
+            ? classItem.subclasses
+            : [];
+
+        const subclassMatch = subclasses.some(subclass => {
+
+            const name = String(
+                subclass.subclass_name || ""
+            ).toLowerCase();
+
+            return (
+                name.includes(searchTerm) ||
+                `${className} ${name}`.includes(searchTerm)
+            );
+
+        });
+
+        return (
+            !searchTerm ||
+            className.includes(searchTerm) ||
+            levelName.includes(searchTerm) ||
+            subclassMatch
+        );
+
+    });
+
+    classesContainer.innerHTML = "";
 
     if (!currentClasses.length) {
 
-        classesContainer.innerHTML =
-            '<div class="loading">No enabled classes were found for your school.</div>';
+        showPageState(
+            "No Enabled Classes",
+            "No enabled classes were found for your school. Check the education levels configured for your school.",
+            "🏫"
+        );
+
+        return;
+    }
+
+    if (!filteredClasses.length) {
+
+        showPageState(
+            "No Matching Classes",
+            "No classes or subclasses match your search. Try another search term.",
+            "🔎"
+        );
 
         return;
     }
@@ -685,15 +1711,26 @@ function renderClasses() {
 
     grid.className = "classes-grid";
 
-    currentClasses.forEach(classItem => {
+    filteredClasses.forEach(classItem => {
 
         const card = document.createElement("section");
 
         card.className = "class-card";
 
+        /* CLASS HEADER */
+
         const header = document.createElement("div");
 
         header.className = "class-card-header";
+
+        const headingGroup = document.createElement("div");
+
+        headingGroup.className = "class-heading";
+
+        const icon = document.createElement("div");
+
+        icon.className = "class-icon";
+        icon.textContent = "▦";
 
         const title = document.createElement("div");
 
@@ -704,51 +1741,69 @@ function renderClasses() {
         const level = document.createElement("span");
 
         level.className = "level-label";
-        level.textContent = classItem.level_name;
+        level.textContent = classItem.level_name || "CLASS";
 
         title.append(heading, level);
+
+        headingGroup.append(icon, title);
+
+        /* ADD BUTTON */
 
         const addButton = document.createElement("button");
 
         addButton.type = "button";
         addButton.className = "add-btn";
-        addButton.textContent = "+ Add";
+        addButton.innerHTML = "+ Add";
+
         addButton.addEventListener("click", () => {
             openCreateModal(classItem);
         });
 
-        header.append(title, addButton);
+        header.append(headingGroup, addButton);
+
+        /* SUBCLASS LIST */
 
         const list = document.createElement("div");
 
         list.className = "subclass-list";
 
-        if (!classItem.subclasses.length) {
+        const subclasses = Array.isArray(classItem.subclasses)
+            ? classItem.subclasses
+            : [];
+
+        if (!subclasses.length) {
 
             const empty = document.createElement("div");
 
             empty.className = "empty-message";
-            empty.textContent = "No subclasses created yet.";
+
+            empty.innerHTML = `
+                <span class="empty-icon">◫</span>
+                No subclasses created for this class yet.
+            `;
 
             list.appendChild(empty);
 
         } else {
 
-            classItem.subclasses.forEach(subclass => {
+            subclasses.forEach(subclass => {
 
                 list.appendChild(
                     createSubclassItem(classItem, subclass)
                 );
 
             });
+
         }
 
         card.append(header, list);
 
         grid.appendChild(card);
+
     });
 
     classesContainer.appendChild(grid);
+
 }
 
 
@@ -762,11 +1817,16 @@ function createSubclassItem(classItem, subclass) {
 
     item.className = "subclass-item";
 
+    /* DETAILS */
+
     const details = document.createElement("div");
+
+    details.className = "subclass-details";
 
     const name = document.createElement("div");
 
     name.className = "subclass-name";
+
     name.textContent =
         `${classItem.class_name} ${subclass.subclass_name}`;
 
@@ -774,9 +1834,11 @@ function createSubclassItem(classItem, subclass) {
 
     status.className =
         "subclass-status " +
-        (subclass.status === "active"
-            ? "status-active"
-            : "status-inactive");
+        (
+            subclass.status === "active"
+                ? "status-active"
+                : "status-inactive"
+        );
 
     status.textContent =
         subclass.status === "active"
@@ -784,6 +1846,8 @@ function createSubclassItem(classItem, subclass) {
             : "Inactive";
 
     details.append(name, status);
+
+    /* ACTIONS */
 
     const actions = document.createElement("div");
 
@@ -814,7 +1878,7 @@ function createSubclassItem(classItem, subclass) {
     }
 
     statusButton.addEventListener("click", () => {
-        changeSubclassStatus(subclass);
+        changeSubclassStatus(subclass, statusButton);
     });
 
     actions.append(editButton, statusButton);
@@ -822,6 +1886,7 @@ function createSubclassItem(classItem, subclass) {
     item.append(details, actions);
 
     return item;
+
 }
 
 
@@ -831,8 +1896,13 @@ function createSubclassItem(classItem, subclass) {
 
 function openCreateModal(classItem) {
 
+    subclassForm.reset();
+
     document.getElementById("modalTitle").textContent =
-        "Add Subclass";
+        "Create Subclass";
+
+    document.getElementById("modalDescription").textContent =
+        "Create a new stream under the selected class.";
 
     document.getElementById("editingSubclassId").value = "";
 
@@ -844,12 +1914,14 @@ function openCreateModal(classItem) {
 
     document.getElementById("subclassName").value = "";
 
-    document.getElementById("saveSubclassBtn").textContent =
-        "Create Subclass";
+    saveSubclassBtn.textContent = "Create Subclass";
 
     modal.classList.add("show");
 
-    document.getElementById("subclassName").focus();
+    setTimeout(() => {
+        document.getElementById("subclassName").focus();
+    }, 50);
+
 }
 
 
@@ -859,8 +1931,13 @@ function openCreateModal(classItem) {
 
 function openEditModal(classItem, subclass) {
 
+    subclassForm.reset();
+
     document.getElementById("modalTitle").textContent =
         "Rename Subclass";
+
+    document.getElementById("modalDescription").textContent =
+        "Update the name of this existing subclass.";
 
     document.getElementById("editingSubclassId").value =
         subclass.id;
@@ -874,12 +1951,18 @@ function openEditModal(classItem, subclass) {
     document.getElementById("subclassName").value =
         subclass.subclass_name;
 
-    document.getElementById("saveSubclassBtn").textContent =
-        "Save Changes";
+    saveSubclassBtn.textContent = "Save Changes";
 
     modal.classList.add("show");
 
-    document.getElementById("subclassName").focus();
+    setTimeout(() => {
+        const input = document.getElementById("subclassName");
+
+        input.focus();
+        input.select();
+
+    }, 50);
+
 }
 
 
@@ -888,16 +1971,36 @@ function openEditModal(classItem, subclass) {
 ===================================================== */
 
 function closeModal() {
+
+    if (isSaving) return;
+
     modal.classList.remove("show");
+
 }
 
 document.getElementById("cancelModalBtn")
     .addEventListener("click", closeModal);
 
+document.getElementById("closeModalBtn")
+    .addEventListener("click", closeModal);
+
 modal.addEventListener("click", event => {
+
     if (event.target === modal) {
         closeModal();
     }
+
+});
+
+document.addEventListener("keydown", event => {
+
+    if (
+        event.key === "Escape" &&
+        modal.classList.contains("show")
+    ) {
+        closeModal();
+    }
+
 });
 
 
@@ -905,80 +2008,123 @@ modal.addEventListener("click", event => {
    CREATE OR RENAME SUBCLASS
 ===================================================== */
 
-document.getElementById("subclassForm")
-    .addEventListener("submit", async event => {
+subclassForm.addEventListener("submit", async event => {
 
-        event.preventDefault();
+    event.preventDefault();
 
-        const saveButton =
-            document.getElementById("saveSubclassBtn");
+    if (isSaving) return;
 
-        const editingId =
-            document.getElementById("editingSubclassId").value;
+    const editingId =
+        document.getElementById("editingSubclassId").value;
 
-        const subclassName =
-            document.getElementById("subclassName").value.trim();
+    const subclassName =
+        document.getElementById("subclassName").value.trim();
 
-        if (!subclassName) {
-            showToast("Enter a subclass name.", true);
-            return;
+    const classId =
+        document.getElementById("selectedClassId").value;
+
+    if (!subclassName) {
+
+        showToast("Please enter a subclass name.", true);
+
+        document.getElementById("subclassName").focus();
+
+        return;
+    }
+
+    if (subclassName.length > 50) {
+
+        showToast(
+            "Subclass name cannot exceed 50 characters.",
+            true
+        );
+
+        return;
+    }
+
+    isSaving = true;
+
+    saveSubclassBtn.disabled = true;
+    document.getElementById("cancelModalBtn").disabled = true;
+    document.getElementById("closeModalBtn").disabled = true;
+
+    saveSubclassBtn.textContent = "Saving...";
+
+    try {
+
+        if (editingId) {
+
+            /* RENAME EXISTING SUBCLASS */
+
+            await apiRequest("/api/subclasses", {
+                method: "PATCH",
+                body: JSON.stringify({
+                    id: editingId,
+                    subclass_name: subclassName
+                })
+            });
+
+            showToast(
+                "Subclass renamed successfully."
+            );
+
+        } else {
+
+            /* CREATE NEW SUBCLASS */
+
+            await apiRequest("/api/subclasses", {
+                method: "POST",
+                body: JSON.stringify({
+                    academic_year_id: academicYearSelect.value,
+                    class_id: classId,
+                    subclass_name: subclassName
+                })
+            });
+
+            showToast(
+                "Subclass created successfully."
+            );
+
         }
 
-        saveButton.disabled = true;
-        saveButton.textContent = "Saving...";
+        modal.classList.remove("show");
 
-        try {
+        await loadSubclasses();
 
-            if (editingId) {
+    } catch (error) {
 
-                await apiRequest("/api/subclasses", {
-                    method: "PATCH",
-                    body: JSON.stringify({
-                        id: editingId,
-                        subclass_name: subclassName
-                    })
-                });
+        console.error(
+            "Subclass save error:",
+            error
+        );
 
-                showToast("Subclass renamed successfully.");
+        showToast(error.message, true);
 
-            } else {
+    } finally {
 
-                await apiRequest("/api/subclasses", {
-                    method: "POST",
-                    body: JSON.stringify({
-                        academic_year_id: academicYearSelect.value,
-                        class_id:
-                            document.getElementById("selectedClassId").value,
-                        subclass_name: subclassName
-                    })
-                });
+        isSaving = false;
 
-                showToast("Subclass created successfully.");
-            }
+        saveSubclassBtn.disabled = false;
 
-            closeModal();
+        document.getElementById("cancelModalBtn").disabled = false;
 
-            await loadSubclasses();
+        document.getElementById("closeModalBtn").disabled = false;
 
-        } catch (error) {
+        saveSubclassBtn.textContent =
+            editingId ? "Save Changes" : "Create Subclass";
 
-            showToast(error.message, true);
+    }
 
-        } finally {
-
-            saveButton.disabled = false;
-
-            saveButton.textContent =
-                editingId ? "Save Changes" : "Create Subclass";
-        }
-    });
+});
 
 
 /* =====================================================
-   ACTIVATE / DEACTIVATE
+   ACTIVATE / DEACTIVATE SUBCLASS
 ===================================================== */
 
-async function changeSubclassStatus(subclass) {
+async function changeSubclassStatus(subclass, button) {
+
+    if (button.disabled) return;
 
     const nextStatus =
         subclass.status === "active"
@@ -990,11 +2136,16 @@ async function changeSubclassStatus(subclass) {
             ? "activate"
             : "deactivate";
 
-    if (!confirm(
+    const confirmed = confirm(
         `Are you sure you want to ${action} this subclass?`
-    )) {
-        return;
-    }
+    );
+
+    if (!confirmed) return;
+
+    const originalText = button.textContent;
+
+    button.disabled = true;
+    button.textContent = "Updating...";
 
     try {
 
@@ -1006,33 +2157,28 @@ async function changeSubclassStatus(subclass) {
             })
         });
 
-        showToast(`Subclass ${action}d successfully.`);
+        showToast(
+            nextStatus === "active"
+                ? "Subclass activated successfully."
+                : "Subclass deactivated successfully."
+        );
 
         await loadSubclasses();
 
     } catch (error) {
 
+        console.error(
+            "Subclass status update error:",
+            error
+        );
+
         showToast(error.message, true);
+
+        button.disabled = false;
+        button.textContent = originalText;
+
     }
-}
 
-
-/* =====================================================
-   ESCAPE HTML
-===================================================== */
-
-function escapeHtml(value) {
-
-    return String(value ?? "").replace(
-        /[&<>"']/g,
-        character => ({
-            "&": "&amp;",
-            "<": "&lt;",
-            ">": "&gt;",
-            '"': "&quot;",
-            "'": "&#039;"
-        })[character]
-    );
 }
 
 
@@ -1047,7 +2193,14 @@ academicYearSelect.addEventListener(
 
 
 /* =====================================================
-   INITIALIZE
+   SEARCH CLASSES AND SUBCLASSES
+===================================================== */
+
+classSearch.addEventListener("input", renderClasses);
+
+
+/* =====================================================
+   INITIALIZE PAGE
 ===================================================== */
 
 loadAcademicYears();
