@@ -12,8 +12,8 @@ import {
  * students, student_enrollments, schools, classes,
  * subjects, academic_years and terms.
  *
- * Only CLOSED tests are included so that in-progress
- * assessments do not distort year-long comparisons.
+ * Includes both OPEN and CLOSED tests. Marks that have not yet
+ * been entered remain NULL and are not treated as zero.
  */
 
 function validId(value) {
@@ -66,7 +66,7 @@ export async function onRequestGet(context) {
                 ay.year_name,
                 MIN(ay.start_date) AS start_date,
                 MAX(ay.end_date) AS end_date,
-                COUNT(DISTINCT CASE WHEN LOWER(t.status) = 'closed' THEN t.id END) AS total_tests,
+                COUNT(DISTINCT t.id) AS total_tests,
                 COUNT(DISTINCT ay.school_id) AS total_schools
             FROM academic_years ay
             INNER JOIN schools s ON s.id = ay.school_id
@@ -231,7 +231,6 @@ export async function onRequestGet(context) {
 
             WHERE ${scopeWhere}
               AND ay.year_name = ${yearParam}
-              AND LOWER(TRIM(t.status)) = 'closed'
 
             ORDER BY
                 t.created_at ASC NULLS LAST,
