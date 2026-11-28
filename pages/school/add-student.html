@@ -301,7 +301,7 @@ button:disabled {
 table {
     width: 100%;
     border-collapse: collapse;
-    min-width: 580px;
+    min-width: 650px;
 }
 
 th,
@@ -378,6 +378,21 @@ tbody tr:hover {
     color: #92400e;
 }
 
+.subclass-pill {
+    display: inline-block;
+    padding: 5px 9px;
+    border-radius: 6px;
+    background: #eff6ff;
+    color: #1d4ed8;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.base-class-label {
+    color: var(--muted);
+    font-size: 12px;
+}
+
 .empty-message {
     text-align: center;
     color: var(--muted);
@@ -402,7 +417,7 @@ tbody tr:hover {
 .modal-content {
     background: white;
     width: 100%;
-    max-width: 480px;
+    max-width: 500px;
     padding: 25px;
     border-radius: 13px;
     box-shadow: 0 15px 45px rgba(0,0,0,.18);
@@ -451,6 +466,19 @@ tbody tr:hover {
     box-shadow: 0 0 0 3px rgba(37, 99, 235, .1);
 }
 
+.form-group select:disabled {
+    background: #f8fafc;
+    color: #94a3b8;
+    cursor: not-allowed;
+}
+
+.form-hint {
+    margin: 7px 0 0;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.5;
+}
+
 /* MODAL CLASS CARDS */
 
 .form-class-cards {
@@ -478,6 +506,23 @@ tbody tr:hover {
     background: var(--primary);
     border-color: var(--primary);
     color: white;
+}
+
+.subclass-field {
+    padding: 15px;
+    background: #f8fafc;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+}
+
+.subclass-field .form-group {
+    margin-bottom: 0;
+}
+
+.subclass-loading {
+    color: var(--muted);
+    font-size: 12px;
+    margin-top: 7px;
 }
 
 .modal-actions {
@@ -569,7 +614,7 @@ tbody tr:hover {
     <div class="header">
         <div>
             <h2>STUDENT MANAGEMENT</h2>
-            <p>Manage student registration and enrolment status.</p>
+            <p>Manage student registration, class placement and enrolment status.</p>
         </div>
 
         <button class="add-btn" id="addStudentBtn">
@@ -590,8 +635,6 @@ tbody tr:hover {
     </div>
 
     <div id="statusMessage" class="status-message"></div>
-
-    <!-- TABS -->
 
     <div class="student-tabs" role="tablist">
         <button
@@ -637,7 +680,7 @@ tbody tr:hover {
         <h3 id="modalTitle">Register Student</h3>
 
         <p class="modal-subtitle">
-            Enter the student's details and select their class.
+            Enter the student's details and select their class and optional subclass.
         </p>
 
         <form id="studentForm">
@@ -645,6 +688,22 @@ tbody tr:hover {
             <div class="form-group">
                 <label>Select Class</label>
                 <div id="formClassCards" class="form-class-cards"></div>
+            </div>
+
+            <div class="form-group">
+                <label for="studentSubclass">Subclass</label>
+
+                <div class="subclass-field">
+                    <select id="studentSubclass" disabled>
+                        <option value="">Loading subclasses...</option>
+                    </select>
+
+                    <p class="form-hint" id="subclassHint">
+                        Subclass assignment is optional. Leave this empty to enrol the student in the base class.
+                    </p>
+
+                    <div id="subclassLoading" class="subclass-loading"></div>
+                </div>
             </div>
 
             <div class="form-group">
@@ -684,8 +743,10 @@ tbody tr:hover {
 
 </main>
 
-<!-- SIDEBAR: SCHOOL ADMIN ONLY -->
+<!-- LOAD ACADEMIC PERIOD SCRIPT BEFORE PAGE LOGIC -->
+<script src="../js/academic-period.js"></script>
 
+<!-- SIDEBAR: SCHOOL ADMIN ONLY -->
 <script>
 document.addEventListener("DOMContentLoaded", async function () {
     try {
@@ -737,6 +798,7 @@ if (
     !currentUser
 ) {
     window.location.replace("../../index.html");
+    throw new Error("Unauthorized access.");
 }
 
 /* =====================================
@@ -752,6 +814,10 @@ const studentForm = document.getElementById("studentForm");
 
 const studentName = document.getElementById("studentName");
 const studentGender = document.getElementById("studentGender");
+const studentSubclass = document.getElementById("studentSubclass");
+
+const subclassHint = document.getElementById("subclassHint");
+const subclassLoading = document.getElementById("subclassLoading");
 
 const modalTitle = document.getElementById("modalTitle");
 const saveBtn = document.getElementById("saveBtn");
@@ -784,12 +850,14 @@ let selectedClassId = "";
 let formClassId = "";
 
 let editingStudentId = null;
+let editingStudentSubclassId = null;
+
+let availableSubclasses = [];
+let subclassRequestNumber = 0;
+
 let messageTimer = null;
 
 /* =====================================
-   API REQUEST HELPER
-===================================== */
-    /* =====================================
    ACADEMIC PERIOD
 ===================================== */
 
@@ -812,34 +880,60 @@ function getSelectedAcademicPeriod() {
 }
 
 function waitForAcademicPeriod() {
-    const existing = window.FilaAcademicPeriod?.getSelection();
+    if (window.FilaAcademicPeriod) {
+        const existing = window.FilaAcademicPeriod.getSelection();
 
-    if (
-        existing &&
-        existing.academic_year_id &&
-        existing.term_id
-    ) {
-        return Promise.resolve(existing);
+        if (
+            existing &&
+            existing.academic_year_id &&
+            existing.term_id
+        ) {
+            return Promise.resolve(existing);
+        }
     }
 
-    return new Promise(resolve => {
+    return new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => {
+            reject(new Error(
+                "Academic period is not ready. Please refresh the page."
+            ));
+        }, 15000);
+
         window.addEventListener(
             "fila:academic-period-ready",
             event => {
-                resolve(
+                clearTimeout(timeout);
+
+                const period =
                     event.detail ||
-                    window.FilaAcademicPeriod.getSelection()
-                );
+                    window.FilaAcademicPeriod?.getSelection();
+
+                if (
+                    period &&
+                    period.academic_year_id &&
+                    period.term_id
+                ) {
+                    resolve(period);
+                } else {
+                    reject(new Error(
+                        "Please select an academic year and term."
+                    ));
+                }
             },
             { once: true }
         );
     });
 }
 
+/* =====================================
+   API REQUEST HELPER
+===================================== */
+
 async function apiRequest(url, options = {}) {
     const response = await fetch(url, {
         ...options,
         credentials: "same-origin",
+        cache: "no-store",
         headers: {
             ...(options.body
                 ? { "Content-Type": "application/json" }
@@ -922,9 +1016,11 @@ function isActive(student) {
 function getStudentsByStatus(status, classId = null) {
     return students
         .filter(student => {
-            const matchesStatus = isActive(student) === (status === "active");
+            const matchesStatus =
+                isActive(student) === (status === "active");
 
-            const matchesClass = classId === null ||
+            const matchesClass =
+                classId === null ||
                 String(student.class_id) === String(classId);
 
             return matchesStatus && matchesClass;
@@ -942,7 +1038,10 @@ function getStudentsByStatus(status, classId = null) {
 
 function updateCounts() {
     const activeCount = students.filter(isActive).length;
-    const inactiveCount = students.filter(student => !isActive(student)).length;
+
+    const inactiveCount = students.filter(
+        student => !isActive(student)
+    ).length;
 
     activeTotal.textContent = activeCount;
     inactiveTotal.textContent = inactiveCount;
@@ -964,7 +1063,6 @@ async function loadClasses() {
 
     classes = result.classes;
 
-    // Automatically select the first available class.
     if (classes.length > 0) {
         selectedClassId = String(classes[0].id);
         formClassId = String(classes[0].id);
@@ -975,13 +1073,142 @@ async function loadClasses() {
 
     renderFormClassCards();
 }
+
 /* =====================================
-   LOAD STUDENTS
+   LOAD SUBCLASSES
+
+   GET /api/subclasses?academic_year_id=...
+   Response:
+   {
+       success: true,
+       classes: [
+           {
+               id,
+               class_name,
+               subclasses: [
+                   { id, subclass_name, status }
+               ]
+           }
+       ]
+   }
 ===================================== */
+
+async function loadSubclasses(classId, preferredSubclassId = null) {
+    const requestNumber = ++subclassRequestNumber;
+
+    availableSubclasses = [];
+
+    studentSubclass.replaceChildren();
+
+    const placeholder = document.createElement("option");
+    placeholder.value = "";
+    placeholder.textContent = "Loading subclasses...";
+    studentSubclass.appendChild(placeholder);
+
+    studentSubclass.disabled = true;
+    subclassLoading.textContent = "Loading available subclasses...";
+
+    subclassHint.textContent =
+        "Subclass assignment is optional. Leave this empty to enrol the student in the base class.";
+
+    if (!classId || !currentPeriod?.academic_year_id) {
+        studentSubclass.replaceChildren();
+
+        const option = document.createElement("option");
+        option.value = "";
+        option.textContent = "Select a class first";
+
+        studentSubclass.appendChild(option);
+
+        subclassLoading.textContent = "";
+        return;
+    }
+
+    try {
+        const params = new URLSearchParams({
+            academic_year_id: currentPeriod.academic_year_id
+        });
+
+        const result = await apiRequest(
+            "/api/subclasses?" + params.toString()
+        );
+
+        // Ignore an older response if the user changed class quickly.
+        if (requestNumber !== subclassRequestNumber) return;
+
+        if (!Array.isArray(result.classes)) {
+            throw new Error("Invalid subclass response from the server.");
+        }
+
+        const matchingClass = result.classes.find(item =>
+            String(item.id) === String(classId)
+        );
+
+        const subclasses = Array.isArray(matchingClass?.subclasses)
+            ? matchingClass.subclasses
+            : [];
+
+        availableSubclasses = subclasses.filter(item =>
+            String(item.status || "").toLowerCase() === "active"
+        );
+
+        studentSubclass.replaceChildren();
+
+        const defaultOption = document.createElement("option");
+        defaultOption.value = "";
+        defaultOption.textContent = availableSubclasses.length
+            ? "No subclass (base class)"
+            : "No active subclasses available";
+
+        studentSubclass.appendChild(defaultOption);
+
+        availableSubclasses.forEach(subclass => {
+            const option = document.createElement("option");
+
+            option.value = String(subclass.id);
+            option.textContent = subclass.subclass_name;
+
+            studentSubclass.appendChild(option);
+        });
+
+        if (
+            preferredSubclassId !== null &&
+            preferredSubclassId !== undefined &&
+            availableSubclasses.some(
+                item => String(item.id) === String(preferredSubclassId)
+            )
+        ) {
+            studentSubclass.value = String(preferredSubclassId);
+        } else {
+            studentSubclass.value = "";
+        }
+
+        studentSubclass.disabled = false;
+
+        subclassLoading.textContent = availableSubclasses.length
+            ? availableSubclasses.length + " active subclass(es) available."
+            : "This class has no active subclasses for the selected academic year.";
+
+    } catch (error) {
+        if (requestNumber !== subclassRequestNumber) return;
+
+        studentSubclass.replaceChildren();
+
+        const option = document.createElement("option");
+        option.value = "";
+        option.textContent = "Could not load subclasses";
+
+        studentSubclass.appendChild(option);
+        studentSubclass.disabled = true;
+
+        subclassLoading.textContent = error.message;
+
+        throw error;
+    }
+}
 
 /* =====================================
    LOAD STUDENTS
-   SELECTED ACADEMIC PERIOD
 ===================================== */
 
 async function loadStudents() {
@@ -990,6 +1217,7 @@ async function loadStudents() {
     const loading = document.createElement("p");
     loading.className = "empty-message";
     loading.textContent = "Loading students...";
+
     studentsContainer.appendChild(loading);
 
     currentPeriod = getSelectedAcademicPeriod();
@@ -1008,7 +1236,6 @@ async function loadStudents() {
         : [];
 
     updateCounts();
-
     renderClassCards();
     renderStudents();
 }
@@ -1023,10 +1250,18 @@ function switchTab(tab) {
     activeTab.classList.toggle("active", tab === "active");
     inactiveTab.classList.toggle("active", tab === "inactive");
 
-    activeTab.setAttribute("aria-selected", String(tab === "active"));
-    inactiveTab.setAttribute("aria-selected", String(tab === "inactive"));
+    activeTab.setAttribute(
+        "aria-selected",
+        String(tab === "active")
+    );
 
-    addStudentBtn.style.display = tab === "active" ? "inline-block" : "none";
+    inactiveTab.setAttribute(
+        "aria-selected",
+        String(tab === "inactive")
+    );
+
+    addStudentBtn.style.display =
+        tab === "active" ? "inline-block" : "none";
 
     sectionInstruction.textContent = tab === "active"
         ? "Select a class to view its active students."
@@ -1064,8 +1299,6 @@ function renderClassCards() {
         return;
     }
 
-    // Keep the selected class if it has students in this tab.
-    // Otherwise automatically select the first available class.
     const selectedClassExists = availableClasses.some(
         cls => String(cls.id) === String(selectedClassId)
     );
@@ -1075,7 +1308,10 @@ function renderClassCards() {
     }
 
     availableClasses.forEach(cls => {
-        const count = getStudentsByStatus(currentTab, cls.id).length;
+        const count = getStudentsByStatus(
+            currentTab,
+            cls.id
+        ).length;
 
         const card = document.createElement("button");
         card.type = "button";
@@ -1089,9 +1325,9 @@ function renderClassCards() {
         title.textContent = formatClassName(cls.class_name);
 
         const total = document.createElement("small");
-        total.textContent = count + (count === 1
-            ? " student"
-            : " students");
+        total.textContent = count + (
+            count === 1 ? " student" : " students"
+        );
 
         card.append(title, total);
 
@@ -1104,6 +1340,7 @@ function renderClassCards() {
         classCards.appendChild(card);
     });
 }
+
 /* =====================================
    RENDER FORM CLASS CARDS
 ===================================== */
@@ -1115,6 +1352,7 @@ function renderFormClassCards() {
         const message = document.createElement("p");
         message.className = "empty-message";
         message.textContent = "No classes available.";
+
         formClassCards.appendChild(message);
         return;
     }
@@ -1131,9 +1369,22 @@ function renderFormClassCards() {
 
         card.textContent = formatClassName(cls.class_name);
 
-        card.addEventListener("click", () => {
+        card.addEventListener("click", async () => {
             formClassId = String(cls.id);
+
+            // A subclass from another class must never remain selected.
+            studentSubclass.value = "";
+
             renderFormClassCards();
+
+            try {
+                await loadSubclasses(formClassId);
+            } catch (error) {
+                showMessage(
+                    "Unable to load subclasses: " + error.message,
+                    "error"
+                );
+            }
         });
 
         formClassCards.appendChild(card);
@@ -1150,7 +1401,9 @@ function renderStudents() {
     if (!selectedClassId) {
         const message = document.createElement("p");
         message.className = "empty-message";
-        message.textContent = "Select a class above to view its students.";
+        message.textContent =
+            "Select a class above to view its students.";
+
         studentsContainer.appendChild(message);
         return;
     }
@@ -1163,11 +1416,15 @@ function renderStudents() {
         const message = document.createElement("p");
         message.className = "empty-message";
         message.textContent = "Selected class was not found.";
+
         studentsContainer.appendChild(message);
         return;
     }
 
-    const sectionStudents = getStudentsByStatus(currentTab, selectedClassId);
+    const sectionStudents = getStudentsByStatus(
+        currentTab,
+        selectedClassId
+    );
 
     const section = document.createElement("div");
     section.className = "class-section";
@@ -1189,7 +1446,14 @@ function renderStudents() {
     const thead = document.createElement("thead");
     const headerRow = document.createElement("tr");
 
-    ["#", "Student Name", "Student Code", "Status", "Actions"].forEach(label => {
+    [
+        "#",
+        "Student Name",
+        "Student Code",
+        "Subclass",
+        "Status",
+        "Actions"
+    ].forEach(label => {
         const th = document.createElement("th");
         th.textContent = label;
         headerRow.appendChild(th);
@@ -1204,12 +1468,13 @@ function renderStudents() {
         const row = document.createElement("tr");
         const cell = document.createElement("td");
 
-        cell.colSpan = 5;
+        cell.colSpan = 6;
         cell.className = "empty-message";
         cell.textContent = "No students found in this class.";
 
         row.appendChild(cell);
         tbody.appendChild(row);
+
     } else {
         sectionStudents.forEach((student, index) => {
             const row = document.createElement("tr");
@@ -1223,11 +1488,26 @@ function renderStudents() {
             const codeCell = document.createElement("td");
             codeCell.textContent = student.student_code || "—";
 
+            const subclassCell = document.createElement("td");
+
+            if (student.subclass_name) {
+                const subclassLabel = document.createElement("span");
+                subclassLabel.className = "subclass-pill";
+                subclassLabel.textContent = student.subclass_name;
+                subclassCell.appendChild(subclassLabel);
+            } else {
+                const baseLabel = document.createElement("span");
+                baseLabel.className = "base-class-label";
+                baseLabel.textContent = "Base class";
+                subclassCell.appendChild(baseLabel);
+            }
+
             const statusCell = document.createElement("td");
             const statusPill = document.createElement("span");
 
             statusPill.className = "status-pill " + currentTab;
-            statusPill.textContent = currentTab === "active" ? "Active" : "Inactive";
+            statusPill.textContent =
+                currentTab === "active" ? "Active" : "Inactive";
 
             statusCell.appendChild(statusPill);
 
@@ -1255,6 +1535,7 @@ function renderStudents() {
                 });
 
                 actions.append(editButton, deactivateButton);
+
             } else {
                 const activateButton = document.createElement("button");
                 activateButton.type = "button";
@@ -1283,6 +1564,7 @@ function renderStudents() {
                 numberCell,
                 nameCell,
                 codeCell,
+                subclassCell,
                 statusCell,
                 actionsCell
             );
@@ -1294,6 +1576,7 @@ function renderStudents() {
     table.appendChild(tbody);
     wrapper.appendChild(table);
     section.appendChild(wrapper);
+
     studentsContainer.appendChild(section);
 }
 
@@ -1301,29 +1584,44 @@ function renderStudents() {
    OPEN ADD STUDENT MODAL
 ===================================== */
 
-function openAddModal() {
+async function openAddModal() {
     if (classes.length === 0) {
-        showMessage("No classes are available for registration.", "error");
+        showMessage(
+            "No classes are available for registration.",
+            "error"
+        );
         return;
     }
 
-    editingStudentId = null;
-    studentForm.reset();
+    try {
+        currentPeriod = getSelectedAcademicPeriod();
 
-    formClassId = selectedClassId || "";
+        editingStudentId = null;
+        editingStudentSubclassId = null;
 
-    modalTitle.textContent = "Register Student";
-    saveBtn.textContent = "Save Student";
+        studentForm.reset();
 
-    renderFormClassCards();
-    studentModal.style.display = "flex";
+        formClassId = selectedClassId || String(classes[0].id);
+
+        modalTitle.textContent = "Register Student";
+        saveBtn.textContent = "Save Student";
+
+        renderFormClassCards();
+
+        studentModal.style.display = "flex";
+
+        await loadSubclasses(formClassId);
+
+    } catch (error) {
+        showMessage(error.message, "error");
+    }
 }
 
 /* =====================================
    OPEN EDIT STUDENT MODAL
 ===================================== */
 
-function openEditModal(id) {
+async function openEditModal(id) {
     const student = students.find(item =>
         String(item.id) === String(id)
     );
@@ -1333,17 +1631,37 @@ function openEditModal(id) {
         return;
     }
 
-    editingStudentId = student.id;
-    formClassId = String(student.class_id);
+    try {
+        currentPeriod = getSelectedAcademicPeriod();
 
-    studentName.value = student.full_name || "";
-    studentGender.value = student.gender || "";
+        editingStudentId = student.id;
 
-    modalTitle.textContent = "Edit Student";
-    saveBtn.textContent = "Update Student";
+        editingStudentSubclassId =
+            student.subclass_id === null ||
+            student.subclass_id === undefined
+                ? null
+                : String(student.subclass_id);
 
-    renderFormClassCards();
-    studentModal.style.display = "flex";
+        formClassId = String(student.class_id);
+
+        studentName.value = student.full_name || "";
+        studentGender.value = student.gender || "";
+
+        modalTitle.textContent = "Edit Student";
+        saveBtn.textContent = "Update Student";
+
+        renderFormClassCards();
+
+        studentModal.style.display = "flex";
+
+        await loadSubclasses(
+            formClassId,
+            editingStudentSubclassId
+        );
+
+    } catch (error) {
+        showMessage(error.message, "error");
+    }
 }
 
 /* =====================================
@@ -1352,13 +1670,23 @@ function openEditModal(id) {
 
 function closeModal() {
     studentModal.style.display = "none";
+
     studentForm.reset();
 
     editingStudentId = null;
+    editingStudentSubclassId = null;
     formClassId = "";
+
+    availableSubclasses = [];
+
+    // Invalidate any pending subclass request.
+    subclassRequestNumber++;
 }
 
-document.getElementById("cancelBtn").addEventListener("click", closeModal);
+document.getElementById("cancelBtn").addEventListener(
+    "click",
+    closeModal
+);
 
 studentModal.addEventListener("click", event => {
     if (event.target === studentModal) {
@@ -1384,18 +1712,45 @@ studentForm.addEventListener("submit", async event => {
         return;
     }
 
+    let period;
+
+    try {
+        period = getSelectedAcademicPeriod();
+    } catch (error) {
+        showMessage(error.message, "error");
+        return;
+    }
+
+    const selectedSubclassId = studentSubclass.value
+        ? Number(studentSubclass.value)
+        : null;
+
+    // Validate the selected subclass against the currently loaded list.
+    if (
+        selectedSubclassId !== null &&
+        !availableSubclasses.some(
+            item => Number(item.id) === selectedSubclassId
+        )
+    ) {
+        showMessage(
+            "The selected subclass is no longer available. Please select it again.",
+            "error"
+        );
+        return;
+    }
+
     const isEditing = editingStudentId !== null;
 
-    const period = getSelectedAcademicPeriod();
+    const payload = {
+        class_id: classId,
+        full_name: fullName,
+        gender: studentGender.value || null,
 
-const payload = {
-    class_id: classId,
-    full_name: fullName,
-    gender: studentGender.value || null,
+        academic_year_id: Number(period.academic_year_id),
+        term_id: Number(period.term_id),
 
-    academic_year_id: Number(period.academic_year_id),
-    term_id: Number(period.term_id)
-};
+        subclass_id: selectedSubclassId
+    };
 
     if (isEditing) {
         payload.id = editingStudentId;
@@ -1410,6 +1765,7 @@ const payload = {
                 method: "POST",
                 body: JSON.stringify(payload)
             });
+
         } else {
             await apiRequest("/api/students", {
                 method: "POST",
@@ -1419,22 +1775,19 @@ const payload = {
 
         closeModal();
 
-        await loadStudents();
+        selectedClassId = String(classId);
 
-        if (isEditing) {
-            selectedClassId = String(classId);
-            renderClassCards();
-            renderStudents();
-        }
+        await loadStudents();
 
         showMessage(
             isEditing
-                ? "Student details updated successfully."
+                ? "Student details and class placement updated successfully."
                 : "Student registered successfully."
         );
 
     } catch (error) {
         showMessage(error.message, "error");
+
     } finally {
         saveBtn.disabled = false;
         saveBtn.textContent = editingStudentId === null
@@ -1451,13 +1804,13 @@ async function deactivateStudent(id) {
     const confirmed = confirm(
         "Deactivate this student?\n\n" +
         "The student will be moved to the Inactive Students section. " +
-        "Their recorded marks will be retained."
+        "Their recorded marks and subclass enrolment will be retained."
     );
 
     if (!confirmed) return;
 
     try {
-        await apiRequest("/api/students/delete", {
+        await apiRequest("/api/students/deactivate", {
             method: "POST",
             body: JSON.stringify({ id })
         });
@@ -1465,6 +1818,7 @@ async function deactivateStudent(id) {
         await loadStudents();
 
         showMessage("Student deactivated successfully.");
+
     } catch (error) {
         showMessage(error.message, "error");
     }
@@ -1491,15 +1845,11 @@ async function activateStudent(id) {
         await loadStudents();
 
         showMessage("Student activated successfully.");
+
     } catch (error) {
         showMessage(error.message, "error");
     }
 }
-
-/* =====================================
-   PERMANENTLY DELETE STUDENT
-===================================== */
-
 
 /* =====================================
    PERMANENTLY DELETE STUDENT
@@ -1521,7 +1871,6 @@ async function permanentlyDeleteStudent(id) {
             }
         );
 
-        // The server must explicitly request confirmation.
         if (!preview.requiresConfirmation) {
             throw new Error(
                 "Unable to verify this student before deletion."
@@ -1529,6 +1878,9 @@ async function permanentlyDeleteStudent(id) {
         }
 
         const marksCount = Number(preview.marksCount || 0);
+        const enrollmentCount = Number(
+            preview.enrollmentCount || 0
+        );
 
         let warning;
 
@@ -1539,23 +1891,33 @@ async function permanentlyDeleteStudent(id) {
                 marksCount + " recorded mark record(s).\n\n" +
                 "If you continue:\n" +
                 "• The student's recorded marks will also be deleted.\n" +
-                "• The student will be permanently removed from the system.\n" +
-                "• This action cannot be reversed.\n\n" +
+                "• Their academic enrolments and subclass allocations will be deleted.\n" +
+                "• The student will be permanently removed from the system.\n\n" +
+                "This action cannot be reversed.\n\n" +
                 "Do you want to continue?";
+
         } else {
             warning =
                 "PERMANENT DELETION CONFIRMATION\n\n" +
                 preview.studentName +
                 " has no recorded marks.\n\n" +
-                "The student will be permanently removed from the system.\n" +
+                "If you continue:\n" +
+                "• Their academic enrolments and subclass allocations will be deleted.\n" +
+                "• The student will be permanently removed from the system.\n\n" +
                 "This action cannot be reversed.\n\n" +
                 "Do you want to continue?";
         }
 
+        if (enrollmentCount > 0) {
+            warning +=
+                "\n\nThe student has " +
+                enrollmentCount +
+                " academic enrolment record(s).";
+        }
+
         if (!confirm(warning)) return;
 
-        // STEP 2: Send the correct confirmation property.
-        // This is the request that actually deletes the student.
+        // STEP 2: Confirm permanent deletion.
 
         const deletion = await apiRequest(
             "/api/students/permanent-delete",
@@ -1574,7 +1936,8 @@ async function permanentlyDeleteStudent(id) {
             );
         }
 
-        // STEP 3: Reload the students from the database.
+        // STEP 3: Reload students.
+
         await loadStudents();
 
         showMessage(
@@ -1598,7 +1961,8 @@ async function permanentlyDeleteStudent(id) {
 ===================================== */
 
 addStudentBtn.addEventListener("click", openAddModal);
-    /* =====================================
+
+/* =====================================
    ACADEMIC PERIOD CHANGE
 ===================================== */
 
@@ -1611,6 +1975,12 @@ window.addEventListener(
 
         selectedClassId = "";
 
+        // Close the modal because its subclass options
+        // belong to the previously selected academic year.
+        if (studentModal.style.display === "flex") {
+            closeModal();
+        }
+
         if (!pageInitialized) return;
 
         try {
@@ -1620,10 +1990,6 @@ window.addEventListener(
         }
     }
 );
-
-/* =====================================
-   INITIALIZE PAGE
-===================================== */
 
 /* =====================================
    INITIALIZE PAGE
@@ -1660,7 +2026,6 @@ async function initializePage() {
 
 initializePage();
 </script>
-    <script src="../js/academic-period.js"></script>
 
 </body>
 </html>
