@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Academic Year Performance Analysis | Fila Grades</title>
+<link rel="stylesheet" href="../css/school-sidebar.css">
+<link rel="stylesheet" href="../css/sector-sidebar.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<style>
+:root{--navy:#123b67;--blue:#1769aa;--green:#16834a;--red:#c0392b;--orange:#b96a0b;--ink:#172b4d;--muted:#64748b;--line:#e2e8f0;--bg:#f4f7fb}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,Arial,sans-serif}
+.main{max-width:1500px;margin:0 auto;padding:28px 24px 60px}
+.page-head{display:flex;justify-content:space-between;align-items:flex-start;gap:18px;margin-bottom:22px}
+.eyebrow{font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--blue)}
+h1{font-size:28px;margin:6px 0 8px;color:var(--navy)}
+.subhead{color:var(--muted);margin:0;line-height:1.55;max-width:780px}
+.actions{display:flex;gap:9px;flex-wrap:wrap}
+.btn{border:0;border-radius:9px;padding:11px 15px;font-weight:700;cursor:pointer;background:var(--navy);color:white}
+.btn.secondary{background:white;color:var(--navy);border:1px solid var(--line)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.filters,.panel,.stat{background:white;border:1px solid var(--line);border-radius:14px;box-shadow:0 4px 16px rgba(15,35,65,.04)}
+.filters{padding:17px;display:grid;grid-template-columns:repeat(4,minmax(150px,1fr));gap:13px;margin-bottom:18px}
+.field label{display:block;font-size:12px;font-weight:800;color:#52647b;margin-bottom:7px}
+.field select{width:100%;padding:11px 12px;border:1px solid #cbd5e1;border-radius:8px;background:white;color:var(--ink);font-size:14px}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:13px;margin-bottom:18px}
+.stat{padding:17px}
+.stat .label{font-size:12px;color:var(--muted);font-weight:700}
+.stat .value{font-size:29px;font-weight:800;color:var(--navy);margin:7px 0 3px}
+.stat .note{font-size:11px;color:var(--muted);line-height:1.4}
+.panel{padding:20px;margin-bottom:18px;min-width:0}
+.panel-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:15px}
+.panel h2{font-size:18px;margin:0 0 5px;color:var(--navy)}
+.panel p{margin:0;color:var(--muted);font-size:12px;line-height:1.5}
+.chart-wrap{height:310px;position:relative}
+.two-col{display:grid;grid-template-columns:1.15fr .85fr;gap:18px}
+.table-wrap{width:100%;overflow:auto}
+table{width:100%;border-collapse:collapse;min-width:650px;font-size:13px}
+th,td{text-align:left;padding:11px 10px;border-bottom:1px solid #edf1f5;white-space:nowrap}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:#64748b;background:#f8fafc;position:sticky;top:0}
+tbody tr:hover{background:#f8fbff}
+.progress-link{border:0;background:none;padding:0;color:var(--blue);font-weight:800;cursor:pointer;text-align:left}
+.delta{font-weight:800}
+.positive{color:var(--green)}.negative{color:var(--red)}.neutral{color:#64748b}
+.pill{display:inline-block;border-radius:20px;padding:4px 8px;font-size:11px;font-weight:800;background:#eef2f7;color:#475569}
+.pill.good{background:#e8f7ee;color:#167443}.pill.bad{background:#fff0ed;color:#b42318}.pill.warn{background:#fff6e5;color:#9a5b00}
+.subject-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.subject-card{border:1px solid var(--line);border-radius:11px;padding:14px}
+.subject-top{display:flex;justify-content:space-between;gap:10px;font-weight:800;margin-bottom:12px}
+.subject-numbers{display:flex;gap:18px;color:var(--muted);font-size:12px}
+.subject-numbers strong{display:block;font-size:18px;color:var(--ink);margin-top:3px}
+.meter{height:7px;background:#edf2f7;border-radius:9px;overflow:hidden;margin-top:12px}
+.meter span{display:block;height:100%;background:var(--blue);border-radius:9px}
+.empty{padding:30px;text-align:center;color:var(--muted);background:white;border:1px dashed #cbd5e1;border-radius:12px}
+.notice{padding:11px 13px;background:#eff6ff;border:1px solid #bfdbfe;color:#1e40af;border-radius:9px;font-size:12px;line-height:1.5;margin-bottom:16px}
+.profile{display:none;border:1px solid #b8d2ed;background:#f8fbff;border-radius:12px;padding:16px;margin-top:14px}
+.profile.open{display:block}
+.profile h3{margin:0 0 5px;color:var(--navy)}
+.profile-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:14px}
+.small-chart{height:220px}
+.status-message{padding:14px;border-radius:9px;margin-bottom:15px;display:none}
+.status-message.error{display:block;background:#fff0ed;color:#a5281b}
+.status-message.info{display:block;background:#eff6ff;color:#1d4e89}
+@media(max-width:900px){.filters{grid-template-columns:repeat(2,1fr)}.stats{grid-template-columns:repeat(2,1fr)}.two-col{grid-template-columns:1fr}}
+@media(max-width:560px){.main{padding:20px 13px 45px}.page-head{display:block}.actions{margin-top:14px}.filters{grid-template-columns:1fr}.stats{gap:8px}.stat{padding:13px}.stat .value{font-size:24px}.panel{padding:14px}.subject-grid,.profile-grid{grid-template-columns:1fr}.chart-wrap{height:250px}}
+@media print{.actions,.filters{display:none!important}.main{max-width:none;padding:0}.panel,.stat{box-shadow:none;break-inside:avoid}}
+</style>
+</head>
+<body>
+<main class="main">
+  <header class="page-head">
+    <div>
+      <div class="eyebrow">Teacher academic intelligence</div>
+      <h1>My Academic Year Performance</h1>
+      <p class="subhead">Track learner progress in the classes and subjects assigned to you throughout the academic year.</p>
+    </div>
+    <div class="actions">
+      <button class="btn secondary" id="refreshBtn">Refresh data</button>
+      <button class="btn secondary" id="printBtn">Print / Save PDF</button>
+      <button class="btn" id="downloadBtn">Download report (CSV)</button>
+    </div>
+  </header>
+
+  <div id="message" class="status-message"></div>
+  <div class="notice"><strong>Calculation note:</strong> Only tests for your assigned classes and subjects are included. Test order uses the recorded creation date. Missing marks are never treated as zero.</div>
+
+  <section class="filters" aria-label="Analysis filters">
+    <div class="field"><label for="yearFilter">Academic Year</label><select id="yearFilter"><option value="">Loading years...</option></select></div>
+    <div class="field"><label for="classFilter">Class</label><select id="classFilter"><option value="">All Classes</option></select></div>
+    <div class="field"><label for="subjectFilter">Subject</label><select id="subjectFilter"><option value="">All Subjects</option></select></div>
+  </section>
+
+  <section class="stats" id="overviewStats">
+    <div class="stat"><div class="label">Tests conducted</div><div class="value">—</div><div class="note">Closed tests in selected scope</div></div>
+    <div class="stat"><div class="label">Overall average</div><div class="value">—</div><div class="note">Complete learner-test results</div></div>
+    <div class="stat"><div class="label">Learners improving</div><div class="value">—</div><div class="note">First complete test compared with latest</div></div>
+    <div class="stat"><div class="label">Learners declining</div><div class="value">—</div><div class="note">First complete test compared with latest</div></div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head"><div><h2>Overall performance trend</h2><p>Average percentage for learners with complete results in each test, ordered chronologically.</p></div></div>
+    <div class="chart-wrap"><canvas id="trendChart"></canvas></div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head"><div><h2>Individual learner progress</h2><p>Select a learner to inspect their test-by-test and subject-by-subject development. N/A means the learner has no complete result for that test.</p></div></div>
+    <div class="table-wrap"><table><thead id="learnerHead"></thead><tbody id="learnerBody"></tbody></table></div>
+    <div class="profile" id="learnerProfile">
+      <h3 id="profileName">Learner profile</h3><p id="profileMeta"></p>
+      <div class="profile-grid"><div><strong>Performance trend</strong><div class="small-chart"><canvas id="learnerChart"></canvas></div></div><div><strong>Subject development</strong><div id="profileSubjects" style="margin-top:12px"></div></div></div>
+    </div>
+  </section>
+
+  <section class="two-col">
+    <div class="panel">
+      <div class="panel-head"><div><h2>Subject development analysis</h2><p>First available subject test compared with the latest available subject test.</p></div></div>
+      <div class="subject-grid" id="subjectDevelopment"></div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head"><div><h2>Class performance development</h2><p>Compare your assigned classes by change between their first and latest tests with complete learner results.</p></div></div>
+    <div class="table-wrap"><table><thead><tr><th>Class</th><th>First average</th><th>Latest average</th><th>Change</th></tr></thead><tbody id="classComparison"></tbody></table></div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head"><div><h2>Learners requiring academic support</h2><p>Flags learners with a latest complete result below 50%, or a decline of at least 10 percentage points.</p></div></div>
+    <div class="table-wrap"><table><thead><tr><th>Learner</th><th>Class</th><th>Latest result</th><th>Change</th><th>Reason</th></tr></thead><tbody id="supportBody"></tbody></table></div>
+  </section>
+  <p style="color:#64748b;font-size:11px;text-align:center">Fila Grades · Academic Year Performance Analysis</p>
+</main>
+
+<script>
+window.FILA_PAGE_AUTH = { roles: ["teacher"] };
+</script>
+<script src="../js/auth-guard.js"></script>
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+let rawData = null;
+let trendChart = null;
+let learnerChart = null;
+let currentView = {};
+const number = value => Number.isFinite(Number(value)) ? Number(value) : 0;
+const fmt = value => Number(value).toFixed(1) + "%";
+const esc = value => String(value ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const key = (...parts) => parts.map(x => String(x ?? "")).join("::");
+const compareDate = (a,b) => new Date(a.created_at || 0)-new Date(b.created_at || 0);
+
+function showMessage(text,type="info"){const box=$("message");box.textContent=text;box.className="status-message "+type}
+function clearMessage(){const box=$("message");box.textContent="";box.className="status-message"}
+function deltaClass(value){return value>0?"positive":value<0?"negative":"neutral"}
+function deltaText(value){return (value>0?"+":"")+number(value).toFixed(1)+" pp"}
+
+async function loadInitial(){
+  clearMessage();
+  $("refreshBtn").disabled=true;
+  try{
+    const response=await fetch("/api/teacher-academic-year-performance",{credentials:"same-origin",cache:"no-store"});
+    const data=await response.json();
+    if(!response.ok||!data.success) throw new Error(data.message||"Unable to load academic years.");
+    rawData=data;
+    $("yearFilter").innerHTML=data.academic_years.length
+      ? data.academic_years.map(y=>`<option value="${esc(y.name)}">${esc(y.name)}</option>`).join("")
+      : '<option value="">No academic years</option>';
+    if(data.academic_years.length){
+      $("yearFilter").value=data.academic_years[0].name;
+      await loadYear();
+    }else{
+      showMessage("No academic years are configured for your account scope.","info");
+      renderEmpty();
+    }
+  }catch(error){showMessage(error.message||"Could not load the dashboard.","error");renderEmpty()}
+  finally{$("refreshBtn").disabled=false}
+}
+async function loadYear(){
+  const year=$("yearFilter").value;
+  if(!year){renderEmpty();return}
+  clearMessage();
+  $("overviewStats").innerHTML='<div class="empty" style="grid-column:1/-1">Loading performance data…</div>';
+  try{
+    const response=await fetch("/api/teacher-academic-year-performance?academic_year="+encodeURIComponent(year),{credentials:"same-origin",cache:"no-store"});
+    const data=await response.json();
+    if(!response.ok||!data.success)throw new Error(data.message||"Unable to load performance data.");
+    rawData=data;
+    populateFilters();
+    renderDashboard();
+  }catch(error){showMessage(error.message||"Unable to load performance data.","error");renderEmpty()}
+}
+function populateFilters(){
+  const oldClass=$("classFilter").value,oldSubject=$("subjectFilter").value;
+  const classMap=new Map((rawData.classes||[]).map(c=>[String(c.id),c.name]));
+  // Keep classes visible even when no tests or learner marks have been recorded yet.
+  rawData.rows.forEach(r=>classMap.set(String(r.class_id),r.class_name));
+  $("classFilter").innerHTML='<option value="">All Classes</option>'+[...classMap].sort((a,b)=>a[1].localeCompare(b[1])).map(([id,name])=>`<option value="${esc(id)}">${esc(name)}</option>`).join("");
+  if(classMap.has(oldClass))$("classFilter").value=oldClass;
+  const selectedClass=$("classFilter").value;
+  const subjectMap=new Map();
+  (rawData.subjects||[]).filter(s=>!selectedClass||String(s.class_id)===selectedClass).forEach(s=>subjectMap.set(String(s.id),s.name));
+  rawData.rows.filter(r=>!selectedClass||String(r.class_id)===selectedClass).forEach(r=>subjectMap.set(String(r.subject_id),r.subject_name));
+  $("subjectFilter").innerHTML='<option value="">All Subjects</option>'+[...subjectMap].sort((a,b)=>a[1].localeCompare(b[1])).map(([id,name])=>`<option value="${esc(id)}">${esc(name)}</option>`).join("");
+  if(subjectMap.has(oldSubject))$("subjectFilter").value=oldSubject;
+}
+function getFilteredRows(){
+  const cls=$("classFilter").value,subject=$("subjectFilter").value;
+  return rawData.rows.filter(r=>(!cls||String(r.class_id)===cls)&&(!subject||String(r.subject_id)===subject));
+}
+function buildAggregates(rows){
+  const testMeta=new Map((rawData.tests||[]).map(t=>[t.id,t]));
+  const tests=[...new Set(rows.map(r=>r.test_id))].map(id=>testMeta.get(id)).filter(Boolean).sort(compareDate);
+  const testLearners=new Map(), learnerMap=new Map(), subjectTests=new Map(), schoolTests=new Map(), classTests=new Map();
+  for(const r of rows){
+    if(!r.student_id)continue;
+    const tid=r.test_id, sid=r.student_id, school=r.school_id;
+    const tlKey=key(school,sid,tid);
+    if(!testLearners.has(tlKey))testLearners.set(tlKey,{school_id:school,school_name:r.school_name,student_id:sid,name:r.student_name,student_code:r.student_code,class_id:r.class_id,class_name:r.class_name,test_id:tid,subjects:new Map(),opportunities:0,recorded:0,score:0,max:0});
+    const tl=testLearners.get(tlKey);
+    const subKey=r.subject_id;
+    if(!tl.subjects.has(subKey)){
+      tl.subjects.set(subKey,{subject_id:subKey,subject_name:r.subject_name,score:r.score,maximum:r.maximum_mark});
+      tl.opportunities++;
+      if(r.score!==null&&r.score!==undefined){tl.recorded++;tl.score+=number(r.score);tl.max+=number(r.maximum_mark)}
+      else tl.max+=number(r.maximum_mark);
+    }
+    const stKey=key(r.subject_id,tid);
+    if(!subjectTests.has(stKey))subjectTests.set(stKey,{subject_id:r.subject_id,subject_name:r.subject_name,test_id:tid,values:[]});
+    if(r.score!==null&&r.score!==undefined&&number(r.maximum_mark)>0)subjectTests.get(stKey).values.push(number(r.score)/number(r.maximum_mark)*100);
+    const schKey=key(school,tid);
+    if(!schoolTests.has(schKey))schoolTests.set(schKey,{school_id:school,school_name:r.school_name,test_id:tid,learners:[]});
+    const classKey=key(school,r.class_id,tid);
+    if(!classTests.has(classKey))classTests.set(classKey,{school_id:school,school_name:r.school_name,class_id:r.class_id,class_name:r.class_name,test_id:tid,learners:[]});
+  }
+  const testSubjects=new Map();
+  rows.forEach(r=>{
+    if(!testSubjects.has(r.test_id))testSubjects.set(r.test_id,new Set());
+    testSubjects.get(r.test_id).add(r.subject_id);
+  });
+  const recordsByLearner=new Map();
+  for(const item of testLearners.values()){
+    const expected=testSubjects.get(item.test_id)?.size||0;
+    item.complete=expected>0&&item.recorded===expected&&item.max>0;
+    item.percentage=item.complete?item.score/item.max*100:null;
+    if(item.complete){
+      const arr=schoolTests.get(key(item.school_id,item.test_id));
+      if(arr)arr.learners.push(item.percentage);
+      const classArr=classTests.get(key(item.school_id,item.class_id,item.test_id));
+      if(classArr)classArr.learners.push(item.percentage);
+    }
+    const learnerKey=key(item.school_id,item.student_id);
+    if(!recordsByLearner.has(learnerKey))recordsByLearner.set(learnerKey,{school_id:item.school_id,school_name:item.school_name,student_id:item.student_id,name:item.name,student_code:item.student_code,records:[]});
+    recordsByLearner.get(learnerKey).records.push(item);
+  }
+  for(const v of recordsByLearner.values())v.records.sort((a,b)=>compareDate(testMeta.get(a.test_id),testMeta.get(b.test_id)));
+  const trend=tests.map(t=>{
+    const vals=[...testLearners.values()].filter(x=>x.test_id===t.id&&x.complete).map(x=>x.percentage);
+    return {test:t,average:vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:null,count:vals.length};
+  });
+  const subjects=[...new Set(rows.map(r=>r.subject_id))].map(id=>{
+    const items=[...subjectTests.values()].filter(x=>x.subject_id===id).sort((a,b)=>compareDate(testMeta.get(a.test_id),testMeta.get(b.test_id))).map(x=>({test_id:x.test_id,average:x.values.length?x.values.reduce((a,b)=>a+b,0)/x.values.length:null,count:x.values.length}));
+    const valid=items.filter(x=>x.average!==null);
+    return {id,name:rows.find(r=>r.subject_id===id)?.subject_name,first:valid[0]||null,latest:valid[valid.length-1]||null};
+  });
+  const schoolComparison=[...new Set(rows.map(r=>r.school_id))].map(id=>{
+    const items=[...schoolTests.values()].filter(x=>x.school_id===id&&x.learners.length).sort((a,b)=>compareDate(testMeta.get(a.test_id),testMeta.get(b.test_id))).map(x=>({average:x.learners.reduce((a,b)=>a+b,0)/x.learners.length,count:x.learners.length}));
+    return {id,name:rows.find(r=>r.school_id===id)?.school_name,first:items[0]||null,latest:items[items.length-1]||null};
+  });
+  const classKeys=[...new Set(rows.map(r=>key(r.school_id,r.class_id)))];
+  const classComparison=classKeys.map(k=>{
+    const [schoolId,classId]=k.split("::");
+    const firstRow=rows.find(r=>r.school_id===schoolId&&r.class_id===classId);
+    const items=[...classTests.values()].filter(x=>x.school_id===schoolId&&x.class_id===classId&&x.learners.length).sort((a,b)=>compareDate(testMeta.get(a.test_id),testMeta.get(b.test_id))).map(x=>({average:x.learners.reduce((a,b)=>a+b,0)/x.learners.length,count:x.learners.length}));
+    return {school_id:schoolId,school_name:firstRow?.school_name,class_id:classId,class_name:firstRow?.class_name,first:items[0]||null,latest:items[items.length-1]||null};
+  });
+  return {tests,testLearners:[...testLearners.values()],learners:[...recordsByLearner.values()],trend,subjects,schoolComparison,classComparison};
+}
+function renderDashboard(){
+  const rows=getFilteredRows();
+  const data=buildAggregates(rows);
+  currentView={rows,data};
+  const valid=data.testLearners.filter(x=>x.complete);
+  const improved=data.learners.filter(l=>{const a=l.records.filter(r=>r.complete);return a.length>=2&&a[a.length-1].percentage>a[0].percentage});
+  const declined=data.learners.filter(l=>{const a=l.records.filter(r=>r.complete);return a.length>=2&&a[a.length-1].percentage<a[0].percentage});
+  const average=valid.length?valid.reduce((s,x)=>s+x.percentage,0)/valid.length:null;
+  const pct=(n,d)=>d?Math.round(n/d*100):0;
+  $("overviewStats").innerHTML=[
+    ["Tests conducted",data.tests.length,"Closed tests in selected scope"],
+    ["Overall average",average===null?"N/A":fmt(average),`${valid.length} complete learner-test results`],
+    ["Learners improving",`${pct(improved.length,data.learners.filter(l=>l.records.filter(r=>r.complete).length>=2).length)}%`,`${improved.length} learners with at least two complete results`],
+    ["Learners declining",`${pct(declined.length,data.learners.filter(l=>l.records.filter(r=>r.complete).length>=2).length)}%`,`${declined.length} learners with at least two complete results`]
+  ].map(([label,value,note])=>`<div class="stat"><div class="label">${label}</div><div class="value">${value}</div><div class="note">${note}</div></div>`).join("");
+  renderTrend(data);
+  renderLearners(data);
+  renderSubjects(data);
+  renderClasses(data);
+  renderSupport(data);
+  $("learnerProfile").classList.remove("open");
+}
+function renderTrend(data){
+  const ctx=$("trendChart");
+  if(trendChart)trendChart.destroy();
+  trendChart=new Chart(ctx,{type:"line",data:{labels:data.trend.map(x=>x.test.name),datasets:[{label:"Average performance",data:data.trend.map(x=>x.average===null?null:Number(x.average.toFixed(2))),borderColor:"#1769aa",backgroundColor:"rgba(23,105,170,.12)",fill:true,tension:.25,spanGaps:false,pointRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.raw===null?"No complete results":fmt(c.raw)}}},scales:{y:{beginAtZero:true,max:100,ticks:{callback:v=>v+"%"}}}}});
+}
+function renderLearners(data){
+  const tests=data.tests;
+  $("learnerHead").innerHTML="<tr><th>Learner</th>"+tests.map(t=>`<th>${esc(t.name)}</th>`).join("")+"<th>Progress</th><th>Status</th></tr>";
+  if(!data.learners.length){$("learnerBody").innerHTML=`<tr><td colspan="${tests.length+3}">No learner records match these filters.</td></tr>`;return}
+  $("learnerBody").innerHTML=data.learners.map(l=>{
+    const recMap=new Map(l.records.map(r=>[r.test_id,r]));
+    const complete=l.records.filter(r=>r.complete);
+    const change=complete.length>=2?complete[complete.length-1].percentage-complete[0].percentage:null;
+    const status=change===null?"Insufficient data":change>0?"Improving":change<0?"Declining":"Maintaining";
+    return `<tr><td><button class="progress-link" data-learner="${esc(key(l.school_id,l.student_id))}">${esc(l.name)}</button><div style="font-size:10px;color:#64748b">${esc(l.student_code||"")}</div></td>${tests.map(t=>{const r=recMap.get(t.id);return `<td>${!r||!r.complete?"N/A":fmt(r.percentage)}</td>`}).join("")}<td class="delta ${change===null?"neutral":deltaClass(change)}">${change===null?"N/A":deltaText(change)}</td><td><span class="pill ${status==="Improving"?"good":status==="Declining"?"bad":"warn"}">${status}</span></td></tr>`;
+  }).join("");
+  $("learnerBody").querySelectorAll("[data-learner]").forEach(btn=>btn.addEventListener("click",()=>showLearner(btn.dataset.learner)));
+}
+function renderSubjects(data){
+  const cards=data.subjects.map(s=>{
+    if(!s.first||!s.latest)return `<div class="subject-card"><div class="subject-top">${esc(s.name)}<span class="pill warn">Insufficient data</span></div><p>Not enough recorded results to compare.</p></div>`;
+    const change=s.latest.average-s.first.average;
+    return `<div class="subject-card"><div class="subject-top"><span>${esc(s.name)}</span><span class="delta ${deltaClass(change)}">${deltaText(change)}</span></div><div class="subject-numbers"><div>First<strong>${fmt(s.first.average)}</strong></div><div>Latest<strong>${fmt(s.latest.average)}</strong></div></div><div class="meter"><span style="width:${Math.max(0,Math.min(100,s.latest.average))}%"></span></div><p style="margin-top:8px">${s.first.count} and ${s.latest.count} complete learner results in comparison tests</p></div>`;
+  });
+  $("subjectDevelopment").innerHTML=cards.length?cards.join(""):'<div class="empty">No subject results are available.</div>';
+}
+function renderClasses(data){
+  const ranked=[...data.classComparison].map(c=>({...c,change:c.first&&c.latest?c.latest.average-c.first.average:null}))
+    .sort((a,b)=>(b.change??-Infinity)-(a.change??-Infinity));
+  $("classComparison").innerHTML=ranked.map(c=>`<tr><td>${esc(c.class_name)}</td><td>${c.first?fmt(c.first.average):"N/A"}</td><td>${c.latest?fmt(c.latest.average):"N/A"}</td><td class="delta ${c.change===null?"neutral":deltaClass(c.change)}">${c.change===null?"N/A":deltaText(c.change)}</td></tr>`).join("")||'<tr><td colspan="4">No class data available.</td></tr>';
+}
+function renderSupport(data){
+  const flagged=data.learners.map(l=>{
+    const complete=l.records.filter(r=>r.complete);
+    const first=complete[0]||null;
+    const latestComplete=complete[complete.length-1]||null;
+    const latestAttempt=l.records[l.records.length-1]||null;
+    const change=complete.length>=2?latestComplete.percentage-first.percentage:null;
+    const reasons=[];
+    if(latestAttempt&&!latestAttempt.complete)reasons.push("Latest test result incomplete");
+    if(latestComplete&&latestComplete.percentage<50)reasons.push("Latest complete result below 50%");
+    if(change!==null&&change<=-10)reasons.push("Declined by at least 10 pp");
+    if(!reasons.length)return null;
+    return {l,latestComplete,latestAttempt,change,reasons};
+  }).filter(Boolean).sort((a,b)=>(a.latestComplete?.percentage??101)-(b.latestComplete?.percentage??101));
+  $("supportBody").innerHTML=flagged.map(x=>`<tr><td>${esc(x.l.name)}</td><td>${esc(x.latestAttempt?.class_name||x.latestComplete?.class_name||"—")}</td><td>${x.latestAttempt&&!x.latestAttempt.complete?"N/A":x.latestComplete?fmt(x.latestComplete.percentage):"N/A"}</td><td class="delta ${x.change===null?"neutral":deltaClass(x.change)}">${x.change===null?"N/A":deltaText(x.change)}</td><td><span class="pill ${x.reasons.includes("Latest test result incomplete")?"warn":"bad"}">${x.reasons.join("; ")}</span></td></tr>`).join("")||'<tr><td colspan="5">No learners currently meet these support flags.</td></tr>';
+}
+function showLearner(learnerKey){
+  const learner=currentView.data.learners.find(l=>key(l.school_id,l.student_id)===learnerKey);
+  if(!learner)return;
+  const tests=currentView.data.tests;
+  const recMap=new Map(learner.records.map(r=>[r.test_id,r]));
+  $("profileName").textContent=learner.name;
+  $("profileMeta").textContent=`Learner ID: ${learner.student_id} · ${learner.school_name} · ${learner.records[0]?.class_name||"Class not specified"}`;
+  const vals=tests.map(t=>{const r=recMap.get(t.id);return r&&r.complete?Number(r.percentage.toFixed(2)):null});
+  if(learnerChart)learnerChart.destroy();
+  learnerChart=new Chart($("learnerChart"),{type:"line",data:{labels:tests.map(t=>t.name),datasets:[{label:"Learner performance",data:vals,borderColor:"#16834a",backgroundColor:"rgba(22,131,74,.12)",fill:true,tension:.25,spanGaps:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,max:100,ticks:{callback:v=>v+"%"}}}}});
+  const subMap=new Map();
+  learner.records.forEach(r=>r.subjects.forEach(s=>{
+    if(!subMap.has(s.subject_id))subMap.set(s.subject_id,{name:s.subject_name,values:[]});
+    if(s.score!==null&&s.maximum>0)subMap.get(s.subject_id).values.push({test:r.test_id,pct:s.score/s.maximum*100});
+  }));
+  const subjectRows=[...subMap.values()].map(s=>{
+    const first=s.values[0],last=s.values[s.values.length-1],d=last.pct-first.pct;
+    return {name:s.name,first:first.pct,last:last.pct,change:d};
+  });
+  const strongest=[...subjectRows].sort((a,b)=>b.last-a.last)[0];
+  const weakest=[...subjectRows].sort((a,b)=>a.last-b.last)[0];
+  const summary=subjectRows.length?`<div style="padding:10px;background:#eef6ff;border-radius:8px;margin-bottom:8px;font-size:12px"><strong>Strongest:</strong> ${esc(strongest.name)} (${fmt(strongest.last)})<br><strong>Needs most attention:</strong> ${esc(weakest.name)} (${fmt(weakest.last)})</div>`:"";
+  $("profileSubjects").innerHTML=summary+subjectRows.map(s=>
+    `<div style="padding:8px 0;border-bottom:1px solid #e2e8f0"><strong>${esc(s.name)}</strong><div style="font-size:12px;color:#64748b">${fmt(s.first)} → ${fmt(s.last)} <span class="delta ${deltaClass(s.change)}">${deltaText(s.change)}</span></div></div>`
+  ).join("")||"No subject results recorded.";
+  $("learnerProfile").classList.add("open");
+  $("learnerProfile").scrollIntoView({behavior:"smooth",block:"nearest"});
+}
+function renderEmpty(){
+  $("overviewStats").innerHTML='<div class="empty" style="grid-column:1/-1">No analysis data available.</div>';
+  ["learnerHead","learnerBody","subjectDevelopment","classComparison","supportBody"].forEach(id=>$(id).innerHTML="");
+  if(trendChart){trendChart.destroy();trendChart=null}
+}
+function downloadCSV(){
+  if(!currentView.data){showMessage("There is no report data to download.","info");return}
+  const d=currentView.data,tests=d.tests,rows=[];
+  const valid=d.testLearners.filter(x=>x.complete);
+  const overall=valid.length?valid.reduce((a,x)=>a+x.percentage,0)/valid.length:null;
+  rows.push(["FILA GRADES - ACADEMIC YEAR PERFORMANCE REPORT"]);
+  rows.push(["Academic Year",$("yearFilter").value]);
+  rows.push(["Generated",new Date().toLocaleString()]);
+  rows.push(["Tests conducted",tests.length]);
+  rows.push(["Overall average",overall===null?"N/A":overall.toFixed(2)+"%"]);
+  rows.push([]);
+  rows.push(["PERFORMANCE TREND"]);
+  rows.push(["Test","Recorded creation date","Average performance","Complete learner results"]);
+  d.trend.forEach(x=>rows.push([x.test.name,x.test.created_at||"",x.average===null?"N/A":x.average.toFixed(2)+"%",x.count]));
+  rows.push([]);
+  rows.push(["SUBJECT DEVELOPMENT"]);
+  rows.push(["Subject","First average","Latest average","Change (pp)"]);
+  d.subjects.forEach(x=>rows.push([x.name,x.first?x.first.average.toFixed(2)+"%":"N/A",x.latest?x.latest.average.toFixed(2)+"%":"N/A",x.first&&x.latest?(x.latest.average-x.first.average).toFixed(2):"N/A"]));
+  rows.push([]);
+  rows.push(["CLASS PERFORMANCE DEVELOPMENT"]);
+  rows.push(["Class","First average","Latest average","Change (pp)"]);
+  d.classComparison.forEach(x=>rows.push([x.class_name,x.first?x.first.average.toFixed(2)+"%":"N/A",x.latest?x.latest.average.toFixed(2)+"%":"N/A",x.first&&x.latest?(x.latest.average-x.first.average).toFixed(2):"N/A"]));
+  rows.push([]);
+  rows.push(["INDIVIDUAL LEARNER PROGRESS"]);
+  rows.push(["School","Learner ID","Learner","Class",...tests.map(t=>t.name),"Change (pp)","Progress"]);
+  d.learners.forEach(l=>{
+    const map=new Map(l.records.map(r=>[r.test_id,r]));
+    const complete=l.records.filter(r=>r.complete);
+    const change=complete.length>=2?complete[complete.length-1].percentage-complete[0].percentage:null;
+    rows.push([l.school_name,l.student_id,l.name,l.records[0]?.class_name||"",...tests.map(t=>{const r=map.get(t.id);return r&&r.complete?r.percentage.toFixed(2)+"%":"N/A"}),change===null?"N/A":change.toFixed(2),change===null?"Insufficient data":change>0?"Improving":change<0?"Declining":"Maintaining"]);
+  });
+  rows.push([]);
+  rows.push(["LEARNERS REQUIRING ACADEMIC SUPPORT"]);
+  rows.push(["Learner","Class","Latest result","Change (pp)","Reason"]);
+  d.learners.forEach(l=>{
+    const complete=l.records.filter(r=>r.complete),first=complete[0],latest=complete[complete.length-1],attempt=l.records[l.records.length-1];
+    const change=complete.length>=2?latest.percentage-first.percentage:null,reasons=[];
+    if(attempt&&!attempt.complete)reasons.push("Latest test result incomplete");
+    if(latest&&latest.percentage<50)reasons.push("Latest complete result below 50%");
+    if(change!==null&&change<=-10)reasons.push("Declined by at least 10 pp");
+    if(reasons.length)rows.push([l.name,attempt?.class_name||latest?.class_name||"",attempt&&!attempt.complete?"N/A":latest?latest.percentage.toFixed(2)+"%":"N/A",change===null?"N/A":change.toFixed(2),reasons.join("; ")]);
+  });
+  const csv=rows.map(row=>row.map(v=>'"'+String(v??"").replace(/"/g,'""')+'"').join(",")).join("\r\n");
+  const blob=new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8"});
+  const url=URL.createObjectURL(blob),a=document.createElement("a");
+  a.href=url;a.download="fila-academic-year-performance-"+$("yearFilter").value+".csv";a.click();URL.revokeObjectURL(url);
+}
+$("yearFilter").addEventListener("change",loadYear);
+$("classFilter").addEventListener("change",()=>{populateFilters();renderDashboard()});
+$("subjectFilter").addEventListener("change",renderDashboard);
+$("refreshBtn").addEventListener("click",loadInitial);
+$("downloadBtn").addEventListener("click",downloadCSV);
+$("printBtn").addEventListener("click",()=>window.print());
+document.addEventListener("fila-auth-ready",()=>{loadInitial()});
+window.addEventListener("DOMContentLoaded",()=>{if(window.currentUser)loadInitial()});
+</script>
+</body>
+</html>
