@@ -5,27 +5,32 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<meta name="description" content="Record and manage student marks for assigned classes and subjects in Fila Grades System.">
+<meta name="description" content="Manage teachers, teaching assignments, classes and academic-year-specific subclasses in Fila Grades System.">
 <meta name="theme-color" content="#173f70">
 
 <link rel="icon" type="image/x-icon" href="../../images/favicon/favicon.ico">
 <link rel="icon" type="image/png" sizes="512x512" href="../../images/favicon/favicon.png">
 
-<title>Teachers Management</title>
+<title>Teachers Management | Fila Grades System</title>
 <link rel="stylesheet" href="../css/school-sidebar.css">
 
 <style>
 :root {
     --primary: #2563eb;
     --primary-dark: #1d4ed8;
+    --primary-light: #eff6ff;
     --success: #15803d;
+    --success-light: #ecfdf5;
     --danger: #dc2626;
+    --danger-light: #fef2f2;
     --warning: #d97706;
+    --warning-light: #fff7ed;
     --text: #172033;
     --muted: #64748b;
     --border: #e2e8f0;
     --surface: #ffffff;
     --background: #f4f7fb;
+    --shadow: 0 5px 22px rgba(15, 23, 42, .055);
 }
 
 * {
@@ -33,61 +38,106 @@
 }
 
 body {
+    margin: 0;
     background: var(--background);
     color: var(--text);
-    font-family: Arial, sans-serif;
-    margin: 0;
+    font-family: Inter, Arial, sans-serif;
 }
 
-header {
-    background: linear-gradient(120deg, #1e40af, #2563eb);
+button, input, select {
+    font: inherit;
+}
+
+button {
+    -webkit-tap-highlight-color: transparent;
+}
+
+.page-banner {
+    background:
+        radial-gradient(circle at 85% 20%, rgba(255,255,255,.13), transparent 25%),
+        linear-gradient(120deg, #173f70, #2563eb);
     color: white;
-    padding: 27px 5%;
+    padding: 34px 5%;
 }
 
-header h1 {
-    margin: 0 0 7px;
-    font-size: 23px;
-    letter-spacing: .4px;
+.banner-inner {
+    max-width: 1320px;
+    margin: auto;
 }
 
-header p {
+.banner-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    background: rgba(255,255,255,.13);
+    border: 1px solid rgba(255,255,255,.18);
+    padding: 6px 11px;
+    border-radius: 30px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .6px;
+    margin-bottom: 13px;
+}
+
+.page-banner h1 {
+    margin: 0 0 8px;
+    font-size: 26px;
+    font-weight: 750;
+    letter-spacing: .3px;
+}
+
+.page-banner p {
     margin: 0;
     color: #dbeafe;
     font-size: 14px;
+    line-height: 1.6;
 }
 
 .page-content {
     width: 94%;
-    max-width: 1250px;
-    margin: 28px auto;
+    max-width: 1320px;
+    margin: 27px auto 45px;
 }
 
 .summary-grid {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 16px;
-    margin-bottom: 22px;
+    gap: 17px;
+    margin-bottom: 23px;
 }
 
 .summary-card {
+    position: relative;
+    overflow: hidden;
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 13px;
-    padding: 19px;
+    border-radius: 14px;
+    padding: 21px;
     display: flex;
     align-items: center;
     gap: 15px;
-    box-shadow: 0 3px 12px rgba(15, 23, 42, .035);
+    box-shadow: var(--shadow);
+}
+
+.summary-card::after {
+    content: "";
+    position: absolute;
+    width: 75px;
+    height: 75px;
+    border-radius: 50%;
+    right: -25px;
+    bottom: -34px;
+    background: rgba(37,99,235,.045);
 }
 
 .summary-icon {
-    width: 45px;
-    height: 45px;
+    flex-shrink: 0;
+    width: 49px;
+    height: 49px;
     display: grid;
     place-items: center;
-    border-radius: 12px;
-    font-size: 21px;
+    border-radius: 13px;
+    font-size: 22px;
     background: #eff6ff;
 }
 
@@ -103,26 +153,29 @@ header p {
     color: var(--muted);
     display: block;
     font-size: 12px;
+    font-weight: 600;
     margin-bottom: 5px;
 }
 
 .summary-card strong {
-    font-size: 23px;
+    font-size: 25px;
+    font-weight: 750;
+    color: #172033;
 }
 
 .management-card {
     background: white;
     border: 1px solid var(--border);
-    padding: 23px;
-    border-radius: 14px;
-    box-shadow: 0 4px 18px rgba(15, 23, 42, .045);
+    padding: 25px;
+    border-radius: 15px;
+    box-shadow: var(--shadow);
 }
 
 .page-heading {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 15px;
+    gap: 17px;
     flex-wrap: wrap;
     margin-bottom: 22px;
 }
@@ -130,59 +183,85 @@ header p {
 .page-heading h2 {
     margin: 0 0 6px;
     font-size: 19px;
+    font-weight: 750;
+    color: #172033;
 }
 
 .page-heading p {
     color: var(--muted);
     margin: 0;
     font-size: 13px;
+    line-height: 1.5;
 }
 
 .btn {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    gap: 7px;
     border: none;
     border-radius: 8px;
     padding: 11px 16px;
     font-size: 13px;
-    font-weight: 600;
+    font-weight: 700;
     cursor: pointer;
     color: white;
-    transition: .2s;
+    transition: .2s ease;
+    white-space: nowrap;
 }
 
 .btn:hover {
-    filter: brightness(.95);
+    filter: brightness(.96);
     transform: translateY(-1px);
 }
 
 .btn:disabled {
-    opacity: .6;
+    opacity: .55;
     cursor: not-allowed;
     transform: none;
 }
 
-.btn-primary { background: var(--primary); }
-.btn-success { background: var(--success); }
-.btn-danger { background: var(--danger); }
-.btn-warning { background: var(--warning); }
+.btn-primary {
+    background: var(--primary);
+    box-shadow: 0 3px 9px rgba(37,99,235,.17);
+}
+
+.btn-success {
+    background: var(--success);
+}
+
+.btn-danger {
+    background: var(--danger);
+}
+
+.btn-warning {
+    background: var(--warning);
+}
+
+.btn-secondary {
+    background: #475569;
+}
 
 .btn-sm {
     padding: 8px 11px;
-    font-size: 12px;
+    font-size: 11px;
 }
 
 .table-wrapper {
     width: 100%;
     overflow-x: auto;
+    border: 1px solid var(--border);
+    border-radius: 10px;
 }
 
 table {
     width: 100%;
-    min-width: 780px;
+    min-width: 850px;
     border-collapse: collapse;
 }
 
 th, td {
-    padding: 14px 12px;
+    padding: 15px 13px;
     text-align: left;
     border-bottom: 1px solid var(--border);
     font-size: 13px;
@@ -192,10 +271,19 @@ th, td {
 th {
     background: #f8fafc;
     color: #475569;
-    font-size: 11px;
+    font-size: 10px;
     text-transform: uppercase;
-    letter-spacing: .45px;
-    font-weight: 700;
+    letter-spacing: .65px;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+tbody tr:last-child td {
+    border-bottom: none;
+}
+
+tbody tr {
+    transition: background .15s ease;
 }
 
 tbody tr:hover {
@@ -203,8 +291,9 @@ tbody tr:hover {
 }
 
 .teacher-name {
-    font-weight: 700;
+    font-weight: 750;
     color: #1e293b;
+    line-height: 1.45;
 }
 
 .teacher-phone {
@@ -213,49 +302,98 @@ tbody tr:hover {
     font-size: 12px;
 }
 
+.teacher-email {
+    color: #64748b;
+    margin-top: 4px;
+    font-size: 11px;
+    overflow-wrap: anywhere;
+}
+
 .assignment-list {
     display: flex;
     flex-wrap: wrap;
-    gap: 5px;
-    max-width: 330px;
-}
-
-.assignment-tag {
-    display: inline-block;
-    background: #eff6ff;
-    color: #1d4ed8;
-    border: 1px solid #dbeafe;
-    border-radius: 6px;
-    padding: 5px 8px;
-    font-size: 11px;
-    font-weight: 600;
+    gap: 7px;
+    max-width: 440px;
 }
 
 .assignment-item {
     display: inline-flex;
     align-items: center;
-    gap: 5px;
+    gap: 7px;
     background: #eff6ff;
     border: 1px solid #dbeafe;
-    border-radius: 6px;
-    padding: 3px 5px 3px 8px;
+    border-radius: 8px;
+    padding: 6px 6px 6px 9px;
+    max-width: 100%;
 }
 
-.assignment-item span {
+.assignment-item.default {
+    background: #eff6ff;
+    border-color: #dbeafe;
+}
+
+.assignment-item.subclass {
+    background: #f0fdf4;
+    border-color: #bbf7d0;
+}
+
+.assignment-info {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+}
+
+.assignment-info strong {
     color: #1d4ed8;
     font-size: 11px;
-    font-weight: 600;
+    font-weight: 750;
+    overflow-wrap: anywhere;
+}
+
+.assignment-item.subclass .assignment-info strong {
+    color: #166534;
+}
+
+.assignment-info small {
+    color: #64748b;
+    font-size: 10px;
+    line-height: 1.35;
+}
+
+.assignment-scope {
+    display: inline-flex;
+    align-items: center;
+    width: fit-content;
+    padding: 2px 6px;
+    border-radius: 20px;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: .25px;
+    text-transform: uppercase;
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+.assignment-item.subclass .assignment-scope {
+    background: #dcfce7;
+    color: #166534;
 }
 
 .remove-assignment {
+    flex-shrink: 0;
+    width: 23px;
+    height: 23px;
     border: none;
     background: #fee2e2;
     color: #dc2626;
-    border-radius: 4px;
+    border-radius: 6px;
     cursor: pointer;
-    font-size: 12px;
-    font-weight: bold;
-    padding: 3px 6px;
+    font-size: 15px;
+    font-weight: 800;
+    display: grid;
+    place-items: center;
+    transition: .15s;
 }
 
 .remove-assignment:hover {
@@ -271,72 +409,112 @@ tbody tr:hover {
 .actions {
     display: flex;
     flex-wrap: wrap;
-    gap: 6px;
+    gap: 7px;
 }
 
 .empty-state {
     text-align: center;
     color: var(--muted);
-    padding: 35px 15px;
+    padding: 38px 15px;
+    font-size: 13px;
 }
 
 .modal {
     display: none;
     position: fixed;
     inset: 0;
-    background: rgba(15, 23, 42, .62);
+    background: rgba(15, 23, 42, .65);
+    backdrop-filter: blur(4px);
     z-index: 1000;
     justify-content: center;
     align-items: center;
-    padding: 15px;
+    padding: 16px;
 }
 
 .modal-content {
     background: white;
     width: 100%;
-    max-width: 490px;
-    max-height: 92vh;
+    max-width: 530px;
+    max-height: 93vh;
     overflow-y: auto;
-    padding: 25px;
-    border-radius: 15px;
-    box-shadow: 0 20px 60px rgba(0,0,0,.22);
+    padding: 27px;
+    border-radius: 16px;
+    box-shadow: 0 25px 70px rgba(0,0,0,.25);
+    animation: modalIn .2s ease;
 }
 
-.modal-heading {
+@keyframes modalIn {
+    from {
+        opacity: 0;
+        transform: translateY(9px) scale(.99);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.modal-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
     margin-bottom: 22px;
 }
 
 .modal-heading h2 {
-    margin: 0 0 6px;
-    font-size: 19px;
+    margin: 0 0 7px;
+    font-size: 20px;
+    font-weight: 800;
+    color: #172033;
 }
 
 .modal-heading p {
     color: var(--muted);
-    font-size: 13px;
+    font-size: 12px;
+    line-height: 1.6;
     margin: 0;
 }
 
+.modal-close {
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: #f8fafc;
+    color: #64748b;
+    font-size: 19px;
+    cursor: pointer;
+}
+
+.modal-close:hover {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
 .form-group {
-    margin-bottom: 16px;
+    margin-bottom: 17px;
 }
 
 .form-group label {
     display: block;
-    font-weight: 600;
-    font-size: 13px;
-    margin-bottom: 7px;
+    font-weight: 750;
+    font-size: 12px;
+    color: #334155;
+    margin-bottom: 8px;
 }
 
 .form-group input,
 .form-group select {
     width: 100%;
-    padding: 12px;
+    padding: 12px 13px;
     border: 1px solid #cbd5e1;
-    border-radius: 8px;
+    border-radius: 9px;
     background: white;
-    font-size: 14px;
+    font-size: 13px;
     color: var(--text);
+    transition: .18s;
 }
 
 .form-group input:focus,
@@ -345,23 +523,185 @@ tbody tr:hover {
     border-color: var(--primary);
 }
 
+.form-group select:disabled {
+    background: #f8fafc;
+    color: #94a3b8;
+    cursor: not-allowed;
+}
+
 .form-hint {
     display: block;
-    margin-top: 6px;
+    margin-top: 7px;
     color: var(--muted);
     font-size: 11px;
-    line-height: 1.5;
+    line-height: 1.55;
+}
+
+.setup-notice,
+.info-notice {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    border-radius: 10px;
+    padding: 13px;
+    margin-bottom: 19px;
+    font-size: 11px;
+    line-height: 1.65;
 }
 
 .setup-notice {
     background: #eff6ff;
     border: 1px solid #bfdbfe;
-    border-radius: 9px;
-    padding: 12px;
-    margin-bottom: 17px;
     color: #1e40af;
+}
+
+.info-notice {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    color: #475569;
+}
+
+.notice-icon {
+    font-size: 16px;
+    flex-shrink: 0;
+}
+
+.assignment-mode-section {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 11px;
+    padding: 15px;
+    margin: 5px 0 18px;
+}
+
+.assignment-mode-section .section-title {
+    font-size: 11px;
+    font-weight: 800;
+    color: #334155;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    margin-bottom: 11px;
+}
+
+.mode-options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 9px;
+}
+
+.mode-option {
+    position: relative;
+}
+
+.mode-option input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.mode-option label {
+    display: flex;
+    align-items: flex-start;
+    gap: 9px;
+    height: 100%;
+    min-height: 75px;
+    padding: 12px;
+    background: white;
+    border: 1px solid #dbe2ea;
+    border-radius: 9px;
+    cursor: pointer;
+    transition: .18s;
+}
+
+.mode-option input:checked + label {
+    border-color: #2563eb;
+    background: #eff6ff;
+    box-shadow: 0 0 0 2px rgba(37,99,235,.09);
+}
+
+.mode-option label:hover {
+    border-color: #93c5fd;
+}
+
+.mode-icon {
+    font-size: 18px;
+    line-height: 1.2;
+}
+
+.mode-copy strong {
+    display: block;
+    font-size: 11px;
+    color: #1e293b;
+    margin-bottom: 5px;
+}
+
+.mode-copy small {
+    display: block;
+    color: #64748b;
+    font-size: 10px;
+    line-height: 1.45;
+    font-weight: 400;
+}
+
+.subclass-fields {
+    display: none;
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    border-radius: 11px;
+    padding: 15px;
+    margin: 2px 0 17px;
+}
+
+.subclass-fields.visible {
+    display: block;
+}
+
+.subclass-fields-heading {
     font-size: 12px;
-    line-height: 1.6;
+    font-weight: 800;
+    color: #166534;
+    margin-bottom: 13px;
+}
+
+.subclass-fields .form-group:last-child {
+    margin-bottom: 0;
+}
+
+.current-assignments {
+    background: #f8fafc;
+    border: 1px solid var(--border);
+    border-radius: 11px;
+    padding: 15px;
+    margin: 20px 0;
+}
+
+.current-assignments-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.current-assignments h3 {
+    margin: 0;
+    font-size: 11px;
+    color: #334155;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+}
+
+.current-assignments-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+}
+
+.current-assignments-list .no-current {
+    color: #94a3b8;
+    font-size: 11px;
+    font-style: italic;
 }
 
 .modal-actions {
@@ -374,66 +714,51 @@ tbody tr:hover {
     flex: 1;
 }
 
-.current-assignments {
-    background: #f8fafc;
-    border: 1px solid var(--border);
-    border-radius: 9px;
-    padding: 13px;
-    margin: 17px 0;
-}
-
-.current-assignments h3 {
-    margin: 0 0 10px;
-    font-size: 12px;
-    color: #475569;
-}
-
-.current-assignments-list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-}
-
-.current-assignments-list span {
-    background: white;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 6px 8px;
-    font-size: 11px;
-    color: #334155;
-}
-
 .toast {
     position: fixed;
     top: 18px;
     right: 18px;
     z-index: 2000;
-    max-width: min(380px, calc(100% - 36px));
+    max-width: min(390px, calc(100% - 36px));
     padding: 14px 18px;
-    border-radius: 9px;
+    border-radius: 10px;
     color: white;
     background: #334155;
     box-shadow: 0 8px 25px rgba(0,0,0,.18);
     display: none;
-    font-size: 13px;
-    line-height: 1.5;
+    font-size: 12px;
+    line-height: 1.6;
 }
 
 .toast.success { background: #15803d; }
 .toast.error { background: #b91c1c; }
 
-@media(max-width:700px) {
-    header {
-        padding: 23px 5%;
+@media(max-width:850px) {
+    .management-card {
+        padding: 19px;
     }
 
-    header h1 {
-        font-size: 19px;
+    .summary-grid {
+        gap: 11px;
+    }
+
+    .summary-card {
+        padding: 16px;
+    }
+}
+
+@media(max-width:700px) {
+    .page-banner {
+        padding: 26px 5%;
+    }
+
+    .page-banner h1 {
+        font-size: 21px;
     }
 
     .page-content {
         width: 94%;
-        margin: 18px auto;
+        margin: 18px auto 35px;
     }
 
     .summary-grid {
@@ -446,11 +771,12 @@ tbody tr:hover {
     }
 
     .summary-card strong {
-        font-size: 20px;
+        font-size: 21px;
     }
 
     .management-card {
-        padding: 15px;
+        padding: 14px;
+        border-radius: 12px;
     }
 
     .page-heading {
@@ -462,26 +788,53 @@ tbody tr:hover {
     }
 
     .modal-content {
-        padding: 19px;
+        padding: 20px;
     }
 
     .modal-actions {
         flex-direction: column;
     }
+
+    .mode-options {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media(max-width:380px) {
+    .modal-content {
+        padding: 16px;
+    }
+
+    .assignment-mode-section,
+    .subclass-fields {
+        padding: 11px;
+    }
 }
 </style>
 </head>
+
+<body>
 
 <div id="schoolSidebarContainer"></div>
 
 <main class="school-main-content">
 
-<header>
-    <h1>TEACHERS MANAGEMENT</h1>
-    <p>Manage teachers, classes and teaching subjects</p>
+<header class="page-banner">
+    <div class="banner-inner">
+        <div class="banner-label">
+            <span>●</span> SCHOOL ADMINISTRATION
+        </div>
+
+        <h1>Teachers Management</h1>
+
+        <p>
+            Manage your teaching staff, organise class assignments
+            and allocate subjects to specific subclasses.
+        </p>
+    </div>
 </header>
 
-<main class="page-content">
+<div class="page-content">
 
     <section class="summary-grid">
 
@@ -515,12 +868,15 @@ tbody tr:hover {
 
         <div class="page-heading">
             <div>
-                <h2>Teachers List</h2>
-                <p>Register teachers and manage their teaching assignments.</p>
+                <h2>Teachers Directory</h2>
+                <p>
+                    Register teachers, update their details and manage
+                    their teaching responsibilities.
+                </p>
             </div>
 
-            <button class="btn btn-primary" id="addTeacherBtn">
-                + Add Teacher
+            <button class="btn btn-primary" id="addTeacherBtn" type="button">
+                <span>＋</span> Add Teacher
             </button>
         </div>
 
@@ -529,9 +885,9 @@ tbody tr:hover {
                 <thead>
                     <tr>
                         <th>#</th>
-                        <th>Teacher</th>
+                        <th>Teacher Details</th>
                         <th>Staff Number</th>
-                        <th>Class & Subject Assignments</th>
+                        <th>Teaching Assignments</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -547,23 +903,33 @@ tbody tr:hover {
         </div>
 
     </section>
-</main>
+</div>
 
-<!-- TEACHER MODAL -->
+<!-- =====================================================
+     TEACHER MODAL
+===================================================== -->
 
 <div class="modal" id="teacherModal">
     <div class="modal-content">
 
-        <div class="modal-heading">
-            <h2 id="modalTitle">Add Teacher</h2>
-            <p>Enter the teacher's personal and account details.</p>
+        <div class="modal-top">
+            <div class="modal-heading">
+                <h2 id="modalTitle">Add Teacher</h2>
+                <p>Enter the teacher's personal and account details.</p>
+            </div>
+
+            <button class="modal-close" id="closeTeacherX" type="button"
+                aria-label="Close">×</button>
         </div>
 
         <input type="hidden" id="teacherId">
 
         <div class="setup-notice" id="setupNotice">
-            The teacher will receive an account setup invitation by email.
-            They will verify their email address and create their own password.
+            <span class="notice-icon">✉️</span>
+            <span>
+                The teacher will receive an account setup invitation by email.
+                They will verify their email address and create their own password.
+            </span>
         </div>
 
         <div class="form-group">
@@ -607,7 +973,7 @@ tbody tr:hover {
         </div>
 
         <div class="form-group">
-            <label for="staffNumber">Staff Number (optional)</label>
+            <label for="staffNumber">Staff Number <span style="color:#94a3b8;font-weight:400;">(optional)</span></label>
             <input
                 type="text"
                 id="staffNumber"
@@ -617,11 +983,11 @@ tbody tr:hover {
         </div>
 
         <div class="modal-actions">
-            <button class="btn btn-success" id="saveTeacherBtn">
+            <button class="btn btn-success" id="saveTeacherBtn" type="button">
                 Save Teacher
             </button>
 
-            <button class="btn btn-danger" id="cancelTeacherBtn">
+            <button class="btn btn-secondary" id="cancelTeacherBtn" type="button">
                 Cancel
             </button>
         </div>
@@ -629,23 +995,45 @@ tbody tr:hover {
     </div>
 </div>
 
-<!-- ASSIGNMENT MODAL -->
+<!-- =====================================================
+     TEACHING ASSIGNMENT MODAL
+===================================================== -->
 
 <div class="modal" id="assignmentModal">
     <div class="modal-content">
 
-        <div class="modal-heading">
-            <h2>Teaching Assignments</h2>
-            <p>Add another class and subject for this teacher.</p>
+        <div class="modal-top">
+            <div class="modal-heading">
+                <h2>Teaching Assignments</h2>
+                <p>
+                    Assign a subject to a base class or to a particular
+                    subclass in an academic year.
+                </p>
+            </div>
+
+            <button class="modal-close" id="closeAssignmentX" type="button"
+                aria-label="Close">×</button>
         </div>
 
         <input type="hidden" id="assignmentTeacherId">
 
+        <div class="info-notice">
+            <span class="notice-icon">ℹ️</span>
+            <span>
+                A default assignment applies to all subclasses of a class.
+                A subclass-specific assignment takes priority for that
+                subclass and subject.
+            </span>
+        </div>
+
         <div class="form-group">
-            <label for="assignmentClass">Select Class</label>
+            <label for="assignmentClass">Select Base Class</label>
             <select id="assignmentClass">
                 <option value="">Loading classes...</option>
             </select>
+            <small class="form-hint">
+                Choose the existing class, for example P6, P5 or S1.
+            </small>
         </div>
 
         <div class="form-group">
@@ -653,26 +1041,107 @@ tbody tr:hover {
             <select id="assignmentSubject" disabled>
                 <option value="">First select a class</option>
             </select>
-
             <small class="form-hint" id="subjectHint">
                 Subjects will appear according to the selected class level.
             </small>
         </div>
 
-        <div class="current-assignments">
-            <h3>Current Assignments</h3>
+        <div class="assignment-mode-section">
 
-            <div class="current-assignments-list" id="currentAssignments">
-                <span>No assignments yet.</span>
+            <div class="section-title">Assignment scope</div>
+
+            <div class="mode-options">
+
+                <div class="mode-option">
+                    <input
+                        type="radio"
+                        name="assignmentMode"
+                        id="modeDefault"
+                        value="default"
+                        checked
+                    >
+
+                    <label for="modeDefault">
+                        <span class="mode-icon">📘</span>
+                        <span class="mode-copy">
+                            <strong>Default Class Assignment</strong>
+                            <small>
+                                Applies to all subclasses unless
+                                specifically overridden.
+                            </small>
+                        </span>
+                    </label>
+                </div>
+
+                <div class="mode-option">
+                    <input
+                        type="radio"
+                        name="assignmentMode"
+                        id="modeSubclass"
+                        value="subclass"
+                    >
+
+                    <label for="modeSubclass">
+                        <span class="mode-icon">🎯</span>
+                        <span class="mode-copy">
+                            <strong>Specific Subclass</strong>
+                            <small>
+                                Assign this subject to one subclass
+                                in a selected academic year.
+                            </small>
+                        </span>
+                    </label>
+                </div>
+
             </div>
         </div>
 
+        <div class="subclass-fields" id="subclassFields">
+
+            <div class="subclass-fields-heading">
+                Academic Year and Subclass
+            </div>
+
+            <div class="form-group">
+                <label for="assignmentAcademicYear">Academic Year</label>
+                <select id="assignmentAcademicYear">
+                    <option value="">Loading academic years...</option>
+                </select>
+                <small class="form-hint">
+                    Select the academic year in which this subclass exists.
+                </small>
+            </div>
+
+            <div class="form-group">
+                <label for="assignmentSubclass">Select Subclass</label>
+                <select id="assignmentSubclass" disabled>
+                    <option value="">First select a class and academic year</option>
+                </select>
+                <small class="form-hint" id="subclassHint">
+                    Available subclasses will appear here.
+                </small>
+            </div>
+
+        </div>
+
+        <div class="current-assignments">
+
+            <div class="current-assignments-heading">
+                <h3>Current Assignments</h3>
+            </div>
+
+            <div class="current-assignments-list" id="currentAssignments">
+                <span class="no-current">No assignments yet.</span>
+            </div>
+
+        </div>
+
         <div class="modal-actions">
-            <button class="btn btn-success" id="saveAssignmentBtn">
-                + Add Assignment
+            <button class="btn btn-success" id="saveAssignmentBtn" type="button">
+                ＋ Add Assignment
             </button>
 
-            <button class="btn btn-danger" id="cancelAssignmentBtn">
+            <button class="btn btn-secondary" id="cancelAssignmentBtn" type="button">
                 Close
             </button>
         </div>
@@ -680,12 +1149,15 @@ tbody tr:hover {
     </div>
 </div>
 
-<div class="toast" id="toast"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
 </main>
 
 <script src="../js/school-sidebar.js"></script>
+
 <script type="module">
-    console.log("TEACHERS PAGE JAVASCRIPT LOADED");
+
+console.log("FILA GRADES — TEACHERS MANAGEMENT LOADED");
 
 /* =====================================================
    AUTHENTICATION CHECK
@@ -717,19 +1189,36 @@ const assignmentModal = document.getElementById("assignmentModal");
 
 const teacherEmailInput = document.getElementById("teacherEmail");
 
+const assignmentClassSelect =
+    document.getElementById("assignmentClass");
+
+const assignmentSubjectSelect =
+    document.getElementById("assignmentSubject");
+
+const academicYearSelect =
+    document.getElementById("assignmentAcademicYear");
+
+const subclassSelect =
+    document.getElementById("assignmentSubclass");
+
 let teachers = [];
 let classes = [];
 let subjects = [];
+let academicYears = [];
+let subclassesByClass = [];
+
+let activeAcademicYear = null;
 
 let editMode = false;
 let activeTeacher = null;
-let toastTimer;
+let toastTimer = null;
 
 /* =====================================================
    TOAST MESSAGES
 ===================================================== */
 
 function showToast(message, type = "success") {
+
     const toast = document.getElementById("toast");
 
     clearTimeout(toastTimer);
@@ -776,7 +1265,7 @@ async function api(url, options = {}) {
 
     if (!response.ok || result.success === false) {
         throw new Error(
-            result.message || "Request failed."
+            result.message || `Request failed (${response.status}).`
         );
     }
 
@@ -784,10 +1273,71 @@ async function api(url, options = {}) {
 }
 
 /* =====================================================
+   GENERAL HELPERS
+===================================================== */
+
+function getElement(id) {
+    return document.getElementById(id);
+}
+
+function getAssignmentMode() {
+
+    return document.querySelector(
+        'input[name="assignmentMode"]:checked'
+    )?.value || "default";
+}
+
+function getAssignmentScope(item) {
+
+    if (
+        item.assignment_type === "subclass" ||
+        item.subclass_id
+    ) {
+        return "subclass";
+    }
+
+    return "default";
+}
+
+function getAcademicYearLabel(item) {
+
+    return item.academic_year_name ||
+        item.year_name ||
+        "Academic year";
+}
+
+function getAssignmentDisplay(item) {
+
+    const className = item.class_name || "Class";
+    const subjectName = item.subject_name || "Subject";
+
+    if (getAssignmentScope(item) === "subclass") {
+
+        const subclassName = item.subclass_name || "Subclass";
+        const yearName = getAcademicYearLabel(item);
+
+        return {
+            title: `${className} ${subclassName} — ${subjectName}`,
+            detail: yearName,
+            scope: "Subclass-specific",
+            type: "subclass"
+        };
+    }
+
+    return {
+        title: `${className} — ${subjectName}`,
+        detail: "Applies to all subclasses unless overridden",
+        scope: "Default",
+        type: "default"
+    };
+}
+
+/* =====================================================
    TABLE HELPERS
 ===================================================== */
 
 function addCell(row, value) {
+
     const cell = document.createElement("td");
 
     cell.textContent = value ?? "-";
@@ -798,6 +1348,7 @@ function addCell(row, value) {
 }
 
 function showTableMessage(message) {
+
     teacherTable.replaceChildren();
 
     const row = document.createElement("tr");
@@ -820,9 +1371,12 @@ async function loadTeachers() {
     showTableMessage("Loading teachers...");
 
     try {
+
         const data = await api("/api/teachers");
 
-        teachers = data.teachers || [];
+        teachers = Array.isArray(data.teachers)
+            ? data.teachers
+            : [];
 
         renderTeachers();
 
@@ -835,6 +1389,54 @@ async function loadTeachers() {
 }
 
 /* =====================================================
+   RENDER ONE ASSIGNMENT
+===================================================== */
+
+function createAssignmentElement(item) {
+
+    const display = getAssignmentDisplay(item);
+
+    const wrapper = document.createElement("div");
+
+    wrapper.className =
+        `assignment-item ${display.type}`;
+
+    const info = document.createElement("div");
+    info.className = "assignment-info";
+
+    const title = document.createElement("strong");
+    title.textContent = display.title;
+
+    const detail = document.createElement("small");
+    detail.textContent = display.detail;
+
+    const scope = document.createElement("span");
+    scope.className = "assignment-scope";
+    scope.textContent = display.scope;
+
+    info.append(title, detail, scope);
+
+    const removeButton = document.createElement("button");
+
+    removeButton.className = "remove-assignment";
+    removeButton.type = "button";
+    removeButton.textContent = "×";
+    removeButton.title = "Remove this assignment";
+    removeButton.setAttribute(
+        "aria-label",
+        `Remove ${display.title}`
+    );
+
+    removeButton.addEventListener("click", () => {
+        removeAssignment(item.assignment_id);
+    });
+
+    wrapper.append(info, removeButton);
+
+    return wrapper;
+}
+
+/* =====================================================
    DISPLAY TEACHERS
 ===================================================== */
 
@@ -842,11 +1444,13 @@ function renderTeachers() {
 
     teacherTable.replaceChildren();
 
-    document.getElementById("teacherCount").textContent =
+    getElement("teacherCount").textContent =
         teachers.length;
 
     if (!teachers.length) {
+
         showTableMessage("No teachers registered yet.");
+
         return;
     }
 
@@ -870,6 +1474,15 @@ function renderTeachers() {
 
         nameCell.append(name, phone);
 
+        if (teacher.email) {
+
+            const email = document.createElement("div");
+            email.className = "teacher-email";
+            email.textContent = teacher.email;
+
+            nameCell.appendChild(email);
+        }
+
         row.appendChild(nameCell);
 
         /* Staff number */
@@ -891,28 +1504,9 @@ function renderTeachers() {
 
             assignments.forEach(item => {
 
-                const wrapper = document.createElement("div");
-                wrapper.className = "assignment-item";
-
-                const label = document.createElement("span");
-
-                label.textContent =
-                    `${item.class_name} — ${item.subject_name}`;
-
-                const removeButton = document.createElement("button");
-
-                removeButton.className = "remove-assignment";
-                removeButton.type = "button";
-                removeButton.textContent = "×";
-                removeButton.title = "Remove this assignment";
-
-                removeButton.addEventListener("click", () => {
-                    removeAssignment(item.assignment_id);
-                });
-
-                wrapper.append(label, removeButton);
-
-                assignmentList.appendChild(wrapper);
+                assignmentList.appendChild(
+                    createAssignmentElement(item)
+                );
             });
 
         } else {
@@ -920,7 +1514,7 @@ function renderTeachers() {
             const empty = document.createElement("span");
 
             empty.className = "no-assignment";
-            empty.textContent = "No assignments";
+            empty.textContent = "No teaching assignments";
 
             assignmentList.appendChild(empty);
         }
@@ -939,6 +1533,7 @@ function renderTeachers() {
         const editButton = document.createElement("button");
 
         editButton.className = "btn btn-warning btn-sm";
+        editButton.type = "button";
         editButton.textContent = "Edit";
 
         editButton.addEventListener("click", () => {
@@ -948,6 +1543,7 @@ function renderTeachers() {
         const assignButton = document.createElement("button");
 
         assignButton.className = "btn btn-success btn-sm";
+        assignButton.type = "button";
         assignButton.textContent = "+ Assignment";
 
         assignButton.addEventListener("click", () => {
@@ -971,6 +1567,7 @@ function renderTeachers() {
 async function removeAssignment(assignmentId) {
 
     if (!assignmentId) {
+
         showToast(
             "Assignment ID is missing. Reload the page and try again.",
             "error"
@@ -1030,7 +1627,6 @@ async function removeAssignment(assignmentId) {
 ===================================================== */
 
 async function loadOptions() {
-       console.log("loadOptions() WAS CALLED")
 
     try {
 
@@ -1039,13 +1635,18 @@ async function loadOptions() {
             api("/api/subjects")
         ]);
 
-        classes = classData.classes || [];
-        subjects = subjectData.subjects || [];
+        classes = Array.isArray(classData.classes)
+            ? classData.classes
+            : [];
 
-        document.getElementById("classCount").textContent =
+        subjects = Array.isArray(subjectData.subjects)
+            ? subjectData.subjects
+            : [];
+
+        getElement("classCount").textContent =
             classes.length;
 
-        document.getElementById("subjectCount").textContent =
+        getElement("subjectCount").textContent =
             subjects.length;
 
         populateClasses();
@@ -1057,27 +1658,117 @@ async function loadOptions() {
 }
 
 /* =====================================================
-   POPULATE CLASSES
+   LOAD ACADEMIC YEARS
+   EXISTING API:
+   GET /api/academic-calendar?action=get
+===================================================== */
+
+async function loadAcademicYears() {
+
+    academicYearSelect.replaceChildren();
+
+    academicYearSelect.add(
+        new Option("Loading academic years...", "")
+    );
+
+    academicYearSelect.disabled = true;
+
+    try {
+
+        const data = await api(
+            "/api/academic-calendar?action=get"
+        );
+
+        academicYears = Array.isArray(data.academic_years)
+            ? data.academic_years
+            : [];
+
+        activeAcademicYear =
+            data.active_academic_year || null;
+
+        academicYearSelect.replaceChildren();
+
+        if (!academicYears.length) {
+
+            academicYearSelect.add(
+                new Option("No academic years available", "")
+            );
+
+            academicYearSelect.disabled = true;
+
+            return;
+        }
+
+        academicYears.forEach(year => {
+
+            const option = new Option(
+                year.year_name,
+                String(year.id)
+            );
+
+            academicYearSelect.add(option);
+        });
+
+        let selectedYearId = "";
+
+        if (activeAcademicYear?.id) {
+
+            selectedYearId = String(activeAcademicYear.id);
+
+        } else {
+
+            const activeYear = academicYears.find(
+                year =>
+                    String(year.status || "").toLowerCase() === "active"
+            );
+
+            if (activeYear) {
+                selectedYearId = String(activeYear.id);
+            } else {
+                selectedYearId = String(academicYears[0].id);
+            }
+        }
+
+        academicYearSelect.value = selectedYearId;
+        academicYearSelect.disabled = false;
+
+    } catch (error) {
+
+        academicYearSelect.replaceChildren();
+
+        academicYearSelect.add(
+            new Option("Unable to load academic years", "")
+        );
+
+        academicYearSelect.disabled = true;
+
+        showToast(
+            `Academic years could not be loaded: ${error.message}`,
+            "error"
+        );
+    }
+}
+
+/* =====================================================
+   POPULATE BASE CLASSES
 ===================================================== */
 
 function populateClasses() {
 
-    const select = document.getElementById("assignmentClass");
+    assignmentClassSelect.replaceChildren();
 
-    select.replaceChildren();
-
-    select.add(
+    assignmentClassSelect.add(
         new Option("-- Select Class --", "")
     );
 
     classes.forEach(item => {
 
         const option = new Option(
-            `${item.class_name} (${item.class_level})`,
+            `${item.class_name} (${item.class_level || item.level_name || ""})`,
             String(item.id)
         );
 
-        select.add(option);
+        assignmentClassSelect.add(option);
     });
 }
 
@@ -1085,29 +1776,21 @@ function populateClasses() {
    FILTER SUBJECTS BY CLASS
 ===================================================== */
 
-
 function filterSubjectsByClass() {
 
-    const classId =
-        document.getElementById("assignmentClass").value;
+    const classId = assignmentClassSelect.value;
 
-    const subjectSelect =
-        document.getElementById("assignmentSubject");
-
-    const hint =
-        document.getElementById("subjectHint");
-
-    subjectSelect.replaceChildren();
+    assignmentSubjectSelect.replaceChildren();
 
     if (!classId) {
 
-        subjectSelect.add(
+        assignmentSubjectSelect.add(
             new Option("First select a class", "")
         );
 
-        subjectSelect.disabled = true;
+        assignmentSubjectSelect.disabled = true;
 
-        hint.textContent =
+        getElement("subjectHint").textContent =
             "Subjects will appear according to the selected class level.";
 
         return;
@@ -1117,9 +1800,17 @@ function filterSubjectsByClass() {
         item => String(item.id) === String(classId)
     );
 
-    if (!selectedClass) return;
+    if (!selectedClass) {
 
-    // Map class education levels to subject education levels
+        assignmentSubjectSelect.add(
+            new Option("Class not found", "")
+        );
+
+        assignmentSubjectSelect.disabled = true;
+
+        return;
+    }
+
     const levelMapping = {
         "PRIMARY": "PRIMARY",
         "ORDINARY LEVEL": "LOWER SECONDARY",
@@ -1127,7 +1818,9 @@ function filterSubjectsByClass() {
     };
 
     const classLevel = String(
-        selectedClass.class_level || ""
+        selectedClass.class_level ||
+        selectedClass.level_name ||
+        ""
     ).trim().toUpperCase();
 
     const expectedLevel = levelMapping[classLevel];
@@ -1143,13 +1836,13 @@ function filterSubjectsByClass() {
         );
     });
 
-    subjectSelect.add(
+    assignmentSubjectSelect.add(
         new Option("-- Select Subject --", "")
     );
 
     allowedSubjects.forEach(subject => {
 
-        subjectSelect.add(
+        assignmentSubjectSelect.add(
             new Option(
                 subject.subject_name,
                 String(subject.id)
@@ -1157,11 +1850,194 @@ function filterSubjectsByClass() {
         );
     });
 
-    subjectSelect.disabled = false;
+    assignmentSubjectSelect.disabled = false;
 
-    hint.textContent = allowedSubjects.length
-        ? `${allowedSubjects.length} subjects available for ${selectedClass.class_name}.`
-        : "No subjects are configured for this class level.";
+    getElement("subjectHint").textContent =
+        allowedSubjects.length
+            ? `${allowedSubjects.length} subjects available for ${selectedClass.class_name}.`
+            : "No subjects are configured for this class level.";
+
+    // The subclass list must match the selected base class.
+    if (getAssignmentMode() === "subclass") {
+        populateSubclasses();
+    }
+}
+
+/* =====================================================
+   LOAD SUBCLASSES
+   EXISTING API:
+   GET /api/subclasses?academic_year_id=...
+===================================================== */
+
+async function loadSubclasses() {
+
+    const academicYearId = academicYearSelect.value;
+
+    subclassesByClass = [];
+
+    subclassSelect.replaceChildren();
+
+    if (!academicYearId) {
+
+        subclassSelect.add(
+            new Option("Select an academic year first", "")
+        );
+
+        subclassSelect.disabled = true;
+
+        getElement("subclassHint").textContent =
+            "Choose an academic year to load its subclasses.";
+
+        return;
+    }
+
+    subclassSelect.add(
+        new Option("Loading subclasses...", "")
+    );
+
+    subclassSelect.disabled = true;
+
+    try {
+
+        const data = await api(
+            `/api/subclasses?academic_year_id=${encodeURIComponent(academicYearId)}`
+        );
+
+        subclassesByClass = Array.isArray(data.classes)
+            ? data.classes
+            : [];
+
+        populateSubclasses();
+
+    } catch (error) {
+
+        subclassSelect.replaceChildren();
+
+        subclassSelect.add(
+            new Option("Unable to load subclasses", "")
+        );
+
+        subclassSelect.disabled = true;
+
+        getElement("subclassHint").textContent =
+            error.message;
+
+        showToast(
+            `Subclasses could not be loaded: ${error.message}`,
+            "error"
+        );
+    }
+}
+
+/* =====================================================
+   POPULATE SUBCLASSES FOR SELECTED CLASS
+===================================================== */
+
+function populateSubclasses() {
+
+    const classId = assignmentClassSelect.value;
+
+    const academicYearId = academicYearSelect.value;
+
+    subclassSelect.replaceChildren();
+
+    if (!classId || !academicYearId) {
+
+        subclassSelect.add(
+            new Option("First select a class and academic year", "")
+        );
+
+        subclassSelect.disabled = true;
+
+        getElement("subclassHint").textContent =
+            "Select a class and academic year to view available subclasses.";
+
+        return;
+    }
+
+    const selectedClassData = subclassesByClass.find(
+        item => String(item.id) === String(classId)
+    );
+
+    if (!selectedClassData) {
+
+        subclassSelect.add(
+            new Option("No subclasses found for this class", "")
+        );
+
+        subclassSelect.disabled = true;
+
+        getElement("subclassHint").textContent =
+            "This class has no subclasses in the selected academic year.";
+
+        return;
+    }
+
+    const availableSubclasses = (
+        Array.isArray(selectedClassData.subclasses)
+            ? selectedClassData.subclasses
+            : []
+    ).filter(item =>
+        String(item.status || "active").toLowerCase() === "active"
+    );
+
+    if (!availableSubclasses.length) {
+
+        subclassSelect.add(
+            new Option("No active subclasses available", "")
+        );
+
+        subclassSelect.disabled = true;
+
+        getElement("subclassHint").textContent =
+            "Create or activate subclasses for this class and academic year first.";
+
+        return;
+    }
+
+    subclassSelect.add(
+        new Option("-- Select Subclass --", "")
+    );
+
+    availableSubclasses.forEach(item => {
+
+        subclassSelect.add(
+            new Option(
+                item.subclass_name,
+                String(item.id)
+            )
+        );
+    });
+
+    subclassSelect.disabled = false;
+
+    getElement("subclassHint").textContent =
+        `${availableSubclasses.length} active subclass(es) available for ${selectedClassData.class_name}.`;
+}
+
+/* =====================================================
+   ASSIGNMENT MODE
+===================================================== */
+
+function updateAssignmentMode() {
+
+    const mode = getAssignmentMode();
+
+    const subclassFields = getElement("subclassFields");
+
+    if (mode === "subclass") {
+
+        subclassFields.classList.add("visible");
+
+        // Load subclasses if an academic year is already selected.
+        if (academicYearSelect.value) {
+            populateSubclasses();
+        }
+
+    } else {
+
+        subclassFields.classList.remove("visible");
+    }
 }
 
 /* =====================================================
@@ -1170,8 +2046,7 @@ function filterSubjectsByClass() {
 
 function renderCurrentAssignments(teacher) {
 
-    const container =
-        document.getElementById("currentAssignments");
+    const container = getElement("currentAssignments");
 
     container.replaceChildren();
 
@@ -1183,6 +2058,7 @@ function renderCurrentAssignments(teacher) {
 
         const empty = document.createElement("span");
 
+        empty.className = "no-current";
         empty.textContent = "No assignments yet.";
 
         container.appendChild(empty);
@@ -1192,29 +2068,9 @@ function renderCurrentAssignments(teacher) {
 
     assignments.forEach(item => {
 
-        const wrapper = document.createElement("div");
-
-        wrapper.className = "assignment-item";
-
-        const label = document.createElement("span");
-
-        label.textContent =
-            `${item.class_name} — ${item.subject_name}`;
-
-        const removeButton = document.createElement("button");
-
-        removeButton.className = "remove-assignment";
-        removeButton.type = "button";
-        removeButton.textContent = "×";
-        removeButton.title = "Remove assignment";
-
-        removeButton.addEventListener("click", () => {
-            removeAssignment(item.assignment_id);
-        });
-
-        wrapper.append(label, removeButton);
-
-        container.appendChild(wrapper);
+        container.appendChild(
+            createAssignmentElement(item)
+        );
     });
 }
 
@@ -1226,22 +2082,22 @@ function openAddTeacher() {
 
     editMode = false;
 
-    document.getElementById("modalTitle").textContent =
+    getElement("modalTitle").textContent =
         "Add Teacher";
 
-    document.getElementById("teacherId").value = "";
+    getElement("teacherId").value = "";
 
-    document.getElementById("teacherName").value = "";
+    getElement("teacherName").value = "";
 
-    document.getElementById("teacherPhone").value = "";
+    getElement("teacherPhone").value = "";
 
     teacherEmailInput.value = "";
 
-    document.getElementById("staffNumber").value = "";
+    getElement("staffNumber").value = "";
 
-    document.getElementById("setupNotice").style.display = "block";
+    getElement("setupNotice").style.display = "flex";
 
-    document.getElementById("saveTeacherBtn").textContent =
+    getElement("saveTeacherBtn").textContent =
         "Create Teacher";
 
     teacherModal.style.display = "flex";
@@ -1255,27 +2111,27 @@ function openEditTeacher(teacher) {
 
     editMode = true;
 
-    document.getElementById("modalTitle").textContent =
+    getElement("modalTitle").textContent =
         "Edit Teacher";
 
-    document.getElementById("teacherId").value =
+    getElement("teacherId").value =
         teacher.id;
 
-    document.getElementById("teacherName").value =
+    getElement("teacherName").value =
         teacher.full_name || "";
 
-    document.getElementById("teacherPhone").value =
+    getElement("teacherPhone").value =
         teacher.phone || "";
 
     teacherEmailInput.value =
         teacher.email || "";
 
-    document.getElementById("staffNumber").value =
+    getElement("staffNumber").value =
         teacher.staff_number || "";
 
-    document.getElementById("setupNotice").style.display = "none";
+    getElement("setupNotice").style.display = "none";
 
-    document.getElementById("saveTeacherBtn").textContent =
+    getElement("saveTeacherBtn").textContent =
         "Update Teacher";
 
     teacherModal.style.display = "flex";
@@ -1286,6 +2142,7 @@ function openEditTeacher(teacher) {
 ===================================================== */
 
 function closeTeacherModal() {
+
     teacherModal.style.display = "none";
 }
 
@@ -1293,20 +2150,47 @@ function closeTeacherModal() {
    OPEN ASSIGNMENT MODAL
 ===================================================== */
 
-function openAssignment(teacher) {
+async function openAssignment(teacher) {
 
     activeTeacher = teacher;
 
-    document.getElementById("assignmentTeacherId").value =
+    getElement("assignmentTeacherId").value =
         teacher.id;
 
-    document.getElementById("assignmentClass").value = "";
+    assignmentClassSelect.value = "";
+
+    document.querySelector(
+        'input[name="assignmentMode"][value="default"]'
+    ).checked = true;
+
+    getElement("subclassFields").classList.remove("visible");
+
+    academicYearSelect.value = "";
+
+    subclassSelect.replaceChildren();
+
+    subclassSelect.add(
+        new Option("First select a class and academic year", "")
+    );
+
+    subclassSelect.disabled = true;
 
     filterSubjectsByClass();
 
     renderCurrentAssignments(teacher);
 
     assignmentModal.style.display = "flex";
+
+    // Refresh academic years when opening the modal.
+    await loadAcademicYears();
+
+    // Load the subclasses for the initially selected academic year.
+    if (academicYearSelect.value) {
+        await loadSubclasses();
+    }
+
+    // Keep the default assignment mode selected.
+    updateAssignmentMode();
 }
 
 /* =====================================================
@@ -1327,18 +2211,16 @@ function closeAssignmentModal() {
 async function saveTeacher() {
 
     const full_name =
-        document.getElementById("teacherName").value.trim();
+        getElement("teacherName").value.trim();
 
     const phone =
-        document.getElementById("teacherPhone").value.trim();
+        getElement("teacherPhone").value.trim();
 
     const email =
         teacherEmailInput.value.trim().toLowerCase();
 
     const staff_number =
-        document.getElementById("staffNumber").value.trim();
-
-    /* Validate required fields */
+        getElement("staffNumber").value.trim();
 
     if (!full_name || !phone || !email) {
 
@@ -1360,8 +2242,6 @@ async function saveTeacher() {
         return;
     }
 
-    /* Build payload matching the backend */
-
     const payload = {
         full_name,
         phone,
@@ -1372,11 +2252,10 @@ async function saveTeacher() {
     if (editMode) {
 
         payload.id =
-            document.getElementById("teacherId").value;
+            getElement("teacherId").value;
     }
 
-    const button =
-        document.getElementById("saveTeacherBtn");
+    const button = getElement("saveTeacherBtn");
 
     button.disabled = true;
 
@@ -1385,17 +2264,6 @@ async function saveTeacher() {
         : "Creating...";
 
     try {
-
-        /*
-         * Teacher creation:
-         * POST /api/teachers
-         *
-         * The backend creates the account with
-         * must_change_password = TRUE and sends
-         * the account setup invitation.
-         *
-         * No password is sent from this page.
-         */
 
         const endpoint = editMode
             ? "/api/teachers/update"
@@ -1440,13 +2308,25 @@ async function saveTeacher() {
 async function saveAssignment() {
 
     const teacher_id =
-        document.getElementById("assignmentTeacherId").value;
+        getElement("assignmentTeacherId").value;
 
     const class_id =
-        document.getElementById("assignmentClass").value;
+        assignmentClassSelect.value;
 
     const subject_id =
-        document.getElementById("assignmentSubject").value;
+        assignmentSubjectSelect.value;
+
+    const mode = getAssignmentMode();
+
+    if (!teacher_id) {
+
+        showToast(
+            "Teacher information is missing. Close and reopen the assignment window.",
+            "error"
+        );
+
+        return;
+    }
 
     if (!class_id || !subject_id) {
 
@@ -1458,27 +2338,75 @@ async function saveAssignment() {
         return;
     }
 
-    const button =
-        document.getElementById("saveAssignmentBtn");
+    /*
+       DEFAULT MODE:
+       Keep the original payload unchanged.
+
+       SUBCLASS MODE:
+       Send academic_year_id and subclass_id.
+    */
+
+    const payload = {
+        teacher_id,
+        class_id,
+        subject_id
+    };
+
+    if (mode === "subclass") {
+
+        const academic_year_id =
+            academicYearSelect.value;
+
+        const subclass_id =
+            subclassSelect.value;
+
+        if (!academic_year_id) {
+
+            showToast(
+                "Select an academic year.",
+                "error"
+            );
+
+            return;
+        }
+
+        if (!subclass_id) {
+
+            showToast(
+                "Select an active subclass.",
+                "error"
+            );
+
+            return;
+        }
+
+        payload.academic_year_id = academic_year_id;
+        payload.subclass_id = subclass_id;
+    }
+
+    const button = getElement("saveAssignmentBtn");
 
     button.disabled = true;
 
-    button.textContent = "Saving...";
+    button.textContent = "Saving assignment...";
 
     try {
 
-        await api("/api/teachers/assignments", {
-            method: "POST",
-
-            body: JSON.stringify({
-                teacher_id,
-                class_id,
-                subject_id
-            })
-        });
+        const result = await api(
+            "/api/teachers/assignments",
+            {
+                method: "POST",
+                body: JSON.stringify(payload)
+            }
+        );
 
         showToast(
-            "Teaching assignment saved successfully."
+            result.message ||
+            (
+                mode === "subclass"
+                    ? "Subclass-specific teaching assignment saved successfully."
+                    : "Default teaching assignment saved successfully."
+            )
         );
 
         await loadTeachers();
@@ -1494,9 +2422,16 @@ async function saveAssignment() {
             renderCurrentAssignments(updatedTeacher);
         }
 
-        document.getElementById("assignmentClass").value = "";
+        // Reset the class and subject selections after saving.
+        assignmentClassSelect.value = "";
 
         filterSubjectsByClass();
+
+        // Keep the selected assignment scope for convenience.
+        if (mode === "subclass") {
+
+            subclassSelect.value = "";
+        }
 
     } catch (error) {
 
@@ -1506,7 +2441,7 @@ async function saveAssignment() {
 
         button.disabled = false;
 
-        button.textContent = "+ Add Assignment";
+        button.textContent = "＋ Add Assignment";
     }
 }
 
@@ -1514,23 +2449,39 @@ async function saveAssignment() {
    EVENT LISTENERS
 ===================================================== */
 
-document.getElementById("addTeacherBtn")
+getElement("addTeacherBtn")
     .addEventListener("click", openAddTeacher);
 
-document.getElementById("cancelTeacherBtn")
+getElement("cancelTeacherBtn")
     .addEventListener("click", closeTeacherModal);
 
-document.getElementById("saveTeacherBtn")
+getElement("closeTeacherX")
+    .addEventListener("click", closeTeacherModal);
+
+getElement("saveTeacherBtn")
     .addEventListener("click", saveTeacher);
 
-document.getElementById("cancelAssignmentBtn")
+getElement("cancelAssignmentBtn")
     .addEventListener("click", closeAssignmentModal);
 
-document.getElementById("saveAssignmentBtn")
+getElement("closeAssignmentX")
+    .addEventListener("click", closeAssignmentModal);
+
+getElement("saveAssignmentBtn")
     .addEventListener("click", saveAssignment);
 
-document.getElementById("assignmentClass")
+assignmentClassSelect
     .addEventListener("change", filterSubjectsByClass);
+
+academicYearSelect
+    .addEventListener("change", loadSubclasses);
+
+document.querySelectorAll(
+    'input[name="assignmentMode"]'
+).forEach(input => {
+
+    input.addEventListener("change", updateAssignmentMode);
+});
 
 teacherModal.addEventListener("click", event => {
 
@@ -1542,6 +2493,15 @@ teacherModal.addEventListener("click", event => {
 assignmentModal.addEventListener("click", event => {
 
     if (event.target === assignmentModal) {
+        closeAssignmentModal();
+    }
+});
+
+document.addEventListener("keydown", event => {
+
+    if (event.key === "Escape") {
+
+        closeTeacherModal();
         closeAssignmentModal();
     }
 });
