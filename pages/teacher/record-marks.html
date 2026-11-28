@@ -365,6 +365,16 @@ td {
     <section class="record-card">
         <h2>Student Marks Entry</h2>
 
+        <div id="subclassFilterGroup" class="form-group selection-hidden">
+            <label for="subclassSelect">Filter by Subclass</label>
+            <select id="subclassSelect" disabled>
+                <option value="all">All Subclasses</option>
+            </select>
+            <small id="subclassFilterMessage" style="display:block;color:#64748b;margin-top:6px;">
+                Showing students from all subclasses.
+            </small>
+        </div>
+
         <div class="empty-state" id="studentsPlaceholder">
             Select your class, subject and open Test to continue.
         </div>
@@ -415,6 +425,7 @@ let selectedClassId = null;
 let selectedSubjectId = null;
 let selectedAssignment = null;
 let selectedTest = null;
+let selectedSubclass = "all";
 
 let academicPeriod = null;
 let optionsRequestNumber = 0;
@@ -440,6 +451,9 @@ const testInformation = document.getElementById("testInformation");
 const studentsBody = document.getElementById("studentsBody");
 const studentsPlaceholder = document.getElementById("studentsPlaceholder");
 const studentsTableContainer = document.getElementById("studentsTableContainer");
+const subclassFilterGroup = document.getElementById("subclassFilterGroup");
+const subclassSelect = document.getElementById("subclassSelect");
+const subclassFilterMessage = document.getElementById("subclassFilterMessage");
 
 const maximumInformation = document.getElementById("maximumInformation");
 const academicPeriodDisplay = document.getElementById("academicPeriodDisplay");
@@ -632,7 +646,10 @@ function selectClass(classId) {
     selectedSubjectId = null;
     selectedAssignment = null;
     selectedTest = null;
+    selectedSubclass = "all";
     maximumMark = null;
+
+    resetSubclassFilter();
 
     document.getElementById("teacherClass").textContent =
         getClasses().find(
@@ -953,12 +970,16 @@ async function loadStudents() {
         };
 
         if (students.length === 0) {
+            resetSubclassFilter();
             studentsPlaceholder.textContent =
                 "No active students were found in this class.";
 
             return;
         }
 
+        // Build subclass choices from the complete student list.
+        // Changing the filter redraws the table without reloading the test.
+        setupSubclassFilter();
         renderStudents();
 
     } catch (error) {
@@ -980,13 +1001,100 @@ async function loadStudents() {
    RENDER STUDENTS
 ===================================================== */
 
+function getStudentSubclass(student) {
+    const value =
+        student.subclass_name ??
+        student.subclassName ??
+        student.sub_class_name ??
+        student.subClassName ??
+        student.class_subclass ??
+        student.classSubclass ??
+        student.stream_name ??
+        student.streamName ??
+        student.section_name ??
+        student.sectionName ??
+        (typeof student.subclass === "string" ? student.subclass : null) ??
+        student.subclass?.name ??
+        student.subclass?.subclass_name ??
+        student.sub_class?.name ??
+        student.stream?.name ??
+        student.section?.name ??
+        null;
+
+    return String(value ?? "").trim();
+}
+
+function resetSubclassFilter() {
+    selectedSubclass = "all";
+    subclassSelect.innerHTML = '<option value="all">All Subclasses</option>';
+    subclassSelect.value = "all";
+    subclassSelect.disabled = true;
+    subclassFilterGroup.classList.add("selection-hidden");
+    subclassFilterMessage.textContent = "Showing students from all subclasses.";
+}
+
+function setupSubclassFilter() {
+    const subclassNames = [...new Set(
+        students.map(getStudentSubclass).filter(Boolean)
+    )].sort((a, b) => a.localeCompare(b));
+
+    subclassSelect.innerHTML = '<option value="all">All Subclasses</option>';
+
+    if (subclassNames.length === 0) {
+        resetSubclassFilter();
+        subclassFilterGroup.classList.remove("selection-hidden");
+        subclassSelect.disabled = true;
+        subclassFilterMessage.textContent =
+            students.length
+                ? "Subclass information is missing from the students API response. The page cannot separate subclasses until the API returns each student's subclass."
+                : "No students to filter.";
+        return false;
+    }
+
+    subclassNames.forEach(name => {
+        const option = document.createElement("option");
+        option.value = name;
+        option.textContent = name;
+        subclassSelect.appendChild(option);
+    });
+
+    subclassFilterGroup.classList.remove("selection-hidden");
+    subclassSelect.disabled = subclassNames.length <= 1;
+    subclassSelect.value = "all";
+    selectedSubclass = "all";
+
+    subclassFilterMessage.textContent = subclassNames.length > 1
+        ? `${students.length} students across ${subclassNames.length} subclasses.`
+        : `All ${students.length} students belong to ${subclassNames[0]}.`;
+
+    return true;
+}
+
+function getVisibleStudents() {
+    if (selectedSubclass === "all") return students;
+
+    return students.filter(student =>
+        getStudentSubclass(student) === selectedSubclass
+    );
+}
+
 function renderStudents() {
     studentsBody.innerHTML = "";
 
     maximumInformation.textContent =
         `Maximum mark: ${maximumMark}`;
 
-    students.forEach((student, index) => {
+    const visibleStudents = getVisibleStudents();
+
+    if (visibleStudents.length === 0) {
+        studentsTableContainer.classList.add("selection-hidden");
+        studentsPlaceholder.style.display = "block";
+        studentsPlaceholder.textContent =
+            `No students found in subclass "${selectedSubclass}".`;
+        return;
+    }
+
+    visibleStudents.forEach((student, index) => {
         const row = document.createElement("tr");
 
         const numberCell = document.createElement("td");
@@ -1053,7 +1161,6 @@ function renderStudents() {
     studentsTableContainer.classList.remove("selection-hidden");
     testInformation.textContent = "";
     testInformation.classList.add("selection-hidden");
-
 }
 
 /* =====================================================
@@ -1062,6 +1169,7 @@ function renderStudents() {
 
 function clearStudents() {
     students = [];
+    resetSubclassFilter();
     studentsBody.innerHTML = "";
 
     studentsPlaceholder.style.display = "block";
@@ -1301,6 +1409,26 @@ studentsBody.addEventListener("keydown", event => {
 });
 
 /* =====================================================
+   SUBCLASS FILTER EVENT
+===================================================== */
+
+subclassSelect.addEventListener("change", () => {
+    if (!students.length) return;
+
+    // Keep the chosen subclass; only redraw the visible student rows.
+    selectedSubclass = subclassSelect.value || "all";
+
+    const visibleCount = getVisibleStudents().length;
+    const totalCount = students.length;
+
+    subclassFilterMessage.textContent = selectedSubclass === "all"
+        ? `Showing all ${totalCount} students.`
+        : `Showing ${visibleCount} of ${totalCount} students in ${selectedSubclass}.`;
+
+    renderStudents();
+});
+
+/* =====================================================
    TEST DROPDOWN EVENT
 ===================================================== */
 
@@ -1338,7 +1466,10 @@ function resetSelectionsForAcademicPeriod() {
     selectedSubjectId = null;
     selectedAssignment = null;
     selectedTest = null;
+    selectedSubclass = "all";
     maximumMark = null;
+
+    resetSubclassFilter();
 
     document.getElementById("teacherClass").textContent = "Not selected";
     document.getElementById("teacherSubject").textContent = "Not selected";
