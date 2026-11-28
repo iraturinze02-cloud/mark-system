@@ -3,7 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <meta name="description" content="Teacher results and academic performance analysis - Fila Grades System">
 <meta name="theme-color" content="#173f70">
 
@@ -406,6 +405,58 @@ button, select {
     display: none !important;
 }
 
+/* Assessment header: first five characters + MORE */
+.assessment-header {
+    min-width: 85px;
+    max-width: 120px;
+    text-align: center !important;
+    white-space: normal !important;
+    vertical-align: middle;
+}
+
+.assessment-short-name {
+    display: block;
+    font-weight: 700;
+    font-size: 13px;
+    overflow-wrap: anywhere;
+}
+
+.assessment-more {
+    display: block;
+    margin: 5px auto 0;
+    padding: 3px 7px;
+    border: 1px solid rgba(255,255,255,.5);
+    border-radius: 5px;
+    background: rgba(255,255,255,.12);
+    color: white;
+    font-size: 10px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.assessment-more:hover {
+    background: white;
+    color: var(--primary);
+}
+
+.assessment-full-name {
+    display: block;
+    margin-top: 7px;
+    padding: 7px;
+    border-radius: 6px;
+    background: white;
+    color: var(--text);
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.4;
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+.assessment-full-name.hidden {
+    display: none !important;
+}
+
 @media(max-width: 1050px) {
     .filters {
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -470,7 +521,8 @@ button, select {
     }
 
     .no-print,
-    .filters-panel {
+    .filters-panel,
+    .assessment-more {
         display: none !important;
     }
 
@@ -493,6 +545,10 @@ button, select {
     .results-table td {
         padding: 6px;
     }
+
+    .assessment-full-name.hidden {
+        display: none !important;
+    }
 }
 </style>
 </head>
@@ -509,7 +565,6 @@ button, select {
 
         <div class="header-actions no-print">
             <button class="btn btn-light" id="printBtn">Print</button>
-
             <button class="btn btn-primary" id="csvBtn" disabled>
                 Download CSV
             </button>
@@ -629,11 +684,9 @@ button, select {
     <section class="analysis-grid" style="margin-bottom:20px">
 
         <div class="analysis-card">
-
             <h3>Gender Performance Analysis</h3>
 
             <table class="analysis-table">
-
                 <thead>
                     <tr>
                         <th>Gender</th>
@@ -644,7 +697,6 @@ button, select {
                 </thead>
 
                 <tbody>
-
                     <tr>
                         <td>Girls</td>
                         <td class="number pass" id="girlsPassed">0</td>
@@ -658,19 +710,15 @@ button, select {
                         <td class="number fail" id="boysFailed">0</td>
                         <td class="number" id="boysRecorded">0</td>
                     </tr>
-
                 </tbody>
-
             </table>
 
             <p style="font-size:11px;color:#64748b;margin-top:14px">
                 Gender analysis includes students with recorded marks only.
             </p>
-
         </div>
 
         <div class="analysis-card">
-
             <h3>Score Distribution</h3>
 
             <p style="font-size:11px;color:#64748b;margin-top:-8px">
@@ -682,7 +730,6 @@ button, select {
                     Select an assessment to view score distribution.
                 </div>
             </div>
-
         </div>
 
     </section>
@@ -690,18 +737,15 @@ button, select {
     <section class="panel">
 
         <div class="results-heading">
-
             <h2>Student Results</h2>
 
             <span id="maximumMark"
                   style="font-size:12px;color:#64748b">
                 Maximum mark: —
             </span>
-
         </div>
 
         <div class="table-wrap">
-
             <table class="results-table">
 
                 <thead id="resultsHead">
@@ -717,20 +761,19 @@ button, select {
                 </thead>
 
                 <tbody id="resultsBody">
-
                     <tr>
                         <td colspan="7" class="empty">
                             Select an academic period, class, subject and assessment.
                         </td>
                     </tr>
-
                 </tbody>
 
             </table>
-
         </div>
 
     </section>
+
+</main>
 
 <script>
 "use strict";
@@ -769,6 +812,10 @@ const API = {
 };
 
 const PASS_MARK = 50;
+
+/* =====================================================
+   USER HELPERS
+===================================================== */
 
 function getRole() {
     return (
@@ -851,7 +898,7 @@ function setOptions(select, items, placeholder, valueKey, labelFunction) {
 }
 
 /* =====================================================
-   RESET
+   RESET RESULTS
 ===================================================== */
 
 function resetResults() {
@@ -930,7 +977,14 @@ async function initialize() {
     try {
         state.role = getRole();
 
-        if (!["teacher", "school_admin", "sector_admin"].includes(state.role)) {
+        const allowedRoles = [
+            "teacher",
+            "school_admin",
+            "dos",
+            "sector_admin"
+        ];
+
+        if (!allowedRoles.includes(state.role)) {
             throw new Error(
                 "You are not authorized to view teacher results."
             );
@@ -944,13 +998,14 @@ async function initialize() {
             return;
         }
 
-        if (state.role === "school_admin") {
+        if (state.role === "school_admin" || state.role === "dos") {
             $("teacherField").classList.remove("hidden");
 
             await loadSchoolTeachers();
             return;
         }
 
+        // Teacher sees their own results.
         await loadCalendar();
 
     } catch (error) {
@@ -970,9 +1025,7 @@ async function loadSectorSchools() {
         : [];
 
     if (!state.schools.length) {
-        throw new Error(
-            "No schools were found in your sector."
-        );
+        throw new Error("No schools were found in your sector.");
     }
 
     setOptions(
@@ -1021,7 +1074,14 @@ async function onSectorSchoolChange() {
     $("yearSelect").disabled = true;
     $("termSelect").disabled = true;
 
-    if (!schoolId) return;
+    $("teacherName").textContent = "—";
+    $("className").textContent = "—";
+    $("subjectName").textContent = "—";
+
+    if (!schoolId) {
+        $("schoolName").textContent = "—";
+        return;
+    }
 
     localStorage.setItem("targetSchoolId", schoolId);
 
@@ -1053,7 +1113,7 @@ async function onSectorSchoolChange() {
         teacher => teacher.full_name
     );
 
-    $("teacherSelect").disabled = false;
+    $("teacherSelect").disabled = teachers.length === 0;
 
     const savedTeacherId = getStoredTeacherId();
 
@@ -1068,10 +1128,19 @@ async function onSectorSchoolChange() {
     }
 
     await loadCalendar();
+
+    // If a teacher was restored, load the selected period's results.
+    if (
+        state.teacherId &&
+        $("yearSelect").value &&
+        $("termSelect").value
+    ) {
+        await loadResults();
+    }
 }
 
 /* =====================================================
-   SCHOOL ADMIN TEACHER SELECTION
+   SCHOOL ADMIN / DOS TEACHER SELECTION
 ===================================================== */
 
 async function loadSchoolTeachers() {
@@ -1138,7 +1207,7 @@ async function loadCalendar() {
         year => year.year_name
     );
 
-    $("yearSelect").disabled = false;
+    $("yearSelect").disabled = state.academicYears.length === 0;
     $("termSelect").disabled = true;
 
     const activeYear = data.active_academic_year;
@@ -1173,14 +1242,15 @@ async function loadCalendar() {
         }
 
         await loadResults();
-    } else if (state.teacherId) {
-        if (
-            activeTerm &&
-            $("yearSelect").value &&
-            $("termSelect").value === String(activeTerm.id)
-        ) {
-            await loadResults();
-        }
+        return;
+    }
+
+    if (
+        state.teacherId &&
+        $("yearSelect").value &&
+        $("termSelect").value
+    ) {
+        await loadResults();
     }
 }
 
@@ -1191,7 +1261,9 @@ function onYearChange() {
         item => String(item.id) === $("yearSelect").value
     );
 
-    const terms = year?.terms || [];
+    const terms = Array.isArray(year?.terms)
+        ? year.terms
+        : [];
 
     setOptions(
         $("termSelect"),
@@ -1201,7 +1273,7 @@ function onYearChange() {
         term => term.term_name
     );
 
-    $("termSelect").disabled = !terms.length;
+    $("termSelect").disabled = terms.length === 0;
 }
 
 /* =====================================================
@@ -1227,11 +1299,19 @@ async function loadResults() {
         term_id: termId
     });
 
-    if (state.role === "school_admin") {
+    if (
+        state.role === "school_admin" ||
+        state.role === "dos"
+    ) {
         params.set("teacher_id", state.teacherId);
     }
 
     if (state.role === "sector_admin") {
+        if (!state.schoolId) {
+            showMessage("Please select a school.");
+            return;
+        }
+
         params.set("school_id", state.schoolId);
         params.set("teacher_id", state.teacherId);
     }
@@ -1241,7 +1321,7 @@ async function loadResults() {
             API.results + "?" + params.toString()
         );
 
-        state.teacher = data.teacher;
+        state.teacher = data.teacher || null;
 
         state.assignments = Array.isArray(data.assignments)
             ? data.assignments
@@ -1284,10 +1364,9 @@ function renderAssignments() {
         const option = document.createElement("option");
 
         option.value = String(index);
-
         option.textContent =
-            assignment.class_name + " - " +
-            assignment.subject_name;
+            (assignment.class_name || "Class") + " - " +
+            (assignment.subject_name || "Subject");
 
         select.appendChild(option);
     });
@@ -1299,6 +1378,24 @@ function renderAssignments() {
         select.value = "0";
         onAssignmentChange();
     }
+}
+
+/* =====================================================
+   ASSESSMENT DATE SORTING
+===================================================== */
+
+function getAssessmentTimestamp(assessment) {
+    const dateValue =
+        assessment.created_at ||
+        assessment.exam_date ||
+        assessment.date ||
+        null;
+
+    if (!dateValue) return 0;
+
+    const timestamp = new Date(dateValue).getTime();
+
+    return Number.isFinite(timestamp) ? timestamp : 0;
 }
 
 /* =====================================================
@@ -1324,7 +1421,8 @@ function prepareAssessments(assignment) {
             name: test.name || "Unnamed test",
             maximum_mark: Number(test.maximum_mark || 0),
             students: normalizeAssessmentStudents(test.students),
-            created_at: test.created_at || null
+            created_at: test.created_at || null,
+            exam_date: null
         });
     });
 
@@ -1342,8 +1440,23 @@ function prepareAssessments(assignment) {
                 exam.total_marks || exam.maximum_mark || 0
             ),
             students: normalizeAssessmentStudents(exam.students),
-            created_at: exam.created_at || null
+            created_at: exam.created_at || null,
+            exam_date: exam.exam_date || null
         });
+    });
+
+    // Newest assessments first.
+    assessments.sort((a, b) => {
+        const dateDifference =
+            getAssessmentTimestamp(b) -
+            getAssessmentTimestamp(a);
+
+        if (dateDifference !== 0) {
+            return dateDifference;
+        }
+
+        return Number(b.source_id || 0) -
+            Number(a.source_id || 0);
     });
 
     return assessments;
@@ -1405,7 +1518,6 @@ function onAssignmentChange() {
     state.assessments = prepareAssessments(assignment);
 
     const select = $("testSelect");
-
     select.innerHTML = "";
 
     const allOption = document.createElement("option");
@@ -1417,7 +1529,6 @@ function onAssignmentChange() {
         const option = document.createElement("option");
 
         option.value = assessment.id;
-
         option.textContent =
             (assessment.type === "exam" ? "EXAM: " : "TEST: ") +
             assessment.name;
@@ -1519,6 +1630,19 @@ function getStudentKey(student) {
     return String(student.id);
 }
 
+function sortStudentsAlphabetically(students) {
+    return [...students].sort((a, b) => {
+        return String(a.name || "").localeCompare(
+            String(b.name || ""),
+            undefined,
+            {
+                sensitivity: "base",
+                numeric: true
+            }
+        );
+    });
+}
+
 /* =====================================================
    COMBINE STUDENTS ACROSS ASSESSMENTS
 ===================================================== */
@@ -1551,8 +1675,8 @@ function buildCombinedRows() {
         });
     });
 
-    return Array.from(studentMap.values()).sort((a, b) =>
-        String(a.name).localeCompare(String(b.name))
+    return sortStudentsAlphabetically(
+        Array.from(studentMap.values())
     );
 }
 
@@ -1596,9 +1720,9 @@ function calculateCombinedResult(student) {
     });
 
     /*
-       Preserve the previous results-page calculation:
-       missing assessment marks contribute zero to the aggregate.
-       They remain displayed as — in the individual columns.
+       This preserves the existing aggregate calculation:
+       missing assessment marks contribute zero to the combined result.
+       Individual missing marks still display as —.
     */
 
     const totalRecordedMaximum =
@@ -1630,7 +1754,6 @@ function calculateCombinedResult(student) {
 
 function renderCombinedHeader() {
     const head = $("resultsHead");
-
     const row = document.createElement("tr");
 
     const columns = [
@@ -1648,12 +1771,60 @@ function renderCombinedHeader() {
 
     state.assessments.forEach(assessment => {
         const th = document.createElement("th");
+        th.className = "assessment-header";
 
-        th.textContent =
-            (assessment.type === "exam" ? "EXAM: " : "TEST: ") +
-            assessment.name +
-            " / " +
-            formatMark(assessment.maximum_mark);
+        const fullName = String(assessment.name || "Unnamed");
+
+        const shortName = document.createElement("span");
+        shortName.className = "assessment-short-name";
+        shortName.textContent = fullName.slice(0, 5);
+
+        th.appendChild(shortName);
+
+        if (fullName.length > 5) {
+            const moreButton = document.createElement("button");
+
+            moreButton.type = "button";
+            moreButton.className = "assessment-more";
+            moreButton.textContent = "MORE";
+            moreButton.setAttribute("aria-expanded", "false");
+
+            const fullNameElement = document.createElement("span");
+            fullNameElement.className =
+                "assessment-full-name hidden";
+
+            fullNameElement.textContent =
+                (assessment.type === "exam" ? "EXAM: " : "TEST: ") +
+                fullName +
+                " (Maximum: " +
+                formatMark(assessment.maximum_mark) +
+                ")";
+
+            moreButton.addEventListener("click", () => {
+                const isHidden =
+                    fullNameElement.classList.contains("hidden");
+
+                fullNameElement.classList.toggle("hidden");
+
+                moreButton.textContent =
+                    isHidden ? "LESS" : "MORE";
+
+                moreButton.setAttribute(
+                    "aria-expanded",
+                    String(isHidden)
+                );
+            });
+
+            th.appendChild(moreButton);
+            th.appendChild(fullNameElement);
+        } else {
+            const maximum = document.createElement("span");
+            maximum.className = "assessment-full-name";
+            maximum.textContent =
+                "Max: " + formatMark(assessment.maximum_mark);
+
+            th.appendChild(maximum);
+        }
 
         row.appendChild(th);
     });
@@ -1714,7 +1885,6 @@ function renderCombinedResults() {
 
     state.resultRows.forEach((item, index) => {
         const { student, result } = item;
-
         const row = document.createElement("tr");
 
         appendCell(row, index + 1);
@@ -1724,11 +1894,7 @@ function renderCombinedResults() {
 
         state.assessments.forEach(assessment => {
             const mark = student.marks[assessment.id];
-
-            appendCell(
-                row,
-                formatMark(mark)
-            );
+            appendCell(row, formatMark(mark));
         });
 
         appendCell(
@@ -1796,7 +1962,6 @@ function appendCell(row, value, className = "") {
 
 function appendStatusCell(row, status) {
     const cell = document.createElement("td");
-
     const pill = document.createElement("span");
 
     pill.className = "status-pill " +
@@ -1823,7 +1988,11 @@ function renderSingleAssessmentResults() {
 
     if (!assessment) return;
 
-    const students = assessment.students || [];
+    // Sort individual assessment students A-Z too.
+    const students = sortStudentsAlphabetically(
+        assessment.students || []
+    );
+
     const maximumMark = Number(assessment.maximum_mark);
 
     $("maximumMark").textContent =
@@ -1864,7 +2033,6 @@ function renderSingleAssessmentResults() {
         );
 
         const status = getResultStatus(percentage);
-
         const row = document.createElement("tr");
 
         appendCell(row, index + 1);
@@ -1890,16 +2058,19 @@ function createAnalysisCounters() {
         passed: 0,
         failed: 0,
         unrecorded: 0,
+
         girls: {
             passed: 0,
             failed: 0,
             recorded: 0
         },
+
         boys: {
             passed: 0,
             failed: 0,
             recorded: 0
         },
+
         distribution: Array.from(
             { length: 11 },
             (_, index) => ({
@@ -2016,9 +2187,11 @@ function updateSingleAssessmentAnalysis() {
         return;
     }
 
-    const students = assessment.students || [];
-    const maximumMark = Number(assessment.maximum_mark);
+    const students = sortStudentsAlphabetically(
+        assessment.students || []
+    );
 
+    const maximumMark = Number(assessment.maximum_mark);
     const counters = createAnalysisCounters();
 
     students.forEach(student => {
@@ -2077,7 +2250,6 @@ function renderDistribution(distribution, recorded) {
         count.textContent = item.count;
 
         row.append(label, track, count);
-
         container.appendChild(row);
     });
 }
@@ -2119,12 +2291,14 @@ function downloadCSV() {
             "Student Name",
             "Student Code",
             "Gender",
+
             ...state.assessments.map(
                 assessment =>
                     (assessment.type === "exam" ? "EXAM: " : "TEST: ") +
                     assessment.name +
                     " (Max " + assessment.maximum_mark + ")"
             ),
+
             "Total Tests",
             "Total Exams",
             "Overall Total",
@@ -2149,9 +2323,11 @@ function downloadCSV() {
                 result.totalTests + "/" + result.totalTestsMaximum,
                 result.totalExams + "/" + result.totalExamsMaximum,
                 result.totalMark + "/" + result.totalRecordedMaximum,
+
                 result.percentage === null
                     ? ""
                     : result.percentage.toFixed(1) + "%",
+
                 result.status
             ]);
         });
@@ -2181,7 +2357,11 @@ function downloadCSV() {
             "Result"
         ]);
 
-        assessment.students.forEach((student, index) => {
+        const sortedStudents = sortStudentsAlphabetically(
+            assessment.students || []
+        );
+
+        sortedStudents.forEach((student, index) => {
             const percentage = getPercentage(
                 student.mark,
                 maximumMark
@@ -2193,9 +2373,11 @@ function downloadCSV() {
                 student.student_code || "",
                 student.gender || "",
                 student.mark ?? "",
+
                 percentage === null
                     ? ""
                     : percentage.toFixed(1) + "%",
+
                 getResultStatus(percentage)
             ]);
         });
@@ -2253,16 +2435,25 @@ $("teacherSelect").addEventListener("change", async () => {
             "targetTeacher",
             state.teacherId
         );
+    } else {
+        localStorage.removeItem("targetTeacher");
     }
 
     resetResults();
 
-    if (state.role === "school_admin") {
+    if (
+        state.role === "school_admin" ||
+        state.role === "dos"
+    ) {
         await loadCalendar();
-    } else if (
+        return;
+    }
+
+    if (
         state.role === "sector_admin" &&
         $("yearSelect").value &&
-        $("termSelect").value
+        $("termSelect").value &&
+        state.teacherId
     ) {
         await loadResults();
     }
@@ -2298,5 +2489,3 @@ initialize();
 
 </body>
 </html>
-    
-</main>
