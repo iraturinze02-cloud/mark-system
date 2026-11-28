@@ -158,7 +158,6 @@ async function loadActiveSchoolPeriods(client, schoolIds) {
             ay.school_id,
             ay.id AS academic_year_id,
             ay.year_name,
-
             t.id AS term_id,
             t.term_name,
             t.term_number
@@ -199,11 +198,6 @@ async function loadActiveSchoolPeriods(client, schoolIds) {
 
 /* =====================================================
    LOAD PERIODS USING ORIGINAL TEST CREATION DATE
-
-   Used for older test_schools records whose
-   academic_year_id and term_id are NULL.
-
-   This avoids assigning today's period to an older test.
 ===================================================== */
 
 async function loadPeriodsAtTestCreation(
@@ -221,7 +215,6 @@ async function loadPeriodsAtTestCreation(
             ay.school_id,
             ay.id AS academic_year_id,
             ay.year_name,
-
             t.id AS term_id,
             t.term_name,
             t.term_number
@@ -281,8 +274,10 @@ async function loadPeriodsAtTestCreation(
    Manage tests belonging to their school.
 
    TEACHER:
-   Can initiate and close ONLY tests they created.
-   Cannot update or delete tests.
+   Can edit, initiate, close and delete their own
+   tests, subject to test status and assignments.
+
+   Teachers cannot manage another user's tests.
 ===================================================== */
 
 export async function onRequestPost(context) {
@@ -345,25 +340,6 @@ export async function onRequestPost(context) {
         }, 400);
     }
 
-    /* ---------------------------------------------
-       TEACHER PERMISSIONS
-
-       Teachers can only initiate and close their
-       own tests.
-
-       They cannot update or delete tests.
-    --------------------------------------------- */
-
-    if (
-        isTeacher &&
-        !["initiate", "close"].includes(action)
-    ) {
-        return json({
-            success: false,
-            message: "Teachers can only initiate or close tests they created."
-        }, 403);
-    }
-
     let client;
     let transactionStarted = false;
 
@@ -379,11 +355,11 @@ export async function onRequestPost(context) {
            Administrator authorization is based on
            organizational scope.
 
-           Teacher authorization additionally requires:
+           Teacher authorization requires:
            1. The teacher created the test.
-           2. The teacher still has an assignment
-              matching the test's school, class and
-              subject.
+           2. The test belongs to the teacher's school.
+           3. The teacher still has at least one matching
+              class and subject assignment.
         --------------------------------------------- */
 
         let testResult;
@@ -408,6 +384,9 @@ export async function onRequestPost(context) {
             ["school_admin", "dos"].includes(auth.role)
         ) {
             if (!auth.schoolId) {
+                await client.query("ROLLBACK");
+                transactionStarted = false;
+
                 return json({
                     success: false,
                     message: "Your account is not linked to a school."
@@ -487,21 +466,16 @@ export async function onRequestPost(context) {
         /* ---------------------------------------------
            DELETE TEST
 
-           Only administrators can delete tests.
-           Only draft tests can be deleted.
+           Administrators:
+           Can delete tests within their scope.
+
+           Teachers:
+           Can delete only their own draft tests.
+
+           Tests linked to examinations cannot be deleted.
         --------------------------------------------- */
 
         if (action === "delete") {
-            if (isTeacher) {
-                await client.query("ROLLBACK");
-                transactionStarted = false;
-
-                return json({
-                    success: false,
-                    message: "Teachers are not allowed to delete tests."
-                }, 403);
-            }
-
             if (test.status !== "draft") {
                 await client.query("ROLLBACK");
                 transactionStarted = false;
@@ -659,21 +633,16 @@ export async function onRequestPost(context) {
         /* ---------------------------------------------
            UPDATE TEST
 
-           Only administrators can edit tests.
-           Only draft tests can be edited.
+           Administrators:
+           Can edit draft tests within their scope.
+
+           Teachers:
+           Can edit only their own draft tests.
+           They must use their assigned school,
+           classes and subjects.
         --------------------------------------------- */
 
         if (action === "update") {
-            if (isTeacher) {
-                await client.query("ROLLBACK");
-                transactionStarted = false;
-
-                return json({
-                    success: false,
-                    message: "Teachers are not allowed to edit tests."
-                }, 403);
-            }
-
             if (test.status !== "draft") {
                 await client.query("ROLLBACK");
                 transactionStarted = false;
@@ -713,6 +682,29 @@ export async function onRequestPost(context) {
             const subjectIds = uniqueIds(
                 getValue(data, "subject_ids", "subjectIds")
             );
+
+            /* -----------------------------------------
+               TEACHER SCHOOL RESTRICTION
+
+               A teacher belongs to one school.
+
+               Ignore school IDs sent by the browser.
+               The test's existing school is authoritative.
+            ----------------------------------------- */
+
+            if (isTeacher) {
+                if (!test.school_id) {
+                    await client.query("ROLLBACK");
+                    transactionStarted = false;
+
+                    return json({
+                        success: false,
+                        message: "This test is not linked to a school."
+                    }, 400);
+                }
+
+                schoolIds = [String(test.school_id)];
+            }
 
             // School Admin and DOS can only manage
             // their own school's tests.
@@ -796,7 +788,38 @@ export async function onRequestPost(context) {
                         auth.sectorId
                     ]
                 );
-            } else {
+            }
+
+            else if (isTeacher) {
+                validSchools = await client.query(
+                    `
+                    SELECT s.id
+
+                    FROM schools s
+
+                    WHERE s.id = $1
+                      AND s.status = 'active'
+
+                      AND EXISTS (
+                          SELECT 1
+
+                          FROM teachers tr
+
+                          INNER JOIN teacher_assignments ta
+                              ON ta.teacher_id = tr.id
+
+                          WHERE tr.user_id = $2
+                            AND ta.school_id = s.id
+                      )
+                    `,
+                    [
+                        schoolIds[0],
+                        auth.userId
+                    ]
+                );
+            }
+
+            else {
                 validSchools = await client.query(
                     `
                     SELECT id
@@ -814,7 +837,7 @@ export async function onRequestPost(context) {
 
                 return json({
                     success: false,
-                    message: "One or more selected schools are invalid."
+                    message: "One or more selected schools are invalid or not assigned to your account."
                 }, 400);
             }
 
@@ -896,6 +919,72 @@ export async function onRequestPost(context) {
                     success: false,
                     message: "One or more selected subjects are invalid."
                 }, 400);
+            }
+
+            /* -----------------------------------------
+               TEACHER CLASS AND SUBJECT ASSIGNMENT CHECK
+
+               Every selected class must be assigned
+               together with every selected subject.
+
+               This prevents a teacher from adding a
+               class or subject outside their assignments.
+            ----------------------------------------- */
+
+            if (isTeacher) {
+                const assignmentResult = await client.query(
+                    `
+                    SELECT
+                        ta.class_id,
+                        ta.subject_id
+
+                    FROM teachers tr
+
+                    INNER JOIN teacher_assignments ta
+                        ON ta.teacher_id = tr.id
+
+                    WHERE tr.user_id = $1
+                      AND ta.school_id = $2
+
+                      AND ta.class_id = ANY($3::bigint[])
+                      AND ta.subject_id = ANY($4::bigint[])
+                    `,
+                    [
+                        auth.userId,
+                        schoolIds[0],
+                        classIds,
+                        subjectIds
+                    ]
+                );
+
+                const assignedCombinations = new Set(
+                    assignmentResult.rows.map(row =>
+                        `${row.class_id}:${row.subject_id}`
+                    )
+                );
+
+                const missingAssignments = [];
+
+                for (const classId of classIds) {
+                    for (const subjectId of subjectIds) {
+                        const combination =
+                            `${classId}:${subjectId}`;
+
+                        if (!assignedCombinations.has(combination)) {
+                            missingAssignments.push(combination);
+                        }
+                    }
+                }
+
+                if (missingAssignments.length > 0) {
+                    await client.query("ROLLBACK");
+                    transactionStarted = false;
+
+                    return json({
+                        success: false,
+                        message: "You can only select classes and subjects assigned to you. One or more selected combinations are not assigned to your account."
+                    }, 403);
+                }
             }
 
             /* -----------------------------------------
