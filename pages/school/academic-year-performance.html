@@ -4,8 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Academic Year Performance Analysis | Fila Grades</title>
-<link rel="stylesheet" href="../css/school-sidebar.css">
-<link rel="stylesheet" href="../css/sector-sidebar.css">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 <style>
 :root{--navy:#123b67;--blue:#1769aa;--green:#16834a;--red:#c0392b;--orange:#b96a0b;--ink:#172b4d;--muted:#64748b;--line:#e2e8f0;--bg:#f4f7fb}
@@ -68,8 +66,6 @@ tbody tr:hover{background:#f8fbff}
 </style>
 </head>
 <body>
-<div id="schoolSidebarContainer"></div>
-<div id="sectorSidebarContainer" style="display:none"></div>
 <main class="main">
   <header class="page-head">
     <div>
@@ -141,8 +137,6 @@ tbody tr:hover{background:#f8fbff}
 <script>
 window.FILA_PAGE_AUTH = { roles: ["sector_admin", "school_admin", "dos"] };
 </script>
-<script src="../js/school-sidebar.js"></script>
-<script src="../js/sector-sidebar.js"></script>
 <script src="../js/auth-guard.js"></script>
 <script>
 "use strict";
