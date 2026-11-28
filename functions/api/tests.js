@@ -28,15 +28,43 @@ function validClosingAt(value) {
 
     const date = new Date(value);
 
-    if (Number.isNaN(date.getTime())) {
-        return undefined;
-    }
-
-    if (date.getTime() <= Date.now()) {
+    if (Number.isNaN(date.getTime()) || date.getTime() <= Date.now()) {
         return undefined;
     }
 
     return date.toISOString();
+}
+
+/*
+ * A teacher must belong to exactly one school.
+ * The school is always derived from database assignments.
+ */
+async function getTeacherSchool(client, userId) {
+    const result = await client.query(
+        `
+        SELECT DISTINCT ta.school_id
+        FROM teachers tr
+        INNER JOIN teacher_assignments ta
+            ON ta.teacher_id = tr.id
+        WHERE tr.user_id = $1
+        ORDER BY ta.school_id
+        `,
+        [userId]
+    );
+
+    if (result.rows.length === 0) {
+        throw new Error(
+            "You do not have any teaching assignments."
+        );
+    }
+
+    if (result.rows.length !== 1) {
+        throw new Error(
+            "Your teaching assignments are linked to more than one school. Please contact your school administrator."
+        );
+    }
+
+    return String(result.rows[0].school_id);
 }
 
 /* =====================================================
@@ -45,7 +73,7 @@ function validClosingAt(value) {
 
 function validateSubjectMarks(subjectIds, subjectMarks) {
     const marksMap = new Map(
-        subjectIds.map(subjectId => [subjectId, 100])
+        subjectIds.map(id => [id, 100])
     );
 
     if (
@@ -119,10 +147,7 @@ function validateSubjectMarks(subjectIds, subjectMarks) {
 
         const totalMarks = Number(rawMarks);
 
-        if (
-            !Number.isFinite(totalMarks) ||
-            totalMarks <= 0
-        ) {
+        if (!Number.isFinite(totalMarks) || totalMarks <= 0) {
             return {
                 valid: false,
                 message: "Maximum marks must be a positive number."
@@ -160,15 +185,12 @@ async function closeExpiredTests(client) {
 
 /* =====================================================
    GET: LOAD TESTS
-   SUPPORTS ACADEMIC YEAR AND TERM FILTERING
 ===================================================== */
 
 export async function onRequestGet(context) {
     const auth = await requireTestUser(context);
 
-    if (auth.error) {
-        return auth.error;
-    }
+    if (auth.error) return auth.error;
 
     let client;
 
@@ -177,28 +199,32 @@ export async function onRequestGet(context) {
 
         await closeExpiredTests(client);
 
+        let teacherSchoolId = null;
+
+        if (auth.role === "teacher") {
+            teacherSchoolId = await getTeacherSchool(
+                client,
+                auth.userId
+            );
+        }
+
         let visibilityCondition = "";
         const parameters = [];
 
         /* ---------------------------------------------
-           SECTOR ADMIN VISIBILITY
+           SECTOR ADMIN
         --------------------------------------------- */
 
         if (auth.role === "sector_admin") {
-            visibilityCondition = `
-                t.sector_id = $1
-            `;
-
+            visibilityCondition = `t.sector_id = $1`;
             parameters.push(auth.sectorId);
         }
 
         /* ---------------------------------------------
-           SCHOOL ADMIN AND DOS VISIBILITY
+           SCHOOL ADMIN AND DOS
         --------------------------------------------- */
 
-        else if (
-            ["school_admin", "dos"].includes(auth.role)
-        ) {
+        else if (["school_admin", "dos"].includes(auth.role)) {
             if (!auth.schoolId) {
                 return json({
                     success: false,
@@ -209,7 +235,6 @@ export async function onRequestGet(context) {
             visibilityCondition = `
                 (
                     t.school_id = $1
-
                     OR EXISTS (
                         SELECT 1
                         FROM test_schools visible_school
@@ -223,10 +248,10 @@ export async function onRequestGet(context) {
         }
 
         /* ---------------------------------------------
-           TEACHER VISIBILITY
+           TEACHER
 
-           Teachers see tests that match at least one
-           of their assigned class-subject combinations.
+           Teachers see tests matching their assigned
+           class-subject combinations in their school.
 
            This includes tests created by administrators
            and other teachers.
@@ -250,18 +275,22 @@ export async function onRequestGet(context) {
                         ON tsu.test_id = t.id
                        AND tsu.subject_id = ta.subject_id
 
-                    INNER JOIN school_levels sl
-                        ON sl.school_id = ta.school_id
-
                     INNER JOIN classes assigned_class
                         ON assigned_class.id = ta.class_id
-                       AND assigned_class.level_id = sl.level_id
+
+                    INNER JOIN school_levels sl
+                        ON sl.school_id = ta.school_id
+                       AND sl.level_id = assigned_class.level_id
 
                     WHERE tr.user_id = $1
+                      AND ta.school_id = $2
                 )
             `;
 
-            parameters.push(auth.userId);
+            parameters.push(
+                auth.userId,
+                teacherSchoolId
+            );
         }
 
         else {
@@ -272,7 +301,7 @@ export async function onRequestGet(context) {
         }
 
         /* ---------------------------------------------
-           READ ACADEMIC PERIOD FILTERS
+           ACADEMIC PERIOD FILTERS
         --------------------------------------------- */
 
         const url = new URL(context.request.url);
@@ -309,58 +338,29 @@ export async function onRequestGet(context) {
                 }, 400);
             }
 
-            const filterSchoolId = requestedSchoolId;
-
-            /* SCHOOL ADMIN AND DOS */
+            if (
+                ["school_admin", "dos"].includes(auth.role) &&
+                String(auth.schoolId) !== requestedSchoolId
+            ) {
+                return json({
+                    success: false,
+                    message:
+                        "You cannot filter tests for another school."
+                }, 403);
+            }
 
             if (
-                ["school_admin", "dos"].includes(auth.role)
+                auth.role === "teacher" &&
+                teacherSchoolId !== requestedSchoolId
             ) {
-                if (
-                    String(auth.schoolId) !== requestedSchoolId
-                ) {
-                    return json({
-                        success: false,
-                        message:
-                            "You cannot filter tests for another school."
-                    }, 403);
-                }
+                return json({
+                    success: false,
+                    message:
+                        "You cannot filter tests for another school."
+                }, 403);
             }
 
-            /* TEACHER */
-
-            else if (auth.role === "teacher") {
-                const teacherSchool = await client.query(
-                    `
-                    SELECT DISTINCT ta.school_id
-                    FROM teachers tr
-
-                    INNER JOIN teacher_assignments ta
-                        ON ta.teacher_id = tr.id
-
-                    WHERE tr.user_id = $1
-                      AND ta.school_id = $2
-
-                    LIMIT 1
-                    `,
-                    [
-                        auth.userId,
-                        filterSchoolId
-                    ]
-                );
-
-                if (teacherSchool.rows.length === 0) {
-                    return json({
-                        success: false,
-                        message:
-                            "You are not assigned to the selected school."
-                    }, 403);
-                }
-            }
-
-            /* SECTOR ADMIN */
-
-            else if (auth.role === "sector_admin") {
+            if (auth.role === "sector_admin") {
                 const selectedSchool = await client.query(
                     `
                     SELECT id
@@ -370,7 +370,7 @@ export async function onRequestGet(context) {
                     LIMIT 1
                     `,
                     [
-                        filterSchoolId,
+                        requestedSchoolId,
                         auth.sectorId
                     ]
                 );
@@ -392,29 +392,25 @@ export async function onRequestGet(context) {
                 AND EXISTS (
                     SELECT 1
                     FROM test_schools period_filter
-
                     WHERE period_filter.test_id = t.id
-
                       AND period_filter.school_id =
                           $${schoolParameter}::bigint
-
                       AND period_filter.academic_year_id =
                           $${yearParameter}::bigint
-
                       AND period_filter.term_id =
                           $${termParameter}::bigint
                 )
             `;
 
             parameters.push(
-                filterSchoolId,
+                requestedSchoolId,
                 academicYearId,
                 termId
             );
         }
 
         /* ---------------------------------------------
-           TEST MANAGEMENT SCOPE
+           MANAGEMENT SCOPE
         --------------------------------------------- */
 
         const manageScopeId =
@@ -429,7 +425,7 @@ export async function onRequestGet(context) {
         const userParameter = parameters.length + 3;
 
         /* ---------------------------------------------
-           LOAD TESTS AND RELATED DATA
+           LOAD TESTS
         --------------------------------------------- */
 
         const testsResult = await client.query(
@@ -460,32 +456,22 @@ export async function onRequestGet(context) {
 
                     WHEN $${roleParameter}::text = 'teacher'
                          AND t.created_by = $${userParameter}::bigint
+                         AND t.school_id = $${scopeParameter}::bigint
                     THEN TRUE
 
                     ELSE FALSE
                 END AS can_manage,
 
-                COALESCE(
-                    test_schools.data,
-                    '[]'::json
-                ) AS schools,
-
-                COALESCE(
-                    test_classes.data,
-                    '[]'::json
-                ) AS classes,
-
-                COALESCE(
-                    test_subjects.data,
-                    '[]'::json
-                ) AS subjects
+                COALESCE(test_schools.data, '[]'::json) AS schools,
+                COALESCE(test_classes.data, '[]'::json) AS classes,
+                COALESCE(test_subjects.data, '[]'::json) AS subjects
 
             FROM tests t
 
             LEFT JOIN users creator
                 ON creator.id = t.created_by
 
-            /* TEST SCHOOLS AND ACADEMIC PERIODS */
+            /* TEST SCHOOLS AND PERIODS */
 
             LEFT JOIN LATERAL (
                 SELECT json_agg(
@@ -525,7 +511,6 @@ export async function onRequestGet(context) {
                     json_build_object(
                         'id', c.id,
                         'class_name', c.class_name,
-
                         'class_level',
                             CASE c.level_id
                                 WHEN 1 THEN 'Primary'
@@ -533,12 +518,9 @@ export async function onRequestGet(context) {
                                 WHEN 3 THEN 'Upper Secondary'
                                 ELSE 'Unknown'
                             END,
-
                         'school_id', tc.school_id
                     )
-                    ORDER BY
-                        tc.school_id,
-                        c.class_name
+                    ORDER BY tc.school_id, c.class_name
                 ) AS data
 
                 FROM test_classes tc
@@ -596,10 +578,7 @@ export async function onRequestGet(context) {
         if (auth.role === "sector_admin") {
             const result = await client.query(
                 `
-                SELECT
-                    id,
-                    school_name,
-                    school_code
+                SELECT id, school_name, school_code
                 FROM schools
                 WHERE sector_id = $1
                   AND status = 'active'
@@ -611,15 +590,10 @@ export async function onRequestGet(context) {
             schools = result.rows;
         }
 
-        else if (
-            ["school_admin", "dos"].includes(auth.role)
-        ) {
+        else if (["school_admin", "dos"].includes(auth.role)) {
             const result = await client.query(
                 `
-                SELECT
-                    id,
-                    school_name,
-                    school_code
+                SELECT id, school_name, school_code
                 FROM schools
                 WHERE id = $1
                   AND status = 'active'
@@ -633,25 +607,12 @@ export async function onRequestGet(context) {
         else if (auth.role === "teacher") {
             const result = await client.query(
                 `
-                SELECT DISTINCT
-                    s.id,
-                    s.school_name,
-                    s.school_code
-
-                FROM teachers tr
-
-                INNER JOIN teacher_assignments ta
-                    ON ta.teacher_id = tr.id
-
-                INNER JOIN schools s
-                    ON s.id = ta.school_id
-
-                WHERE tr.user_id = $1
-                  AND s.status = 'active'
-
-                ORDER BY s.school_name
+                SELECT id, school_name, school_code
+                FROM schools
+                WHERE id = $1
+                  AND status = 'active'
                 `,
-                [auth.userId]
+                [teacherSchoolId]
             );
 
             schools = result.rows;
@@ -669,14 +630,12 @@ export async function onRequestGet(context) {
                 SELECT
                     c.id,
                     c.class_name,
-
                     CASE c.level_id
                         WHEN 1 THEN 'Primary'
                         WHEN 2 THEN 'Lower Secondary'
                         WHEN 3 THEN 'Upper Secondary'
                         ELSE 'Unknown'
                     END AS class_level,
-
                     sl.school_id,
                     s.school_name
 
@@ -702,22 +661,18 @@ export async function onRequestGet(context) {
             classes = result.rows;
         }
 
-        else if (
-            ["school_admin", "dos"].includes(auth.role)
-        ) {
+        else if (["school_admin", "dos"].includes(auth.role)) {
             const result = await client.query(
                 `
                 SELECT
                     c.id,
                     c.class_name,
-
                     CASE c.level_id
                         WHEN 1 THEN 'Primary'
                         WHEN 2 THEN 'Lower Secondary'
                         WHEN 3 THEN 'Upper Secondary'
                         ELSE 'Unknown'
                     END AS class_level,
-
                     sl.school_id
 
                 FROM classes c
@@ -727,9 +682,7 @@ export async function onRequestGet(context) {
 
                 WHERE sl.school_id = $1
 
-                ORDER BY
-                    c.level_id,
-                    c.class_name
+                ORDER BY c.level_id, c.class_name
                 `,
                 [auth.schoolId]
             );
@@ -743,14 +696,12 @@ export async function onRequestGet(context) {
                 SELECT DISTINCT
                     c.id,
                     c.class_name,
-
                     CASE c.level_id
                         WHEN 1 THEN 'Primary'
                         WHEN 2 THEN 'Lower Secondary'
                         WHEN 3 THEN 'Upper Secondary'
                         ELSE 'Unknown'
                     END AS class_level,
-
                     ta.school_id
 
                 FROM teachers tr
@@ -766,12 +717,14 @@ export async function onRequestGet(context) {
                    AND sl.level_id = c.level_id
 
                 WHERE tr.user_id = $1
+                  AND ta.school_id = $2
 
-                ORDER BY
-                    ta.school_id,
-                    c.class_name
+                ORDER BY c.class_name
                 `,
-                [auth.userId]
+                [
+                    auth.userId,
+                    teacherSchoolId
+                ]
             );
 
             classes = result.rows;
@@ -800,17 +753,18 @@ export async function onRequestGet(context) {
                     ON s.id = ta.subject_id
 
                 WHERE tr.user_id = $1
+                  AND ta.school_id = $2
 
                 ORDER BY s.subject_name
                 `,
-                [auth.userId]
+                [
+                    auth.userId,
+                    teacherSchoolId
+                ]
             );
         } else {
             subjectsResult = await client.query(`
-                SELECT
-                    id,
-                    subject_name,
-                    subject_code
+                SELECT id, subject_name, subject_code
                 FROM subjects
                 ORDER BY subject_name
             `);
@@ -827,17 +781,24 @@ export async function onRequestGet(context) {
                 id: auth.userId,
                 role: auth.role,
                 sectorId: auth.sectorId,
-                schoolId: auth.schoolId
+                schoolId: auth.role === "teacher"
+                    ? teacherSchoolId
+                    : auth.schoolId
             }
         });
 
     } catch (error) {
         console.error("Load tests error:", error);
 
+        const clientErrors = [
+            "You do not have any teaching assignments.",
+            "Your teaching assignments are linked to more than one school. Please contact your school administrator."
+        ];
+
         return json({
             success: false,
             message: error.message || "Unable to load tests."
-        }, 500);
+        }, clientErrors.includes(error.message) ? 403 : 500);
 
     } finally {
         if (client) {
@@ -849,26 +810,23 @@ export async function onRequestGet(context) {
 /* =====================================================
    POST: CREATE A TEST
 
-   ROLES:
-   - sector_admin
-   - school_admin
-   - dos
-   - teacher
+   SECTOR ADMIN:
+   - Creates sector tests for selected schools.
 
-   TEACHERS:
-   - Their school is derived from database assignments.
-   - Exactly one assigned school is required.
-   - Client-submitted school IDs are ignored.
+   SCHOOL ADMIN / DOS:
+   - Creates tests for their own school.
+
+   TEACHER:
+   - School is derived from teacher assignments.
+   - Exactly one school is required.
    - Only assigned class-subject combinations are allowed.
-   - Uses the normal official assessment tables.
+   - Uses the official test tables.
 ===================================================== */
 
 export async function onRequestPost(context) {
     const auth = await requireTestUser(context);
 
-    if (auth.error) {
-        return auth.error;
-    }
+    if (auth.error) return auth.error;
 
     if (
         ![
@@ -895,10 +853,6 @@ export async function onRequestPost(context) {
         }, 400);
     }
 
-    /* ---------------------------------------------
-       READ TEST NAME
-    --------------------------------------------- */
-
     const testName = String(
         data.test_name ?? data.testName ?? ""
     ).trim();
@@ -909,10 +863,6 @@ export async function onRequestPost(context) {
             message: "Enter a valid test name."
         }, 400);
     }
-
-    /* ---------------------------------------------
-       READ CLASSES AND SUBJECTS
-    --------------------------------------------- */
 
     const classIds = uniqueIds(
         data.class_ids ?? data.classIds
@@ -936,27 +886,19 @@ export async function onRequestPost(context) {
         }, 400);
     }
 
-    /* ---------------------------------------------
-       VALIDATE MAXIMUM MARKS
-    --------------------------------------------- */
-
-    const subjectMarksValidation = validateSubjectMarks(
+    const marksValidation = validateSubjectMarks(
         subjectIds,
         data.subject_marks ?? data.subjectMarks
     );
 
-    if (!subjectMarksValidation.valid) {
+    if (!marksValidation.valid) {
         return json({
             success: false,
-            message: subjectMarksValidation.message
+            message: marksValidation.message
         }, 400);
     }
 
-    const subjectMarks = subjectMarksValidation.marks;
-
-    /* ---------------------------------------------
-       VALIDATE CLOSING DATE
-    --------------------------------------------- */
+    const subjectMarks = marksValidation.marks;
 
     const closingAt = validClosingAt(
         data.closing_at ?? data.closingAt
@@ -980,18 +922,6 @@ export async function onRequestPost(context) {
 
         /* ---------------------------------------------
            DETERMINE SCHOOL IDS
-
-           SECTOR ADMIN:
-           - Uses submitted school IDs.
-
-           SCHOOL ADMIN / DOS:
-           - Uses authenticated school ID.
-
-           TEACHER:
-           - School is determined exclusively from
-             teacher_assignments.
-           - Exactly one school must be found.
-           - Browser-supplied school IDs are ignored.
         --------------------------------------------- */
 
         let schoolIds = [];
@@ -1002,9 +932,7 @@ export async function onRequestPost(context) {
             );
         }
 
-        else if (
-            ["school_admin", "dos"].includes(auth.role)
-        ) {
+        else if (["school_admin", "dos"].includes(auth.role)) {
             if (!auth.schoolId) {
                 throw new Error(
                     "Your account is not linked to a school."
@@ -1015,38 +943,12 @@ export async function onRequestPost(context) {
         }
 
         else if (auth.role === "teacher") {
-            const teacherSchoolsResult = await client.query(
-                `
-                SELECT DISTINCT
-                    ta.school_id
-
-                FROM teachers tr
-
-                INNER JOIN teacher_assignments ta
-                    ON ta.teacher_id = tr.id
-
-                WHERE tr.user_id = $1
-
-                ORDER BY ta.school_id
-                `,
-                [auth.userId]
+            const teacherSchoolId = await getTeacherSchool(
+                client,
+                auth.userId
             );
 
-            if (teacherSchoolsResult.rows.length === 0) {
-                throw new Error(
-                    "You do not have any teaching assignments."
-                );
-            }
-
-            if (teacherSchoolsResult.rows.length !== 1) {
-                throw new Error(
-                    "Your teaching assignments are linked to more than one school. Please contact your school administrator."
-                );
-            }
-
-            schoolIds = [
-                String(teacherSchoolsResult.rows[0].school_id)
-            ];
+            schoolIds = [teacherSchoolId];
         }
 
         if (schoolIds.length === 0) {
@@ -1054,7 +956,7 @@ export async function onRequestPost(context) {
         }
 
         /* ---------------------------------------------
-           VALIDATE SELECTED SCHOOLS
+           VALIDATE SCHOOLS
         --------------------------------------------- */
 
         let validSchools;
@@ -1062,9 +964,7 @@ export async function onRequestPost(context) {
         if (auth.role === "sector_admin") {
             validSchools = await client.query(
                 `
-                SELECT
-                    id,
-                    school_name
+                SELECT id, school_name
                 FROM schools
                 WHERE id = ANY($1::bigint[])
                   AND sector_id = $2
@@ -1078,9 +978,7 @@ export async function onRequestPost(context) {
         } else {
             validSchools = await client.query(
                 `
-                SELECT
-                    id,
-                    school_name
+                SELECT id, school_name
                 FROM schools
                 WHERE id = $1
                   AND status = 'active'
@@ -1097,10 +995,6 @@ export async function onRequestPost(context) {
 
         /* ---------------------------------------------
            VALIDATE TEACHER ASSIGNMENTS
-
-           Every selected class-subject combination
-           must exist in the teacher's assignments
-           for their one verified school.
         --------------------------------------------- */
 
         let validClasses;
@@ -1144,8 +1038,10 @@ export async function onRequestPost(context) {
                 )
             );
 
-            const missingPairs = [];
-
+            /*
+             * Every selected class must be assigned
+             * together with every selected subject.
+             */
             for (const classId of classIds) {
                 for (const subjectId of subjectIds) {
                     if (
@@ -1153,32 +1049,17 @@ export async function onRequestPost(context) {
                             `${classId}:${subjectId}`
                         )
                     ) {
-                        missingPairs.push(
-                            `${classId}:${subjectId}`
+                        throw new Error(
+                            "You can only create tests for class and subject combinations assigned to you. Check your selected classes and subjects."
                         );
                     }
                 }
             }
 
-            if (missingPairs.length > 0) {
-                throw new Error(
-                    "You can only create tests for class and subject combinations assigned to you. Check your selected classes and subjects."
-                );
-            }
-
-            /* -----------------------------------------
-               INSERT EACH SELECTED CLASS ONLY ONCE
-
-               The assignment query can return the same
-               class more than once when the teacher
-               teaches multiple selected subjects.
-            ----------------------------------------- */
-
             const uniqueAssignedClasses = new Map();
 
             for (const row of assignmentsResult.rows) {
-                const key =
-                    `${row.school_id}:${row.class_id}`;
+                const key = `${row.school_id}:${row.class_id}`;
 
                 if (!uniqueAssignedClasses.has(key)) {
                     uniqueAssignedClasses.set(key, {
@@ -1193,15 +1074,11 @@ export async function onRequestPost(context) {
             };
 
             const selectedClassIds = new Set(
-                validClasses.rows.map(
-                    row => String(row.id)
-                )
+                validClasses.rows.map(row => String(row.id))
             );
 
             if (
-                classIds.some(
-                    classId => !selectedClassIds.has(classId)
-                )
+                classIds.some(id => !selectedClassIds.has(id))
             ) {
                 throw new Error(
                     "One or more selected classes are not assigned to you."
@@ -1228,9 +1105,7 @@ export async function onRequestPost(context) {
                 WHERE c.id = ANY($1::bigint[])
                   AND sl.school_id = ANY($2::bigint[])
 
-                ORDER BY
-                    sl.school_id,
-                    c.class_name
+                ORDER BY sl.school_id, c.class_name
                 `,
                 [
                     classIds,
@@ -1240,9 +1115,7 @@ export async function onRequestPost(context) {
 
             const validClassIds = [
                 ...new Set(
-                    validClasses.rows.map(
-                        row => String(row.id)
-                    )
+                    validClasses.rows.map(row => String(row.id))
                 )
             ];
 
@@ -1275,10 +1148,8 @@ export async function onRequestPost(context) {
         /* ---------------------------------------------
            FIND ACTIVE ACADEMIC YEAR AND TERM
 
-           Kigali local date determines the active
-           academic year and term.
-
-           Exactly one matching period is required
+           Kigali local date is used.
+           Exactly one active period is required
            for each selected school.
         --------------------------------------------- */
 
@@ -1287,10 +1158,8 @@ export async function onRequestPost(context) {
             SELECT
                 s.id AS school_id,
                 s.school_name,
-
                 ay.id AS academic_year_id,
                 ay.year_name,
-
                 tm.id AS term_id,
                 tm.term_name,
                 tm.term_number
@@ -1364,9 +1233,9 @@ export async function onRequestPost(context) {
            CREATE TEST
 
            Teacher:
-           - sector_id = NULL
-           - school_id = verified assigned school
-           - created_by = authenticated user
+           sector_id = NULL
+           school_id = assigned school
+           created_by = authenticated user
         --------------------------------------------- */
 
         const testResult = await client.query(
@@ -1401,7 +1270,7 @@ export async function onRequestPost(context) {
         const test = testResult.rows[0];
 
         /* ---------------------------------------------
-           INSERT TEST SCHOOLS AND ACADEMIC PERIODS
+           INSERT TEST SCHOOLS AND PERIODS
         --------------------------------------------- */
 
         for (const schoolId of schoolIds) {
@@ -1457,7 +1326,7 @@ export async function onRequestPost(context) {
         }
 
         /* ---------------------------------------------
-           INSERT TEST SUBJECTS WITH MAXIMUM MARKS
+           INSERT TEST SUBJECTS
         --------------------------------------------- */
 
         for (const subject of subjectMarks) {
@@ -1514,8 +1383,7 @@ export async function onRequestPost(context) {
 
         return json({
             success: false,
-            message: error.message ||
-                "Unable to create the test."
+            message: error.message || "Unable to create the test."
         }, isClientError ? 400 : 500);
 
     } finally {
@@ -1524,4 +1392,3 @@ export async function onRequestPost(context) {
         }
     }
 }
-
