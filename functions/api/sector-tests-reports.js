@@ -1505,8 +1505,9 @@ function buildReports(
         ...finishLearnerMap(learners)
     }))
     .sort((a, b) =>
-        b.average_percentage - a.average_percentage ||
+        
         b.pass_rate - a.pass_rate ||
+        b.average_percentage - a.average_percentage ||
         a.teacher.localeCompare(b.teacher)
     )
     .map((item, index) => ({
