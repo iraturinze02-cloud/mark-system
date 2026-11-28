@@ -1132,6 +1132,7 @@ button, select {
 
 </main>
 
+
 <script>
 "use strict";
 
@@ -1140,6 +1141,11 @@ button, select {
 ===================================================== */
 
 const $ = id => document.getElementById(id);
+
+const DEFAULT_GRADING_SETTINGS = {
+    overall_test_max: 90,
+    overall_exam_max: 90
+};
 
 const state = {
     role: null,
@@ -1150,12 +1156,10 @@ const state = {
     teachers: [],
     academicYears: [],
     assignments: [],
-    gradingSettings: {
-    overall_test_max: 90,
-    overall_exam_max: 90
-},
 
-settingsLoaded: false,
+    gradingSettings: { ...DEFAULT_GRADING_SETTINGS },
+    settingsLoaded: false,
+    settingsLoading: false,
 
     selectedAssignment: null,
     selectedTest: null,
@@ -1171,7 +1175,8 @@ const API = {
     results: "/api/teacher-results",
     calendar: "/api/teacher-results-calendar",
     teachers: "/api/teachers",
-    schools: "/api/sector-schools"
+    schools: "/api/sector-schools",
+    gradingSettings: "/api/grading-settings"
 };
 
 const PASS_MARK = 50;
@@ -1202,6 +1207,42 @@ function getStoredTeacherId() {
     } catch {}
 
     return String(stored);
+}
+
+function getCurrentTeacherId() {
+    if (state.teacherId) {
+        return String(state.teacherId);
+    }
+
+    if (state.teacher?.id) {
+        return String(state.teacher.id);
+    }
+
+    return String(
+        localStorage.getItem("userId") ||
+        localStorage.getItem("teacherId") ||
+        ""
+    );
+}
+
+function getCurrentSchoolId() {
+    if (state.schoolId) {
+        return String(state.schoolId);
+    }
+
+    if (state.teacher?.school_id) {
+        return String(state.teacher.school_id);
+    }
+
+    if (state.teacher?.schoolId) {
+        return String(state.teacher.schoolId);
+    }
+
+    if (state.role === "sector_admin") {
+        return String($("schoolSelect").value || "");
+    }
+
+    return "";
 }
 
 function showMessage(message, type = "error") {
@@ -1243,34 +1284,8 @@ async function apiGet(url) {
 }
 
 /* =====================================================
-   GRADING SETTINGS
-   FILA GRADES SYSTEM - CLOUDFLARE PAGES
-===================================================== */
-
-const GRADING_SETTINGS_API = "/api/grading-settings";
-
-/* =====================================================
-   GET CURRENT TEACHER ID
-===================================================== */
-
-function getCurrentTeacherId() {
-    if (state.teacherId) {
-        return String(state.teacherId);
-    }
-
-    if (state.teacher?.id) {
-        return String(state.teacher.id);
-    }
-
-    return String(
-        localStorage.getItem("userId") ||
-        localStorage.getItem("teacherId") ||
-        ""
-    );
-}
-
-/* =====================================================
-   GET SETTINGS SCOPE
+   GRADING SETTINGS SCOPE
+   Includes all database scope columns.
 ===================================================== */
 
 function getGradingSettingsScope() {
@@ -1284,8 +1299,9 @@ function getGradingSettingsScope() {
 
     const scope = {
         teacher_id: getCurrentTeacherId(),
-        subject_id: String(assignment.subject_id || ""),
+        school_id: getCurrentSchoolId(),
         class_id: String(assignment.class_id || ""),
+        subject_id: String(assignment.subject_id || ""),
         academic_year_id: $("yearSelect").value,
         term_id: $("termSelect").value
     };
@@ -1293,7 +1309,7 @@ function getGradingSettingsScope() {
     for (const [key, value] of Object.entries(scope)) {
         if (!value) {
             throw new Error(
-                "Unable to identify the selected " +
+                "Unable to identify " +
                 key.replaceAll("_", " ") +
                 ". Please check your selection."
             );
@@ -1301,6 +1317,22 @@ function getGradingSettingsScope() {
     }
 
     return scope;
+}
+
+/* =====================================================
+   SETTINGS BUTTON STATE
+===================================================== */
+
+function updateSettingsButton() {
+    const enabled =
+        Boolean(state.selectedAssignment) &&
+        $("testSelect").value === "all" &&
+        Boolean(getCurrentTeacherId()) &&
+        Boolean(getCurrentSchoolId()) &&
+        Boolean($("yearSelect").value) &&
+        Boolean($("termSelect").value);
+
+    $("settingsBtn").disabled = !enabled;
 }
 
 /* =====================================================
@@ -1331,13 +1363,8 @@ function clearSettingsMessage() {
 ===================================================== */
 
 function updateSettingsPreview() {
-    const testMaximum = Number(
-        $("overallTestMax").value
-    );
-
-    const examMaximum = Number(
-        $("overallExamMax").value
-    );
+    const testMaximum = Number($("overallTestMax").value);
+    const examMaximum = Number($("overallExamMax").value);
 
     const total =
         (Number.isFinite(testMaximum) ? testMaximum : 0) +
@@ -1356,36 +1383,51 @@ async function loadGradingSettings() {
 
     const params = new URLSearchParams(scope);
 
-    const response = await apiGet(
-        GRADING_SETTINGS_API + "?" + params.toString()
-    );
+    state.settingsLoading = true;
 
-    if (!response || response.success === false) {
-        throw new Error(
-            response?.message ||
-            "Unable to load grading settings."
+    try {
+        const response = await apiGet(
+            API.gradingSettings + "?" + params.toString()
         );
+
+        const settings = response.settings || {};
+
+        state.gradingSettings = {
+            overall_test_max: Number(
+                settings.overall_test_max ??
+                DEFAULT_GRADING_SETTINGS.overall_test_max
+            ),
+
+            overall_exam_max: Number(
+                settings.overall_exam_max ??
+                DEFAULT_GRADING_SETTINGS.overall_exam_max
+            )
+        };
+
+        if (
+            !Number.isFinite(state.gradingSettings.overall_test_max) ||
+            state.gradingSettings.overall_test_max <= 0 ||
+            !Number.isFinite(state.gradingSettings.overall_exam_max) ||
+            state.gradingSettings.overall_exam_max <= 0
+        ) {
+            throw new Error("The saved grading settings are invalid.");
+        }
+
+        state.settingsLoaded = true;
+
+        $("overallTestMax").value =
+            state.gradingSettings.overall_test_max;
+
+        $("overallExamMax").value =
+            state.gradingSettings.overall_exam_max;
+
+        updateSettingsPreview();
+
+        return state.gradingSettings;
+
+    } finally {
+        state.settingsLoading = false;
     }
-
-    const settings = response.settings || {};
-
-    state.gradingSettings = {
-        overall_test_max:
-            Number(settings.overall_test_max ?? 90),
-
-        overall_exam_max:
-            Number(settings.overall_exam_max ?? 90)
-    };
-
-    state.settingsLoaded = true;
-
-    $("overallTestMax").value =
-        state.gradingSettings.overall_test_max;
-
-    $("overallExamMax").value =
-        state.gradingSettings.overall_exam_max;
-
-    updateSettingsPreview();
 }
 
 /* =====================================================
@@ -1393,7 +1435,6 @@ async function loadGradingSettings() {
 ===================================================== */
 
 async function openGradingSettings() {
-
     if (
         !state.selectedAssignment ||
         $("testSelect").value !== "all"
@@ -1401,7 +1442,6 @@ async function openGradingSettings() {
         showMessage(
             "Select All Tests and Examinations before changing overall settings."
         );
-
         return;
     }
 
@@ -1430,13 +1470,11 @@ async function openGradingSettings() {
         await loadGradingSettings();
 
     } catch (error) {
-
         showSettingsMessage(
             error.message || "Unable to load grading settings."
         );
 
     } finally {
-
         button.disabled = false;
         button.textContent = "Save Settings";
     }
@@ -1448,7 +1486,6 @@ async function openGradingSettings() {
 
 function closeGradingSettings() {
     $("gradingSettingsModal").classList.add("hidden");
-
     clearSettingsMessage();
 }
 
@@ -1457,63 +1494,44 @@ function closeGradingSettings() {
 ===================================================== */
 
 async function saveGradingSettings() {
-
     clearSettingsMessage();
 
     let scope;
 
     try {
-
         scope = getGradingSettingsScope();
 
     } catch (error) {
-
         showSettingsMessage(error.message);
-
         return;
     }
 
-    const testMaximum = Number(
-        $("overallTestMax").value
-    );
-
-    const examMaximum = Number(
-        $("overallExamMax").value
-    );
-
-    /* VALIDATE TEST MAXIMUM */
+    const testMaximum = Number($("overallTestMax").value);
+    const examMaximum = Number($("overallExamMax").value);
 
     if (
         !Number.isFinite(testMaximum) ||
         testMaximum <= 0
     ) {
-
         showSettingsMessage(
             "Enter a valid Overall Test Maximum greater than zero."
         );
 
         $("overallTestMax").focus();
-
         return;
     }
-
-    /* VALIDATE EXAMINATION MAXIMUM */
 
     if (
         !Number.isFinite(examMaximum) ||
         examMaximum <= 0
     ) {
-
         showSettingsMessage(
             "Enter a valid Overall Examination Maximum greater than zero."
         );
 
         $("overallExamMax").focus();
-
         return;
     }
-
-    /* REQUEST PAYLOAD */
 
     const payload = {
         ...scope,
@@ -1527,19 +1545,15 @@ async function saveGradingSettings() {
     button.textContent = "Saving...";
 
     try {
-
         const response = await fetch(
-            GRADING_SETTINGS_API,
+            API.gradingSettings,
             {
                 method: "POST",
-
                 credentials: "same-origin",
-
                 headers: {
                     "Content-Type": "application/json",
                     "Accept": "application/json"
                 },
-
                 body: JSON.stringify(payload)
             }
         );
@@ -1547,25 +1561,18 @@ async function saveGradingSettings() {
         let data;
 
         try {
-
             data = await response.json();
-
         } catch {
-
             throw new Error(
                 "The server returned an invalid response."
             );
         }
 
         if (!response.ok || data.success === false) {
-
             throw new Error(
-                data.message ||
-                "Unable to save grading settings."
+                data.message || "Unable to save grading settings."
             );
         }
-
-        /* UPDATE FRONTEND STATE */
 
         state.gradingSettings = {
             overall_test_max: testMaximum,
@@ -1574,47 +1581,32 @@ async function saveGradingSettings() {
 
         state.settingsLoaded = true;
 
-        /* SUCCESS MESSAGE */
-
         showSettingsMessage(
             "Overall marks settings saved successfully.",
             "success"
         );
 
-        /* REFRESH COMBINED RESULTS */
-
-        if ($("testSelect").value === "all") {
-
-            renderCombinedResults();
-
-            updateCombinedAnalysis();
-        }
-
-        /* CLOSE MODAL AFTER SUCCESS */
+        renderCombinedResults();
+        updateCombinedAnalysis();
 
         setTimeout(() => {
-
             closeGradingSettings();
-
         }, 900);
 
     } catch (error) {
-
         showSettingsMessage(
             error.message ||
             "An error occurred while saving grading settings."
         );
 
     } finally {
-
         button.disabled = false;
-
         button.textContent = "Save Settings";
     }
 }
 
 /* =====================================================
-   SETTINGS INPUT EVENTS
+   SETTINGS EVENTS
 ===================================================== */
 
 $("overallTestMax").addEventListener(
@@ -1626,10 +1618,6 @@ $("overallExamMax").addEventListener(
     "input",
     updateSettingsPreview
 );
-
-/* =====================================================
-   SETTINGS BUTTON EVENTS
-===================================================== */
 
 $("settingsBtn").addEventListener(
     "click",
@@ -1651,12 +1639,29 @@ $("saveSettingsBtn").addEventListener(
     saveGradingSettings
 );
 
-function setOptions(select, items, placeholder, valueKey, labelFunction) {
+$("gradingSettingsModal").addEventListener("click", event => {
+    if (event.target === $("gradingSettingsModal")) {
+        closeGradingSettings();
+    }
+});
+
+/* =====================================================
+   SELECT OPTIONS HELPER
+===================================================== */
+
+function setOptions(
+    select,
+    items,
+    placeholder,
+    valueKey,
+    labelFunction
+) {
     select.innerHTML = "";
 
     const first = document.createElement("option");
     first.value = "";
     first.textContent = placeholder;
+
     select.appendChild(first);
 
     items.forEach(item => {
@@ -1682,6 +1687,9 @@ function resetResults() {
     state.students = [];
     state.resultRows = [];
 
+    state.gradingSettings = { ...DEFAULT_GRADING_SETTINGS };
+    state.settingsLoaded = false;
+
     $("assignmentSelect").innerHTML =
         '<option value="">Select class and subject</option>';
 
@@ -1691,6 +1699,7 @@ function resetResults() {
     $("assignmentSelect").disabled = true;
     $("testSelect").disabled = true;
     $("csvBtn").disabled = true;
+    $("settingsBtn").disabled = true;
 
     $("resultsHead").innerHTML = `
         <tr>
@@ -1714,6 +1723,10 @@ function resetResults() {
 
     clearAnalysis();
 }
+
+/* =====================================================
+   CLEAR ANALYSIS
+===================================================== */
 
 function clearAnalysis() {
     [
@@ -1770,7 +1783,10 @@ async function initialize() {
             return;
         }
 
-        if (state.role === "school_admin" || state.role === "dos") {
+        if (
+            state.role === "school_admin" ||
+            state.role === "dos"
+        ) {
             $("teacherField").classList.remove("hidden");
 
             await loadSchoolTeachers();
@@ -1778,6 +1794,11 @@ async function initialize() {
         }
 
         // Teacher sees their own results.
+        state.teacherId =
+            localStorage.getItem("userId") ||
+            localStorage.getItem("teacherId") ||
+            null;
+
         await loadCalendar();
 
     } catch (error) {
@@ -1808,7 +1829,8 @@ async function loadSectorSchools() {
         school => school.school_name
     );
 
-    const savedSchoolId = localStorage.getItem("targetSchoolId");
+    const savedSchoolId =
+        localStorage.getItem("targetSchoolId");
 
     if (
         savedSchoolId &&
@@ -1818,6 +1840,7 @@ async function loadSectorSchools() {
     ) {
         $("schoolSelect").value = String(savedSchoolId);
         await onSectorSchoolChange();
+
     } else {
         $("teacherSelect").disabled = true;
     }
@@ -1831,6 +1854,7 @@ async function onSectorSchoolChange() {
     state.schoolId = schoolId || null;
     state.teacherId = null;
     state.teachers = [];
+    state.teacher = null;
 
     $("teacherSelect").innerHTML =
         '<option value="">Select teacher</option>';
@@ -1900,15 +1924,6 @@ async function onSectorSchoolChange() {
     }
 
     await loadCalendar();
-
-    // If a teacher was restored, load the selected period's results.
-    if (
-        state.teacherId &&
-        $("yearSelect").value &&
-        $("termSelect").value
-    ) {
-        await loadResults();
-    }
 }
 
 /* =====================================================
@@ -1942,6 +1957,7 @@ async function loadSchoolTeachers() {
         state.teacherId = savedTeacherId;
 
         await loadCalendar();
+
     } else {
         $("yearSelect").disabled = true;
         $("termSelect").disabled = true;
@@ -1979,7 +1995,9 @@ async function loadCalendar() {
         year => year.year_name
     );
 
-    $("yearSelect").disabled = state.academicYears.length === 0;
+    $("yearSelect").disabled =
+        state.academicYears.length === 0;
+
     $("termSelect").disabled = true;
 
     const activeYear = data.active_academic_year;
@@ -2025,6 +2043,10 @@ async function loadCalendar() {
         await loadResults();
     }
 }
+
+/* =====================================================
+   ACADEMIC YEAR CHANGE
+===================================================== */
 
 function onYearChange() {
     resetResults();
@@ -2095,6 +2117,14 @@ async function loadResults() {
 
         state.teacher = data.teacher || null;
 
+        // Get the school ID from the selected school or server response.
+        state.schoolId =
+            state.schoolId ||
+            data.teacher?.school_id ||
+            data.teacher?.schoolId ||
+            data.school_id ||
+            null;
+
         state.assignments = Array.isArray(data.assignments)
             ? data.assignments
             : [];
@@ -2136,8 +2166,10 @@ function renderAssignments() {
         const option = document.createElement("option");
 
         option.value = String(index);
+
         option.textContent =
-            (assignment.class_name || "Class") + " - " +
+            (assignment.class_name || "Class") +
+            " - " +
             (assignment.subject_name || "Subject");
 
         select.appendChild(option);
@@ -2246,6 +2278,11 @@ function onAssignmentChange() {
     state.students = [];
     state.resultRows = [];
 
+    state.gradingSettings = { ...DEFAULT_GRADING_SETTINGS };
+    state.settingsLoaded = false;
+
+    $("settingsBtn").disabled = true;
+
     $("testSelect").innerHTML =
         '<option value="">Select assessment</option>';
 
@@ -2293,14 +2330,17 @@ function onAssignmentChange() {
     select.innerHTML = "";
 
     const allOption = document.createElement("option");
+
     allOption.value = "all";
     allOption.textContent = "All Tests and Examinations";
+
     select.appendChild(allOption);
 
     state.assessments.forEach(assessment => {
         const option = document.createElement("option");
 
         option.value = assessment.id;
+
         option.textContent =
             (assessment.type === "exam" ? "EXAM: " : "TEST: ") +
             assessment.name;
@@ -2328,10 +2368,11 @@ function onAssignmentChange() {
    ASSESSMENT SELECTION
 ===================================================== */
 
-function onTestChange() {
+async function onTestChange() {
     const selected = $("testSelect").value;
 
     if (!selected || !state.selectedAssignment) {
+        $("settingsBtn").disabled = true;
         clearAnalysis();
         return;
     }
@@ -2340,8 +2381,39 @@ function onTestChange() {
 
     if (selected === "all") {
         state.currentTest = null;
+
+        updateSettingsButton();
+
+        /*
+         * Load the saved settings whenever the combined view
+         * is selected. This ensures the combined calculation
+         * uses the values stored in the database.
+         */
+        try {
+            await loadGradingSettings();
+
+        } catch (error) {
+            state.settingsLoaded = false;
+
+            showMessage(
+                "Could not load saved grading settings: " +
+                error.message +
+                ". Default maximums of 90 and 90 are being displayed."
+            );
+
+            state.gradingSettings = {
+                ...DEFAULT_GRADING_SETTINGS
+            };
+        }
+
+        // Ignore results if the user changed the assessment while loading.
+        if ($("testSelect").value !== "all") return;
+
         renderCombinedResults();
         updateCombinedAnalysis();
+
+        updateSettingsButton();
+
         return;
     }
 
@@ -2350,6 +2422,8 @@ function onTestChange() {
     );
 
     if (!state.currentTest) return;
+
+    $("settingsBtn").disabled = true;
 
     renderSingleAssessmentResults();
     updateSingleAssessmentAnalysis();
@@ -2457,62 +2531,94 @@ function buildCombinedRows() {
 ===================================================== */
 
 function calculateCombinedResult(student) {
-    let totalTests = 0;
-    let totalTestsMaximum = 0;
+    let rawTests = 0;
+    let rawTestsMaximum = 0;
 
-    let totalExams = 0;
-    let totalExamsMaximum = 0;
+    let rawExams = 0;
+    let rawExamsMaximum = 0;
 
     let recordedAssessments = 0;
     let unrecordedAssessments = 0;
 
     state.assessments.forEach(assessment => {
         const mark = student.marks[assessment.id];
-        const maximum = Number(assessment.maximum_mark);
+        const maximum = Number(assessment.maximum_mark || 0);
 
         if (assessment.type === "exam") {
-            totalExamsMaximum += maximum;
+            rawExamsMaximum += maximum;
 
             if (mark === null || mark === undefined) {
                 unrecordedAssessments++;
             } else {
-                totalExams += Number(mark);
+                rawExams += Number(mark);
                 recordedAssessments++;
             }
+
         } else {
-            totalTestsMaximum += maximum;
+            rawTestsMaximum += maximum;
 
             if (mark === null || mark === undefined) {
                 unrecordedAssessments++;
             } else {
-                totalTests += Number(mark);
+                rawTests += Number(mark);
                 recordedAssessments++;
             }
         }
     });
 
     /*
-       This preserves the existing aggregate calculation:
-       missing assessment marks contribute zero to the combined result.
-       Individual missing marks still display as —.
-    */
+     * IMPORTANT:
+     *
+     * Tests are combined and scaled as one group.
+     *
+     * Examinations are combined and scaled as another group.
+     *
+     * Individual assessment marks displayed in the table
+     * remain unchanged.
+     */
 
-    const totalRecordedMaximum =
-        totalTestsMaximum + totalExamsMaximum;
+    const configuredTestMaximum = Number(
+        state.gradingSettings.overall_test_max
+    );
 
-    const totalMark = totalTests + totalExams;
+    const configuredExamMaximum = Number(
+        state.gradingSettings.overall_exam_max
+    );
 
-    const percentage = totalRecordedMaximum > 0
-        ? (totalMark / totalRecordedMaximum) * 100
+    const scaledTests = rawTestsMaximum > 0
+        ? (rawTests / rawTestsMaximum) * configuredTestMaximum
+        : 0;
+
+    const scaledExams = rawExamsMaximum > 0
+        ? (rawExams / rawExamsMaximum) * configuredExamMaximum
+        : 0;
+
+    const combinedMaximum =
+        configuredTestMaximum + configuredExamMaximum;
+
+    const combinedMark = scaledTests + scaledExams;
+
+    const percentage = combinedMaximum > 0
+        ? (combinedMark / combinedMaximum) * 100
         : null;
 
     return {
-        totalTests,
-        totalTestsMaximum,
-        totalExams,
-        totalExamsMaximum,
-        totalMark,
-        totalRecordedMaximum,
+        // Raw marks, useful for reference and troubleshooting.
+        rawTests,
+        rawTestsMaximum,
+        rawExams,
+        rawExamsMaximum,
+
+        // Scaled marks used in the final combined result.
+        totalTests: scaledTests,
+        totalTestsMaximum: configuredTestMaximum,
+
+        totalExams: scaledExams,
+        totalExamsMaximum: configuredExamMaximum,
+
+        totalMark: combinedMark,
+        totalRecordedMaximum: combinedMaximum,
+
         percentage,
         recordedAssessments,
         unrecordedAssessments,
@@ -2543,11 +2649,15 @@ function renderCombinedHeader() {
 
     state.assessments.forEach(assessment => {
         const th = document.createElement("th");
+
         th.className = "assessment-header";
 
-        const fullName = String(assessment.name || "Unnamed");
+        const fullName = String(
+            assessment.name || "Unnamed"
+        );
 
         const shortName = document.createElement("span");
+
         shortName.className = "assessment-short-name";
         shortName.textContent = fullName.slice(0, 5);
 
@@ -2562,6 +2672,7 @@ function renderCombinedHeader() {
             moreButton.setAttribute("aria-expanded", "false");
 
             const fullNameElement = document.createElement("span");
+
             fullNameElement.className =
                 "assessment-full-name hidden";
 
@@ -2589,9 +2700,12 @@ function renderCombinedHeader() {
 
             th.appendChild(moreButton);
             th.appendChild(fullNameElement);
+
         } else {
             const maximum = document.createElement("span");
+
             maximum.className = "assessment-full-name";
+
             maximum.textContent =
                 "Max: " + formatMark(assessment.maximum_mark);
 
@@ -2634,6 +2748,7 @@ function renderCombinedResults() {
     renderCombinedHeader();
 
     const body = $("resultsBody");
+
     body.innerHTML = "";
 
     if (!students.length) {
@@ -2647,6 +2762,7 @@ function renderCombinedResults() {
 
         $("csvBtn").disabled = true;
         $("maximumMark").textContent = "Maximum mark: —";
+
         return;
     }
 
@@ -2657,6 +2773,7 @@ function renderCombinedResults() {
 
     state.resultRows.forEach((item, index) => {
         const { student, result } = item;
+
         const row = document.createElement("tr");
 
         appendCell(row, index + 1);
@@ -2664,11 +2781,14 @@ function renderCombinedResults() {
         appendCell(row, student.student_code);
         appendCell(row, student.gender);
 
+        // Individual assessment marks remain unchanged.
         state.assessments.forEach(assessment => {
             const mark = student.marks[assessment.id];
+
             appendCell(row, formatMark(mark));
         });
 
+        // These totals are now scaled to the configured maximums.
         appendCell(
             row,
             formatMark(result.totalTests) +
@@ -2704,14 +2824,13 @@ function renderCombinedResults() {
         body.appendChild(row);
     });
 
-    const maximum = state.assessments.reduce(
-        (sum, assessment) =>
-            sum + Number(assessment.maximum_mark || 0),
-        0
-    );
+    const combinedMaximum =
+        Number(state.gradingSettings.overall_test_max) +
+        Number(state.gradingSettings.overall_exam_max);
 
     $("maximumMark").textContent =
-        "Combined maximum mark: " + formatMark(maximum);
+        "Combined maximum mark: " +
+        formatMark(combinedMaximum);
 
     $("csvBtn").disabled = false;
 }
@@ -2736,7 +2855,8 @@ function appendStatusCell(row, status) {
     const cell = document.createElement("td");
     const pill = document.createElement("span");
 
-    pill.className = "status-pill " +
+    pill.className =
+        "status-pill " +
         (
             status === "Passed"
                 ? "status-pass"
@@ -2760,7 +2880,6 @@ function renderSingleAssessmentResults() {
 
     if (!assessment) return;
 
-    // Sort individual assessment students A-Z too.
     const students = sortStudentsAlphabetically(
         assessment.students || []
     );
@@ -2783,6 +2902,7 @@ function renderSingleAssessmentResults() {
     `;
 
     const body = $("resultsBody");
+
     body.innerHTML = "";
 
     if (!students.length) {
@@ -2805,6 +2925,7 @@ function renderSingleAssessmentResults() {
         );
 
         const status = getResultStatus(percentage);
+
         const row = document.createElement("tr");
 
         appendCell(row, index + 1);
@@ -2858,7 +2979,11 @@ function createAnalysisCounters() {
     };
 }
 
-function addStudentToAnalysis(counters, student, percentage) {
+function addStudentToAnalysis(
+    counters,
+    student,
+    percentage
+) {
     if (percentage === null) {
         counters.unrecorded++;
         return;
@@ -2866,8 +2991,11 @@ function addStudentToAnalysis(counters, student, percentage) {
 
     const passed = percentage >= PASS_MARK;
 
-    if (passed) counters.passed++;
-    else counters.failed++;
+    if (passed) {
+        counters.passed++;
+    } else {
+        counters.failed++;
+    }
 
     const normalizedGender = String(
         student.gender || ""
@@ -2875,27 +3003,38 @@ function addStudentToAnalysis(counters, student, percentage) {
 
     let group = null;
 
-    if (["female", "girl", "girls", "f"].includes(normalizedGender)) {
+    if (
+        ["female", "girl", "girls", "f"].includes(normalizedGender)
+    ) {
         group = counters.girls;
-    } else if (["male", "boy", "boys", "m"].includes(normalizedGender)) {
+
+    } else if (
+        ["male", "boy", "boys", "m"].includes(normalizedGender)
+    ) {
         group = counters.boys;
     }
 
     if (group) {
         group.recorded++;
 
-        if (passed) group.passed++;
-        else group.failed++;
+        if (passed) {
+            group.passed++;
+        } else {
+            group.failed++;
+        }
     }
 
     let bin;
 
     if (percentage > 100) {
         bin = 10;
+
     } else if (percentage >= 90) {
         bin = 9;
+
     } else if (percentage >= 0) {
         bin = Math.floor(percentage / 10);
+
     } else {
         bin = 0;
     }
@@ -2964,6 +3103,7 @@ function updateSingleAssessmentAnalysis() {
     );
 
     const maximumMark = Number(assessment.maximum_mark);
+
     const counters = createAnalysisCounters();
 
     students.forEach(student => {
@@ -3002,15 +3142,19 @@ function renderDistribution(distribution, recorded) {
 
     distribution.forEach(item => {
         const row = document.createElement("div");
+
         row.className = "distribution-row";
 
         const label = document.createElement("span");
+
         label.textContent = item.label;
 
         const track = document.createElement("div");
+
         track.className = "bar-track";
 
         const fill = document.createElement("div");
+
         fill.className = "bar-fill";
 
         fill.style.width =
@@ -3019,9 +3163,11 @@ function renderDistribution(distribution, recorded) {
         track.appendChild(fill);
 
         const count = document.createElement("strong");
+
         count.textContent = item.count;
 
         row.append(label, track, count);
+
         container.appendChild(row);
     });
 }
@@ -3059,6 +3205,15 @@ function downloadCSV() {
 
     if (state.selectedTest === "all") {
         rows.push([
+            "Overall Test Maximum",
+            state.gradingSettings.overall_test_max,
+            "Overall Examination Maximum",
+            state.gradingSettings.overall_exam_max
+        ]);
+
+        rows.push([]);
+
+        rows.push([
             "No.",
             "Student Name",
             "Student Code",
@@ -3071,8 +3226,8 @@ function downloadCSV() {
                     " (Max " + assessment.maximum_mark + ")"
             ),
 
-            "Total Tests",
-            "Total Exams",
+            "Total Tests (Scaled)",
+            "Total Exams (Scaled)",
             "Overall Total",
             "Percentage",
             "Result"
@@ -3092,9 +3247,17 @@ function downloadCSV() {
                         : student.marks[assessment.id]
                 ),
 
-                result.totalTests + "/" + result.totalTestsMaximum,
-                result.totalExams + "/" + result.totalExamsMaximum,
-                result.totalMark + "/" + result.totalRecordedMaximum,
+                formatMark(result.totalTests) +
+                    "/" +
+                    formatMark(result.totalTestsMaximum),
+
+                formatMark(result.totalExams) +
+                    "/" +
+                    formatMark(result.totalExamsMaximum),
+
+                formatMark(result.totalMark) +
+                    "/" +
+                    formatMark(result.totalRecordedMaximum),
 
                 result.percentage === null
                     ? ""
@@ -3106,7 +3269,10 @@ function downloadCSV() {
 
     } else {
         const assessment = state.currentTest;
-        const maximumMark = Number(assessment.maximum_mark);
+
+        const maximumMark = Number(
+            assessment.maximum_mark
+        );
 
         rows.push([
             "Assessment",
@@ -3167,6 +3333,7 @@ function downloadCSV() {
     );
 
     const url = URL.createObjectURL(blob);
+
     const link = document.createElement("a");
 
     link.href = url;
@@ -3181,7 +3348,9 @@ function downloadCSV() {
         ".csv";
 
     document.body.appendChild(link);
+
     link.click();
+
     link.remove();
 
     URL.revokeObjectURL(url);
@@ -3194,6 +3363,7 @@ function downloadCSV() {
 $("schoolSelect").addEventListener("change", async () => {
     try {
         await onSectorSchoolChange();
+
     } catch (error) {
         showMessage(error.message);
     }
@@ -3202,11 +3372,16 @@ $("schoolSelect").addEventListener("change", async () => {
 $("teacherSelect").addEventListener("change", async () => {
     state.teacherId = $("teacherSelect").value || null;
 
+    state.teacher = state.teachers.find(
+        teacher => String(teacher.id) === String(state.teacherId)
+    ) || null;
+
     if (state.teacherId) {
         localStorage.setItem(
             "targetTeacher",
             state.teacherId
         );
+
     } else {
         localStorage.removeItem("targetTeacher");
     }
@@ -3245,7 +3420,10 @@ $("testSelect").addEventListener(
     onTestChange
 );
 
-$("csvBtn").addEventListener("click", downloadCSV);
+$("csvBtn").addEventListener(
+    "click",
+    downloadCSV
+);
 
 $("printBtn").addEventListener("click", () => {
     window.print();
