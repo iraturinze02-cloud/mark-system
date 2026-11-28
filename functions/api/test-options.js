@@ -19,7 +19,12 @@ export async function onRequest(context) {
         }, 405);
     }
 
-    if (!["sector_admin", "dos","teacher", "school_admin"].includes(auth.role)) {
+    if (![
+        "sector_admin",
+        "school_admin",
+        "dos",
+        "teacher"
+    ].includes(auth.role)) {
         return json({
             success: false,
             message: "You are not allowed to access test creation options."
@@ -33,13 +38,25 @@ export async function onRequest(context) {
 
         let schools = [];
 
-        // =========================================
-        // LOAD AUTHORIZED SCHOOLS
-        // =========================================
+        /* =====================================================
+           1. LOAD AUTHORIZED SCHOOLS
+
+           Sector admin:
+           - All active schools in their sector.
+
+           School admin / DOS:
+           - Their own active school.
+
+           Teacher:
+           - Only schools where they have teacher assignments.
+           - School access is derived from teacher_assignments.
+        ===================================================== */
 
         if (auth.role === "sector_admin") {
             const result = await client.query(`
-                SELECT id, school_name
+                SELECT
+                    id,
+                    school_name
                 FROM schools
                 WHERE sector_id = $1
                   AND status = 'active'
@@ -48,9 +65,32 @@ export async function onRequest(context) {
 
             schools = result.rows;
 
+        } else if (auth.role === "teacher") {
+            const result = await client.query(`
+                SELECT DISTINCT
+                    s.id,
+                    s.school_name
+                FROM teachers tr
+
+                INNER JOIN teacher_assignments ta
+                    ON ta.teacher_id = tr.id
+
+                INNER JOIN schools s
+                    ON s.id = ta.school_id
+
+                WHERE tr.user_id = $1
+                  AND s.status = 'active'
+
+                ORDER BY s.school_name
+            `, [auth.userId]);
+
+            schools = result.rows;
+
         } else {
             const result = await client.query(`
-                SELECT id, school_name
+                SELECT
+                    id,
+                    school_name
                 FROM schools
                 WHERE id = $1
                   AND status = 'active'
@@ -63,6 +103,10 @@ export async function onRequest(context) {
             school => String(school.id)
         );
 
+        /* =====================================================
+           2. HANDLE USERS WITHOUT AUTHORIZED SCHOOLS
+        ===================================================== */
+
         if (!schoolIds.length) {
             return json({
                 success: true,
@@ -73,10 +117,10 @@ export async function onRequest(context) {
             });
         }
 
-        // =========================================
-        // LOAD ACTIVE ACADEMIC YEAR AND TERM
-        // FOR EACH AUTHORIZED SCHOOL
-        // =========================================
+        /* =====================================================
+           3. LOAD ACTIVE ACADEMIC YEAR AND TERM
+           FOR EACH AUTHORIZED SCHOOL
+        ===================================================== */
 
         const academicPeriodResult = await client.query(`
             SELECT
@@ -109,10 +153,10 @@ export async function onRequest(context) {
             ORDER BY ay.school_id
         `, [schoolIds]);
 
-        // =========================================
-        // ENSURE EACH SCHOOL HAS EXACTLY ONE
-        // ACTIVE ACADEMIC YEAR AND TERM
-        // =========================================
+        /* =====================================================
+           4. ENSURE EACH SCHOOL HAS EXACTLY ONE
+              ACTIVE ACADEMIC YEAR AND TERM
+        ===================================================== */
 
         const periodsBySchool = new Map();
 
@@ -159,83 +203,182 @@ export async function onRequest(context) {
             }, 409);
         }
 
-        // =========================================
-        // LOAD UNIVERSAL CLASSES
-        // Each class appears only once.
-        // school_ids identifies schools offering it.
-        // =========================================
+        /* =====================================================
+           5. LOAD CLASSES
 
-        const classResult = await client.query(`
-            SELECT
-                c.id,
-                c.class_name,
+           Teacher:
+           - Only classes in their teacher_assignments.
+           - school_ids contains only schools where they have
+             the corresponding class assignment.
 
-                CASE c.level_id
-                    WHEN 1 THEN 'Primary'
-                    WHEN 2 THEN 'Lower Secondary'
-                    WHEN 3 THEN 'Upper Secondary'
-                    ELSE 'Unknown'
-                END AS class_level,
+           Administrators:
+           - Preserve the existing school-level class loading.
+        ===================================================== */
 
-                c.level_id,
+        let classResult;
 
-                ARRAY_AGG(
-                    DISTINCT sl.school_id
-                    ORDER BY sl.school_id
-                ) AS school_ids
+        if (auth.role === "teacher") {
+            classResult = await client.query(`
+                SELECT
+                    c.id,
+                    c.class_name,
 
-            FROM classes c
+                    CASE c.level_id
+                        WHEN 1 THEN 'Primary'
+                        WHEN 2 THEN 'Lower Secondary'
+                        WHEN 3 THEN 'Upper Secondary'
+                        ELSE 'Unknown'
+                    END AS class_level,
 
-            INNER JOIN school_levels sl
-                ON sl.level_id = c.level_id
+                    c.level_id,
 
-            INNER JOIN schools s
-                ON s.id = sl.school_id
+                    ARRAY_AGG(
+                        DISTINCT ta.school_id
+                        ORDER BY ta.school_id
+                    ) AS school_ids
 
-            WHERE sl.school_id = ANY($1::bigint[])
-              AND s.status = 'active'
+                FROM teachers tr
 
-            GROUP BY
-                c.id,
-                c.class_name,
-                c.level_id
+                INNER JOIN teacher_assignments ta
+                    ON ta.teacher_id = tr.id
 
-            ORDER BY
-                c.level_id,
-                c.class_name
-        `, [schoolIds]);
+                INNER JOIN classes c
+                    ON c.id = ta.class_id
 
-        // =========================================
-        // LOAD ONLY SUBJECTS WITH THEIR APPLICABLE
-        // EDUCATION LEVELS
-        // =========================================
+                INNER JOIN schools s
+                    ON s.id = ta.school_id
 
-        const subjectResult = await client.query(`
-            SELECT
-                s.id,
-                s.subject_name,
+                WHERE tr.user_id = $1
+                  AND ta.school_id = ANY($2::bigint[])
+                  AND s.status = 'active'
 
-                ARRAY_AGG(
-                    DISTINCT scl.education_level
-                    ORDER BY scl.education_level
-                ) AS education_levels
+                GROUP BY
+                    c.id,
+                    c.class_name,
+                    c.level_id
 
-            FROM subjects s
+                ORDER BY
+                    c.level_id,
+                    c.class_name
+            `, [auth.userId, schoolIds]);
 
-            INNER JOIN subject_class_levels scl
-                ON scl.subject_id = s.id
+        } else {
+            classResult = await client.query(`
+                SELECT
+                    c.id,
+                    c.class_name,
 
-            GROUP BY
-                s.id,
-                s.subject_name
+                    CASE c.level_id
+                        WHEN 1 THEN 'Primary'
+                        WHEN 2 THEN 'Lower Secondary'
+                        WHEN 3 THEN 'Upper Secondary'
+                        ELSE 'Unknown'
+                    END AS class_level,
 
-            ORDER BY
-                s.subject_name
-        `);
+                    c.level_id,
 
-        // =========================================
-        // RETURN ALL TEST CREATION OPTIONS
-        // =========================================
+                    ARRAY_AGG(
+                        DISTINCT sl.school_id
+                        ORDER BY sl.school_id
+                    ) AS school_ids
+
+                FROM classes c
+
+                INNER JOIN school_levels sl
+                    ON sl.level_id = c.level_id
+
+                INNER JOIN schools s
+                    ON s.id = sl.school_id
+
+                WHERE sl.school_id = ANY($1::bigint[])
+                  AND s.status = 'active'
+
+                GROUP BY
+                    c.id,
+                    c.class_name,
+                    c.level_id
+
+                ORDER BY
+                    c.level_id,
+                    c.class_name
+            `, [schoolIds]);
+        }
+
+        /* =====================================================
+           6. LOAD SUBJECTS
+
+           Teacher:
+           - Only subjects in their teacher_assignments.
+           - Retain education_levels for the existing
+             class/subject compatibility filtering in the UI.
+
+           Administrators:
+           - Preserve the existing subject options.
+        ===================================================== */
+
+        let subjectResult;
+
+        if (auth.role === "teacher") {
+            subjectResult = await client.query(`
+                SELECT
+                    s.id,
+                    s.subject_name,
+
+                    ARRAY_AGG(
+                        DISTINCT scl.education_level
+                        ORDER BY scl.education_level
+                    ) AS education_levels
+
+                FROM teachers tr
+
+                INNER JOIN teacher_assignments ta
+                    ON ta.teacher_id = tr.id
+
+                INNER JOIN subjects s
+                    ON s.id = ta.subject_id
+
+                INNER JOIN subject_class_levels scl
+                    ON scl.subject_id = s.id
+
+                WHERE tr.user_id = $1
+                  AND ta.school_id = ANY($2::bigint[])
+
+                GROUP BY
+                    s.id,
+                    s.subject_name
+
+                ORDER BY
+                    s.subject_name
+            `, [auth.userId, schoolIds]);
+
+        } else {
+            subjectResult = await client.query(`
+                SELECT
+                    s.id,
+                    s.subject_name,
+
+                    ARRAY_AGG(
+                        DISTINCT scl.education_level
+                        ORDER BY scl.education_level
+                    ) AS education_levels
+
+                FROM subjects s
+
+                INNER JOIN subject_class_levels scl
+                    ON scl.subject_id = s.id
+
+                GROUP BY
+                    s.id,
+                    s.subject_name
+
+                ORDER BY
+                    s.subject_name
+            `);
+        }
+
+        /* =====================================================
+           7. RETURN TEST CREATION OPTIONS
+        ===================================================== */
 
         return json({
             success: true,
