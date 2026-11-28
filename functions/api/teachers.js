@@ -46,21 +46,63 @@ export async function onRequestGet(context) {
                         SELECT json_agg(
                             json_build_object(
                                 'assignment_id', ta.id,
+
                                 'class_id', c.id,
                                 'class_name', c.class_name,
+
                                 'subject_id', s.id,
-                                'subject_name', s.subject_name
+                                'subject_name', s.subject_name,
+
+                                'academic_year_id', ta.academic_year_id,
+                                'academic_year_name', ay.year_name,
+
+                                'term_id', ta.term_id,
+                                'term_name', tr.term_name,
+
+                                'subclass_id', ta.subclass_id,
+                                'subclass_name', scs.subclass_name,
+
+                                'assignment_type',
+                                    CASE
+                                        WHEN ta.subclass_id IS NULL
+                                        THEN 'default'
+                                        ELSE 'subclass'
+                                    END
                             )
-                            ORDER BY c.class_name, s.subject_name
+                            ORDER BY
+                                c.class_name,
+                                s.subject_name,
+                                ay.start_date DESC NULLS LAST,
+                                scs.subclass_name NULLS FIRST
                         )
+
                         FROM teacher_assignments ta
+
                         JOIN classes c
                           ON c.id = ta.class_id
+
                         JOIN school_levels sl
                           ON sl.school_id = ta.school_id
                          AND sl.level_id = c.level_id
+
                         JOIN subjects s
                           ON s.id = ta.subject_id
+
+                        LEFT JOIN academic_years ay
+                          ON ay.id = ta.academic_year_id
+                         AND ay.school_id = ta.school_id
+
+                        LEFT JOIN terms tr
+                          ON tr.id = ta.term_id
+                         AND tr.school_id = ta.school_id
+                         AND tr.academic_year_id = ta.academic_year_id
+
+                        LEFT JOIN school_class_subclasses scs
+                          ON scs.id = ta.subclass_id
+                         AND scs.school_id = ta.school_id
+                         AND scs.academic_year_id = ta.academic_year_id
+                         AND scs.class_id = ta.class_id
+
                         WHERE ta.teacher_id = t.id
                           AND ta.school_id = $1
                     ),
