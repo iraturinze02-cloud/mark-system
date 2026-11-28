@@ -1172,7 +1172,7 @@ tbody tr:hover {
                         <thead>
                             <tr>
                                 <th>Subject code</th>
-                                <th>Subject</th>
+                                <th>Subjects</th>
                                 <th>Learners</th>
                                 <th>Results</th>
                                 
@@ -2120,7 +2120,14 @@ function renderTeachers(overall, bySubject) {
                 ${escapeHTML(item.teacher)}
             </td>
             <td>${escapeHTML(item.school)}</td>
-            <td>${escapeHTML(item.subject)}</td>
+            <td>
+    ${item.subjects?.length
+        ? item.subjects.map(subject =>
+            `<span class="subject-tag">${escapeHTML(subject.subject)}</span>`
+          ).join(" ")
+        : "—"
+    }
+</td>
             <td>${formatNumber(item.candidates)}</td>
             <td>${formatNumber(item.recorded)}</td>
             <td>${formatNumber(item.passed)}</td>
