@@ -1492,18 +1492,43 @@ function buildReports(
         a.subject.localeCompare(b.subject)
     );
 
+// Collect all subjects taught by each teacher in the school.
+const teacherSubjectsByOverall = new Map();
 
+for (const item of teacherSubjects) {
+    const key = [
+        item.teacher_id,
+        item.school_id
+    ].join("_");
+
+    if (!teacherSubjectsByOverall.has(key)) {
+        teacherSubjectsByOverall.set(key, []);
+    }
+
+    const subjects = teacherSubjectsByOverall.get(key);
+
+    if (!subjects.some(subject => subject.subject_id === item.subject_id)) {
+        subjects.push({
+            subject_id: item.subject_id,
+            subject: item.subject,
+            subject_code: item.subject_code
+        });
+    }
+}
 
     /* =====================================================
        FINAL OVERALL TEACHER PERFORMANCE
     ===================================================== */
 
     const teachers = Array.from(
-        teacherOverallLearners.entries()
-    ).map(([key, learners]) => ({
-        ...teacherOverallMetadata.get(key),
-        ...finishLearnerMap(learners)
-    }))
+    teacherOverallLearners.entries()
+).map(([key, learners]) => ({
+    ...teacherOverallMetadata.get(key),
+
+    subjects: teacherSubjectsByOverall.get(key) || [],
+
+    ...finishLearnerMap(learners)
+}))
     .sort((a, b) =>
         
         b.pass_rate - a.pass_rate ||
