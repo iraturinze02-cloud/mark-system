@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -321,7 +320,7 @@ button, select {
 
 .results-table {
     width: 100%;
-    min-width: 760px;
+    min-width: 900px;
     border-collapse: collapse;
     font-size: 13px;
 }
@@ -337,10 +336,20 @@ button, select {
 .results-table td {
     padding: 12px 11px;
     border-bottom: 1px solid var(--border);
+    white-space: nowrap;
 }
 
 .results-table tr:hover td {
     background: #f8fafc;
+}
+
+.results-table .summary-column {
+    background: #f0f5fc;
+    font-weight: 700;
+}
+
+.results-table th.summary-column {
+    background: #0f315b;
 }
 
 .status-pill {
@@ -471,6 +480,19 @@ button, select {
         box-shadow: none;
         break-inside: avoid;
     }
+
+    .table-wrap {
+        overflow: visible;
+    }
+
+    .results-table {
+        font-size: 10px;
+    }
+
+    .results-table th,
+    .results-table td {
+        padding: 6px;
+    }
 }
 </style>
 </head>
@@ -487,6 +509,7 @@ button, select {
 
         <div class="header-actions no-print">
             <button class="btn btn-light" id="printBtn">Print</button>
+
             <button class="btn btn-primary" id="csvBtn" disabled>
                 Download CSV
             </button>
@@ -536,9 +559,9 @@ button, select {
             </div>
 
             <div class="field">
-                <label for="testSelect">Test</label>
+                <label for="testSelect">Assessment</label>
                 <select id="testSelect" disabled>
-                    <option value="">Select test</option>
+                    <option value="">Select assessment</option>
                 </select>
             </div>
 
@@ -546,6 +569,7 @@ button, select {
     </section>
 
     <section class="info-grid" style="margin-bottom:20px">
+
         <div class="info-card">
             <span>Teacher</span>
             <strong id="teacherName">—</strong>
@@ -565,6 +589,7 @@ button, select {
             <span>Subject</span>
             <strong id="subjectName">—</strong>
         </div>
+
     </section>
 
     <section class="metrics" style="margin-bottom:20px">
@@ -604,9 +629,11 @@ button, select {
     <section class="analysis-grid" style="margin-bottom:20px">
 
         <div class="analysis-card">
+
             <h3>Gender Performance Analysis</h3>
 
             <table class="analysis-table">
+
                 <thead>
                     <tr>
                         <th>Gender</th>
@@ -617,6 +644,7 @@ button, select {
                 </thead>
 
                 <tbody>
+
                     <tr>
                         <td>Girls</td>
                         <td class="number pass" id="girlsPassed">0</td>
@@ -630,39 +658,53 @@ button, select {
                         <td class="number fail" id="boysFailed">0</td>
                         <td class="number" id="boysRecorded">0</td>
                     </tr>
+
                 </tbody>
+
             </table>
 
             <p style="font-size:11px;color:#64748b;margin-top:14px">
                 Gender analysis includes students with recorded marks only.
             </p>
+
         </div>
 
         <div class="analysis-card">
+
             <h3>Score Distribution</h3>
 
             <p style="font-size:11px;color:#64748b;margin-top:-8px">
-                Distribution is based on percentage of the test's maximum mark.
+                Distribution is based on the calculated result percentage.
             </p>
 
             <div id="distribution">
-                <div class="empty">Select a test to view score distribution.</div>
+                <div class="empty">
+                    Select an assessment to view score distribution.
+                </div>
             </div>
+
         </div>
 
     </section>
 
     <section class="panel">
+
         <div class="results-heading">
+
             <h2>Student Results</h2>
-            <span id="maximumMark" style="font-size:12px;color:#64748b">
+
+            <span id="maximumMark"
+                  style="font-size:12px;color:#64748b">
                 Maximum mark: —
             </span>
+
         </div>
 
         <div class="table-wrap">
+
             <table class="results-table">
-                <thead>
+
+                <thead id="resultsHead">
                     <tr>
                         <th>#</th>
                         <th>Student Name</th>
@@ -675,17 +717,20 @@ button, select {
                 </thead>
 
                 <tbody id="resultsBody">
+
                     <tr>
                         <td colspan="7" class="empty">
-                            Select an academic period, class, subject and test.
+                            Select an academic period, class, subject and assessment.
                         </td>
                     </tr>
-                </tbody>
-            </table>
-        </div>
-    </section>
 
-</main>
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </section>
 
 <script>
 "use strict";
@@ -709,7 +754,11 @@ const state = {
     selectedAssignment: null,
     selectedTest: null,
     currentTest: null,
-    teacher: null
+    teacher: null,
+
+    assessments: [],
+    students: [],
+    resultRows: []
 };
 
 const API = {
@@ -718,6 +767,8 @@ const API = {
     teachers: "/api/teachers",
     schools: "/api/sector-schools"
 };
+
+const PASS_MARK = 50;
 
 function getRole() {
     return (
@@ -781,24 +832,66 @@ async function apiGet(url) {
     return data;
 }
 
+function setOptions(select, items, placeholder, valueKey, labelFunction) {
+    select.innerHTML = "";
+
+    const first = document.createElement("option");
+    first.value = "";
+    first.textContent = placeholder;
+    select.appendChild(first);
+
+    items.forEach(item => {
+        const option = document.createElement("option");
+
+        option.value = String(item[valueKey]);
+        option.textContent = labelFunction(item);
+
+        select.appendChild(option);
+    });
+}
+
+/* =====================================================
+   RESET
+===================================================== */
+
 function resetResults() {
     state.assignments = [];
     state.selectedAssignment = null;
     state.selectedTest = null;
     state.currentTest = null;
+    state.assessments = [];
+    state.students = [];
+    state.resultRows = [];
 
     $("assignmentSelect").innerHTML =
         '<option value="">Select class and subject</option>';
 
     $("testSelect").innerHTML =
-        '<option value="">Select test</option>';
+        '<option value="">Select assessment</option>';
 
     $("assignmentSelect").disabled = true;
     $("testSelect").disabled = true;
     $("csvBtn").disabled = true;
 
-    $("resultsBody").innerHTML =
-        '<tr><td colspan="7" class="empty">Select a test to view results.</td></tr>';
+    $("resultsHead").innerHTML = `
+        <tr>
+            <th>#</th>
+            <th>Student Name</th>
+            <th>Student Code</th>
+            <th>Gender</th>
+            <th>Mark</th>
+            <th>Percentage</th>
+            <th>Result</th>
+        </tr>
+    `;
+
+    $("resultsBody").innerHTML = `
+        <tr>
+            <td colspan="7" class="empty">
+                Select a class, subject and assessment.
+            </td>
+        </tr>
+    `;
 
     clearAnalysis();
 }
@@ -815,29 +908,18 @@ function clearAnalysis() {
         "boysPassed",
         "boysFailed",
         "boysRecorded"
-    ].forEach(id => $(id).textContent = "0");
+    ].forEach(id => {
+        $(id).textContent = "0";
+    });
 
     $("passPercentage").textContent = "0%";
     $("maximumMark").textContent = "Maximum mark: —";
 
-    $("distribution").innerHTML =
-        '<div class="empty">Select a test to view score distribution.</div>';
-}
-
-function setOptions(select, items, placeholder, valueKey, labelFunction) {
-    select.innerHTML = "";
-
-    const first = document.createElement("option");
-    first.value = "";
-    first.textContent = placeholder;
-    select.appendChild(first);
-
-    items.forEach(item => {
-        const option = document.createElement("option");
-        option.value = String(item[valueKey]);
-        option.textContent = labelFunction(item);
-        select.appendChild(option);
-    });
+    $("distribution").innerHTML = `
+        <div class="empty">
+            Select an assessment to view score distribution.
+        </div>
+    `;
 }
 
 /* =====================================================
@@ -849,7 +931,9 @@ async function initialize() {
         state.role = getRole();
 
         if (!["teacher", "school_admin", "sector_admin"].includes(state.role)) {
-            throw new Error("You are not authorized to view teacher results.");
+            throw new Error(
+                "You are not authorized to view teacher results."
+            );
         }
 
         if (state.role === "sector_admin") {
@@ -867,8 +951,8 @@ async function initialize() {
             return;
         }
 
-        // Teacher: the API identifies the logged-in teacher.
         await loadCalendar();
+
     } catch (error) {
         showMessage(error.message);
     }
@@ -886,7 +970,9 @@ async function loadSectorSchools() {
         : [];
 
     if (!state.schools.length) {
-        throw new Error("No schools were found in your sector.");
+        throw new Error(
+            "No schools were found in your sector."
+        );
     }
 
     setOptions(
@@ -899,8 +985,12 @@ async function loadSectorSchools() {
 
     const savedSchoolId = localStorage.getItem("targetSchoolId");
 
-    if (savedSchoolId &&
-        state.schools.some(s => String(s.id) === String(savedSchoolId))) {
+    if (
+        savedSchoolId &&
+        state.schools.some(
+            school => String(school.id) === String(savedSchoolId)
+        )
+    ) {
         $("schoolSelect").value = String(savedSchoolId);
         await onSectorSchoolChange();
     } else {
@@ -940,7 +1030,13 @@ async function onSectorSchoolChange() {
     );
 
     if (school) {
-        localStorage.setItem("targetSchool", school.school_name || "");
+        $("schoolName").textContent =
+            school.school_name || "—";
+
+        localStorage.setItem(
+            "targetSchool",
+            school.school_name || ""
+        );
     }
 
     const teachers = Array.isArray(school?.teachers)
@@ -961,8 +1057,12 @@ async function onSectorSchoolChange() {
 
     const savedTeacherId = getStoredTeacherId();
 
-    if (savedTeacherId &&
-        teachers.some(t => String(t.id) === savedTeacherId)) {
+    if (
+        savedTeacherId &&
+        teachers.some(
+            teacher => String(teacher.id) === savedTeacherId
+        )
+    ) {
         $("teacherSelect").value = savedTeacherId;
         state.teacherId = savedTeacherId;
     }
@@ -991,10 +1091,15 @@ async function loadSchoolTeachers() {
 
     const savedTeacherId = getStoredTeacherId();
 
-    if (savedTeacherId &&
-        state.teachers.some(t => String(t.id) === savedTeacherId)) {
+    if (
+        savedTeacherId &&
+        state.teachers.some(
+            teacher => String(teacher.id) === savedTeacherId
+        )
+    ) {
         $("teacherSelect").value = savedTeacherId;
         state.teacherId = savedTeacherId;
+
         await loadCalendar();
     } else {
         $("yearSelect").disabled = true;
@@ -1003,7 +1108,7 @@ async function loadSchoolTeachers() {
 }
 
 /* =====================================================
-   LOAD ACADEMIC CALENDAR FOR THE SELECTED SCHOOL
+   LOAD ACADEMIC CALENDAR
 ===================================================== */
 
 async function loadCalendar() {
@@ -1015,7 +1120,8 @@ async function loadCalendar() {
     if (state.role === "sector_admin") {
         if (!state.schoolId) return;
 
-        url += "?school_id=" + encodeURIComponent(state.schoolId);
+        url += "?school_id=" +
+            encodeURIComponent(state.schoolId);
     }
 
     const data = await apiGet(url);
@@ -1036,54 +1142,46 @@ async function loadCalendar() {
     $("termSelect").disabled = true;
 
     const activeYear = data.active_academic_year;
-const activeTerm = data.active_term;
+    const activeTerm = data.active_term;
 
-if (
-    activeYear &&
-    state.academicYears.some(
-        year => String(year.id) === String(activeYear.id)
-    )
-) {
-    $("yearSelect").value = String(activeYear.id);
-
-    // Load the terms belonging to the active academic year.
-    onYearChange();
-
-    // Select the active term.
     if (
-        activeTerm &&
-        Array.from($("termSelect").options).some(
-            option => option.value === String(activeTerm.id)
+        activeYear &&
+        state.academicYears.some(
+            year => String(year.id) === String(activeYear.id)
         )
     ) {
-        $("termSelect").value = String(activeTerm.id);
-    }
-}
+        $("yearSelect").value = String(activeYear.id);
 
-// Teacher: load results using the logged-in teacher's identity.
-if (state.role === "teacher") {
-    if (!$("yearSelect").value || !$("termSelect").value) {
-        showMessage(
-            "The active academic year or term could not be identified. Please select them manually."
-        );
-        return;
-    }
+        onYearChange();
 
-    await loadResults();
-}
-
-// School Admin and Sector Admin.
-else if (state.teacherId) {
-    if (activeTerm && $("yearSelect").value) {
-        const termExists = Array.from($("termSelect").options)
-            .some(option => option.value === String(activeTerm.id));
-
-        if (termExists) {
+        if (
+            activeTerm &&
+            Array.from($("termSelect").options).some(
+                option => option.value === String(activeTerm.id)
+            )
+        ) {
             $("termSelect").value = String(activeTerm.id);
+        }
+    }
+
+    if (state.role === "teacher") {
+        if (!$("yearSelect").value || !$("termSelect").value) {
+            showMessage(
+                "The active academic year or term could not be identified. Please select them manually."
+            );
+            return;
+        }
+
+        await loadResults();
+    } else if (state.teacherId) {
+        if (
+            activeTerm &&
+            $("yearSelect").value &&
+            $("termSelect").value === String(activeTerm.id)
+        ) {
             await loadResults();
         }
     }
-}
 }
 
 function onYearChange() {
@@ -1107,7 +1205,7 @@ function onYearChange() {
 }
 
 /* =====================================================
-   LOAD RESULTS
+   LOAD TEACHER RESULTS
 ===================================================== */
 
 async function loadResults() {
@@ -1139,9 +1237,12 @@ async function loadResults() {
     }
 
     try {
-        const data = await apiGet(API.results + "?" + params.toString());
+        const data = await apiGet(
+            API.results + "?" + params.toString()
+        );
 
         state.teacher = data.teacher;
+
         state.assignments = Array.isArray(data.assignments)
             ? data.assignments
             : [];
@@ -1155,8 +1256,13 @@ async function loadResults() {
         renderAssignments();
 
         if (!state.assignments.length) {
-            $("resultsBody").innerHTML =
-                '<tr><td colspan="7" class="empty">No assignments or results were found for this academic period.</td></tr>';
+            $("resultsBody").innerHTML = `
+                <tr>
+                    <td colspan="7" class="empty">
+                        No assignments or results were found for this academic period.
+                    </td>
+                </tr>
+            `;
         }
 
     } catch (error) {
@@ -1165,7 +1271,7 @@ async function loadResults() {
 }
 
 /* =====================================================
-   ASSIGNMENT AND TEST SELECTORS
+   ASSIGNMENT SELECTOR
 ===================================================== */
 
 function renderAssignments() {
@@ -1178,6 +1284,7 @@ function renderAssignments() {
         const option = document.createElement("option");
 
         option.value = String(index);
+
         option.textContent =
             assignment.class_name + " - " +
             assignment.subject_name;
@@ -1186,32 +1293,87 @@ function renderAssignments() {
     });
 
     select.disabled = state.assignments.length === 0;
-
     $("testSelect").disabled = true;
-    
 
-    // Automatically select the first available class and subject.
     if (state.assignments.length > 0) {
         select.value = "0";
         onAssignmentChange();
     }
 }
 
+/* =====================================================
+   PREPARE TESTS AND EXAMINATIONS
+===================================================== */
+
+function normalizeAssessmentStudents(items) {
+    return Array.isArray(items) ? items : [];
+}
+
+function prepareAssessments(assignment) {
+    const assessments = [];
+
+    const tests = Array.isArray(assignment.tests)
+        ? assignment.tests
+        : [];
+
+    tests.forEach(test => {
+        assessments.push({
+            id: "test_" + test.id,
+            source_id: test.id,
+            type: "test",
+            name: test.name || "Unnamed test",
+            maximum_mark: Number(test.maximum_mark || 0),
+            students: normalizeAssessmentStudents(test.students),
+            created_at: test.created_at || null
+        });
+    });
+
+    const examinations = Array.isArray(assignment.examinations)
+        ? assignment.examinations
+        : [];
+
+    examinations.forEach(exam => {
+        assessments.push({
+            id: "exam_" + exam.id,
+            source_id: exam.id,
+            type: "exam",
+            name: exam.exam_name || exam.name || "Unnamed examination",
+            maximum_mark: Number(
+                exam.total_marks || exam.maximum_mark || 0
+            ),
+            students: normalizeAssessmentStudents(exam.students),
+            created_at: exam.created_at || null
+        });
+    });
+
+    return assessments;
+}
+
+/* =====================================================
+   ASSIGNMENT CHANGE
+===================================================== */
 
 function onAssignmentChange() {
-    // Clear the previous test and results WITHOUT deleting assignments.
     state.selectedAssignment = null;
     state.selectedTest = null;
     state.currentTest = null;
+    state.assessments = [];
+    state.students = [];
+    state.resultRows = [];
 
     $("testSelect").innerHTML =
-        '<option value="">Select test</option>';
+        '<option value="">Select assessment</option>';
 
     $("testSelect").disabled = true;
     $("csvBtn").disabled = true;
 
-    $("resultsBody").innerHTML =
-        '<tr><td colspan="7" class="empty">Select a test to view results.</td></tr>';
+    $("resultsBody").innerHTML = `
+        <tr>
+            <td colspan="7" class="empty">
+                Select an assessment to view results.
+            </td>
+        </tr>
+    `;
 
     clearAnalysis();
 
@@ -1223,11 +1385,12 @@ function onAssignmentChange() {
         return;
     }
 
-    // Retrieve the selected assignment from the preserved assignments.
     const assignment = state.assignments[Number(index)];
 
     if (!assignment) {
-        showMessage("The selected class and subject could not be found.");
+        showMessage(
+            "The selected class and subject could not be found."
+        );
         return;
     }
 
@@ -1239,53 +1402,74 @@ function onAssignmentChange() {
     $("subjectName").textContent =
         assignment.subject_name || "—";
 
-    // Load tests returned by the API.
-    const tests = Array.isArray(assignment.tests)
-        ? assignment.tests
-        : [];
+    state.assessments = prepareAssessments(assignment);
 
-    setOptions(
-        $("testSelect"),
-        tests,
-        "Select test",
-        "id",
-        test => test.name + (
-            test.status ? " (" + test.status + ")" : ""
-        )
-    );
+    const select = $("testSelect");
 
-    $("testSelect").disabled = tests.length === 0;
-    // Automatically select the first available test.
-if (tests.length > 0) {
-    $("testSelect").value = String(tests[0].id);
-    onTestChange();
-}
+    select.innerHTML = "";
 
-    if (!tests.length) {
-        $("resultsBody").innerHTML =
-            '<tr><td colspan="7" class="empty">No tests are available for this class and subject.</td></tr>';
+    const allOption = document.createElement("option");
+    allOption.value = "all";
+    allOption.textContent = "All Tests and Examinations";
+    select.appendChild(allOption);
+
+    state.assessments.forEach(assessment => {
+        const option = document.createElement("option");
+
+        option.value = assessment.id;
+
+        option.textContent =
+            (assessment.type === "exam" ? "EXAM: " : "TEST: ") +
+            assessment.name;
+
+        select.appendChild(option);
+    });
+
+    select.disabled = state.assessments.length === 0;
+
+    if (state.assessments.length > 0) {
+        select.value = "all";
+        onTestChange();
+    } else {
+        $("resultsBody").innerHTML = `
+            <tr>
+                <td colspan="7" class="empty">
+                    No tests or examinations are available for this class and subject.
+                </td>
+            </tr>
+        `;
     }
 }
 
+/* =====================================================
+   ASSESSMENT SELECTION
+===================================================== */
 
 function onTestChange() {
-    const testId = $("testSelect").value;
+    const selected = $("testSelect").value;
 
-    if (!testId || !state.selectedAssignment) {
+    if (!selected || !state.selectedAssignment) {
         clearAnalysis();
         return;
     }
 
-    state.currentTest = state.selectedAssignment.tests.find(
-        test => String(test.id) === String(testId)
-    );
+    state.selectedTest = selected;
 
-    state.selectedTest = testId;
+    if (selected === "all") {
+        state.currentTest = null;
+        renderCombinedResults();
+        updateCombinedAnalysis();
+        return;
+    }
+
+    state.currentTest = state.assessments.find(
+        assessment => assessment.id === selected
+    );
 
     if (!state.currentTest) return;
 
-    renderResults();
-    updateAnalysis();
+    renderSingleAssessmentResults();
+    updateSingleAssessmentAnalysis();
 }
 
 /* =====================================================
@@ -1296,6 +1480,7 @@ function getPercentage(mark, maximumMark) {
     if (
         mark === null ||
         mark === undefined ||
+        mark === "" ||
         !Number.isFinite(Number(mark)) ||
         !Number.isFinite(Number(maximumMark)) ||
         Number(maximumMark) <= 0
@@ -1309,7 +1494,7 @@ function getPercentage(mark, maximumMark) {
 function getResultStatus(percentage) {
     if (percentage === null) return "Unrecorded";
 
-    return percentage >= 50 ? "Passed" : "Failed";
+    return percentage >= PASS_MARK ? "Passed" : "Failed";
 }
 
 function formatPercentage(value) {
@@ -1318,25 +1503,355 @@ function formatPercentage(value) {
         : value.toFixed(1) + "%";
 }
 
+function formatMark(value) {
+    if (value === null || value === undefined || value === "") {
+        return "—";
+    }
+
+    const number = Number(value);
+
+    return Number.isFinite(number)
+        ? number.toFixed(2).replace(/\.00$/, "")
+        : "—";
+}
+
+function getStudentKey(student) {
+    return String(student.id);
+}
+
 /* =====================================================
-   RENDER STUDENT RESULTS
+   COMBINE STUDENTS ACROSS ASSESSMENTS
 ===================================================== */
 
-function renderResults() {
-    const test = state.currentTest;
-    const students = test.students || [];
+function buildCombinedRows() {
+    const studentMap = new Map();
 
-    const maximumMark = Number(test.maximum_mark);
+    state.assessments.forEach(assessment => {
+        assessment.students.forEach(student => {
+            const key = getStudentKey(student);
 
-    $("maximumMark").textContent =
-        "Maximum mark: " + maximumMark;
+            if (!studentMap.has(key)) {
+                studentMap.set(key, {
+                    id: student.id,
+                    name: student.name || "—",
+                    student_code: student.student_code || "—",
+                    gender: student.gender || "—",
+                    marks: {}
+                });
+            }
+
+            const combinedStudent = studentMap.get(key);
+
+            combinedStudent.marks[assessment.id] =
+                student.mark === null ||
+                student.mark === undefined ||
+                student.mark === ""
+                    ? null
+                    : Number(student.mark);
+        });
+    });
+
+    return Array.from(studentMap.values()).sort((a, b) =>
+        String(a.name).localeCompare(String(b.name))
+    );
+}
+
+/* =====================================================
+   COMBINED RESULT CALCULATIONS
+===================================================== */
+
+function calculateCombinedResult(student) {
+    let totalTests = 0;
+    let totalTestsMaximum = 0;
+
+    let totalExams = 0;
+    let totalExamsMaximum = 0;
+
+    let recordedAssessments = 0;
+    let unrecordedAssessments = 0;
+
+    state.assessments.forEach(assessment => {
+        const mark = student.marks[assessment.id];
+        const maximum = Number(assessment.maximum_mark);
+
+        if (assessment.type === "exam") {
+            totalExamsMaximum += maximum;
+
+            if (mark === null || mark === undefined) {
+                unrecordedAssessments++;
+            } else {
+                totalExams += Number(mark);
+                recordedAssessments++;
+            }
+        } else {
+            totalTestsMaximum += maximum;
+
+            if (mark === null || mark === undefined) {
+                unrecordedAssessments++;
+            } else {
+                totalTests += Number(mark);
+                recordedAssessments++;
+            }
+        }
+    });
+
+    /*
+       Preserve the previous results-page calculation:
+       missing assessment marks contribute zero to the aggregate.
+       They remain displayed as — in the individual columns.
+    */
+
+    const totalRecordedMaximum =
+        totalTestsMaximum + totalExamsMaximum;
+
+    const totalMark = totalTests + totalExams;
+
+    const percentage = totalRecordedMaximum > 0
+        ? (totalMark / totalRecordedMaximum) * 100
+        : null;
+
+    return {
+        totalTests,
+        totalTestsMaximum,
+        totalExams,
+        totalExamsMaximum,
+        totalMark,
+        totalRecordedMaximum,
+        percentage,
+        recordedAssessments,
+        unrecordedAssessments,
+        status: getResultStatus(percentage)
+    };
+}
+
+/* =====================================================
+   COMBINED MARKSHEET HEADER
+===================================================== */
+
+function renderCombinedHeader() {
+    const head = $("resultsHead");
+
+    const row = document.createElement("tr");
+
+    const columns = [
+        "#",
+        "Student Name",
+        "Student Code",
+        "Gender"
+    ];
+
+    columns.forEach(label => {
+        const th = document.createElement("th");
+        th.textContent = label;
+        row.appendChild(th);
+    });
+
+    state.assessments.forEach(assessment => {
+        const th = document.createElement("th");
+
+        th.textContent =
+            (assessment.type === "exam" ? "EXAM: " : "TEST: ") +
+            assessment.name +
+            " / " +
+            formatMark(assessment.maximum_mark);
+
+        row.appendChild(th);
+    });
+
+    const summaryColumns = [
+        "Total Tests",
+        "Total Exams",
+        "Overall Total",
+        "Percentage",
+        "Result"
+    ];
+
+    summaryColumns.forEach(label => {
+        const th = document.createElement("th");
+
+        th.textContent = label;
+        th.className = "summary-column";
+
+        row.appendChild(th);
+    });
+
+    head.innerHTML = "";
+    head.appendChild(row);
+}
+
+/* =====================================================
+   RENDER COMBINED MARKSHEET
+===================================================== */
+
+function renderCombinedResults() {
+    const students = buildCombinedRows();
+
+    state.students = students;
+
+    renderCombinedHeader();
 
     const body = $("resultsBody");
     body.innerHTML = "";
 
     if (!students.length) {
-        body.innerHTML =
-            '<tr><td colspan="7" class="empty">No active enrolled students were found for this test and academic period.</td></tr>';
+        body.innerHTML = `
+            <tr>
+                <td colspan="${9 + state.assessments.length}" class="empty">
+                    No active enrolled students were found for this class and academic period.
+                </td>
+            </tr>
+        `;
+
+        $("csvBtn").disabled = true;
+        $("maximumMark").textContent = "Maximum mark: —";
+        return;
+    }
+
+    state.resultRows = students.map(student => ({
+        student,
+        result: calculateCombinedResult(student)
+    }));
+
+    state.resultRows.forEach((item, index) => {
+        const { student, result } = item;
+
+        const row = document.createElement("tr");
+
+        appendCell(row, index + 1);
+        appendCell(row, student.name);
+        appendCell(row, student.student_code);
+        appendCell(row, student.gender);
+
+        state.assessments.forEach(assessment => {
+            const mark = student.marks[assessment.id];
+
+            appendCell(
+                row,
+                formatMark(mark)
+            );
+        });
+
+        appendCell(
+            row,
+            formatMark(result.totalTests) +
+            " / " +
+            formatMark(result.totalTestsMaximum),
+            "summary-column"
+        );
+
+        appendCell(
+            row,
+            formatMark(result.totalExams) +
+            " / " +
+            formatMark(result.totalExamsMaximum),
+            "summary-column"
+        );
+
+        appendCell(
+            row,
+            formatMark(result.totalMark) +
+            " / " +
+            formatMark(result.totalRecordedMaximum),
+            "summary-column"
+        );
+
+        appendCell(
+            row,
+            formatPercentage(result.percentage),
+            "summary-column"
+        );
+
+        appendStatusCell(row, result.status);
+
+        body.appendChild(row);
+    });
+
+    const maximum = state.assessments.reduce(
+        (sum, assessment) =>
+            sum + Number(assessment.maximum_mark || 0),
+        0
+    );
+
+    $("maximumMark").textContent =
+        "Combined maximum mark: " + formatMark(maximum);
+
+    $("csvBtn").disabled = false;
+}
+
+/* =====================================================
+   TABLE CELL HELPERS
+===================================================== */
+
+function appendCell(row, value, className = "") {
+    const cell = document.createElement("td");
+
+    cell.textContent = value ?? "";
+
+    if (className) {
+        cell.className = className;
+    }
+
+    row.appendChild(cell);
+}
+
+function appendStatusCell(row, status) {
+    const cell = document.createElement("td");
+
+    const pill = document.createElement("span");
+
+    pill.className = "status-pill " +
+        (
+            status === "Passed"
+                ? "status-pass"
+                : status === "Failed"
+                    ? "status-fail"
+                    : "status-pending"
+        );
+
+    pill.textContent = status;
+
+    cell.appendChild(pill);
+    row.appendChild(cell);
+}
+
+/* =====================================================
+   SINGLE ASSESSMENT RESULTS
+===================================================== */
+
+function renderSingleAssessmentResults() {
+    const assessment = state.currentTest;
+
+    if (!assessment) return;
+
+    const students = assessment.students || [];
+    const maximumMark = Number(assessment.maximum_mark);
+
+    $("maximumMark").textContent =
+        "Maximum mark: " + formatMark(maximumMark);
+
+    $("resultsHead").innerHTML = `
+        <tr>
+            <th>#</th>
+            <th>Student Name</th>
+            <th>Student Code</th>
+            <th>Gender</th>
+            <th>Mark</th>
+            <th>Percentage</th>
+            <th>Result</th>
+        </tr>
+    `;
+
+    const body = $("resultsBody");
+    body.innerHTML = "";
+
+    if (!students.length) {
+        body.innerHTML = `
+            <tr>
+                <td colspan="7" class="empty">
+                    No active enrolled students were found for this assessment.
+                </td>
+            </tr>
+        `;
 
         $("csvBtn").disabled = true;
         return;
@@ -1352,36 +1867,13 @@ function renderResults() {
 
         const row = document.createElement("tr");
 
-        const values = [
-            index + 1,
-            student.name || "—",
-            student.student_code || "—",
-            student.gender || "—",
-            student.mark === null ? "Not recorded" : student.mark,
-            formatPercentage(percentage),
-            status
-        ];
-
-        values.forEach((value, cellIndex) => {
-            const cell = document.createElement("td");
-
-            if (cellIndex === 6) {
-                const pill = document.createElement("span");
-                pill.className = "status-pill " +
-                    (status === "Passed"
-                        ? "status-pass"
-                        : status === "Failed"
-                            ? "status-fail"
-                            : "status-pending");
-
-                pill.textContent = status;
-                cell.appendChild(pill);
-            } else {
-                cell.textContent = value;
-            }
-
-            row.appendChild(cell);
-        });
+        appendCell(row, index + 1);
+        appendCell(row, student.name || "—");
+        appendCell(row, student.student_code || "—");
+        appendCell(row, student.gender || "—");
+        appendCell(row, formatMark(student.mark));
+        appendCell(row, formatPercentage(percentage));
+        appendStatusCell(row, status);
 
         body.appendChild(row);
     });
@@ -1390,38 +1882,144 @@ function renderResults() {
 }
 
 /* =====================================================
-   OVERALL AND GENDER ANALYSIS
+   ANALYSIS HELPERS
 ===================================================== */
 
-function updateAnalysis() {
-    const test = state.currentTest;
+function createAnalysisCounters() {
+    return {
+        passed: 0,
+        failed: 0,
+        unrecorded: 0,
+        girls: {
+            passed: 0,
+            failed: 0,
+            recorded: 0
+        },
+        boys: {
+            passed: 0,
+            failed: 0,
+            recorded: 0
+        },
+        distribution: Array.from(
+            { length: 11 },
+            (_, index) => ({
+                label:
+                    index === 10
+                        ? ">100%"
+                        : index === 9
+                            ? "90–100%"
+                            : index * 10 + "–" + (index * 10 + 9) + "%",
+                count: 0
+            })
+        )
+    };
+}
 
-    if (!test) {
+function addStudentToAnalysis(counters, student, percentage) {
+    if (percentage === null) {
+        counters.unrecorded++;
+        return;
+    }
+
+    const passed = percentage >= PASS_MARK;
+
+    if (passed) counters.passed++;
+    else counters.failed++;
+
+    const normalizedGender = String(
+        student.gender || ""
+    ).trim().toLowerCase();
+
+    let group = null;
+
+    if (["female", "girl", "girls", "f"].includes(normalizedGender)) {
+        group = counters.girls;
+    } else if (["male", "boy", "boys", "m"].includes(normalizedGender)) {
+        group = counters.boys;
+    }
+
+    if (group) {
+        group.recorded++;
+
+        if (passed) group.passed++;
+        else group.failed++;
+    }
+
+    let bin;
+
+    if (percentage > 100) {
+        bin = 10;
+    } else if (percentage >= 90) {
+        bin = 9;
+    } else if (percentage >= 0) {
+        bin = Math.floor(percentage / 10);
+    } else {
+        bin = 0;
+    }
+
+    counters.distribution[bin].count++;
+}
+
+function displayAnalysis(counters, totalStudents) {
+    const recorded = counters.passed + counters.failed;
+
+    const passPercentage = recorded > 0
+        ? counters.passed / recorded * 100
+        : 0;
+
+    $("totalStudents").textContent = totalStudents;
+    $("passedStudents").textContent = counters.passed;
+    $("failedStudents").textContent = counters.failed;
+    $("unrecordedStudents").textContent = counters.unrecorded;
+
+    $("passPercentage").textContent =
+        passPercentage.toFixed(1) + "%";
+
+    $("girlsPassed").textContent = counters.girls.passed;
+    $("girlsFailed").textContent = counters.girls.failed;
+    $("girlsRecorded").textContent = counters.girls.recorded;
+
+    $("boysPassed").textContent = counters.boys.passed;
+    $("boysFailed").textContent = counters.boys.failed;
+    $("boysRecorded").textContent = counters.boys.recorded;
+
+    renderDistribution(counters.distribution, recorded);
+}
+
+/* =====================================================
+   COMBINED ANALYSIS
+===================================================== */
+
+function updateCombinedAnalysis() {
+    const counters = createAnalysisCounters();
+
+    state.resultRows.forEach(({ student, result }) => {
+        addStudentToAnalysis(
+            counters,
+            student,
+            result.percentage
+        );
+    });
+
+    displayAnalysis(counters, state.students.length);
+}
+
+/* =====================================================
+   SINGLE ASSESSMENT ANALYSIS
+===================================================== */
+
+function updateSingleAssessmentAnalysis() {
+    const assessment = state.currentTest;
+
+    if (!assessment) {
         clearAnalysis();
         return;
     }
 
-    const students = test.students || [];
-    const maximumMark = Number(test.maximum_mark);
+    const students = assessment.students || [];
+    const maximumMark = Number(assessment.maximum_mark);
 
-    let passed = 0;
-    let failed = 0;
-    let unrecorded = 0;
-
-    const gender = {
-        girls: { passed: 0, failed: 0, recorded: 0 },
-        boys: { passed: 0, failed: 0, recorded: 0 }
-    };
-
-    const distribution = Array.from(
-        { length: 11 },
-        (_, index) => ({
-            label: index === 10 ? ">100%" :
-                index === 9 ? "90–100%" :
-                (index * 10) + "–" + ((index * 10) + 9) + "%",
-            count: 0
-        })
-    );
+    const counters = createAnalysisCounters();
 
     students.forEach(student => {
         const percentage = getPercentage(
@@ -1429,72 +2027,14 @@ function updateAnalysis() {
             maximumMark
         );
 
-        if (percentage === null) {
-            unrecorded++;
-            return;
-        }
-
-        const isPassed = percentage >= 50;
-
-        if (isPassed) passed++;
-        else failed++;
-
-        const normalizedGender = String(
-            student.gender || ""
-        ).trim().toLowerCase();
-
-        let genderGroup = null;
-
-        if (["female", "girl", "girls", "f"].includes(normalizedGender)) {
-            genderGroup = gender.girls;
-        } else if (["male", "boy", "boys", "m"].includes(normalizedGender)) {
-            genderGroup = gender.boys;
-        }
-
-        if (genderGroup) {
-            genderGroup.recorded++;
-
-            if (isPassed) genderGroup.passed++;
-            else genderGroup.failed++;
-        }
-
-        let bin;
-
-        if (percentage > 100) {
-            bin = 10;
-        } else if (percentage >= 90) {
-            bin = 9;
-        } else if (percentage >= 0) {
-            bin = Math.floor(percentage / 10);
-        } else {
-            bin = 0;
-        }
-
-        distribution[bin].count++;
+        addStudentToAnalysis(
+            counters,
+            student,
+            percentage
+        );
     });
 
-    const recorded = passed + failed;
-
-    const passPercentage = recorded > 0
-        ? (passed / recorded) * 100
-        : 0;
-
-    $("totalStudents").textContent = students.length;
-    $("passedStudents").textContent = passed;
-    $("failedStudents").textContent = failed;
-    $("unrecordedStudents").textContent = unrecorded;
-    $("passPercentage").textContent =
-        passPercentage.toFixed(1) + "%";
-
-    $("girlsPassed").textContent = gender.girls.passed;
-    $("girlsFailed").textContent = gender.girls.failed;
-    $("girlsRecorded").textContent = gender.girls.recorded;
-
-    $("boysPassed").textContent = gender.boys.passed;
-    $("boysFailed").textContent = gender.boys.failed;
-    $("boysRecorded").textContent = gender.boys.recorded;
-
-    renderDistribution(distribution, recorded);
+    displayAnalysis(counters, students.length);
 }
 
 /* =====================================================
@@ -1505,8 +2045,11 @@ function renderDistribution(distribution, recorded) {
     const container = $("distribution");
 
     if (!recorded) {
-        container.innerHTML =
-            '<div class="empty">No recorded marks are available for this test.</div>';
+        container.innerHTML = `
+            <div class="empty">
+                No recorded marks are available.
+            </div>
+        `;
         return;
     }
 
@@ -1526,7 +2069,7 @@ function renderDistribution(distribution, recorded) {
         fill.className = "bar-fill";
 
         fill.style.width =
-            ((item.count / recorded) * 100) + "%";
+            (item.count / recorded * 100) + "%";
 
         track.appendChild(fill);
 
@@ -1534,6 +2077,7 @@ function renderDistribution(distribution, recorded) {
         count.textContent = item.count;
 
         row.append(label, track, count);
+
         container.appendChild(row);
     });
 }
@@ -1543,12 +2087,9 @@ function renderDistribution(distribution, recorded) {
 ===================================================== */
 
 function downloadCSV() {
-    const test = state.currentTest;
-
-    if (!test) return;
-
-    const students = test.students || [];
-    const maximumMark = Number(test.maximum_mark);
+    if (!state.selectedAssignment || !state.selectedTest) {
+        return;
+    }
 
     const rows = [
         [
@@ -1565,18 +2106,72 @@ function downloadCSV() {
         ],
         [
             "Class",
-            state.selectedAssignment?.class_name || "",
+            state.selectedAssignment.class_name || "",
             "Subject",
-            state.selectedAssignment?.subject_name || ""
+            state.selectedAssignment.subject_name || ""
         ],
-        [
-            "Test",
-            test.name || "",
+        []
+    ];
+
+    if (state.selectedTest === "all") {
+        rows.push([
+            "No.",
+            "Student Name",
+            "Student Code",
+            "Gender",
+            ...state.assessments.map(
+                assessment =>
+                    (assessment.type === "exam" ? "EXAM: " : "TEST: ") +
+                    assessment.name +
+                    " (Max " + assessment.maximum_mark + ")"
+            ),
+            "Total Tests",
+            "Total Exams",
+            "Overall Total",
+            "Percentage",
+            "Result"
+        ]);
+
+        state.resultRows.forEach(({ student, result }, index) => {
+            rows.push([
+                index + 1,
+                student.name,
+                student.student_code,
+                student.gender,
+
+                ...state.assessments.map(assessment =>
+                    student.marks[assessment.id] === null ||
+                    student.marks[assessment.id] === undefined
+                        ? ""
+                        : student.marks[assessment.id]
+                ),
+
+                result.totalTests + "/" + result.totalTestsMaximum,
+                result.totalExams + "/" + result.totalExamsMaximum,
+                result.totalMark + "/" + result.totalRecordedMaximum,
+                result.percentage === null
+                    ? ""
+                    : result.percentage.toFixed(1) + "%",
+                result.status
+            ]);
+        });
+
+    } else {
+        const assessment = state.currentTest;
+        const maximumMark = Number(assessment.maximum_mark);
+
+        rows.push([
+            "Assessment",
+            assessment.name,
+            "Type",
+            assessment.type,
             "Maximum Mark",
             maximumMark
-        ],
-        [],
-        [
+        ]);
+
+        rows.push([]);
+
+        rows.push([
             "No.",
             "Student Name",
             "Student Code",
@@ -1584,25 +2179,27 @@ function downloadCSV() {
             "Mark",
             "Percentage",
             "Result"
-        ]
-    ];
-
-    students.forEach((student, index) => {
-        const percentage = getPercentage(
-            student.mark,
-            maximumMark
-        );
-
-        rows.push([
-            index + 1,
-            student.name || "",
-            student.student_code || "",
-            student.gender || "",
-            student.mark === null ? "" : student.mark,
-            percentage === null ? "" : percentage.toFixed(1) + "%",
-            getResultStatus(percentage)
         ]);
-    });
+
+        assessment.students.forEach((student, index) => {
+            const percentage = getPercentage(
+                student.mark,
+                maximumMark
+            );
+
+            rows.push([
+                index + 1,
+                student.name || "",
+                student.student_code || "",
+                student.gender || "",
+                student.mark ?? "",
+                percentage === null
+                    ? ""
+                    : percentage.toFixed(1) + "%",
+                getResultStatus(percentage)
+            ]);
+        });
+    }
 
     const csv = rows.map(row =>
         row.map(value =>
@@ -1619,9 +2216,14 @@ function downloadCSV() {
     const link = document.createElement("a");
 
     link.href = url;
+
     link.download =
         "teacher-results-" +
-        (test.name || "results").replace(/[^a-z0-9]/gi, "-") +
+        (state.selectedAssignment.class_name || "class")
+            .replace(/[^a-z0-9]/gi, "-") +
+        "-" +
+        (state.selectedAssignment.subject_name || "subject")
+            .replace(/[^a-z0-9]/gi, "-") +
         ".csv";
 
     document.body.appendChild(link);
@@ -1647,19 +2249,22 @@ $("teacherSelect").addEventListener("change", async () => {
     state.teacherId = $("teacherSelect").value || null;
 
     if (state.teacherId) {
-        localStorage.setItem("targetTeacher", state.teacherId);
+        localStorage.setItem(
+            "targetTeacher",
+            state.teacherId
+        );
     }
 
     resetResults();
 
     if (state.role === "school_admin") {
         await loadCalendar();
-    } else if (state.role === "sector_admin") {
-        // The selected school's calendar is already loaded.
-        // The user can choose the desired year and term.
-        if ($("yearSelect").value && $("termSelect").value) {
-            await loadResults();
-        }
+    } else if (
+        state.role === "sector_admin" &&
+        $("yearSelect").value &&
+        $("termSelect").value
+    ) {
+        await loadResults();
     }
 });
 
@@ -1679,14 +2284,19 @@ $("testSelect").addEventListener(
 
 $("csvBtn").addEventListener("click", downloadCSV);
 
-$("printBtn").addEventListener("click", () => window.print());
+$("printBtn").addEventListener("click", () => {
+    window.print();
+});
 
 /* =====================================================
    START
 ===================================================== */
 
 initialize();
+
 </script>
 
 </body>
 </html>
+    
+</main>
