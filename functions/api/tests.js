@@ -225,11 +225,11 @@ export async function onRequestGet(context) {
         /* ---------------------------------------------
            TEACHER VISIBILITY
 
-           A teacher sees a test when at least one
-           assigned class-subject combination matches.
+           Teachers see tests that match at least one
+           of their assigned class-subject combinations.
 
-           This also allows teachers to see tests created
-           by administrators and other teachers.
+           This includes tests created by administrators
+           and other teachers.
         --------------------------------------------- */
 
         else if (auth.role === "teacher") {
@@ -332,7 +332,7 @@ export async function onRequestGet(context) {
             else if (auth.role === "teacher") {
                 const teacherSchool = await client.query(
                     `
-                    SELECT 1
+                    SELECT DISTINCT ta.school_id
                     FROM teachers tr
 
                     INNER JOIN teacher_assignments ta
@@ -779,9 +779,6 @@ export async function onRequestGet(context) {
 
         /* ---------------------------------------------
            LOAD SUBJECTS
-
-           Teachers only receive subjects assigned
-           to them. Administrators retain all subjects.
         --------------------------------------------- */
 
         let subjectsResult;
@@ -851,14 +848,19 @@ export async function onRequestGet(context) {
 
 /* =====================================================
    POST: CREATE A TEST
-   SECTOR ADMIN, SCHOOL ADMIN, DOS AND TEACHER
 
-   Teachers:
-   - School is verified from teacher_assignments.
-   - Only assigned classes and subjects are allowed.
-   - Every selected class-subject combination must
-     exist in the teacher's assignments.
-   - Test is saved in the normal assessment tables.
+   ROLES:
+   - sector_admin
+   - school_admin
+   - dos
+   - teacher
+
+   TEACHERS:
+   - Their school is derived from database assignments.
+   - Exactly one assigned school is required.
+   - Client-submitted school IDs are ignored.
+   - Only assigned class-subject combinations are allowed.
+   - Uses the normal official assessment tables.
 ===================================================== */
 
 export async function onRequestPost(context) {
@@ -979,16 +981,17 @@ export async function onRequestPost(context) {
         /* ---------------------------------------------
            DETERMINE SCHOOL IDS
 
-           Sector admin:
-           Uses submitted school IDs.
+           SECTOR ADMIN:
+           - Uses submitted school IDs.
 
-           School admin and DOS:
-           Uses their authenticated school.
+           SCHOOL ADMIN / DOS:
+           - Uses authenticated school ID.
 
-           Teacher:
-           Uses a school from their verified teaching
-           assignments. The request cannot grant access
-           to a school where they have no assignment.
+           TEACHER:
+           - School is determined exclusively from
+             teacher_assignments.
+           - Exactly one school must be found.
+           - Browser-supplied school IDs are ignored.
         --------------------------------------------- */
 
         let schoolIds = [];
@@ -1012,75 +1015,38 @@ export async function onRequestPost(context) {
         }
 
         else if (auth.role === "teacher") {
-            const requestedSchoolId = String(
-                data.school_id ??
-                data.schoolId ??
-                ""
-            ).trim();
-
             const teacherSchoolsResult = await client.query(
                 `
                 SELECT DISTINCT
-                    ta.school_id,
-                    s.school_name
+                    ta.school_id
 
                 FROM teachers tr
 
                 INNER JOIN teacher_assignments ta
                     ON ta.teacher_id = tr.id
 
-                INNER JOIN schools s
-                    ON s.id = ta.school_id
-
                 WHERE tr.user_id = $1
-                  AND s.status = 'active'
 
-                ORDER BY s.school_name
+                ORDER BY ta.school_id
                 `,
                 [auth.userId]
             );
 
             if (teacherSchoolsResult.rows.length === 0) {
                 throw new Error(
-                    "You do not have any active school teaching assignments."
+                    "You do not have any teaching assignments."
                 );
             }
 
-            if (requestedSchoolId) {
-                if (!/^\d+$/.test(requestedSchoolId)) {
-                    throw new Error("Invalid selected school.");
-                }
-
-                const assignedSchool =
-                    teacherSchoolsResult.rows.find(
-                        row =>
-                            String(row.school_id) === requestedSchoolId
-                    );
-
-                if (!assignedSchool) {
-                    throw new Error(
-                        "You are not assigned to the selected school."
-                    );
-                }
-
-                schoolIds = [requestedSchoolId];
-            } else {
-                const assignedSchoolIds = [
-                    ...new Set(
-                        teacherSchoolsResult.rows.map(
-                            row => String(row.school_id)
-                        )
-                    )
-                ];
-
-                if (assignedSchoolIds.length !== 1) {
-                    throw new Error(
-                        "Select the school for which you want to create this test."
-                    );
-                }
-
-                schoolIds = assignedSchoolIds;
+            if (teacherSchoolsResult.rows.length !== 1) {
+                throw new Error(
+                    "Your teaching assignments are linked to more than one school. Please contact your school administrator."
+                );
             }
+
+            schoolIds = [
+                String(teacherSchoolsResult.rows[0].school_id)
+            ];
         }
 
         if (schoolIds.length === 0) {
@@ -1132,15 +1098,9 @@ export async function onRequestPost(context) {
         /* ---------------------------------------------
            VALIDATE TEACHER ASSIGNMENTS
 
-           IMPORTANT:
-
-           The teacher must own every selected
-           class-subject combination in the selected
-           school.
-
-           This prevents combining a class assigned to
-           the teacher with a subject assigned to them
-           in a different class.
+           Every selected class-subject combination
+           must exist in the teacher's assignments
+           for their one verified school.
         --------------------------------------------- */
 
         let validClasses;
@@ -1206,35 +1166,47 @@ export async function onRequestPost(context) {
                 );
             }
 
-            const assignedClassIds = new Set(
-                assignmentsResult.rows.map(
-                    row => String(row.class_id)
+            /* -----------------------------------------
+               INSERT EACH SELECTED CLASS ONLY ONCE
+
+               The assignment query can return the same
+               class more than once when the teacher
+               teaches multiple selected subjects.
+            ----------------------------------------- */
+
+            const uniqueAssignedClasses = new Map();
+
+            for (const row of assignmentsResult.rows) {
+                const key =
+                    `${row.school_id}:${row.class_id}`;
+
+                if (!uniqueAssignedClasses.has(key)) {
+                    uniqueAssignedClasses.set(key, {
+                        id: row.class_id,
+                        school_id: row.school_id
+                    });
+                }
+            }
+
+            validClasses = {
+                rows: [...uniqueAssignedClasses.values()]
+            };
+
+            const selectedClassIds = new Set(
+                validClasses.rows.map(
+                    row => String(row.id)
                 )
             );
 
-            const missingClasses = classIds.filter(
-                id => !assignedClassIds.has(id)
-            );
-
-            if (missingClasses.length > 0) {
+            if (
+                classIds.some(
+                    classId => !selectedClassIds.has(classId)
+                )
+            ) {
                 throw new Error(
                     "One or more selected classes are not assigned to you."
                 );
             }
-
-            validClasses = {
-                rows: [
-                    ...new Map(
-                        assignmentsResult.rows.map(row => [
-                            `${row.school_id}:${row.class_id}`,
-                            {
-                                id: row.class_id,
-                                school_id: row.school_id
-                            }
-                        ])
-                    ).values()
-                ]
-            };
         }
 
         /* ---------------------------------------------
@@ -1283,10 +1255,6 @@ export async function onRequestPost(context) {
 
         /* ---------------------------------------------
            VALIDATE SUBJECTS
-
-           For teachers, also verify that the selected
-           subjects are among their assigned subjects
-           in the selected school.
         --------------------------------------------- */
 
         const validSubjects = await client.query(
@@ -1395,11 +1363,10 @@ export async function onRequestPost(context) {
         /* ---------------------------------------------
            CREATE TEST
 
-           Teacher tests are school tests.
-
-           sector_id is NULL for teachers.
-           school_id is the verified assigned school.
-           created_by is the authenticated user.
+           Teacher:
+           - sector_id = NULL
+           - school_id = verified assigned school
+           - created_by = authenticated user
         --------------------------------------------- */
 
         const testResult = await client.query(
@@ -1532,10 +1499,8 @@ export async function onRequestPost(context) {
             "Select at least one class.",
             "Select at least one subject.",
             "Your account is not linked to a school.",
-            "You do not have any active school teaching assignments.",
-            "Select the school for which you want to create this test.",
-            "Invalid selected school.",
-            "You are not assigned to the selected school.",
+            "You do not have any teaching assignments.",
+            "Your teaching assignments are linked to more than one school. Please contact your school administrator.",
             "One or more selected schools are invalid.",
             "One or more selected classes are not offered by the selected schools.",
             "One or more selected classes are not assigned to you.",
@@ -1545,8 +1510,7 @@ export async function onRequestPost(context) {
 
         const isClientError =
             clientErrorMessages.includes(error.message) ||
-            error.message.startsWith("Cannot create this test.") ||
-            error.message.startsWith("You can only create tests");
+            error.message.startsWith("Cannot create this test.");
 
         return json({
             success: false,
@@ -1560,3 +1524,4 @@ export async function onRequestPost(context) {
         }
     }
 }
+
