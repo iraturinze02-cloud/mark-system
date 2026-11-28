@@ -40,10 +40,23 @@ export async function onRequestGet(context) {
         url.searchParams.get("term_id")
     );
 
+    // Optional subclass filter. Missing or empty means All Subclasses.
+    const subclassParam = url.searchParams.get("subclass_id");
+    const subclassId = subclassParam
+        ? validId(subclassParam)
+        : null;
+
     if (!academicYearId || !termId) {
         return json({
             success: false,
             message: "Please select an academic year and term."
+        }, 400);
+    }
+
+    if (subclassParam && !subclassId) {
+        return json({
+            success: false,
+            message: "Invalid subclass selection."
         }, 400);
     }
 
@@ -301,10 +314,51 @@ export async function onRequestGet(context) {
             [teacherId, schoolId]
         );
 
+        /* =================================================
+           4. VALIDATE SELECTED SUBCLASS
+        ================================================= */
+
+        if (subclassId) {
+            const subclassValidation = await client.query(
+                `
+                SELECT scs.id
+                FROM school_class_subclasses scs
+
+                WHERE scs.id = $1
+                  AND scs.school_id = $2
+                  AND scs.academic_year_id = $3
+                  AND LOWER(TRIM(scs.status)) = 'active'
+
+                  AND EXISTS (
+                      SELECT 1
+                      FROM teacher_assignments ta
+                      WHERE ta.teacher_id = $4
+                        AND ta.school_id = $2
+                        AND ta.class_id = scs.class_id
+                  )
+
+                LIMIT 1
+                `,
+                [
+                    subclassId,
+                    schoolId,
+                    academicYearId,
+                    teacherId
+                ]
+            );
+
+            if (!subclassValidation.rowCount) {
+                return json({
+                    success: false,
+                    message: "The selected subclass is not available for this teacher, school or academic year."
+                }, 400);
+            }
+        }
+
         const assignments = [];
 
         /* =================================================
-           4. LOAD STUDENTS, TESTS AND EXAMINATIONS
+           5. LOAD STUDENTS, TESTS AND EXAMINATIONS
         ================================================= */
 
         for (const assignmentRow of assignmentResult.rows) {
@@ -318,12 +372,46 @@ export async function onRequestGet(context) {
                 class_level: assignmentRow.class_level,
                 subject_id: String(assignmentRow.subject_id),
                 subject_name: assignmentRow.subject_name,
+
+                // Active subclasses for this class and academic year.
+                subclasses: [],
+
                 tests: [],
                 examinations: []
             };
 
             /* -----------------------------------------
-               STUDENTS IN THE SELECTED PERIOD
+               5A. LOAD SUBCLASSES FOR THIS CLASS
+            ----------------------------------------- */
+
+            const subclassResult = await client.query(
+                `
+                SELECT
+                    id,
+                    subclass_name
+                FROM school_class_subclasses
+                WHERE school_id = $1
+                  AND academic_year_id = $2
+                  AND class_id = $3
+                  AND LOWER(TRIM(status)) = 'active'
+                ORDER BY subclass_name ASC, id ASC
+                `,
+                [
+                    schoolId,
+                    academicYearId,
+                    assignmentRow.class_id
+                ]
+            );
+
+            assignment.subclasses = subclassResult.rows.map(
+                subclass => ({
+                    id: String(subclass.id),
+                    name: subclass.subclass_name
+                })
+            );
+
+            /* -----------------------------------------
+               5B. STUDENTS IN THE SELECTED PERIOD
             ----------------------------------------- */
 
             const studentResult = await client.query(
@@ -332,7 +420,8 @@ export async function onRequestGet(context) {
                     st.id,
                     st.full_name,
                     st.student_code,
-                    st.gender
+                    st.gender,
+                    se.subclass_id
 
                 FROM student_enrollments se
 
@@ -348,6 +437,11 @@ export async function onRequestGet(context) {
                   AND se.term_id = $4
                   AND LOWER(TRIM(se.status)) = 'active'
 
+                  AND (
+                      $5::bigint IS NULL
+                      OR se.subclass_id = $5
+                  )
+
                 ORDER BY
                     st.id,
                     se.created_at DESC,
@@ -358,7 +452,8 @@ export async function onRequestGet(context) {
                     schoolId,
                     assignmentRow.class_id,
                     academicYearId,
-                    termId
+                    termId,
+                    subclassId
                 ]
             );
 
@@ -366,11 +461,17 @@ export async function onRequestGet(context) {
                 id: String(student.id),
                 name: student.full_name,
                 student_code: student.student_code,
-                gender: student.gender
+                gender: student.gender,
+
+                // NULL means the student has not been allocated
+                // to a subclass in this enrollment.
+                subclass_id: student.subclass_id === null
+                    ? null
+                    : String(student.subclass_id)
             }));
 
             /* -----------------------------------------
-               TESTS
+               5C. TESTS
             ----------------------------------------- */
 
             const testResult = await client.query(
@@ -416,7 +517,7 @@ export async function onRequestGet(context) {
             );
 
             /* -----------------------------------------
-               TEST MARKS
+               5D. TEST MARKS
             ----------------------------------------- */
 
             let testMarks = [];
@@ -448,7 +549,9 @@ export async function onRequestGet(context) {
             for (const mark of testMarks) {
                 testMarkMap.set(
                     `${mark.test_id}:${mark.student_id}`,
-                    mark.score === null ? null : Number(mark.score)
+                    mark.score === null
+                        ? null
+                        : Number(mark.score)
                 );
             }
 
@@ -457,6 +560,7 @@ export async function onRequestGet(context) {
                 name: test.test_name,
                 status: test.status,
                 created_at: test.created_at,
+
                 maximum_mark: test.maximum_mark === null
                     ? 0
                     : Number(test.maximum_mark),
@@ -466,16 +570,15 @@ export async function onRequestGet(context) {
                     mark: testMarkMap.has(
                         `${test.id}:${student.id}`
                     )
-                        ? testMarkMap.get(`${test.id}:${student.id}`)
+                        ? testMarkMap.get(
+                            `${test.id}:${student.id}`
+                        )
                         : null
                 }))
             }));
 
             /* -----------------------------------------
-               EXAMINATIONS
-
-               Examinations are stored in the separate
-               examinations table, not in tests.
+               5E. EXAMINATIONS
             ----------------------------------------- */
 
             const examinationResult = await client.query(
@@ -515,10 +618,7 @@ export async function onRequestGet(context) {
             );
 
             /* -----------------------------------------
-               EXAMINATION MARKS
-
-               marks.examination_id links marks to
-               examinations.id.
+               5F. EXAMINATION MARKS
             ----------------------------------------- */
 
             let examinationMarks = [];
@@ -552,7 +652,9 @@ export async function onRequestGet(context) {
             for (const mark of examinationMarks) {
                 examinationMarkMap.set(
                     `${mark.examination_id}:${mark.student_id}`,
-                    mark.score === null ? null : Number(mark.score)
+                    mark.score === null
+                        ? null
+                        : Number(mark.score)
                 );
             }
 
@@ -584,7 +686,7 @@ export async function onRequestGet(context) {
         }
 
         /* =================================================
-           5. RESPONSE
+           6. RESPONSE
         ================================================= */
 
         return json({
@@ -606,6 +708,10 @@ export async function onRequestGet(context) {
                 school_id: String(schoolId),
                 school_name: schoolName
             },
+
+            selected_subclass_id: subclassId
+                ? String(subclassId)
+                : null,
 
             assignments
         });
