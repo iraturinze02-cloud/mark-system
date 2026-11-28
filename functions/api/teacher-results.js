@@ -22,7 +22,6 @@ function validId(value) {
 ===================================================== */
 
 export async function onRequestGet(context) {
-
     const auth = await authenticateRole(context, [
         "teacher",
         "school_admin",
@@ -52,83 +51,59 @@ export async function onRequestGet(context) {
     let teacherId = null;
     let teacherName = null;
     let schoolName = null;
-
     let client;
 
     try {
-
         client = await connectDB(context);
 
         /* =================================================
-           1. TEACHER ACCESS
+           1. IDENTIFY TEACHER AND SCHOOL
         ================================================= */
 
         if (auth.role === "teacher") {
+            schoolId = validId(auth.schoolId);
 
-            if (!auth.schoolId) {
+            if (!schoolId) {
                 return json({
                     success: false,
                     message: "Your account is not linked to a school."
                 }, 403);
             }
 
-            schoolId = validId(auth.schoolId);
-
-            if (!schoolId) {
-                return json({
-                    success: false,
-                    message: "Invalid school account information."
-                }, 403);
-            }
-
-            const teacherResult = await client.query(
+            const result = await client.query(
                 `
                 SELECT
                     t.id,
                     u.full_name,
                     s.school_name
-
                 FROM teachers t
-
                 INNER JOIN users u
                     ON u.id = t.user_id
                    AND u.school_id = t.school_id
                    AND u.role = 'teacher'
-
                 INNER JOIN schools s
                     ON s.id = t.school_id
-
                 WHERE t.user_id = $1
                   AND t.school_id = $2
-
                 LIMIT 1
                 `,
-                [
-                    auth.userId,
-                    schoolId
-                ]
+                [auth.userId, schoolId]
             );
 
-            if (teacherResult.rowCount === 0) {
+            if (!result.rowCount) {
                 return json({
                     success: false,
                     message: "Your teacher profile could not be found."
                 }, 404);
             }
 
-            teacherId = String(teacherResult.rows[0].id);
-            teacherName = teacherResult.rows[0].full_name;
-            schoolName = teacherResult.rows[0].school_name;
+            teacherId = validId(result.rows[0].id);
+            teacherName = result.rows[0].full_name;
+            schoolName = result.rows[0].school_name;
         }
 
-        /* =================================================
-           2. SCHOOL ADMIN ACCESS
-        ================================================= */
-
         else if (auth.role === "school_admin") {
-
             schoolId = validId(auth.schoolId);
-
             teacherId = validId(
                 url.searchParams.get("teacher_id")
             );
@@ -147,52 +122,39 @@ export async function onRequestGet(context) {
                 }, 400);
             }
 
-            const teacherResult = await client.query(
+            const result = await client.query(
                 `
                 SELECT
                     t.id,
                     u.full_name,
                     s.school_name
-
                 FROM teachers t
-
                 INNER JOIN users u
                     ON u.id = t.user_id
                    AND u.school_id = t.school_id
                    AND u.role = 'teacher'
-
                 INNER JOIN schools s
                     ON s.id = t.school_id
-
                 WHERE t.id = $1
                   AND t.school_id = $2
-
                 LIMIT 1
                 `,
-                [
-                    teacherId,
-                    schoolId
-                ]
+                [teacherId, schoolId]
             );
 
-            if (teacherResult.rowCount === 0) {
+            if (!result.rowCount) {
                 return json({
                     success: false,
                     message: "This teacher does not belong to your school."
                 }, 403);
             }
 
-            teacherName = teacherResult.rows[0].full_name;
-            schoolName = teacherResult.rows[0].school_name;
-            teacherId = String(teacherResult.rows[0].id);
+            teacherId = validId(result.rows[0].id);
+            teacherName = result.rows[0].full_name;
+            schoolName = result.rows[0].school_name;
         }
 
-        /* =================================================
-           3. SECTOR ADMIN ACCESS
-        ================================================= */
-
         else if (auth.role === "sector_admin") {
-
             schoolId = validId(
                 url.searchParams.get("school_id")
             );
@@ -215,55 +177,41 @@ export async function onRequestGet(context) {
                 }, 403);
             }
 
-            const teacherResult = await client.query(
+            const result = await client.query(
                 `
                 SELECT
                     t.id,
                     u.full_name,
                     s.school_name
-
                 FROM teachers t
-
                 INNER JOIN users u
                     ON u.id = t.user_id
                    AND u.school_id = t.school_id
                    AND u.role = 'teacher'
-
                 INNER JOIN schools s
                     ON s.id = t.school_id
-
                 WHERE t.id = $1
                   AND t.school_id = $2
                   AND s.sector_id = $3
-
                 LIMIT 1
                 `,
-                [
-                    teacherId,
-                    schoolId,
-                    auth.sectorId
-                ]
+                [teacherId, schoolId, auth.sectorId]
             );
 
-            if (teacherResult.rowCount === 0) {
+            if (!result.rowCount) {
                 return json({
                     success: false,
                     message: "This teacher is not accessible within your sector."
                 }, 403);
             }
 
-            teacherName = teacherResult.rows[0].full_name;
-            schoolName = teacherResult.rows[0].school_name;
-            teacherId = String(teacherResult.rows[0].id);
+            teacherId = validId(result.rows[0].id);
+            teacherName = result.rows[0].full_name;
+            schoolName = result.rows[0].school_name;
         }
 
         /* =================================================
-           4. VALIDATE ACADEMIC YEAR AND TERM
-
-           The selected academic year and term must belong
-           to the selected teacher's school.
-
-           This prevents mixing IDs between schools.
+           2. VALIDATE ACADEMIC PERIOD
         ================================================= */
 
         const periodResult = await client.query(
@@ -271,31 +219,22 @@ export async function onRequestGet(context) {
             SELECT
                 ay.id AS academic_year_id,
                 ay.year_name,
-
                 tr.id AS term_id,
                 tr.term_name,
                 tr.term_number
-
             FROM academic_years ay
-
             INNER JOIN terms tr
                 ON tr.school_id = ay.school_id
                AND tr.academic_year_id = ay.id
-
             WHERE ay.school_id = $1
               AND ay.id = $2
               AND tr.id = $3
-
             LIMIT 1
             `,
-            [
-                schoolId,
-                academicYearId,
-                termId
-            ]
+            [schoolId, academicYearId, termId]
         );
 
-        if (periodResult.rowCount === 0) {
+        if (!periodResult.rowCount) {
             return json({
                 success: false,
                 message: "The selected academic year or term does not belong to this school."
@@ -305,28 +244,16 @@ export async function onRequestGet(context) {
         const academicPeriod = periodResult.rows[0];
 
         /* =================================================
-           5. LOAD ASSIGNMENTS, TESTS, STUDENTS AND MARKS
-
-           IMPORTANT:
-
-           - Assignments are not filtered by academic period.
-           - Tests are filtered through test_schools.
-           - Students are filtered through student_enrollments.
-           - Only active enrolled students are included.
-           - Students without marks remain in the results.
-           - Gender is returned for gender analysis.
+           3. GET TEACHER ASSIGNMENTS
         ================================================= */
 
-        const result = await client.query(
+        const assignmentResult = await client.query(
             `
             SELECT
                 ta.id AS assignment_id,
-
                 ta.school_id,
                 sch.school_name,
-
                 ta.teacher_id,
-
                 c.id AS class_id,
                 c.class_name,
 
@@ -338,21 +265,7 @@ export async function onRequestGet(context) {
                 END AS class_level,
 
                 sub.id AS subject_id,
-                sub.subject_name,
-
-                tst.id AS test_id,
-                tst.test_name,
-                tst.status AS test_status,
-                tst.created_at AS test_created_at,
-
-                ts.total_marks AS maximum_mark,
-
-                st.id AS student_id,
-                st.full_name AS student_name,
-                st.student_code,
-                st.gender,
-
-                m.score
+                sub.subject_name
 
             FROM teacher_assignments ta
 
@@ -378,271 +291,326 @@ export async function onRequestGet(context) {
             INNER JOIN subjects sub
                 ON sub.id = ta.subject_id
 
-            /* -----------------------------------------
-               TEST CLASSES
-            ----------------------------------------- */
-
-            LEFT JOIN test_classes tc
-                ON tc.school_id = ta.school_id
-               AND tc.class_id = ta.class_id
-
-            /* -----------------------------------------
-               SCHOOL-SPECIFIC TEST ACADEMIC PERIOD
-            ----------------------------------------- */
-
-            LEFT JOIN test_schools tsc
-                ON tsc.test_id = tc.test_id
-               AND tsc.school_id = ta.school_id
-               AND tsc.academic_year_id = $3
-               AND tsc.term_id = $4
-
-            /* -----------------------------------------
-               TEST DETAILS
-            ----------------------------------------- */
-
-            LEFT JOIN tests tst
-                ON tst.id = tc.test_id
-               AND tsc.test_id IS NOT NULL
-               AND EXISTS (
-                    SELECT 1
-                    FROM test_subjects check_subject
-                    WHERE check_subject.test_id = tst.id
-                      AND check_subject.subject_id = ta.subject_id
-               )
-
-            /* -----------------------------------------
-               SUBJECT MAXIMUM MARK
-            ----------------------------------------- */
-
-            LEFT JOIN test_subjects ts
-                ON ts.test_id = tst.id
-               AND ts.subject_id = ta.subject_id
-
-            /* -----------------------------------------
-               STUDENT ENROLLMENT
-
-               Get students enrolled in the selected
-               school, class, academic year and term.
-            ----------------------------------------- */
-
-            LEFT JOIN LATERAL (
-                SELECT DISTINCT ON (se.student_id)
-                    se.student_id
-
-                FROM student_enrollments se
-
-                WHERE se.school_id = ta.school_id
-                  AND se.class_id = ta.class_id
-                  AND se.academic_year_id = $3
-                  AND se.term_id = $4
-                  AND LOWER(TRIM(se.status)) = 'active'
-
-                ORDER BY
-                    se.student_id,
-                    se.created_at DESC,
-                    se.id DESC
-
-            ) enrollment ON TRUE
-
-            /* -----------------------------------------
-               STUDENT DETAILS
-            ----------------------------------------- */
-
-            LEFT JOIN students st
-                ON st.id = enrollment.student_id
-               AND st.school_id = ta.school_id
-               AND st.class_id = ta.class_id
-               AND st.status = 'active'
-
-            /* -----------------------------------------
-               MARKS
-
-               A missing mark remains NULL.
-               It must not be counted as a failure.
-            ----------------------------------------- */
-
-            LEFT JOIN marks m
-                ON m.test_id = tst.id
-               AND m.student_id = st.id
-               AND m.class_id = ta.class_id
-               AND m.subject_id = ta.subject_id
-
-            /* -----------------------------------------
-               SELECTED TEACHER
-            ----------------------------------------- */
-
             WHERE ta.teacher_id = $1
               AND ta.school_id = $2
 
             ORDER BY
                 c.class_name,
-                sub.subject_name,
-                tst.created_at DESC,
-                st.full_name
+                sub.subject_name
             `,
-            [
-                teacherId,
-                schoolId,
-                academicYearId,
-                termId
-            ]
+            [teacherId, schoolId]
         );
 
+        const assignments = [];
+
         /* =================================================
-           6. ORGANIZE RESULTS
-
-           Structure:
-
-           assignments[]
-              tests[]
-                 students[]
+           4. LOAD STUDENTS, TESTS AND EXAMINATIONS
         ================================================= */
 
-        const assignmentsMap = new Map();
-
-        for (const row of result.rows) {
-
-            const assignmentKey = String(row.assignment_id);
-
-            /* -----------------------------------------
-               CREATE ASSIGNMENT
-            ----------------------------------------- */
-
-            if (!assignmentsMap.has(assignmentKey)) {
-
-                assignmentsMap.set(assignmentKey, {
-                    assignment_id: assignmentKey,
-
-                    school_id: String(row.school_id),
-                    school_name: row.school_name,
-
-                    teacher_id: String(row.teacher_id),
-
-                    class_id: String(row.class_id),
-                    class_name: row.class_name,
-                    class_level: row.class_level,
-
-                    subject_id: String(row.subject_id),
-                    subject_name: row.subject_name,
-
-                    tests: []
-                });
-            }
-
-            const assignment =
-                assignmentsMap.get(assignmentKey);
+        for (const assignmentRow of assignmentResult.rows) {
+            const assignment = {
+                assignment_id: String(assignmentRow.assignment_id),
+                school_id: String(assignmentRow.school_id),
+                school_name: assignmentRow.school_name,
+                teacher_id: String(assignmentRow.teacher_id),
+                class_id: String(assignmentRow.class_id),
+                class_name: assignmentRow.class_name,
+                class_level: assignmentRow.class_level,
+                subject_id: String(assignmentRow.subject_id),
+                subject_name: assignmentRow.subject_name,
+                tests: [],
+                examinations: []
+            };
 
             /* -----------------------------------------
-               NO TEST FOR THIS ASSIGNMENT
+               STUDENTS IN THE SELECTED PERIOD
             ----------------------------------------- */
 
-            if (row.test_id === null) {
-                continue;
-            }
+            const studentResult = await client.query(
+                `
+                SELECT DISTINCT ON (st.id)
+                    st.id,
+                    st.full_name,
+                    st.student_code,
+                    st.gender
 
-            const testId = String(row.test_id);
+                FROM student_enrollments se
 
-            /* -----------------------------------------
-               FIND OR CREATE TEST
-            ----------------------------------------- */
+                INNER JOIN students st
+                    ON st.id = se.student_id
+                   AND st.school_id = se.school_id
+                   AND st.class_id = se.class_id
+                   AND st.status = 'active'
 
-            let test = assignment.tests.find(
-                item => item.id === testId
+                WHERE se.school_id = $1
+                  AND se.class_id = $2
+                  AND se.academic_year_id = $3
+                  AND se.term_id = $4
+                  AND LOWER(TRIM(se.status)) = 'active'
+
+                ORDER BY
+                    st.id,
+                    se.created_at DESC,
+                    se.id DESC,
+                    st.full_name
+                `,
+                [
+                    schoolId,
+                    assignmentRow.class_id,
+                    academicYearId,
+                    termId
+                ]
             );
 
-            if (!test) {
-
-                test = {
-                    id: testId,
-
-                    name: row.test_name,
-                    status: row.test_status,
-                    created_at: row.test_created_at,
-
-                    maximum_mark: row.maximum_mark === null
-                        ? 0
-                        : Number(row.maximum_mark),
-
-                    students: []
-                };
-
-                assignment.tests.push(test);
-            }
+            const students = studentResult.rows.map(student => ({
+                id: String(student.id),
+                name: student.full_name,
+                student_code: student.student_code,
+                gender: student.gender
+            }));
 
             /* -----------------------------------------
-               NO STUDENT FOR THIS TEST
+               TESTS
             ----------------------------------------- */
 
-            if (row.student_id === null) {
-                continue;
-            }
+            const testResult = await client.query(
+                `
+                SELECT DISTINCT
+                    tst.id,
+                    tst.test_name,
+                    tst.status,
+                    tst.created_at,
+                    ts.total_marks AS maximum_mark
+
+                FROM test_classes tc
+
+                INNER JOIN test_schools tsc
+                    ON tsc.test_id = tc.test_id
+                   AND tsc.school_id = tc.school_id
+                   AND tsc.academic_year_id = $3
+                   AND tsc.term_id = $4
+
+                INNER JOIN tests tst
+                    ON tst.id = tc.test_id
+
+                INNER JOIN test_subjects ts
+                    ON ts.test_id = tst.id
+                   AND ts.subject_id = $5
+
+                WHERE tc.school_id = $1
+                  AND tc.class_id = $2
+
+                ORDER BY tst.created_at, tst.id
+                `,
+                [
+                    schoolId,
+                    assignmentRow.class_id,
+                    academicYearId,
+                    termId,
+                    assignmentRow.subject_id
+                ]
+            );
+
+            const testIds = testResult.rows.map(
+                row => String(row.id)
+            );
 
             /* -----------------------------------------
-               ADD STUDENT
-
-               Gender is required by the frontend
-               gender performance analysis.
+               TEST MARKS
             ----------------------------------------- */
 
-            test.students.push({
-                id: String(row.student_id),
+            let testMarks = [];
 
-                name: row.student_name,
+            if (testIds.length) {
+                const marksResult = await client.query(
+                    `
+                    SELECT
+                        m.test_id,
+                        m.student_id,
+                        m.score
+                    FROM marks m
+                    WHERE m.test_id = ANY($1::bigint[])
+                      AND m.class_id = $2
+                      AND m.subject_id = $3
+                    `,
+                    [
+                        testIds,
+                        assignmentRow.class_id,
+                        assignmentRow.subject_id
+                    ]
+                );
 
-                student_code: row.student_code,
+                testMarks = marksResult.rows;
+            }
 
-                gender: row.gender,
+            const testMarkMap = new Map();
 
-                mark: row.score === null
-                    ? null
-                    : Number(row.score)
-            });
+            for (const mark of testMarks) {
+                testMarkMap.set(
+                    `${mark.test_id}:${mark.student_id}`,
+                    mark.score === null ? null : Number(mark.score)
+                );
+            }
+
+            assignment.tests = testResult.rows.map(test => ({
+                id: String(test.id),
+                name: test.test_name,
+                status: test.status,
+                created_at: test.created_at,
+                maximum_mark: test.maximum_mark === null
+                    ? 0
+                    : Number(test.maximum_mark),
+
+                students: students.map(student => ({
+                    ...student,
+                    mark: testMarkMap.has(
+                        `${test.id}:${student.id}`
+                    )
+                        ? testMarkMap.get(`${test.id}:${student.id}`)
+                        : null
+                }))
+            }));
+
+            /* -----------------------------------------
+               EXAMINATIONS
+
+               Examinations are stored in the separate
+               examinations table, not in tests.
+            ----------------------------------------- */
+
+            const examinationResult = await client.query(
+                `
+                SELECT
+                    e.id,
+                    e.exam_name,
+                    e.exam_type,
+                    e.total_marks,
+                    e.exam_date,
+                    e.created_at
+
+                FROM examinations e
+
+                WHERE e.school_id = $1
+                  AND e.class_id = $2
+                  AND e.subject_id = $3
+                  AND e.academic_year_id = $4
+                  AND e.term_id = $5
+
+                ORDER BY
+                    e.exam_date NULLS LAST,
+                    e.created_at,
+                    e.id
+                `,
+                [
+                    schoolId,
+                    assignmentRow.class_id,
+                    assignmentRow.subject_id,
+                    academicYearId,
+                    termId
+                ]
+            );
+
+            const examinationIds = examinationResult.rows.map(
+                row => String(row.id)
+            );
+
+            /* -----------------------------------------
+               EXAMINATION MARKS
+
+               marks.examination_id links marks to
+               examinations.id.
+            ----------------------------------------- */
+
+            let examinationMarks = [];
+
+            if (examinationIds.length) {
+                const marksResult = await client.query(
+                    `
+                    SELECT
+                        m.examination_id,
+                        m.student_id,
+                        m.score
+
+                    FROM marks m
+
+                    WHERE m.examination_id = ANY($1::bigint[])
+                      AND m.class_id = $2
+                      AND m.subject_id = $3
+                    `,
+                    [
+                        examinationIds,
+                        assignmentRow.class_id,
+                        assignmentRow.subject_id
+                    ]
+                );
+
+                examinationMarks = marksResult.rows;
+            }
+
+            const examinationMarkMap = new Map();
+
+            for (const mark of examinationMarks) {
+                examinationMarkMap.set(
+                    `${mark.examination_id}:${mark.student_id}`,
+                    mark.score === null ? null : Number(mark.score)
+                );
+            }
+
+            assignment.examinations =
+                examinationResult.rows.map(examination => ({
+                    id: String(examination.id),
+                    name: examination.exam_name,
+                    exam_type: examination.exam_type,
+                    exam_date: examination.exam_date,
+                    created_at: examination.created_at,
+
+                    maximum_mark: Number(
+                        examination.total_marks
+                    ),
+
+                    students: students.map(student => ({
+                        ...student,
+                        mark: examinationMarkMap.has(
+                            `${examination.id}:${student.id}`
+                        )
+                            ? examinationMarkMap.get(
+                                `${examination.id}:${student.id}`
+                            )
+                            : null
+                    }))
+                }));
+
+            assignments.push(assignment);
         }
 
         /* =================================================
-           7. SUCCESS RESPONSE
+           5. RESPONSE
         ================================================= */
 
         return json({
-
             success: true,
 
             academic_period: {
                 academic_year_id: String(
                     academicPeriod.academic_year_id
                 ),
-
                 academic_year: academicPeriod.year_name,
-
-                term_id: String(
-                    academicPeriod.term_id
-                ),
-
+                term_id: String(academicPeriod.term_id),
                 term: academicPeriod.term_name,
-
-                term_number: Number(
-                    academicPeriod.term_number
-                )
+                term_number: Number(academicPeriod.term_number)
             },
 
             teacher: {
                 id: String(teacherId),
-
                 full_name: teacherName,
-
                 school_id: String(schoolId),
-
                 school_name: schoolName
             },
 
-            assignments: Array.from(
-                assignmentsMap.values()
-            )
-
+            assignments
         });
 
     } catch (error) {
-
         console.error("Teacher Results API error:", {
             message: error?.message,
             code: error?.code,
@@ -657,10 +625,8 @@ export async function onRequestGet(context) {
         }, 500);
 
     } finally {
-
         if (client) {
             await client.end().catch(() => {});
         }
-
     }
 }
