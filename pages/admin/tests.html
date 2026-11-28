@@ -18,14 +18,19 @@
 
 <style>
 :root {
-    --primary: #2563eb;
-    --primary-dark: #1d4ed8;
-    --success: #15803d;
-    --danger: #dc2626;
-    --warning: #d97706;
-    --border: #e2e8f0;
-    --muted: #64748b;
-    --background: #f8fafc;
+    --primary: #174a82;
+    --primary-dark: #10365f;
+    --primary-light: #eaf2fb;
+    --accent: #2878c8;
+    --success: #168354;
+    --danger: #c94343;
+    --warning: #b7791f;
+    --text: #172b45;
+    --muted: #718096;
+    --border: #e4eaf1;
+    --surface: #ffffff;
+    --background: #f3f6fa;
+    --shadow: 0 8px 28px rgba(25, 55, 90, .06);
 }
 
 * {
@@ -35,8 +40,10 @@
 body {
     margin: 0;
     background: var(--background);
-    color: #0f172a;
-    font-family: Arial, sans-serif;
+    color: var(--text);
+    font-family: Inter, "Segoe UI", Arial, sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
 }
 
 button, input, select {
@@ -45,96 +52,7 @@ button, input, select {
 
 button {
     cursor: pointer;
-}
-
-.topbar {
-    background: white;
-    border-bottom: 1px solid var(--border);
-    padding: 16px 22px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 12px;
-}
-
-.topbar h2 {
-    margin: 0;
-    font-size: 20px;
-}
-
-.topbar p {
-    color: var(--muted);
-    font-size: 13px;
-    margin: 5px 0 0;
-}
-
-.container {
-    max-width: 1200px;
-    margin: 28px auto;
-    padding: 0 18px;
-}
-
-.panel {
-    background: white;
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 22px;
-    box-shadow: 0 2px 8px rgba(15, 23, 42, .04);
-}
-
-.panel-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 14px;
-    margin-bottom: 20px;
-}
-
-.panel-header h3 {
-    margin: 0;
-    font-size: 19px;
-}
-
-.primary-btn,
-.secondary-btn,
-.danger-btn,
-.success-btn,
-.warning-btn {
-    border: 0;
-    border-radius: 7px;
-    padding: 10px 14px;
-    font-weight: 600;
-    font-size: 13px;
-}
-
-.primary-btn {
-    background: var(--primary);
-    color: white;
-}
-
-.primary-btn:hover {
-    background: var(--primary-dark);
-}
-
-.secondary-btn {
-    background: #e2e8f0;
-    color: #1e293b;
-}
-
-.danger-btn {
-    background: #fee2e2;
-    color: #b91c1c;
-}
-
-.success-btn {
-    background: #dcfce7;
-    color: #166534;
-}
-
-.warning-btn {
-    background: #fef3c7;
-    color: #92400e;
+    transition: .2s ease;
 }
 
 button:disabled {
@@ -142,97 +60,319 @@ button:disabled {
     cursor: not-allowed;
 }
 
+/* =====================================
+   TOP NAVIGATION
+===================================== */
+
+.topbar {
+    min-height: 82px;
+    padding: 16px 5%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    color: white;
+    background: linear-gradient(115deg, #12375f, #1d568e 65%, #2874b8);
+    box-shadow: 0 4px 18px rgba(16, 54, 95, .16);
+}
+
+.topbar h2 {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 750;
+    letter-spacing: -.5px;
+}
+
+.topbar p {
+    margin: 4px 0 0;
+    color: rgba(255,255,255,.78);
+    font-size: 13px;
+}
+
+.topbar .secondary-btn {
+    background: rgba(255,255,255,.12);
+    border: 1px solid rgba(255,255,255,.3);
+    color: white;
+    border-radius: 9px;
+    padding: 10px 17px;
+}
+
+.topbar .secondary-btn:hover {
+    background: rgba(255,255,255,.22);
+}
+
+/* =====================================
+   MAIN PAGE
+===================================== */
+
+.container {
+    width: min(1440px, 94%);
+    margin: 32px auto 55px;
+}
+
+.panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 15px;
+    padding: 25px;
+    box-shadow: var(--shadow);
+}
+
+.panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 18px;
+    margin-bottom: 23px;
+}
+
+.panel-header h3 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 750;
+    letter-spacing: -.3px;
+    color: #183957;
+}
+
+.panel-header p {
+    color: var(--muted);
+    font-size: 13px;
+    margin: 5px 0 0 !important;
+}
+
+.primary-btn,
+.secondary-btn,
+.danger-btn,
+.success-btn,
+.warning-btn {
+    border: 1px solid transparent;
+    border-radius: 8px;
+    padding: 10px 15px;
+    font-weight: 650;
+    font-size: 13px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+}
+
+.primary-btn {
+    background: var(--primary);
+    color: white;
+    box-shadow: 0 3px 8px rgba(23,74,130,.15);
+}
+
+.primary-btn:hover {
+    background: var(--primary-dark);
+    transform: translateY(-1px);
+    box-shadow: 0 5px 13px rgba(23,74,130,.2);
+}
+
+.secondary-btn {
+    background: #edf2f7;
+    color: #344b63;
+    border-color: #e0e7ef;
+}
+
+.secondary-btn:hover {
+    background: #e2eaf3;
+}
+
+.danger-btn {
+    background: #fff0f0;
+    color: #b83232;
+    border-color: #f7dada;
+}
+
+.danger-btn:hover {
+    background: #ffe1e1;
+}
+
+.success-btn {
+    background: #e9f8f0;
+    color: #147447;
+    border-color: #d0efdf;
+}
+
+.success-btn:hover {
+    background: #d9f2e4;
+}
+
+.warning-btn {
+    background: #fff7e8;
+    color: #98630e;
+    border-color: #f4e5c4;
+}
+
+.warning-btn:hover {
+    background: #ffefcf;
+}
+
+/* =====================================
+   SEARCH AND FILTER TOOLBAR
+===================================== */
+
 .toolbar {
     display: flex;
     flex-wrap: wrap;
-    gap: 10px;
-    margin-bottom: 16px;
+    gap: 12px;
+    margin-bottom: 19px;
+    padding: 14px;
+    background: #f7f9fc;
+    border: 1px solid #edf1f6;
+    border-radius: 11px;
 }
 
 .toolbar input,
 .toolbar select {
-    min-height: 40px;
-    border: 1px solid var(--border);
-    border-radius: 7px;
-    padding: 9px 12px;
+    min-height: 43px;
+    border: 1px solid #dce4ed;
+    border-radius: 8px;
+    padding: 10px 13px;
     background: white;
+    color: var(--text);
+    outline: none;
+    transition: .2s;
 }
 
 .toolbar input {
     flex: 1;
-    min-width: 180px;
+    min-width: 220px;
 }
+
+.toolbar select {
+    min-width: 165px;
+}
+
+.toolbar input:focus,
+.toolbar select:focus,
+.form-group input:focus {
+    border-color: #5795d0;
+    box-shadow: 0 0 0 3px rgba(40,120,200,.11);
+}
+
+/* =====================================
+   TEST TABLE
+===================================== */
 
 .table-wrap {
     overflow-x: auto;
+    border: 1px solid var(--border);
+    border-radius: 11px;
 }
 
 table {
     width: 100%;
-    min-width: 850px;
-    border-collapse: collapse;
+    min-width: 1050px;
+    border-collapse: separate;
+    border-spacing: 0;
 }
 
 th, td {
-    padding: 13px 12px;
-    border-bottom: 1px solid var(--border);
+    padding: 15px 14px;
+    border-bottom: 1px solid #edf1f5;
     text-align: left;
     font-size: 13px;
-    vertical-align: top;
+    vertical-align: middle;
 }
 
 th {
-    background: #f8fafc;
-    color: #475569;
-    font-weight: 700;
+    background: #f5f8fc;
+    color: #53677e;
+    font-size: 11px;
+    font-weight: 750;
+    text-transform: uppercase;
+    letter-spacing: .55px;
+    white-space: nowrap;
+}
+
+td {
+    color: #40546b;
+}
+
+tbody tr {
+    background: white;
+    transition: background .15s;
+}
+
+tbody tr:hover {
+    background: #f8fbff;
+}
+
+tbody tr:last-child td {
+    border-bottom: 0;
 }
 
 td strong {
-    color: #0f172a;
+    color: #193b5b;
+    font-size: 13px;
+    font-weight: 700;
 }
 
 .details {
-    color: #64748b;
-    line-height: 1.7;
+    color: #60748a;
+    line-height: 1.85;
     max-width: 260px;
 }
 
 .subject-list {
-    line-height: 1.8;
+    line-height: 1.9;
 }
 
 .subject-list span {
     display: block;
+    color: #344b63;
 }
 
 .subject-list small {
-    color: var(--muted);
+    display: inline-block;
+    color: #8291a3;
     font-size: 11px;
+    margin-left: 3px;
 }
 
+.hint {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 6px;
+}
+
+/* =====================================
+   STATUS BADGES
+===================================== */
+
 .status {
-    display: inline-block;
-    padding: 5px 9px;
-    border-radius: 20px;
-    font-size: 11px;
-    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 11px;
+    border-radius: 30px;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .6px;
     text-transform: uppercase;
+    white-space: nowrap;
 }
 
 .status-draft {
-    background: #fef3c7;
-    color: #92400e;
+    background: #fff5df;
+    color: #94600d;
 }
 
 .status-open {
-    background: #dcfce7;
-    color: #166534;
+    background: #e4f7ed;
+    color: #147447;
 }
 
 .status-closed {
-    background: #fee2e2;
-    color: #991b1b;
+    background: #ffeded;
+    color: #b83232;
 }
+
+/* =====================================
+   ACTION BUTTONS
+===================================== */
 
 .actions {
     display: flex;
@@ -242,43 +382,62 @@ td strong {
 }
 
 .actions button {
-    padding: 7px 9px;
+    padding: 7px 10px;
     font-size: 11px;
+    border-radius: 7px;
 }
+
+/* =====================================
+   EMPTY STATE
+===================================== */
 
 .empty {
     text-align: center;
-    color: var(--muted);
-    padding: 35px 12px;
+    color: #8796a8;
+    padding: 48px 15px !important;
+    font-size: 13px;
 }
+
+/* =====================================
+   MESSAGE / NOTIFICATION
+===================================== */
 
 .message {
     display: none;
-    padding: 12px 15px;
-    border-radius: 8px;
-    margin-bottom: 15px;
+    padding: 13px 17px;
+    border-radius: 9px;
+    margin-bottom: 18px;
     font-size: 13px;
+    font-weight: 600;
+    border: 1px solid transparent;
 }
 
 .message.success {
     display: block;
-    color: #166534;
-    background: #dcfce7;
+    color: #176b45;
+    background: #e9f8f0;
+    border-color: #ccebd9;
 }
 
 .message.error {
     display: block;
-    color: #991b1b;
-    background: #fee2e2;
+    color: #a52d2d;
+    background: #fff0f0;
+    border-color: #f3d1d1;
 }
+
+/* =====================================
+   MODAL
+===================================== */
 
 .modal {
     display: none;
     position: fixed;
     inset: 0;
     z-index: 1000;
-    background: rgba(15, 23, 42, .6);
-    padding: 18px;
+    background: rgba(12, 29, 49, .65);
+    backdrop-filter: blur(4px);
+    padding: 20px;
     overflow-y: auto;
     align-items: flex-start;
     justify-content: center;
@@ -291,15 +450,29 @@ td strong {
 .modal-content {
     background: white;
     width: 100%;
-    max-width: 720px;
+    max-width: 790px;
     margin: 25px auto;
-    border-radius: 12px;
+    border-radius: 15px;
     overflow: hidden;
+    box-shadow: 0 22px 65px rgba(0,0,0,.22);
+    animation: modalAppear .2s ease-out;
+}
+
+@keyframes modalAppear {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .modal-header {
-    padding: 18px 22px;
-    border-bottom: 1px solid var(--border);
+    padding: 21px 25px;
+    background: linear-gradient(110deg, #153e69, #23649f);
+    color: white;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -309,67 +482,100 @@ td strong {
 .modal-header h3 {
     margin: 0;
     font-size: 19px;
+    font-weight: 750;
 }
 
 .close-modal {
     border: 0;
-    background: transparent;
-    font-size: 25px;
-    color: #64748b;
+    background: rgba(255,255,255,.12);
+    color: white;
+    font-size: 24px;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    display: grid;
+    place-items: center;
+}
+
+.close-modal:hover {
+    background: rgba(255,255,255,.24);
 }
 
 .modal-body {
-    padding: 22px;
+    padding: 25px;
+    max-height: calc(100vh - 190px);
+    overflow-y: auto;
 }
 
 .form-group {
-    margin-bottom: 21px;
+    margin-bottom: 25px;
 }
 
 .form-group label,
 .section-label {
     display: block;
-    font-weight: 700;
+    font-weight: 750;
     font-size: 13px;
-    margin-bottom: 9px;
+    color: #304a64;
+    margin-bottom: 10px;
 }
 
 .form-group input {
     width: 100%;
-    padding: 11px;
-    border: 1px solid var(--border);
-    border-radius: 7px;
+    padding: 12px 13px;
+    border: 1px solid #dce4ed;
+    border-radius: 8px;
+    color: #243b53;
+    background: white;
+    outline: none;
+    transition: .2s;
 }
 
-.hint {
-    font-size: 12px;
-    color: var(--muted);
-    margin-top: 6px;
+.form-group input::placeholder {
+    color: #a0adba;
 }
+
+.form-group input[type="datetime-local"] {
+    max-width: 100%;
+}
+
+.form-group > .hint {
+    line-height: 1.6;
+}
+
+/* =====================================
+   SCHOOL AND CLASS SELECTION
+===================================== */
 
 .selection-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
-    gap: 9px;
+    grid-template-columns: repeat(auto-fit, minmax(155px, 1fr));
+    gap: 10px;
 }
 
 .selection-card {
-    background: white;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 12px;
-    min-height: 45px;
+    background: #fbfcfe;
+    border: 1px solid #e0e7ef;
+    border-radius: 9px;
+    padding: 12px 13px;
+    min-height: 48px;
     text-align: left;
-    color: #334155;
+    color: #40566e;
     font-size: 13px;
-    transition: .15s;
+    transition: .18s;
+}
+
+.selection-card:hover {
+    border-color: #8bb4dc;
+    background: #f2f7fd;
 }
 
 .selection-card.selected {
-    border: 2px solid var(--primary);
-    background: #eff6ff;
-    color: #1d4ed8;
-    font-weight: 700;
+    border: 1.5px solid #2878c8;
+    background: #edf5fd;
+    color: #17548e;
+    font-weight: 750;
+    box-shadow: 0 2px 7px rgba(40,120,200,.08);
 }
 
 .selection-card:disabled {
@@ -379,29 +585,32 @@ td strong {
 
 .selection-card small {
     display: block;
-    color: var(--muted);
+    color: #8493a4;
     margin-top: 5px;
     font-weight: 400;
 }
 
-/* SUBJECT MAXIMUM MARKS */
+/* =====================================
+   SUBJECT SELECTION AND MARKS
+===================================== */
 
 .subject-selection-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-    gap: 11px;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
 }
 
 .subject-option {
-    border: 1px solid var(--border);
-    border-radius: 9px;
-    padding: 12px;
-    background: white;
+    border: 1px solid #e0e7ef;
+    border-radius: 10px;
+    padding: 14px;
+    background: #fbfcfe;
+    transition: .18s;
 }
 
 .subject-option.selected {
-    border: 2px solid var(--primary);
-    background: #eff6ff;
+    border: 1.5px solid #2878c8;
+    background: #f1f7fe;
 }
 
 .subject-select-btn {
@@ -409,40 +618,41 @@ td strong {
     border: 0;
     background: transparent;
     text-align: left;
-    color: #334155;
+    color: #40566e;
     font-size: 13px;
-    font-weight: 600;
+    font-weight: 700;
     padding: 2px 0 8px;
 }
 
 .subject-option.selected .subject-select-btn {
-    color: #1d4ed8;
+    color: #17548e;
 }
 
 .subject-mark-group {
-    margin-top: 5px;
+    margin-top: 7px;
 }
 
 .subject-mark-group label {
     display: block;
     font-size: 12px;
-    color: #475569;
-    font-weight: 600;
-    margin-bottom: 6px;
+    color: #53677e;
+    font-weight: 650;
+    margin-bottom: 7px;
 }
 
 .subject-mark-group input {
     width: 100%;
-    padding: 9px 10px;
-    border: 1px solid var(--border);
+    padding: 10px 11px;
+    border: 1px solid #dce4ed;
     border-radius: 7px;
     background: white;
     font-size: 14px;
+    outline: none;
 }
 
 .subject-mark-group input:focus {
-    outline: 2px solid #bfdbfe;
-    border-color: var(--primary);
+    border-color: #5795d0;
+    box-shadow: 0 0 0 3px rgba(40,120,200,.1);
 }
 
 .subject-mark-group input:disabled {
@@ -452,42 +662,118 @@ td strong {
 
 .subject-mark-hint {
     font-size: 11px;
-    color: var(--muted);
-    margin-top: 5px;
+    color: #8291a3;
+    margin-top: 6px;
+    line-height: 1.5;
 }
 
+/* =====================================
+   MODAL FOOTER
+===================================== */
+
 .modal-footer {
-    padding: 16px 22px;
+    padding: 17px 25px;
+    background: #f8fafc;
     border-top: 1px solid var(--border);
     display: flex;
     justify-content: flex-end;
-    gap: 9px;
+    gap: 10px;
 }
 
-@media(max-width:600px) {
+/* =====================================
+   RESPONSIVE DESIGN
+===================================== */
+
+@media(max-width: 768px) {
     .topbar {
-        padding: 14px;
+        padding: 15px 4%;
+    }
+
+    .topbar h2 {
+        font-size: 19px;
     }
 
     .container {
-        margin: 16px auto;
-        padding: 0 10px;
+        width: 96%;
+        margin: 20px auto 35px;
     }
 
     .panel {
-        padding: 14px;
+        padding: 17px;
+    }
+
+    .panel-header h3 {
+        font-size: 18px;
+    }
+
+    .panel-header {
+        align-items: flex-start;
+    }
+
+    .toolbar {
+        padding: 11px;
+    }
+
+    .toolbar input {
+        min-width: 100%;
+    }
+
+    .toolbar select {
+        flex: 1;
     }
 
     .modal {
-        padding: 8px;
+        padding: 9px;
     }
 
     .modal-content {
         margin: 8px auto;
+        border-radius: 12px;
+    }
+
+    .modal-header {
+        padding: 17px 18px;
     }
 
     .modal-body {
-        padding: 16px;
+        padding: 18px;
+        max-height: calc(100vh - 155px);
+    }
+
+    .modal-footer {
+        padding: 14px 18px;
+    }
+}
+
+@media(max-width: 480px) {
+    .topbar {
+        gap: 10px;
+    }
+
+    .topbar h2 {
+        font-size: 17px;
+    }
+
+    .topbar p {
+        font-size: 11px;
+    }
+
+    .topbar .secondary-btn {
+        padding: 9px 12px;
+        font-size: 12px;
+    }
+
+    .panel {
+        padding: 13px;
+    }
+
+    .panel-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .panel-header .primary-btn {
+        width: 100%;
     }
 
     .selection-grid {
@@ -496,6 +782,14 @@ td strong {
 
     .subject-selection-grid {
         grid-template-columns: 1fr;
+    }
+
+    .modal-footer {
+        flex-direction: column-reverse;
+    }
+
+    .modal-footer button {
+        width: 100%;
     }
 }
 </style>
@@ -506,11 +800,11 @@ td strong {
 <header class="topbar">
     <div>
         <h2>Test Management</h2>
-        <p id="roleDescription">Manage Tests</p>
+        <p id="roleDescription">Manage and monitor assessments</p>
     </div>
 
     <button class="secondary-btn" onclick="goBack()">
-        Back
+        <span aria-hidden="true">←</span> Back
     </button>
 </header>
 
@@ -519,11 +813,12 @@ td strong {
     <div id="message" class="message"></div>
 
     <section class="panel">
+
         <div class="panel-header">
             <div>
-                <h3>Tests</h3>
-                <p style="color:#64748b;font-size:13px;margin:6px 0 0">
-                    View and manage Tests
+                <h3>Assessment Overview</h3>
+                <p>
+                    View, monitor and manage tests and their assessment settings.
                 </p>
             </div>
 
@@ -531,15 +826,17 @@ td strong {
                 class="primary-btn"
                 id="addTestBtn"
                 onclick="openAddModal()">
-                + Add New Test
+                <span aria-hidden="true">＋</span>
+                Create New Test
             </button>
         </div>
 
         <div class="toolbar">
+
             <input
                 type="search"
                 id="searchInput"
-                placeholder="Search Tests..."
+                placeholder="Search by test name..."
                 oninput="renderTests()">
 
             <select id="statusFilter" onchange="renderTests()">
@@ -548,18 +845,20 @@ td strong {
                 <option value="open">Open</option>
                 <option value="closed">Closed</option>
             </select>
+
         </div>
 
         <div class="table-wrap">
+
             <table>
                 <thead>
                     <tr>
                         <th>#</th>
-                        <th>Test</th>
+                        <th>Assessment</th>
                         <th>Schools</th>
                         <th>Classes</th>
-                        <th>Subjects and Maximum Marks</th>
-                        <th>Closing time</th>
+                        <th>Subjects & Maximum Marks</th>
+                        <th>Closing Time</th>
                         <th>Status</th>
                         <th>Actions</th>
                     </tr>
@@ -568,40 +867,55 @@ td strong {
                 <tbody id="testsTable">
                     <tr>
                         <td colspan="8" class="empty">
-                            Loading Tests...
+                            Loading assessments...
                         </td>
                     </tr>
                 </tbody>
             </table>
+
         </div>
+
     </section>
 
 </main>
 
-<!-- ADD / EDIT TEST MODAL -->
+
+<!-- =====================================
+     CREATE / EDIT TEST MODAL
+===================================== -->
 
 <div class="modal" id="testModal">
+
     <div class="modal-content">
 
         <div class="modal-header">
             <h3 id="modalTitle">Create New Test</h3>
-            <button class="close-modal" onclick="closeModal()">&times;</button>
+
+            <button
+                class="close-modal"
+                onclick="closeModal()"
+                aria-label="Close modal">
+                &times;
+            </button>
         </div>
 
         <div class="modal-body">
 
             <div class="form-group">
                 <label for="testName">Test name *</label>
+
                 <input
                     type="text"
                     id="testName"
                     maxlength="200"
-                    placeholder="e.g. First Mid-Term Test">
+                    placeholder="e.g. First Mid-Term Assessment">
             </div>
 
+
             <div class="form-group" id="schoolsGroup">
+
                 <label class="section-label">
-                    Schools expected to do this Test *
+                    Schools expected to do this test *
                 </label>
 
                 <div class="selection-grid" id="schoolsGrid"></div>
@@ -609,53 +923,70 @@ td strong {
                 <div class="hint">
                     Select one or more schools in your sector.
                 </div>
+
             </div>
 
+
             <div class="form-group">
+
                 <label class="section-label">
-                    Classes expected to do this Test *
+                    Classes expected to do this test *
                 </label>
 
                 <div class="selection-grid" id="classesGrid"></div>
 
                 <div class="hint">
-                    Select one or more classes from the selected schools.
+                    Select the classes that will participate in this assessment.
                 </div>
+
             </div>
 
+
             <div class="form-group">
+
                 <label class="section-label">
                     Subjects and Maximum Marks *
                 </label>
 
-                <div class="hint" style="margin-bottom:12px">
-                    Select each subject and enter its maximum mark.
-                    For example, English out of 100 and Mathematics out of 50. Leave blank if it is out of /100
+                <div class="hint" style="margin-bottom:13px">
+                    Select the subjects and specify the maximum mark for each.
+                    For example, English out of 100 and Mathematics out of 50.
+                    Leave the maximum mark blank to use 100.
                 </div>
 
                 <div
                     class="subject-selection-grid"
                     id="subjectsGrid">
                 </div>
+
             </div>
 
+
             <div class="form-group">
+
                 <label for="closingAt">
                     Closing date and time (optional)
                 </label>
 
-                <input type="datetime-local" id="closingAt">
+                <input
+                    type="datetime-local"
+                    id="closingAt">
 
                 <div class="hint">
-                    Leave blank if the Test should remain open until
-                    an administrator closes it.
+                    Leave blank if the test should remain open until it is
+                    manually closed by an authorized user.
                 </div>
+
             </div>
 
         </div>
 
+
         <div class="modal-footer">
-            <button class="secondary-btn" onclick="closeModal()">
+
+            <button
+                class="secondary-btn"
+                onclick="closeModal()">
                 Cancel
             </button>
 
@@ -665,9 +996,11 @@ td strong {
                 onclick="saveTest()">
                 Save Test
             </button>
+
         </div>
 
     </div>
+
 </div>
 
 <script>
@@ -1726,9 +2059,12 @@ function goBack() {
     if (role === "sector_admin") {
         window.location.href = "../sector/sector-admin.html";
 
-    } else if (role === "../school/school_admin") {
-        window.location.href = "school-admin.html";
+    } else if (role === "school_admin") {
+        window.location.href = "../school/school-admin.html";
+} else if (role === "dos") {
+        window.location.href = "../dos/dos-dashboard.html";
 
+    }
     } else {
         window.location.href = "../teacher/teacher-dashboard.html";
     }
