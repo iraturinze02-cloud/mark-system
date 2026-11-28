@@ -1257,7 +1257,8 @@ tbody tr:hover {
                                 <th>Rank</th>
                                 <th>Teacher</th>
                                 <th>School</th>
-                                <th>Learners</th>
+                                 <th>Subject</th>
+                                <th>No of Learners</th>
                                 <th>Results</th>
                                 
                                 <th>Passed results</th>
@@ -1286,7 +1287,7 @@ tbody tr:hover {
                                  <th>Rank</th>
                                 <th>Teacher</th>
                                 <th>School</th>
-                                <th>Learners</th>
+                                <th>No of Learners</th>
                                 <th>Results</th>
                                 <th>Passed results</th>
                                 <th>Failed results</th>
@@ -2119,6 +2120,7 @@ function renderTeachers(overall, bySubject) {
                 ${escapeHTML(item.teacher)}
             </td>
             <td>${escapeHTML(item.school)}</td>
+            <td>${escapeHTML(item.subject)}</td>
             <td>${formatNumber(item.candidates)}</td>
             <td>${formatNumber(item.recorded)}</td>
             <td>${formatNumber(item.passed)}</td>
