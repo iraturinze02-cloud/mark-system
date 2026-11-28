@@ -47,14 +47,24 @@ export async function onRequestPost(context) {
     try {
         client = await connectDB(context);
 
+        /* =============================================
+           STEP 1: CHECK DELETION AND REQUEST CONFIRMATION
+        ============================================= */
+
         if (!confirmed) {
             const studentResult = await client.query(
-                `SELECT id, full_name, class_id
+                `SELECT
+                    id,
+                    full_name,
+                    class_id
                  FROM students
                  WHERE id = $1
                    AND school_id = $2
                    AND status = 'inactive'`,
-                [studentId, auth.schoolId]
+                [
+                    studentId,
+                    auth.schoolId
+                ]
             );
 
             if (studentResult.rowCount === 0) {
@@ -69,34 +79,55 @@ export async function onRequestPost(context) {
             const marksResult = await client.query(
                 `SELECT COUNT(*)::int AS marks_count
                  FROM marks
-                 WHERE student_id = $1
-                   AND class_id = $2`,
-                [student.id, student.class_id]
+                 WHERE student_id = $1`,
+                [student.id]
             );
 
             const marksCount = marksResult.rows[0].marks_count;
+
+            const enrollmentResult = await client.query(
+                `SELECT COUNT(*)::int AS enrollment_count
+                 FROM student_enrollments
+                 WHERE student_id = $1
+                   AND school_id = $2`,
+                [
+                    student.id,
+                    auth.schoolId
+                ]
+            );
 
             return json({
                 success: true,
                 requiresConfirmation: true,
                 studentName: student.full_name,
                 marksCount,
+                enrollmentCount: enrollmentResult.rows[0].enrollment_count,
                 hasMarks: marksCount > 0
             });
         }
 
+        /* =============================================
+           STEP 2: PERMANENT DELETION
+        ============================================= */
+
         await client.query("BEGIN");
         transactionStarted = true;
 
-        // Lock the inactive student while deletion is in progress.
+        // Lock the inactive student during deletion.
         const studentResult = await client.query(
-            `SELECT id, full_name, class_id
+            `SELECT
+                id,
+                full_name,
+                class_id
              FROM students
              WHERE id = $1
                AND school_id = $2
                AND status = 'inactive'
              FOR UPDATE`,
-            [studentId, auth.schoolId]
+            [
+                studentId,
+                auth.schoolId
+            ]
         );
 
         if (studentResult.rowCount === 0) {
@@ -111,22 +142,37 @@ export async function onRequestPost(context) {
 
         const student = studentResult.rows[0];
 
-        // Delete only marks belonging to this student and class.
+        // Delete all marks belonging to this student,
+        // including marks recorded in previous classes.
         const marksResult = await client.query(
             `DELETE FROM marks
-             WHERE student_id = $1
-               AND class_id = $2`,
-            [student.id, student.class_id]
+             WHERE student_id = $1`,
+            [student.id]
         );
 
-        // Permanently delete the student.
+        // Remove enrollments for all academic years and terms.
+        // This also removes the student's subclass allocations.
+        const enrollmentResult = await client.query(
+            `DELETE FROM student_enrollments
+             WHERE student_id = $1
+               AND school_id = $2`,
+            [
+                student.id,
+                auth.schoolId
+            ]
+        );
+
+        // Permanently delete the inactive student.
         const deleteResult = await client.query(
             `DELETE FROM students
              WHERE id = $1
                AND school_id = $2
                AND status = 'inactive'
              RETURNING id`,
-            [student.id, auth.schoolId]
+            [
+                student.id,
+                auth.schoolId
+            ]
         );
 
         if (deleteResult.rowCount === 0) {
@@ -139,7 +185,8 @@ export async function onRequestPost(context) {
         return json({
             success: true,
             message: "Student permanently deleted.",
-            deletedMarks: marksResult.rowCount
+            deletedMarks: marksResult.rowCount,
+            deletedEnrollments: enrollmentResult.rowCount
         });
 
     } catch (error) {
@@ -155,6 +202,8 @@ export async function onRequestPost(context) {
         }, 500);
 
     } finally {
-        if (client) await client.end().catch(() => {});
+        if (client) {
+            await client.end().catch(() => {});
+        }
     }
 }
