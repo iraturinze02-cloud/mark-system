@@ -3,6 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/x-icon" href="../../images/favicon/favicon.ico">
+<link rel="icon" type="image/png" sizes="512x512" href="../../images/favicon/favicon.png">
 <title>Academic Year Performance Analysis | Fila Grades</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 <style>
@@ -167,8 +169,6 @@ async function loadInitial(){
     const isSector=data.user.role==="sector_admin";
     $("schoolFilterWrap").style.display=isSector?"block":"none";
     $("schoolComparisonPanel").style.display=isSector?"block":"none";
-    $("schoolSidebarContainer").style.display=isSector?"none":"block";
-    $("sectorSidebarContainer").style.display=isSector?"block":"none";
     $("schoolFilter").innerHTML='<option value="">All Schools</option>'+data.schools.map(s=>`<option value="${esc(s.id)}">${esc(s.name)}</option>`).join("");
     $("yearFilter").innerHTML=data.academic_years.length
       ? data.academic_years.map(y=>`<option value="${esc(y.name)}">${esc(y.name)}</option>`).join("")
