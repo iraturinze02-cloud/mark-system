@@ -550,6 +550,239 @@ button, select {
         display: none !important;
     }
 }
+/* =====================================================
+   GRADING SETTINGS MODAL
+===================================================== */
+
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: rgba(15, 23, 42, .60);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 18px;
+    overflow-y: auto;
+}
+
+.settings-modal {
+    width: min(520px, 100%);
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 25px 70px rgba(0,0,0,.20);
+    overflow: hidden;
+    animation: settingsModalIn .2s ease;
+}
+
+@keyframes settingsModalIn {
+    from {
+        opacity: 0;
+        transform: translateY(12px) scale(.98);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.settings-modal-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 15px;
+    padding: 23px;
+    background: linear-gradient(135deg, #173f70, #245b96);
+    color: white;
+}
+
+.settings-modal-header h2 {
+    margin: 0;
+    font-size: 19px;
+}
+
+.settings-modal-header p {
+    margin: 7px 0 0;
+    color: rgba(255,255,255,.78);
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.modal-close {
+    border: 0;
+    background: rgba(255,255,255,.14);
+    color: white;
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    font-size: 25px;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.modal-close:hover {
+    background: rgba(255,255,255,.25);
+}
+
+.settings-context {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    padding: 18px 23px;
+    background: #f8fafc;
+    border-bottom: 1px solid var(--border);
+}
+
+.settings-context div {
+    min-width: 0;
+}
+
+.settings-context span {
+    display: block;
+    color: var(--muted);
+    font-size: 10px;
+    margin-bottom: 5px;
+}
+
+.settings-context strong {
+    display: block;
+    font-size: 12px;
+    color: var(--primary);
+    overflow-wrap: anywhere;
+}
+
+.settings-fields {
+    padding: 22px 23px;
+    display: grid;
+    gap: 20px;
+}
+
+.settings-field label {
+    display: block;
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 9px;
+}
+
+.settings-input-wrap {
+    display: flex;
+    align-items: center;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    overflow: hidden;
+    background: white;
+}
+
+.settings-input-wrap:focus-within {
+    border-color: var(--blue);
+    box-shadow: 0 0 0 3px rgba(37,99,235,.10);
+}
+
+.settings-input-wrap input {
+    width: 100%;
+    min-width: 0;
+    padding: 13px;
+    border: 0;
+    outline: none;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--primary);
+}
+
+.settings-input-wrap span {
+    padding: 0 13px;
+    color: var(--muted);
+    font-size: 12px;
+    white-space: nowrap;
+    border-left: 1px solid var(--border);
+}
+
+.settings-field small {
+    display: block;
+    margin-top: 7px;
+    color: var(--muted);
+    font-size: 11px;
+    line-height: 1.5;
+}
+
+.settings-preview {
+    margin: 0 23px 20px;
+    padding: 15px;
+    background: var(--primary-light);
+    border: 1px solid #d7e4f5;
+    border-radius: 10px;
+}
+
+.settings-preview div {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+}
+
+.settings-preview span {
+    color: var(--primary);
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.settings-preview strong {
+    color: var(--primary);
+    font-size: 23px;
+}
+
+.settings-preview p {
+    margin: 7px 0 0;
+    color: var(--muted);
+    font-size: 11px;
+    line-height: 1.5;
+}
+
+.settings-modal-footer {
+    padding: 17px 23px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.settings-message {
+    margin: 15px 23px 0;
+    padding: 11px;
+    border-radius: 8px;
+    font-size: 12px;
+}
+
+.settings-message.error {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.settings-message.success {
+    background: #dcfce7;
+    color: #166534;
+}
+
+@media(max-width: 500px) {
+    .settings-modal-header,
+    .settings-fields {
+        padding: 17px;
+    }
+
+    .settings-context {
+        padding: 15px 17px;
+    }
+
+    .settings-preview {
+        margin-left: 17px;
+        margin-right: 17px;
+    }
+
+    .settings-modal-footer {
+        padding: 15px 17px;
+    }
+}
 </style>
 </head>
 
@@ -564,6 +797,9 @@ button, select {
         </div>
 
         <div class="header-actions no-print">
+            <button class="btn btn-light" id="settingsBtn" disabled>
+    <span style="margin-right:6px">⚙</span> Settings
+</button>
             <button class="btn btn-light" id="printBtn">Print</button>
             <button class="btn btn-primary" id="csvBtn" disabled>
                 Download CSV
@@ -772,6 +1008,127 @@ button, select {
         </div>
 
     </section>
+    <!-- =================================================
+     OVERALL MARKS SETTINGS MODAL
+================================================== -->
+
+<div id="gradingSettingsModal" class="modal-overlay hidden">
+
+    <div class="settings-modal">
+
+        <div class="settings-modal-header">
+            <div>
+                <h2>Overall Marks Settings</h2>
+                <p>Configure the maximum marks for combined results.</p>
+            </div>
+
+            <button type="button"
+                    class="modal-close"
+                    id="closeSettingsBtn"
+                    aria-label="Close">
+                &times;
+            </button>
+        </div>
+
+        <div class="settings-context">
+            <div>
+                <span>Class</span>
+                <strong id="settingsClass">—</strong>
+            </div>
+
+            <div>
+                <span>Subject</span>
+                <strong id="settingsSubject">—</strong>
+            </div>
+
+            <div>
+                <span>Academic Year</span>
+                <strong id="settingsYear">—</strong>
+            </div>
+
+            <div>
+                <span>Term</span>
+                <strong id="settingsTerm">—</strong>
+            </div>
+        </div>
+
+        <div id="settingsMessage" class="settings-message hidden"></div>
+
+        <div class="settings-fields">
+
+            <div class="settings-field">
+                <label for="overallTestMax">
+                    Overall Test Maximum
+                </label>
+
+                <div class="settings-input-wrap">
+                    <input
+                        type="number"
+                        id="overallTestMax"
+                        min="0.01"
+                        step="0.01"
+                        placeholder="e.g. 90"
+                    >
+
+                    <span>Marks</span>
+                </div>
+
+                <small>
+                    All tests will be combined and scaled to this maximum.
+                </small>
+            </div>
+
+            <div class="settings-field">
+                <label for="overallExamMax">
+                    Overall Examination Maximum
+                </label>
+
+                <div class="settings-input-wrap">
+                    <input
+                        type="number"
+                        id="overallExamMax"
+                        min="0.01"
+                        step="0.01"
+                        placeholder="e.g. 90"
+                    >
+
+                    <span>Marks</span>
+                </div>
+
+                <small>
+                    All examinations will be combined and scaled to this maximum.
+                </small>
+            </div>
+
+        </div>
+
+        <div class="settings-preview">
+            <div>
+                <span>Combined Overall Maximum</span>
+                <strong id="settingsCombinedMaximum">180</strong>
+            </div>
+            <p>
+                This is the maximum used when calculating the combined result.
+            </p>
+        </div>
+
+        <div class="settings-modal-footer">
+            <button type="button"
+                    class="btn btn-light"
+                    id="cancelSettingsBtn">
+                Cancel
+            </button>
+
+            <button type="button"
+                    class="btn btn-primary"
+                    id="saveSettingsBtn">
+                Save Settings
+            </button>
+        </div>
+
+    </div>
+
+</div>
 
 </main>
 
@@ -793,6 +1150,12 @@ const state = {
     teachers: [],
     academicYears: [],
     assignments: [],
+    gradingSettings: {
+    overall_test_max: 90,
+    overall_exam_max: 90
+},
+
+settingsLoaded: false,
 
     selectedAssignment: null,
     selectedTest: null,
@@ -878,6 +1241,415 @@ async function apiGet(url) {
 
     return data;
 }
+
+/* =====================================================
+   GRADING SETTINGS
+   FILA GRADES SYSTEM - CLOUDFLARE PAGES
+===================================================== */
+
+const GRADING_SETTINGS_API = "/api/grading-settings";
+
+/* =====================================================
+   GET CURRENT TEACHER ID
+===================================================== */
+
+function getCurrentTeacherId() {
+    if (state.teacherId) {
+        return String(state.teacherId);
+    }
+
+    if (state.teacher?.id) {
+        return String(state.teacher.id);
+    }
+
+    return String(
+        localStorage.getItem("userId") ||
+        localStorage.getItem("teacherId") ||
+        ""
+    );
+}
+
+/* =====================================================
+   GET SETTINGS SCOPE
+===================================================== */
+
+function getGradingSettingsScope() {
+    const assignment = state.selectedAssignment;
+
+    if (!assignment) {
+        throw new Error(
+            "Please select a class and subject first."
+        );
+    }
+
+    const scope = {
+        teacher_id: getCurrentTeacherId(),
+        subject_id: String(assignment.subject_id || ""),
+        class_id: String(assignment.class_id || ""),
+        academic_year_id: $("yearSelect").value,
+        term_id: $("termSelect").value
+    };
+
+    for (const [key, value] of Object.entries(scope)) {
+        if (!value) {
+            throw new Error(
+                "Unable to identify the selected " +
+                key.replaceAll("_", " ") +
+                ". Please check your selection."
+            );
+        }
+    }
+
+    return scope;
+}
+
+/* =====================================================
+   SETTINGS MESSAGES
+===================================================== */
+
+function showSettingsMessage(message, type = "error") {
+    const element = $("settingsMessage");
+
+    if (!element) return;
+
+    element.textContent = message;
+    element.className = "settings-message " + type;
+    element.classList.remove("hidden");
+}
+
+function clearSettingsMessage() {
+    const element = $("settingsMessage");
+
+    if (!element) return;
+
+    element.textContent = "";
+    element.className = "settings-message hidden";
+}
+
+/* =====================================================
+   SETTINGS PREVIEW
+===================================================== */
+
+function updateSettingsPreview() {
+    const testMaximum = Number(
+        $("overallTestMax").value
+    );
+
+    const examMaximum = Number(
+        $("overallExamMax").value
+    );
+
+    const total =
+        (Number.isFinite(testMaximum) ? testMaximum : 0) +
+        (Number.isFinite(examMaximum) ? examMaximum : 0);
+
+    $("settingsCombinedMaximum").textContent =
+        formatMark(total);
+}
+
+/* =====================================================
+   LOAD GRADING SETTINGS
+===================================================== */
+
+async function loadGradingSettings() {
+    const scope = getGradingSettingsScope();
+
+    const params = new URLSearchParams(scope);
+
+    const response = await apiGet(
+        GRADING_SETTINGS_API + "?" + params.toString()
+    );
+
+    if (!response || response.success === false) {
+        throw new Error(
+            response?.message ||
+            "Unable to load grading settings."
+        );
+    }
+
+    const settings = response.settings || {};
+
+    state.gradingSettings = {
+        overall_test_max:
+            Number(settings.overall_test_max ?? 90),
+
+        overall_exam_max:
+            Number(settings.overall_exam_max ?? 90)
+    };
+
+    state.settingsLoaded = true;
+
+    $("overallTestMax").value =
+        state.gradingSettings.overall_test_max;
+
+    $("overallExamMax").value =
+        state.gradingSettings.overall_exam_max;
+
+    updateSettingsPreview();
+}
+
+/* =====================================================
+   OPEN SETTINGS MODAL
+===================================================== */
+
+async function openGradingSettings() {
+
+    if (
+        !state.selectedAssignment ||
+        $("testSelect").value !== "all"
+    ) {
+        showMessage(
+            "Select All Tests and Examinations before changing overall settings."
+        );
+
+        return;
+    }
+
+    clearSettingsMessage();
+
+    $("settingsClass").textContent =
+        state.selectedAssignment.class_name || "—";
+
+    $("settingsSubject").textContent =
+        state.selectedAssignment.subject_name || "—";
+
+    $("settingsYear").textContent =
+        $("yearSelect").selectedOptions[0]?.textContent || "—";
+
+    $("settingsTerm").textContent =
+        $("termSelect").selectedOptions[0]?.textContent || "—";
+
+    $("gradingSettingsModal").classList.remove("hidden");
+
+    const button = $("saveSettingsBtn");
+
+    button.disabled = true;
+    button.textContent = "Loading...";
+
+    try {
+        await loadGradingSettings();
+
+    } catch (error) {
+
+        showSettingsMessage(
+            error.message || "Unable to load grading settings."
+        );
+
+    } finally {
+
+        button.disabled = false;
+        button.textContent = "Save Settings";
+    }
+}
+
+/* =====================================================
+   CLOSE SETTINGS MODAL
+===================================================== */
+
+function closeGradingSettings() {
+    $("gradingSettingsModal").classList.add("hidden");
+
+    clearSettingsMessage();
+}
+
+/* =====================================================
+   SAVE GRADING SETTINGS
+===================================================== */
+
+async function saveGradingSettings() {
+
+    clearSettingsMessage();
+
+    let scope;
+
+    try {
+
+        scope = getGradingSettingsScope();
+
+    } catch (error) {
+
+        showSettingsMessage(error.message);
+
+        return;
+    }
+
+    const testMaximum = Number(
+        $("overallTestMax").value
+    );
+
+    const examMaximum = Number(
+        $("overallExamMax").value
+    );
+
+    /* VALIDATE TEST MAXIMUM */
+
+    if (
+        !Number.isFinite(testMaximum) ||
+        testMaximum <= 0
+    ) {
+
+        showSettingsMessage(
+            "Enter a valid Overall Test Maximum greater than zero."
+        );
+
+        $("overallTestMax").focus();
+
+        return;
+    }
+
+    /* VALIDATE EXAMINATION MAXIMUM */
+
+    if (
+        !Number.isFinite(examMaximum) ||
+        examMaximum <= 0
+    ) {
+
+        showSettingsMessage(
+            "Enter a valid Overall Examination Maximum greater than zero."
+        );
+
+        $("overallExamMax").focus();
+
+        return;
+    }
+
+    /* REQUEST PAYLOAD */
+
+    const payload = {
+        ...scope,
+        overall_test_max: testMaximum,
+        overall_exam_max: examMaximum
+    };
+
+    const button = $("saveSettingsBtn");
+
+    button.disabled = true;
+    button.textContent = "Saving...";
+
+    try {
+
+        const response = await fetch(
+            GRADING_SETTINGS_API,
+            {
+                method: "POST",
+
+                credentials: "same-origin",
+
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json"
+                },
+
+                body: JSON.stringify(payload)
+            }
+        );
+
+        let data;
+
+        try {
+
+            data = await response.json();
+
+        } catch {
+
+            throw new Error(
+                "The server returned an invalid response."
+            );
+        }
+
+        if (!response.ok || data.success === false) {
+
+            throw new Error(
+                data.message ||
+                "Unable to save grading settings."
+            );
+        }
+
+        /* UPDATE FRONTEND STATE */
+
+        state.gradingSettings = {
+            overall_test_max: testMaximum,
+            overall_exam_max: examMaximum
+        };
+
+        state.settingsLoaded = true;
+
+        /* SUCCESS MESSAGE */
+
+        showSettingsMessage(
+            "Overall marks settings saved successfully.",
+            "success"
+        );
+
+        /* REFRESH COMBINED RESULTS */
+
+        if ($("testSelect").value === "all") {
+
+            renderCombinedResults();
+
+            updateCombinedAnalysis();
+        }
+
+        /* CLOSE MODAL AFTER SUCCESS */
+
+        setTimeout(() => {
+
+            closeGradingSettings();
+
+        }, 900);
+
+    } catch (error) {
+
+        showSettingsMessage(
+            error.message ||
+            "An error occurred while saving grading settings."
+        );
+
+    } finally {
+
+        button.disabled = false;
+
+        button.textContent = "Save Settings";
+    }
+}
+
+/* =====================================================
+   SETTINGS INPUT EVENTS
+===================================================== */
+
+$("overallTestMax").addEventListener(
+    "input",
+    updateSettingsPreview
+);
+
+$("overallExamMax").addEventListener(
+    "input",
+    updateSettingsPreview
+);
+
+/* =====================================================
+   SETTINGS BUTTON EVENTS
+===================================================== */
+
+$("settingsBtn").addEventListener(
+    "click",
+    openGradingSettings
+);
+
+$("closeSettingsBtn").addEventListener(
+    "click",
+    closeGradingSettings
+);
+
+$("cancelSettingsBtn").addEventListener(
+    "click",
+    closeGradingSettings
+);
+
+$("saveSettingsBtn").addEventListener(
+    "click",
+    saveGradingSettings
+);
 
 function setOptions(select, items, placeholder, valueKey, labelFunction) {
     select.innerHTML = "";
