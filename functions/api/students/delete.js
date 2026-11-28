@@ -51,8 +51,15 @@ export async function onRequestPost(context) {
              WHERE id = $1
                AND school_id = $2
                AND status = 'active'
-             RETURNING id`,
-            [studentId, auth.schoolId]
+             RETURNING
+                id,
+                full_name,
+                class_id,
+                status`,
+            [
+                studentId,
+                auth.schoolId
+            ]
         );
 
         if (result.rowCount === 0) {
@@ -64,7 +71,8 @@ export async function onRequestPost(context) {
 
         return json({
             success: true,
-            message: "Student deactivated successfully."
+            message: "Student deactivated successfully.",
+            student: result.rows[0]
         });
 
     } catch (error) {
@@ -76,6 +84,8 @@ export async function onRequestPost(context) {
         }, 500);
 
     } finally {
-        if (client) await client.end().catch(() => {});
+        if (client) {
+            await client.end().catch(() => {});
+        }
     }
 }
