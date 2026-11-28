@@ -51,8 +51,15 @@ export async function onRequestPost(context) {
              WHERE id = $1
                AND school_id = $2
                AND status = 'inactive'
-             RETURNING id, full_name`,
-            [studentId, auth.schoolId]
+             RETURNING
+                id,
+                full_name,
+                class_id,
+                status`,
+            [
+                studentId,
+                auth.schoolId
+            ]
         );
 
         if (result.rowCount === 0) {
@@ -77,6 +84,8 @@ export async function onRequestPost(context) {
         }, 500);
 
     } finally {
-        if (client) await client.end().catch(() => {});
+        if (client) {
+            await client.end().catch(() => {});
+        }
     }
 }
