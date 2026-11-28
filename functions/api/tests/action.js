@@ -76,9 +76,7 @@ function validateSubjectMarks(subjectIds, subjectMarks) {
             item.subject_id ?? item.subjectId ?? ""
         ).trim();
 
-        const totalMarks = Number(
-            item.total_marks ?? item.totalMarks
-        );
+        const rawMarks = item.total_marks ?? item.totalMarks;
 
         if (!/^\d+$/.test(subjectId)) {
             return {
@@ -100,6 +98,19 @@ function validateSubjectMarks(subjectIds, subjectMarks) {
                 message: "Duplicate subject maximum marks were provided."
             };
         }
+
+        if (
+            rawMarks === null ||
+            rawMarks === undefined ||
+            String(rawMarks).trim() === ""
+        ) {
+            return {
+                valid: false,
+                message: "Every subject must have a positive maximum mark."
+            };
+        }
+
+        const totalMarks = Number(rawMarks);
 
         if (
             !Number.isFinite(totalMarks) ||
@@ -187,13 +198,12 @@ async function loadActiveSchoolPeriods(client, schoolIds) {
 }
 
 /* =====================================================
-   LOAD PERIODS USING THE ORIGINAL TEST CREATION DATE
+   LOAD PERIODS USING ORIGINAL TEST CREATION DATE
 
-   Used only for older test_schools records whose
-   academic_year_id and term_id are still NULL.
+   Used for older test_schools records whose
+   academic_year_id and term_id are NULL.
 
-   This avoids incorrectly assigning today's period
-   to an older test.
+   This avoids assigning today's period to an older test.
 ===================================================== */
 
 async function loadPeriodsAtTestCreation(
@@ -264,11 +274,15 @@ async function loadPeriodsAtTestCreation(
    - close
    - delete
 
-   Sector admin:
+   SECTOR ADMIN:
    Manages tests belonging to their sector.
 
-   School admin and DOS:
+   SCHOOL ADMIN AND DOS:
    Manage tests belonging to their school.
+
+   TEACHER:
+   Can initiate and close ONLY tests they created.
+   Cannot update or delete tests.
 ===================================================== */
 
 export async function onRequestPost(context) {
@@ -278,9 +292,15 @@ export async function onRequestPost(context) {
         return auth.error;
     }
 
-    if (
-        !["sector_admin", "school_admin", "dos"].includes(auth.role)
-    ) {
+    const isTeacher = auth.role === "teacher";
+
+    const isAdministrator = [
+        "sector_admin",
+        "school_admin",
+        "dos"
+    ].includes(auth.role);
+
+    if (!isTeacher && !isAdministrator) {
         return json({
             success: false,
             message: "You are not allowed to manage tests."
@@ -325,6 +345,25 @@ export async function onRequestPost(context) {
         }, 400);
     }
 
+    /* ---------------------------------------------
+       TEACHER PERMISSIONS
+
+       Teachers can only initiate and close their
+       own tests.
+
+       They cannot update or delete tests.
+    --------------------------------------------- */
+
+    if (
+        isTeacher &&
+        !["initiate", "close"].includes(action)
+    ) {
+        return json({
+            success: false,
+            message: "Teachers can only initiate or close tests they created."
+        }, 403);
+    }
+
     let client;
     let transactionStarted = false;
 
@@ -337,8 +376,14 @@ export async function onRequestPost(context) {
         /* ---------------------------------------------
            FIND AND LOCK TEST
 
-           Authorization is based on organizational
-           scope, not on who created the test.
+           Administrator authorization is based on
+           organizational scope.
+
+           Teacher authorization additionally requires:
+           1. The teacher created the test.
+           2. The teacher still has an assignment
+              matching the test's school, class and
+              subject.
         --------------------------------------------- */
 
         let testResult;
@@ -357,7 +402,18 @@ export async function onRequestPost(context) {
                     auth.sectorId
                 ]
             );
-        } else {
+        }
+
+        else if (
+            ["school_admin", "dos"].includes(auth.role)
+        ) {
+            if (!auth.schoolId) {
+                return json({
+                    success: false,
+                    message: "Your account is not linked to a school."
+                }, 403);
+            }
+
             testResult = await client.query(
                 `
                 SELECT *
@@ -373,13 +429,56 @@ export async function onRequestPost(context) {
             );
         }
 
-        if (testResult.rows.length === 0) {
+        else if (isTeacher) {
+            testResult = await client.query(
+                `
+                SELECT t.*
+
+                FROM tests t
+
+                WHERE t.id = $1
+                  AND t.created_by = $2
+                  AND t.school_id IS NOT NULL
+
+                  AND EXISTS (
+                      SELECT 1
+
+                      FROM teachers tr
+
+                      INNER JOIN teacher_assignments ta
+                          ON ta.teacher_id = tr.id
+
+                      INNER JOIN test_classes tc
+                          ON tc.test_id = t.id
+                         AND tc.school_id = ta.school_id
+                         AND tc.class_id = ta.class_id
+
+                      INNER JOIN test_subjects ts
+                          ON ts.test_id = t.id
+                         AND ts.subject_id = ta.subject_id
+
+                      WHERE tr.user_id = $2
+                        AND ta.school_id = t.school_id
+                  )
+
+                FOR UPDATE OF t
+                `,
+                [
+                    testId,
+                    auth.userId
+                ]
+            );
+        }
+
+        if (!testResult || testResult.rows.length === 0) {
             await client.query("ROLLBACK");
             transactionStarted = false;
 
             return json({
                 success: false,
-                message: "Test not found or you do not have permission to manage it."
+                message: isTeacher
+                    ? "Test not found, or you are not its creator or no longer have the required assignment."
+                    : "Test not found or you do not have permission to manage it."
             }, 404);
         }
 
@@ -388,10 +487,21 @@ export async function onRequestPost(context) {
         /* ---------------------------------------------
            DELETE TEST
 
+           Only administrators can delete tests.
            Only draft tests can be deleted.
         --------------------------------------------- */
 
         if (action === "delete") {
+            if (isTeacher) {
+                await client.query("ROLLBACK");
+                transactionStarted = false;
+
+                return json({
+                    success: false,
+                    message: "Teachers are not allowed to delete tests."
+                }, 403);
+            }
+
             if (test.status !== "draft") {
                 await client.query("ROLLBACK");
                 transactionStarted = false;
@@ -442,7 +552,10 @@ export async function onRequestPost(context) {
         /* ---------------------------------------------
            INITIATE TEST
 
-           Only draft tests can be initiated.
+           Administrators can initiate tests within
+           their authorized scope.
+
+           Teachers can initiate only their own tests.
         --------------------------------------------- */
 
         if (action === "initiate") {
@@ -499,6 +612,11 @@ export async function onRequestPost(context) {
 
         /* ---------------------------------------------
            CLOSE TEST
+
+           Administrators can close tests within
+           their authorized scope.
+
+           Teachers can close only their own tests.
         --------------------------------------------- */
 
         if (action === "close") {
@@ -541,10 +659,21 @@ export async function onRequestPost(context) {
         /* ---------------------------------------------
            UPDATE TEST
 
+           Only administrators can edit tests.
            Only draft tests can be edited.
         --------------------------------------------- */
 
         if (action === "update") {
+            if (isTeacher) {
+                await client.query("ROLLBACK");
+                transactionStarted = false;
+
+                return json({
+                    success: false,
+                    message: "Teachers are not allowed to edit tests."
+                }, 403);
+            }
+
             if (test.status !== "draft") {
                 await client.query("ROLLBACK");
                 transactionStarted = false;
@@ -796,13 +925,6 @@ export async function onRequestPost(context) {
 
             /* -----------------------------------------
                IDENTIFY SCHOOLS NEEDING A PERIOD
-
-               Existing complete mappings are preserved.
-
-               Existing NULL mappings are resolved using
-               the original test creation date.
-
-               New schools use the currently active period.
             ----------------------------------------- */
 
             const schoolsNeedingOriginalPeriod = [];
@@ -883,14 +1005,8 @@ export async function onRequestPost(context) {
                                 matchingPeriods[0].term_id
                         });
                     } else {
-                        const school = schoolsForPeriodError(
-                            schoolId,
-                            schoolIds,
-                            validSchools.rows
-                        );
-
                         invalidPeriodSchools.push(
-                            school || `School ID ${schoolId}`
+                            `School ID ${schoolId}`
                         );
                     }
 
@@ -951,9 +1067,6 @@ export async function onRequestPost(context) {
 
             /* -----------------------------------------
                REMOVE OLD CLASS RELATIONSHIPS
-
-               Delete test_classes before removing
-               any school mappings.
             ----------------------------------------- */
 
             await client.query(
@@ -966,8 +1079,6 @@ export async function onRequestPost(context) {
 
             /* -----------------------------------------
                REMOVE ONLY SCHOOLS NO LONGER SELECTED
-
-               Retained school mappings are preserved.
             ----------------------------------------- */
 
             await client.query(
@@ -984,11 +1095,6 @@ export async function onRequestPost(context) {
 
             /* -----------------------------------------
                INSERT OR PRESERVE SCHOOL MAPPINGS
-
-               Existing schools retain their original
-               academic year and term.
-
-               New schools receive their active period.
             ----------------------------------------- */
 
             for (const schoolId of schoolIds) {
@@ -1020,9 +1126,6 @@ export async function onRequestPost(context) {
 
             /* -----------------------------------------
                INSERT SCHOOL/CLASS COMBINATIONS
-
-               A selected class is linked to every
-               selected school offering that class.
             ----------------------------------------- */
 
             for (const selectedClass of validClasses.rows) {
@@ -1091,7 +1194,8 @@ export async function onRequestPost(context) {
 
         return json({
             success: false,
-            message: "Unable to complete the requested test action."
+            message: error.message ||
+                "Unable to complete the requested test action."
         }, 500);
 
     } finally {
@@ -1099,15 +1203,4 @@ export async function onRequestPost(context) {
             await client.end().catch(() => {});
         }
     }
-}
-
-/* =====================================================
-   HELPER: SCHOOL NAME FOR PERIOD ERROR
-===================================================== */
-
-function schoolsForPeriodError(schoolId, schoolIds, validSchools) {
-    // The validated school rows contain IDs only.
-    // Return a clear identifier when the name is not
-    // available in this endpoint.
-    return `School ID ${schoolId}`;
 }
