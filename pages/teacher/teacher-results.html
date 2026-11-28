@@ -2337,6 +2337,85 @@ function loadAssignmentSubclasses(assignment) {
    ASSIGNMENT CHANGE
 ===================================================== */
 
+/* =====================================================
+   REBUILD ASSESSMENTS FOR THE CURRENT SUBCLASS
+   Does not reset the subclass selector.
+===================================================== */
+function rebuildAssessmentsForCurrentSubclass() {
+    const assignment = state.selectedAssignment;
+
+    if (!assignment) return;
+
+    state.selectedTest = null;
+    state.currentTest = null;
+    state.assessments = prepareAssessments(assignment);
+    state.students = [];
+    state.resultRows = [];
+
+    clearMessage();
+    clearAnalysis();
+    $("csvBtn").disabled = true;
+    $("resultsBody").innerHTML = `
+        <tr>
+            <td colspan="7" class="empty">
+                Updating results for the selected subclass...
+            </td>
+        </tr>
+    `;
+
+    const select = $("testSelect");
+    select.innerHTML = "";
+
+    const allOption = document.createElement("option");
+    allOption.value = "all";
+    allOption.textContent = "All Tests and Examinations";
+    select.appendChild(allOption);
+
+    state.assessments.forEach(assessment => {
+        const option = document.createElement("option");
+        option.value = assessment.id;
+        option.textContent =
+            (assessment.type === "exam" ? "EXAM: " : "TEST: ") +
+            assessment.name;
+        select.appendChild(option);
+    });
+
+    select.disabled = state.assessments.length === 0;
+    $("csvBtn").disabled = true;
+    $("settingsBtn").disabled = true;
+
+    if (state.assessments.length > 0) {
+        select.value = "all";
+        onTestChange();
+    } else {
+        $("resultsHead").innerHTML = `
+            <tr>
+                <th>#</th>
+                <th>Student Name</th>
+                <th>Student Code</th>
+                <th>Gender</th>
+                <th>Mark</th>
+                <th>Percentage</th>
+                <th>Result</th>
+            </tr>
+        `;
+
+        $("resultsBody").innerHTML = `
+            <tr>
+                <td colspan="7" class="empty">
+                    No tests or examinations are available for this class and subject.
+                </td>
+            </tr>
+        `;
+
+        clearAnalysis();
+    }
+}
+
+/* =====================================================
+   ASSIGNMENT CHANGE
+   A new class/subject resets the subclass to All.
+===================================================== */
 function onAssignmentChange() {
     state.selectedAssignment = null;
     state.selectedTest = null;
@@ -2349,10 +2428,8 @@ function onAssignmentChange() {
     state.settingsLoaded = false;
 
     $("settingsBtn").disabled = true;
-
     $("testSelect").innerHTML =
         '<option value="">Select assessment</option>';
-
     $("testSelect").disabled = true;
     $("csvBtn").disabled = true;
 
@@ -2371,12 +2448,23 @@ function onAssignmentChange() {
     if (index === "") {
         $("className").textContent = "—";
         $("subjectName").textContent = "—";
+
+        $("subclassSelect").innerHTML =
+            '<option value="all">All Subclasses</option>';
+        $("subclassSelect").value = "all";
+        $("subclassSelect").disabled = true;
         return;
     }
 
     const assignment = state.assignments[Number(index)];
 
     if (!assignment) {
+        $("className").textContent = "—";
+        $("subjectName").textContent = "—";
+        $("subclassSelect").innerHTML =
+            '<option value="all">All Subclasses</option>';
+        $("subclassSelect").value = "all";
+        $("subclassSelect").disabled = true;
         showMessage(
             "The selected class and subject could not be found."
         );
@@ -2384,67 +2472,15 @@ function onAssignmentChange() {
     }
 
     state.selectedAssignment = assignment;
-    if (index === "") {
-    $("className").textContent = "—";
-    $("subjectName").textContent = "—";
 
-    $("subclassSelect").innerHTML =
-        '<option value="all">All</option>';
+    $("className").textContent = assignment.class_name || "—";
+    $("subjectName").textContent = assignment.subject_name || "—";
 
-    $("subclassSelect").value = "all";
-    $("subclassSelect").disabled = true;
+    // Only a class/subject change rebuilds and resets the subclass list.
+    loadAssignmentSubclasses(assignment);
 
-    return;
-}
-
-$("className").textContent =
-    assignment.class_name || "—";
-
-$("subjectName").textContent =
-    assignment.subject_name || "—";
-
-// Load subclasses belonging to this class and academic year.
-loadAssignmentSubclasses(assignment);
-
-// Prepare assessments using the selected subclass.
-state.assessments = prepareAssessments(assignment);
-
-    const select = $("testSelect");
-    select.innerHTML = "";
-
-    const allOption = document.createElement("option");
-
-    allOption.value = "all";
-    allOption.textContent = "All Tests and Examinations";
-
-    select.appendChild(allOption);
-
-    state.assessments.forEach(assessment => {
-        const option = document.createElement("option");
-
-        option.value = assessment.id;
-
-        option.textContent =
-            (assessment.type === "exam" ? "EXAM: " : "TEST: ") +
-            assessment.name;
-
-        select.appendChild(option);
-    });
-
-    select.disabled = state.assessments.length === 0;
-
-    if (state.assessments.length > 0) {
-        select.value = "all";
-        onTestChange();
-    } else {
-        $("resultsBody").innerHTML = `
-            <tr>
-                <td colspan="7" class="empty">
-                    No tests or examinations are available for this class and subject.
-                </td>
-            </tr>
-        `;
-    }
+    // Build assessments using the newly selected class and default subclass.
+    rebuildAssessmentsForCurrentSubclass();
 }
 
 /* =====================================================
@@ -3508,9 +3544,8 @@ $("teacherSelect").addEventListener("change", async () => {
     $("subclassSelect").addEventListener("change", () => {
     if (!state.selectedAssignment) return;
 
-    // Rebuild assessments using the newly selected subclass.
-    // The selected subclass is applied before all calculations.
-    onAssignmentChange();
+    // Keep the selected subclass; rebuild only the assessment data/results.
+    rebuildAssessmentsForCurrentSubclass();
 });
 
 $("yearSelect").addEventListener("change", onYearChange);
