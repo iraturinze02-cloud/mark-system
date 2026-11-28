@@ -600,6 +600,98 @@ tbody tr:hover {
         font-size: 12px;
     }
 }
+/* BULK REGISTRATION */
+
+.bulk-registration {
+    padding: 20px;
+    margin-bottom: 24px;
+    border: 1px solid #dbeafe;
+    border-radius: 11px;
+    background: #f8fbff;
+}
+
+.bulk-info h3 {
+    margin: 0 0 8px;
+    color: #173f70;
+    font-size: 16px;
+}
+
+.bulk-info p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+.bulk-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 16px;
+}
+
+.template-btn {
+    background: #e0edff;
+    color: #1d4ed8;
+}
+
+.upload-btn {
+    background: #15803d;
+    color: white;
+}
+
+.template-btn:hover {
+    background: #cfe2ff;
+}
+
+.upload-btn:hover {
+    background: #166534;
+}
+
+.bulk-hint {
+    margin: 12px 0 0;
+    color: var(--muted);
+    font-size: 12px;
+}
+
+.bulk-upload-status {
+    display: none;
+    margin-top: 15px;
+    padding: 13px;
+    border-radius: 8px;
+    font-size: 13px;
+    line-height: 1.6;
+    white-space: pre-line;
+}
+
+.bulk-upload-status.success {
+    display: block;
+    background: #dcfce7;
+    color: #166534;
+}
+
+.bulk-upload-status.error {
+    display: block;
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.bulk-upload-status.info {
+    display: block;
+    background: #eff6ff;
+    color: #1d4ed8;
+}
+
+@media(max-width: 600px) {
+    .bulk-actions {
+        flex-direction: column;
+    }
+
+    .bulk-actions button {
+        width: 100%;
+    }
+}
+    
 </style>
 </head>
 
@@ -621,6 +713,41 @@ tbody tr:hover {
             + Register Student
         </button>
     </div>
+    <!-- BULK STUDENT REGISTRATION -->
+<div class="bulk-registration">
+    <div class="bulk-info">
+        <h3>Bulk Student Registration</h3>
+        <p>
+            Register many students at once using an Excel template.
+            Download the template, fill in student details, and upload it.
+            Student codes will be generated automatically.
+        </p>
+    </div>
+
+    <div class="bulk-actions">
+        <button type="button" class="template-btn" id="downloadTemplateBtn">
+            Download Excel Template
+        </button>
+
+        <button type="button" class="upload-btn" id="chooseExcelBtn">
+            Upload Completed Excel
+        </button>
+
+        <input
+            type="file"
+            id="excelFileInput"
+            accept=".xlsx,.xls"
+            hidden
+        >
+    </div>
+
+    <p class="bulk-hint">
+        Accepted formats: .xlsx and .xls. Do not change the column headings
+        in the template.
+    </p>
+
+    <div id="bulkUploadStatus" class="bulk-upload-status"></div>
+</div>
 
     <div class="summary-cards">
         <div class="summary-card active-summary">
@@ -775,7 +902,7 @@ document.addEventListener("DOMContentLoaded", async function () {
     }
 });
 </script>
-
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>
 "use strict";
 
@@ -834,6 +961,18 @@ const activeTabCount = document.getElementById("activeTabCount");
 const inactiveTabCount = document.getElementById("inactiveTabCount");
 
 const sectionInstruction = document.getElementById("sectionInstruction");
+
+const downloadTemplateBtn =
+    document.getElementById("downloadTemplateBtn");
+
+const chooseExcelBtn =
+    document.getElementById("chooseExcelBtn");
+
+const excelFileInput =
+    document.getElementById("excelFileInput");
+
+const bulkUploadStatus =
+    document.getElementById("bulkUploadStatus");
 
 /* =====================================
    STATE
@@ -979,7 +1118,450 @@ function showMessage(message, type = "success") {
         }, 6000);
     }
 }
+/* =====================================
+   BULK STUDENT REGISTRATION
+===================================== */
 
+function showBulkStatus(message, type = "info") {
+    bulkUploadStatus.textContent = message;
+    bulkUploadStatus.className =
+        "bulk-upload-status " + type;
+}
+
+/* =====================================
+   DOWNLOAD EXCEL TEMPLATE
+===================================== */
+
+function downloadStudentTemplate() {
+    if (typeof XLSX === "undefined") {
+        showBulkStatus(
+            "Excel library could not be loaded. Please refresh the page and try again.",
+            "error"
+        );
+        return;
+    }
+
+    const headers = [
+        "Full Name",
+        "Gender",
+        "Class",
+        "Subclass",
+        "Date of Birth",
+        "Admission Date"
+    ];
+
+    const studentsSheet = XLSX.utils.aoa_to_sheet([
+        headers
+    ]);
+
+    studentsSheet["!cols"] = [
+        { wch: 28 },
+        { wch: 14 },
+        { wch: 14 },
+        { wch: 18 },
+        { wch: 18 },
+        { wch: 18 }
+    ];
+
+    const instructionsSheet = XLSX.utils.aoa_to_sheet([
+        ["FILA GRADES SYSTEM - STUDENT IMPORT TEMPLATE"],
+        [""],
+        ["Instructions"],
+        ["1. Enter one student per row in the Students sheet."],
+        ["2. Do not change the column headings."],
+        ["3. Full Name, Gender and Class are required."],
+        ["4. Gender must be Male or Female."],
+        ["5. Class must match a class available in your school, for example P6."],
+        ["6. Subclass is optional. Leave it empty if the student is not assigned to a subclass."],
+        ["7. Date of Birth is optional. Use YYYY-MM-DD."],
+        ["8. Admission Date is optional. Use YYYY-MM-DD."],
+        ["9. Do not enter student codes. The system generates them automatically."],
+        [""],
+        ["Example"],
+        ["Full Name", "Gender", "Class", "Subclass", "Date of Birth", "Admission Date"],
+        ["UWIMANA Alice", "Female", "P6", "P6 A", "2014-05-12", "2026-09-07"]
+    ]);
+
+    instructionsSheet["!cols"] = [
+        { wch: 35 },
+        { wch: 18 },
+        { wch: 18 },
+        { wch: 20 },
+        { wch: 20 },
+        { wch: 20 }
+    ];
+
+    const workbook = XLSX.utils.book_new();
+
+    XLSX.utils.book_append_sheet(
+        workbook,
+        studentsSheet,
+        "Students"
+    );
+
+    XLSX.utils.book_append_sheet(
+        workbook,
+        instructionsSheet,
+        "Instructions"
+    );
+
+    XLSX.writeFile(
+        workbook,
+        "Fila_Grades_Student_Registration_Template.xlsx"
+    );
+
+    showBulkStatus(
+        "Excel template downloaded. Fill in the Students sheet and upload the completed file.",
+        "success"
+    );
+}
+
+/* =====================================
+   NORMALIZE EXCEL HEADERS
+===================================== */
+
+function normalizeExcelHeader(value) {
+    return String(value || "")
+        .trim()
+        .toLowerCase()
+        .replace(/[_-]/g, " ")
+        .replace(/\s+/g, " ");
+}
+
+/* =====================================
+   READ EXCEL DATE
+===================================== */
+
+function normalizeExcelDate(value) {
+    if (value === null || value === undefined || value === "") {
+        return null;
+    }
+
+    if (value instanceof Date && !isNaN(value.getTime())) {
+        return value.toISOString().slice(0, 10);
+    }
+
+    const text = String(value).trim();
+
+    if (!text) return null;
+
+    // Accept YYYY-MM-DD.
+    if (/^\d{4}-\d{2}-\d{2}$/.test(text)) {
+        const date = new Date(text + "T00:00:00");
+
+        if (
+            !isNaN(date.getTime()) &&
+            date.toISOString().slice(0, 10) === text
+        ) {
+            return text;
+        }
+
+        throw new Error("Invalid date: " + text);
+    }
+
+    // Accept DD/MM/YYYY.
+    const match = text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+
+    if (match) {
+        const day = Number(match[1]);
+        const month = Number(match[2]);
+        const year = Number(match[3]);
+
+        const date = new Date(Date.UTC(year, month - 1, day));
+
+        if (
+            date.getUTCFullYear() !== year ||
+            date.getUTCMonth() !== month - 1 ||
+            date.getUTCDate() !== day
+        ) {
+            throw new Error("Invalid date: " + text);
+        }
+
+        return [
+            year,
+            String(month).padStart(2, "0"),
+            String(day).padStart(2, "0")
+        ].join("-");
+    }
+
+    throw new Error(
+        "Invalid date format: " + text +
+        ". Use YYYY-MM-DD or DD/MM/YYYY."
+    );
+}
+
+/* =====================================
+   PARSE EXCEL FILE
+===================================== */
+
+async function parseStudentExcel(file) {
+    if (typeof XLSX === "undefined") {
+        throw new Error("Excel library is not available.");
+    }
+
+    const extension = file.name.split(".").pop().toLowerCase();
+
+    if (!["xlsx", "xls"].includes(extension)) {
+        throw new Error("Please upload an .xlsx or .xls Excel file.");
+    }
+
+    const buffer = await file.arrayBuffer();
+
+    const workbook = XLSX.read(buffer, {
+        type: "array",
+        cellDates: true
+    });
+
+    const worksheet = workbook.Sheets["Students"] ||
+        workbook.Sheets[workbook.SheetNames[0]];
+
+    if (!worksheet) {
+        throw new Error("The Excel file does not contain a Students worksheet.");
+    }
+
+    const rows = XLSX.utils.sheet_to_json(worksheet, {
+        header: 1,
+        defval: "",
+        raw: false,
+        blankrows: false
+    });
+
+    if (rows.length < 2) {
+        throw new Error("The Excel file contains no student records.");
+    }
+
+    const headers = rows[0].map(normalizeExcelHeader);
+
+    const columnIndexes = {
+        full_name: headers.indexOf("full name"),
+        gender: headers.indexOf("gender"),
+        class_name: headers.indexOf("class"),
+        subclass_name: headers.indexOf("subclass"),
+        date_of_birth: headers.indexOf("date of birth"),
+        admission_date: headers.indexOf("admission date")
+    };
+
+    const requiredColumns = [
+        "full_name",
+        "gender",
+        "class_name"
+    ];
+
+    const missingColumns = requiredColumns.filter(
+        key => columnIndexes[key] === -1
+    );
+
+    if (missingColumns.length) {
+        throw new Error(
+            "Missing required Excel columns: " +
+            missingColumns.join(", ")
+        );
+    }
+
+    const parsedStudents = [];
+
+    const rowErrors = [];
+
+    for (let index = 1; index < rows.length; index++) {
+        const row = rows[index];
+
+        const getValue = key => {
+            const columnIndex = columnIndexes[key];
+
+            return columnIndex === -1
+                ? ""
+                : String(row[columnIndex] ?? "").trim();
+        };
+
+        const fullName = getValue("full_name");
+        const gender = getValue("gender");
+        const className = getValue("class_name");
+        const subclassName = getValue("subclass_name");
+
+        const dateOfBirthValue = getValue("date_of_birth");
+        const admissionDateValue = getValue("admission_date");
+
+        // Ignore completely empty rows.
+        if (
+            !fullName &&
+            !gender &&
+            !className &&
+            !subclassName &&
+            !dateOfBirthValue &&
+            !admissionDateValue
+        ) {
+            continue;
+        }
+
+        const excelRowNumber = index + 1;
+
+        try {
+            if (!fullName) {
+                throw new Error("Full Name is required.");
+            }
+
+            if (!gender) {
+                throw new Error("Gender is required.");
+            }
+
+            if (!["male", "female"].includes(gender.toLowerCase())) {
+                throw new Error("Gender must be Male or Female.");
+            }
+
+            if (!className) {
+                throw new Error("Class is required.");
+            }
+
+            if (fullName.length > 200) {
+                throw new Error("Student name must not exceed 200 characters.");
+            }
+
+            const dateOfBirth = normalizeExcelDate(dateOfBirthValue);
+            const admissionDate = normalizeExcelDate(admissionDateValue);
+
+            parsedStudents.push({
+                full_name: fullName,
+                gender: gender.toLowerCase() === "male"
+                    ? "Male"
+                    : "Female",
+                class_name: className,
+                subclass_name: subclassName || null,
+                date_of_birth: dateOfBirth,
+                admission_date: admissionDate,
+                excel_row: excelRowNumber
+            });
+
+        } catch (error) {
+            rowErrors.push(
+                "Row " + excelRowNumber + ": " + error.message
+            );
+        }
+    }
+
+    if (rowErrors.length) {
+        throw new Error(
+            "The Excel file has errors:\n" +
+            rowErrors.slice(0, 20).join("\n") +
+            (rowErrors.length > 20
+                ? "\nAnd " + (rowErrors.length - 20) + " more error(s)."
+                : "")
+        );
+    }
+
+    if (parsedStudents.length === 0) {
+        throw new Error("No student records were found in the Excel file.");
+    }
+
+    return parsedStudents;
+}
+
+/* =====================================
+   UPLOAD STUDENT EXCEL
+===================================== */
+
+async function uploadStudentExcel(file) {
+    const period = getSelectedAcademicPeriod();
+
+    const studentsToUpload = await parseStudentExcel(file);
+
+    if (!confirm(
+        "You are about to register " +
+        studentsToUpload.length +
+        " student(s).\n\n" +
+        "Academic Year: " + period.academic_year_id +
+        "\nTerm: " + period.term_id +
+        "\n\nStudent codes will be generated automatically.\n\n" +
+        "Continue?"
+    )) {
+        return;
+    }
+
+    chooseExcelBtn.disabled = true;
+    downloadTemplateBtn.disabled = true;
+
+    showBulkStatus(
+        "Uploading and registering " +
+        studentsToUpload.length +
+        " students. Please wait...",
+        "info"
+    );
+
+    try {
+        const result = await apiRequest("/api/students/bulk", {
+            method: "POST",
+            body: JSON.stringify({
+                academic_year_id: Number(period.academic_year_id),
+                term_id: Number(period.term_id),
+                students: studentsToUpload
+            })
+        });
+
+        await loadStudents();
+
+        const importedCount = Number(
+            result.importedCount ??
+            result.imported ??
+            studentsToUpload.length
+        );
+
+        let message =
+            "Bulk registration completed successfully.\n\n" +
+            "Successfully registered: " + importedCount + " student(s).";
+
+        if (Array.isArray(result.errors) && result.errors.length) {
+            message +=
+                "\n\nRows not imported:\n" +
+                result.errors.map(item => {
+                    if (typeof item === "string") return item;
+
+                    return "Row " + item.row + ": " + item.message;
+                }).join("\n");
+        }
+
+        showBulkStatus(message, "success");
+
+        showMessage(
+            importedCount + " student(s) registered successfully."
+        );
+
+        excelFileInput.value = "";
+
+    } catch (error) {
+        showBulkStatus(
+            error.message || "Bulk registration failed.",
+            "error"
+        );
+
+    } finally {
+        chooseExcelBtn.disabled = false;
+        downloadTemplateBtn.disabled = false;
+    }
+}
+
+/* =====================================
+   BULK REGISTRATION EVENTS
+===================================== */
+
+downloadTemplateBtn.addEventListener(
+    "click",
+    downloadStudentTemplate
+);
+
+chooseExcelBtn.addEventListener("click", () => {
+    excelFileInput.click();
+});
+
+excelFileInput.addEventListener("change", async () => {
+    const file = excelFileInput.files?.[0];
+
+    if (!file) return;
+
+    try {
+        await uploadStudentExcel(file);
+    } catch (error) {
+        showBulkStatus(error.message, "error");
+    }
+});
 /* =====================================
    CLASS NAME FORMATTING
 ===================================== */
