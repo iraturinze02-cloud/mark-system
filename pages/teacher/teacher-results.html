@@ -848,6 +848,12 @@ button, select {
                     <option value="">Select class and subject</option>
                 </select>
             </div>
+            <div class="field">
+    <label for="subclassSelect">Subclass</label>
+    <select id="subclassSelect" disabled>
+        <option value="all">All</option>
+    </select>
+</div>
 
             <div class="field">
                 <label for="testSelect">Assessment</label>
@@ -1700,6 +1706,11 @@ function resetResults() {
     $("testSelect").disabled = true;
     $("csvBtn").disabled = true;
     $("settingsBtn").disabled = true;
+    $("subclassSelect").innerHTML =
+    '<option value="all">All</option>';
+
+$("subclassSelect").value = "all";
+$("subclassSelect").disabled = true;
 
     $("resultsHead").innerHTML = `
         <tr>
@@ -2206,8 +2217,30 @@ function getAssessmentTimestamp(assessment) {
    PREPARE TESTS AND EXAMINATIONS
 ===================================================== */
 
+/* =====================================================
+   SUBCLASS FILTER
+===================================================== */
+
+function getSelectedSubclassId() {
+    return $("subclassSelect").value || "all";
+}
+
 function normalizeAssessmentStudents(items) {
-    return Array.isArray(items) ? items : [];
+    const students = Array.isArray(items) ? items : [];
+
+    const selectedSubclassId = getSelectedSubclassId();
+
+    // All Subclasses includes students with NULL subclass_id.
+    if (selectedSubclassId === "all") {
+        return students;
+    }
+
+    // A specific subclass includes only students allocated to it.
+    return students.filter(student =>
+        student.subclass_id !== null &&
+        student.subclass_id !== undefined &&
+        String(student.subclass_id) === String(selectedSubclassId)
+    );
 }
 
 function prepareAssessments(assignment) {
@@ -2265,7 +2298,41 @@ function prepareAssessments(assignment) {
 
     return assessments;
 }
+/* =====================================================
+   LOAD SUBCLASSES FOR SELECTED CLASS
+===================================================== */
 
+function loadAssignmentSubclasses(assignment) {
+    const select = $("subclassSelect");
+
+    select.innerHTML = "";
+
+    const allOption = document.createElement("option");
+
+    allOption.value = "all";
+    allOption.textContent = "All Subclasses";
+
+    select.appendChild(allOption);
+
+    const subclasses = Array.isArray(assignment.subclasses)
+        ? assignment.subclasses
+        : [];
+
+    subclasses.forEach(subclass => {
+        const option = document.createElement("option");
+
+        option.value = String(subclass.id);
+        option.textContent = "Subclass " + subclass.name;
+
+        select.appendChild(option);
+    });
+
+    select.value = "all";
+
+    // Keep the filter available even when no subclasses exist.
+    // All Subclasses will then display the complete class register.
+    select.disabled = subclasses.length === 0;
+}
 /* =====================================================
    ASSIGNMENT CHANGE
 ===================================================== */
@@ -2317,14 +2384,30 @@ function onAssignmentChange() {
     }
 
     state.selectedAssignment = assignment;
+    if (index === "") {
+    $("className").textContent = "—";
+    $("subjectName").textContent = "—";
 
-    $("className").textContent =
-        assignment.class_name || "—";
+    $("subclassSelect").innerHTML =
+        '<option value="all">All</option>';
 
-    $("subjectName").textContent =
-        assignment.subject_name || "—";
+    $("subclassSelect").value = "all";
+    $("subclassSelect").disabled = true;
 
-    state.assessments = prepareAssessments(assignment);
+    return;
+}
+
+$("className").textContent =
+    assignment.class_name || "—";
+
+$("subjectName").textContent =
+    assignment.subject_name || "—";
+
+// Load subclasses belonging to this class and academic year.
+loadAssignmentSubclasses(assignment);
+
+// Prepare assessments using the selected subclass.
+state.assessments = prepareAssessments(assignment);
 
     const select = $("testSelect");
     select.innerHTML = "";
@@ -3181,27 +3264,44 @@ function downloadCSV() {
         return;
     }
 
-    const rows = [
-        [
-            "Teacher",
-            state.teacher?.full_name || "",
-            "School",
-            state.teacher?.school_name || ""
-        ],
-        [
-            "Academic Year",
-            $("yearSelect").selectedOptions[0]?.textContent || "",
-            "Term",
-            $("termSelect").selectedOptions[0]?.textContent || ""
-        ],
-        [
-            "Class",
-            state.selectedAssignment.class_name || "",
-            "Subject",
-            state.selectedAssignment.subject_name || ""
-        ],
-        []
-    ];
+    const selectedSubclass = $("subclassSelect").value;
+
+const selectedSubclassName =
+    selectedSubclass === "all"
+        ? "All Subclasses"
+        : (
+            state.selectedAssignment.subclasses || []
+        ).find(
+            item => String(item.id) === String(selectedSubclass)
+        )?.name || "";
+
+const rows = [
+    [
+        "Teacher",
+        state.teacher?.full_name || "",
+        "School",
+        state.teacher?.school_name || ""
+    ],
+    [
+        "Academic Year",
+        $("yearSelect").selectedOptions[0]?.textContent || "",
+        "Term",
+        $("termSelect").selectedOptions[0]?.textContent || ""
+    ],
+    [
+        "Class",
+        state.selectedAssignment.class_name || "",
+        "Subject",
+        state.selectedAssignment.subject_name || ""
+    ],
+    [
+        "Subclass",
+        selectedSubclass === "all"
+            ? "All Subclasses"
+            : "Subclass " + selectedSubclassName
+    ],
+    []
+];
 
     if (state.selectedTest === "all") {
         rows.push([
@@ -3404,6 +3504,13 @@ $("teacherSelect").addEventListener("change", async () => {
     ) {
         await loadResults();
     }
+});
+    $("subclassSelect").addEventListener("change", () => {
+    if (!state.selectedAssignment) return;
+
+    // Rebuild assessments using the newly selected subclass.
+    // The selected subclass is applied before all calculations.
+    onAssignmentChange();
 });
 
 $("yearSelect").addEventListener("change", onYearChange);
