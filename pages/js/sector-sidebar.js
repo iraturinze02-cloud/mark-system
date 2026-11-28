@@ -36,7 +36,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     Main Menu
                 </div>
 
-                <a href="dashboard.html" class="sidebar-link active">
+                <a href="dashboard.html" class="sidebar-link">
                     <span class="sidebar-icon">📊</span>
                     <span>Dashboard</span>
                 </a>
@@ -63,6 +63,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 <a href="../school/school-marks.html" class="sidebar-link">
                     <span class="sidebar-icon">📈</span>
                     <span>School Records</span>
+                </a>
+
+                <a href="../school/academic-year-performance.html" class="sidebar-link">
+                    <span class="sidebar-icon">📊</span>
+                    <span>Academic Year Analysis</span>
                 </a>
 
                 <a href="inspect-marks-recording.html" class="sidebar-link">
@@ -99,6 +104,14 @@ document.addEventListener("DOMContentLoaded", () => {
     `;
 
     const sidebar = document.getElementById("sectorSidebar");
+    const currentPage = window.location.pathname.split("/").filter(Boolean).pop().toLowerCase();
+    sidebar.querySelectorAll(".sidebar-link").forEach(link => {
+        const linkPage = link.getAttribute("href").split("/").pop().toLowerCase();
+        if (linkPage === currentPage) {
+            link.classList.add("active");
+            link.setAttribute("aria-current", "page");
+        }
+    });
     const toggle = document.getElementById("sectorSidebarToggle");
     const overlay = document.getElementById("sectorSidebarOverlay");
     const logoutButton = document.getElementById("sectorSidebarLogout");

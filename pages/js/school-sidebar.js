@@ -12,6 +12,9 @@
     );
 
     const userName = currentUser.full_name || "School Administrator";
+    const userRoleLabel = currentUser.role === "dos"
+        ? "Director of Studies"
+        : "School Administrator";
 
     const firstLetter = userName.trim().charAt(0).toUpperCase() || "S";
 
@@ -71,6 +74,11 @@
                     <span>School Marks</span>
                 </a>
 
+                <a href="academic-year-performance.html" class="sidebar-link">
+                    <span class="sidebar-link-icon">📈</span>
+                    <span>Academic Year Analysis</span>
+                </a>
+
                 <a href="inspect-marks-recording.html" class="sidebar-link">
                     <span class="sidebar-link-icon">🔍</span>
                     <span>Inspect Marks Recording</span>
@@ -90,7 +98,7 @@
 
                     <div class="sidebar-user-info">
                         <strong>${escapeHTML(userName)}</strong>
-                        <span>School Administrator</span>
+                        <span>${escapeHTML(userRoleLabel)}</span>
                     </div>
                 </div>
 
