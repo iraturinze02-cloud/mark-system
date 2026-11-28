@@ -1471,8 +1471,9 @@ function buildReports(
         teacherSubjectGroups.values()
     ).map(group => {
         group.teachers.sort((a, b) =>
-            b.average_percentage - a.average_percentage ||
+            
             b.pass_rate - a.pass_rate ||
+            b.average_percentage - a.average_percentage ||
             b.passed - a.passed ||
             a.teacher.localeCompare(b.teacher)
         );
