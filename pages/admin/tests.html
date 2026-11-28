@@ -1459,26 +1459,37 @@ function renderClasses() {
         return;
     }
 
-    // Keep only classes offered by the selected schools.
-    // For school_admin, the API already returns classes
-    // belonging to that administrator's school.
+    // Filter classes according to the user's role.
     const availableClasses = options.classes.filter(item => {
-    if (role === "school_admin") {
-        return true;
-    }
 
-    // Support both the new school_ids array and
-    // the older school_id field.
-    const offeredBy = Array.isArray(item.school_ids)
-        ? item.school_ids.map(id => String(id))
-        : item.school_id !== undefined
-            ? [String(item.school_id)]
-            : [];
+        // Teachers receive only their assigned classes from the API.
+        // They do not select schools.
+        if (role === "teacher") {
+            return true;
+        }
 
-    return selectedSchools.some(schoolId =>
-        offeredBy.includes(String(schoolId))
-    );
-});
+        // School administrators and DOS already receive
+        // classes belonging to their own school.
+        if (role === "school_admin" || role === "dos") {
+            return true;
+        }
+
+        // Sector administrators see classes offered by
+        // the schools they have selected.
+        if (role === "sector_admin") {
+            const offeredBy = Array.isArray(item.school_ids)
+                ? item.school_ids.map(id => String(id))
+                : item.school_id !== undefined
+                    ? [String(item.school_id)]
+                    : [];
+
+            return selectedSchools.some(schoolId =>
+                offeredBy.includes(String(schoolId))
+            );
+        }
+
+        return false;
+    });
 
     // Remove duplicate universal class IDs.
     const uniqueClasses = new Map();
@@ -1508,8 +1519,7 @@ function renderClasses() {
         return a.class_name.localeCompare(b.class_name);
     });
 
-    // Remove selected classes that are no longer offered
-    // by any currently selected school.
+    // Remove selected classes that are no longer available.
     const availableIds = classes.map(item => String(item.id));
 
     selectedClasses = selectedClasses.filter(id =>
@@ -1519,7 +1529,11 @@ function renderClasses() {
     if (!classes.length) {
         grid.innerHTML = `
             <p class="hint">
-                No classes are offered by the selected schools.
+                ${
+                    role === "teacher"
+                        ? "No assigned classes were returned. Please check your teaching assignments."
+                        : "No classes are offered by the selected schools."
+                }
             </p>
         `;
 
@@ -1551,6 +1565,8 @@ function renderClasses() {
 
     renderSubjects();
 }
+
+
 /* =========================================
    RENDER SUBJECTS AND MAXIMUM MARK INPUTS
 ========================================= */
