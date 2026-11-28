@@ -7,7 +7,18 @@ import {
 
 /* =====================================================
    GET: ACTIVE ENROLLED STUDENTS FOR A SELECTED TEST
-   FILTERED BY SELECTED ACADEMIC YEAR AND TERM
+
+   FILTERED BY:
+   - Academic year
+   - Term
+   - Class
+   - Teacher assignment
+
+   RETURNS:
+   - Student information
+   - Subclass ID
+   - Subclass name
+   - Existing marks
 ===================================================== */
 
 export async function onRequestGet(context) {
@@ -70,14 +81,18 @@ export async function onRequestGet(context) {
                 t.id AS term_id,
                 t.term_name AS term,
                 t.term_number
+
             FROM academic_years ay
+
             INNER JOIN terms t
                 ON t.academic_year_id = ay.id
                AND t.school_id = ay.school_id
+
             WHERE ay.id = $1
               AND t.id = $2
               AND ay.school_id = $3
               AND t.school_id = $3
+
             LIMIT 1
             `,
             [
@@ -295,16 +310,24 @@ export async function onRequestGet(context) {
         }
 
         /* ---------------------------------------------
-           7. LOAD ACTIVE ENROLLMENTS AND EXISTING MARKS
+           7. LOAD ACTIVE ENROLLMENTS, SUBCLASSES
+              AND EXISTING MARKS
 
-           IMPORTANT:
-           The enrollment determines the student's class
-           for the selected academic year and term.
+           SUBCLASS RELATIONSHIP:
+
+           student_enrollments.subclass_id
+                    |
+                    v
+           school_class_subclasses.id
+
+           The LEFT JOIN keeps students who have not
+           yet been allocated to a subclass.
         --------------------------------------------- */
 
         const studentsResult = await client.query(
             `
-            SELECT
+            SELECT DISTINCT ON (s.id)
+
                 s.id AS student_id,
                 s.student_code,
                 s.full_name,
@@ -312,6 +335,10 @@ export async function onRequestGet(context) {
 
                 se.id AS enrollment_id,
                 se.class_id AS enrollment_class_id,
+
+                se.subclass_id,
+
+                scs.subclass_name,
 
                 m.id AS mark_id,
                 m.score AS mark,
@@ -322,6 +349,14 @@ export async function onRequestGet(context) {
             INNER JOIN students s
                 ON s.id = se.student_id
                AND s.school_id = se.school_id
+               AND s.class_id = se.class_id
+               AND s.status = 'active'
+
+            LEFT JOIN school_class_subclasses scs
+                ON scs.id = se.subclass_id
+               AND scs.school_id = se.school_id
+               AND scs.academic_year_id = se.academic_year_id
+               AND scs.class_id = se.class_id
 
             LEFT JOIN marks m
                 ON m.test_id = $1
@@ -335,7 +370,10 @@ export async function onRequestGet(context) {
               AND se.term_id = $6
               AND LOWER(TRIM(se.status)) = 'active'
 
-            ORDER BY s.full_name ASC
+            ORDER BY
+                s.id,
+                se.created_at DESC,
+                se.id DESC
             `,
             [
                 testId,
@@ -363,7 +401,27 @@ export async function onRequestGet(context) {
 
             assignment,
 
-            students: studentsResult.rows
+            students: studentsResult.rows.map(student => ({
+                ...student,
+
+                student_id: String(student.student_id),
+                enrollment_id: String(student.enrollment_id),
+                enrollment_class_id: String(student.enrollment_class_id),
+
+                subclass_id: student.subclass_id === null
+                    ? null
+                    : String(student.subclass_id),
+
+                subclass_name: student.subclass_name || null,
+
+                mark_id: student.mark_id === null
+                    ? null
+                    : String(student.mark_id),
+
+                mark: student.mark === null
+                    ? null
+                    : Number(student.mark)
+            }))
         });
 
     } catch (error) {
