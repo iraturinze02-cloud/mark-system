@@ -413,12 +413,24 @@ export async function onRequestGet(context) {
            MANAGEMENT SCOPE
         --------------------------------------------- */
 
-        const manageScopeId =
-            auth.role === "sector_admin"
-                ? auth.sectorId
-                : ["school_admin", "dos"].includes(auth.role)
-                    ? auth.schoolId
-                    : null;
+        
+/* ---------------------------------------------
+   MANAGEMENT SCOPE
+
+   Sector admin: own sector.
+   School admin / DOS: own school.
+   Teacher: own assigned school.
+--------------------------------------------- */
+
+const manageScopeId =
+    auth.role === "sector_admin"
+        ? auth.sectorId
+        : ["school_admin", "dos"].includes(auth.role)
+            ? auth.schoolId
+            : auth.role === "teacher"
+                ? teacherSchoolId
+                : null;
+
 
         const roleParameter = parameters.length + 1;
         const scopeParameter = parameters.length + 2;
