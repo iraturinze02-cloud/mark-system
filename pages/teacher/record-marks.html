@@ -837,6 +837,7 @@ function resetTestUI() {
    RENDER TEST SELECTION
 ===================================================== */
 
+
 function renderTests() {
     resetTestUI();
 
@@ -852,33 +853,38 @@ function renderTests() {
         return;
     }
 
-    // ONLY ONE OPEN TEST: AUTOMATICALLY SELECT
-    if (openTests.length === 1) {
-        selectTest(openTests[0].test_id);
-        return;
-    }
+    // Sort newest first using the test creation date.
+    const recentTests = [...openTests].sort((a, b) => {
+        const dateA = new Date(a.created_at || 0).getTime();
+        const dateB = new Date(b.created_at || 0).getTime();
 
-    // MULTIPLE OPEN TESTS: SHOW DROPDOWN
-    testSection.classList.remove("selection-hidden");
-
-    testSelect.innerHTML =
-        '<option value="">Choose an open Test</option>';
-
-    openTests.forEach(test => {
-        const option = document.createElement("option");
-
-        option.value = String(test.test_id);
-
-        option.textContent =
-            `${test.test_name} — ${test.total_marks ?? "Marks not specified"} marks`;
-
-        testSelect.appendChild(option);
+        return dateB - dateA;
     });
 
-    showTestMessage(
-        "Choose the Test you want to record marks for.",
-        "success"
-    );
+    // Automatically select the most recent open Test.
+    const latestTest = recentTests[0];
+
+    selectTest(latestTest.test_id);
+
+    // Show the dropdown only when multiple open tests exist.
+    if (recentTests.length > 1) {
+        testSection.classList.remove("selection-hidden");
+
+        testSelect.innerHTML = "";
+
+        recentTests.forEach(test => {
+            const option = document.createElement("option");
+
+            option.value = String(test.test_id);
+
+            option.textContent =
+                `${test.test_name} — ${test.total_marks ?? "Marks not specified"} marks`;
+
+            testSelect.appendChild(option);
+        });
+
+        testSelect.value = String(latestTest.test_id);
+    }
 }
 
 /* =====================================================
